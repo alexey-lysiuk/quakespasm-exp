@@ -549,7 +549,7 @@ void R_DrawBrushModel (entity_t *e)
 		e->origin[1] -= DIST_EPSILON;
 		e->origin[2] -= DIST_EPSILON;
 	}
-	R_RotateForEntity (e->origin, e->angles);
+	R_RotateForEntity (e->origin, e->angles, e->netstate.scale);
 	if (gl_zfix.value)
 	{
 		e->origin[0] += DIST_EPSILON;
@@ -614,7 +614,7 @@ void R_DrawBrushModel_ShowTris (entity_t *e)
 
 	glPushMatrix ();
 	e->angles[0] = -e->angles[0];	// stupid quake bug
-	R_RotateForEntity (e->origin, e->angles);
+	R_RotateForEntity (e->origin, e->angles, e->netstate.scale);
 	e->angles[0] = -e->angles[0];	// stupid quake bug
 
 	//
@@ -652,7 +652,7 @@ R_RenderDynamicLightmaps
 called during rendering
 ================
 */
-void R_RenderDynamicLightmaps (msurface_t *fa)
+void R_RenderDynamicLightmaps (qmodel_t *model, msurface_t *fa)
 {
 	byte		*base;
 	int			maps;
@@ -698,7 +698,7 @@ dynamic:
 				theRect->h = (fa->light_t-theRect->t)+tmax;
 			base = lm->data;
 			base += fa->light_t * LMBLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
-			R_BuildLightMap (fa, base, LMBLOCK_WIDTH*lightmap_bytes);
+			R_BuildLightMap (model, fa, base, LMBLOCK_WIDTH*lightmap_bytes);
 		}
 	}
 }
@@ -777,7 +777,7 @@ int	nColinElim;
 GL_CreateSurfaceLightmap
 ========================
 */
-void GL_CreateSurfaceLightmap (msurface_t *surf)
+void GL_CreateSurfaceLightmap (qmodel_t *model, msurface_t *surf)
 {
 	int		smax, tmax;
 	byte	*base;
@@ -788,7 +788,7 @@ void GL_CreateSurfaceLightmap (msurface_t *surf)
 	surf->lightmaptexturenum = AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
 	base = lightmap[surf->lightmaptexturenum].data;
 	base += (surf->light_t * LMBLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-	R_BuildLightMap (surf, base, LMBLOCK_WIDTH*lightmap_bytes);
+	R_BuildLightMap (model, surf, base, LMBLOCK_WIDTH*lightmap_bytes);
 }
 
 /*
@@ -917,7 +917,7 @@ void GL_BuildLightmaps (void)
 			//johnfitz -- rewritten to use SURF_DRAWTILED instead of the sky/water flags
 			if (m->surfaces[i].flags & SURF_DRAWTILED)
 				continue;
-			GL_CreateSurfaceLightmap (m->surfaces + i);
+			GL_CreateSurfaceLightmap (m, m->surfaces + i);
 			BuildSurfaceDisplayList (m->surfaces + i);
 			//johnfitz
 		}
@@ -1130,7 +1130,7 @@ R_BuildLightMap -- johnfitz -- revised for lit support via lordhavoc
 Combine and scale multiple lightmaps into the 8.8 format in blocklights
 ===============
 */
-void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
+void R_BuildLightMap (qmodel_t *model, msurface_t *surf, byte *dest, int stride)
 {
 	int			smax, tmax;
 	int			r,g,b;
@@ -1147,7 +1147,7 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 	size = smax*tmax;
 	lightmap = surf->samples;
 
-	if (cl.worldmodel->lightdata)
+	if (model->lightdata)
 	{
 	// clear to no light
 		memset (&blocklights[0], 0, size * 3 * sizeof (unsigned int)); //johnfitz -- lit support via lordhavoc
@@ -1310,7 +1310,7 @@ void R_RebuildAllLightmaps (void)
 				continue;
 			base = lightmap[fa->lightmaptexturenum].data;
 			base += fa->light_t * LMBLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
-			R_BuildLightMap (fa, base, LMBLOCK_WIDTH*lightmap_bytes);
+			R_BuildLightMap (mod, fa, base, LMBLOCK_WIDTH*lightmap_bytes);
 		}
 	}
 
