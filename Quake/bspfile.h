@@ -243,9 +243,9 @@ typedef struct
 	unsigned int	v[2];		// vertex numbers
 } dledge_t;
 
-#define	MAXLIGHTMAPS	4
-#define LMBLOCK_WIDTH	256
-#define LMBLOCK_HEIGHT	256
+#define	MAXLIGHTMAPS	16
+#define INVALID_LIGHTSTYLE 0xffffu
+#define INVALID_LIGHTSTYLE_OLD 0xffu
 typedef struct
 {
 	short		planenum;
