@@ -391,6 +391,7 @@ void Sys_Error (const char *error, ...)
 
 	fputs (errortxt1, stderr);
 	Con_Redirect(NULL);
+	PR_SwitchQCVM(NULL);
 	Host_Shutdown ();
 	fputs (errortxt2, stderr);
 	fputs (text, stderr);
