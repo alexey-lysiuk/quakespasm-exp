@@ -256,7 +256,7 @@ typedef struct
 	short		texinfo;
 
 // lighting info
-	byte		styles[MAXLIGHTMAPS];
+	byte		styles[4];
 	int			lightofs;		// start of [numstyles*surfsize] samples
 } dsface_t;
 
@@ -270,7 +270,7 @@ typedef struct
 	int			texinfo;
 
 // lighting info
-	byte		styles[MAXLIGHTMAPS];
+	byte		styles[4];
 	int			lightofs;		// start of [numstyles*surfsize] samples
 } dlface_t;
 
