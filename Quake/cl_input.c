@@ -59,6 +59,8 @@ kbutton_t	in_up, in_down;
 
 int			in_impulse;
 
+// JPG 1.05 - translate +jump to +moveup under water
+//extern cvar_t	pq_moveup;
 
 void KeyDown (kbutton_t *b)
 {
@@ -70,6 +72,10 @@ void KeyDown (kbutton_t *b)
 		k = atoi(c);
 	else
 		k = -1;		// typed manually at the console for continuous down
+
+	// JPG 1.05 - if jump is pressed underwater, translate it to a moveup
+	if (b == &in_jump /*&& pq_moveup.value*/ && cl.stats[STAT_HEALTH] > 0 && cl.inwater)
+		b = &in_up;
 
 	if (k == b->down[0] || k == b->down[1])
 		return;		// repeating key
@@ -102,6 +108,19 @@ void KeyUp (kbutton_t *b)
 		b->down[0] = b->down[1] = 0;
 		b->state = 4;	// impulse up
 		return;
+	}
+
+	// JPG 1.05 - check to see if we need to translate -jump to -moveup
+	if (b == &in_jump/* && pq_moveup.value*/)
+	{
+		if (k == in_up.down[0] || k == in_up.down[1])
+			b = &in_up;
+		else
+		{
+			// in case a -moveup got lost somewhere
+			in_up.down[0] = in_up.down[1] = 0;
+			in_up.state = 4;
+		}
 	}
 
 	if (b->down[0] == k)
