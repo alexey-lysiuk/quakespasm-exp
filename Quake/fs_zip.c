@@ -24,9 +24,6 @@
 //infozip utf-8 name override.
 //other 'extra' fields.
 
-#define qofs_t long long
-#define qofs_Make(low,high) ((unsigned int)(low) | ((qofs_t)(high)<<32))
-
 struct zipinfo
 {
 	unsigned int	thisdisk;					//this disk number
@@ -747,7 +744,7 @@ pack_t *FSZIP_LoadArchive (const char *packfile)
 	return pack;
 }
 
-FILE *FSZIP_Deflate(FILE *src, int srcsize, int outsize)
+FILE *FSZIP_Deflate(FILE *src, qofs_t srcsize, qofs_t outsize)
 {
 #ifdef USE_ZLIB
 	byte inbuffer[65536];

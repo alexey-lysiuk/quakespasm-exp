@@ -1896,7 +1896,7 @@ QUAKE FILESYSTEM
 =============================================================================
 */
 
-int	com_filesize;
+qofs_t	com_filesize;
 
 
 //
@@ -1905,14 +1905,14 @@ int	com_filesize;
 typedef struct
 {
 	char	name[56];
-	int		filepos, filelen;
+	unsigned int		filepos, filelen;
 } dpackfile_t;
 
 typedef struct
 {
 	char	id[4];
-	int		dirofs;
-	int		dirlen;
+	unsigned int		dirofs;
+	unsigned int		dirlen;
 } dpackheader_t;
 
 #define MAX_FILES_IN_PACK	4096

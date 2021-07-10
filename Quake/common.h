@@ -222,11 +222,24 @@ char *va (const char *format, ...) FUNC_PRINTF(1,2);
 //============================================================================
 
 // QUAKEFS
+#ifdef _WIN32
+	#define qofs_t __int64	//LLP64 sucks and needs clumsy workarounds.
+	#define fseek _fseeki64
+	#define ftell _ftelli64
+#elif _POSIX_C_SOURCE >= 200112L
+	#define qofs_t off_t	//posix has its own LFS support for 32bit systems.
+	#define fseek fseeko
+	#define ftell ftello
+#else
+	#define qofs_t long		//LP64 just makes more sense. everything just works.
+#endif
+#define qofs_Make(low,high) ((unsigned int)(low) | ((qofs_t)(high)<<32))
+
 typedef struct
 {
 	char	name[MAX_QPATH];
-	int		filepos, filelen;
-	int		deflatedsize;
+	qofs_t	filepos, filelen;
+	qofs_t	deflatedsize;
 } packfile_t;
 
 typedef struct pack_s
@@ -252,7 +265,7 @@ typedef struct searchpath_s
 extern searchpath_t *com_searchpaths;
 extern searchpath_t *com_base_searchpaths;
 
-extern int com_filesize;
+extern qofs_t com_filesize;
 struct cache_user_s;
 
 extern	char	com_basedir[MAX_OSPATH];
@@ -264,7 +277,7 @@ const char *COM_GetGameNames(qboolean full);
 qboolean COM_GameDirMatches(const char *tdirs);
 
 pack_t *FSZIP_LoadArchive (const char *packfile);
-FILE *FSZIP_Deflate(FILE *src, int srcsize, int outsize);
+FILE *FSZIP_Deflate(FILE *src, qofs_t srcsize, qofs_t outsize);
 
 void COM_WriteFile (const char *filename, const void *data, int len);
 int COM_OpenFile (const char *filename, int *handle, unsigned int *path_id);

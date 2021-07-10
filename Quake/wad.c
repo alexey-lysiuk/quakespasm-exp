@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-int				wad_numlumps;
+unsigned int	wad_numlumps;
 lumpinfo_t		*wad_lumps;
 byte			*wad_base = NULL;
 
@@ -116,13 +116,13 @@ void W_LoadWadFile (void) //johnfitz -- filename is now hard-coded for honesty
 		{
 			if (lump_p->filepos > com_filesize || lump_p->size < 0)
 			{
-				Con_Printf ("Wad file %s lump \"%.16s\" begins %u bytes beyond end of wad\n",filename, lump_p->name, lump_p->filepos - com_filesize);
+				Con_Printf ("Wad file %s lump \"%.16s\" begins %u bytes beyond end of wad\n",filename, lump_p->name, (unsigned)(lump_p->filepos - com_filesize));
 				lump_p->filepos = 0;
 				lump_p->size = q_max(0, lump_p->size-lump_p->filepos);
 			}
 			else
 			{
-				Con_Printf ("Wad file %s lump \"%.16s\" extends %u bytes beyond end of wad (lump size: %u)\n",filename, lump_p->name, (lump_p->filepos + lump_p->size) - com_filesize, lump_p->size);
+				Con_Printf ("Wad file %s lump \"%.16s\" extends %u bytes beyond end of wad (lump size: %u)\n",filename, lump_p->name, (unsigned)((lump_p->filepos + lump_p->size) - com_filesize), lump_p->size);
 				lump_p->size = q_max(0, lump_p->size-lump_p->filepos);
 			}
 		}

@@ -3478,7 +3478,7 @@ void SV_SpawnServer (const char *server)
 		if (csprogs)
 		{
 			Info_SetKey(svs.serverinfo, sizeof(svs.serverinfo), "*csprogs", va("%#x", Com_BlockChecksum(csprogs, com_filesize)));
-			Info_SetKey(svs.serverinfo, sizeof(svs.serverinfo), "*csprogssize", va("%#x", com_filesize));
+			Info_SetKey(svs.serverinfo, sizeof(svs.serverinfo), "*csprogssize", va("%#x", (unsigned)com_filesize));
 			free(csprogs);
 		}
 		else

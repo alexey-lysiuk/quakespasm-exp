@@ -53,9 +53,9 @@ struct mdfour {
 };
 
 static void mdfour_begin(struct mdfour *md); // old: MD4Init
-static void mdfour_update(struct mdfour *md, unsigned char *in, int n); //old: MD4Update
+static void mdfour_update(struct mdfour *md, unsigned char *in, size_t n); //old: MD4Update
 static void mdfour_result(struct mdfour *md, unsigned char *out); // old: MD4Final
-static void mdfour(unsigned char *out, unsigned char *in, int n);
+static void mdfour(unsigned char *out, unsigned char *in, size_t n);
 
 #endif	// _MDFOUR_H
 
@@ -160,7 +160,7 @@ static void mdfour_begin(struct mdfour *md)
 }
 
 
-static void mdfour_tail(struct mdfour *m, unsigned char *in, int n)
+static void mdfour_tail(struct mdfour *m, unsigned char *in, size_t n)
 {
 	unsigned char buf[128];
 	uint32 M[16];
@@ -190,7 +190,7 @@ static void mdfour_tail(struct mdfour *m, unsigned char *in, int n)
 	}
 }
 
-static void mdfour_update(struct mdfour *m, unsigned char *in, int n)
+static void mdfour_update(struct mdfour *m, unsigned char *in, size_t n)
 {
 	uint32 M[16];
 
@@ -218,7 +218,7 @@ static void mdfour_result(struct mdfour *m, unsigned char *out)
 }
 
 
-static void mdfour(unsigned char *out, unsigned char *in, int n)
+static void mdfour(unsigned char *out, unsigned char *in, size_t n)
 {
 	struct mdfour md;
 	mdfour_begin(&md);
@@ -234,7 +234,7 @@ static void mdfour(unsigned char *out, unsigned char *in, int n)
 //	Author: Jeff Teunissen	<d2deek@pmail.net>
 //	Date: 01 Jan 2000
 
-unsigned Com_BlockChecksum (void *buffer, int length)
+unsigned Com_BlockChecksum (void *buffer, size_t length)
 {
 	int				digest[4];
 	unsigned 		val;
@@ -246,7 +246,7 @@ unsigned Com_BlockChecksum (void *buffer, int length)
 	return val;
 }
 
-void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
+void Com_BlockFullChecksum (void *buffer, size_t len, unsigned char *outbuf)
 {
 	mdfour ( outbuf, (unsigned char *) buffer, len );
 }

@@ -72,7 +72,7 @@ static int findhandle (void)
 	return i;
 }
 
-long Sys_filelength (FILE *f)
+qofs_t Sys_filelength (FILE *f)
 {
 	long		pos, end;
 
@@ -84,10 +84,11 @@ long Sys_filelength (FILE *f)
 	return end;
 }
 
-int Sys_FileOpenRead (const char *path, int *hndl)
+qofs_t Sys_FileOpenRead (const char *path, int *hndl)
 {
 	FILE	*f;
-	int	i, retval;
+	int	i;
+	qofs_t retval;
 
 	i = findhandle ();
 	f = fopen(path, "rb");
@@ -136,7 +137,7 @@ void Sys_FileClose (int handle)
 	sys_handles[handle] = NULL;
 }
 
-void Sys_FileSeek (int handle, int position)
+void Sys_FileSeek (int handle, qofs_t position)
 {
 	fseek (sys_handles[handle], position, SEEK_SET);
 }

@@ -103,6 +103,8 @@ endif
 ifeq ($(USE_SDL2),1)
 CFLAGS += -DUSE_SDL2
 endif
+#make use of LFS on 32bit even on systems.
+CFLAGS += -D_FILE_OFFSET_BITS=64
 
 ifeq ($(USE_SDL2),1)
 SDL_CONFIG ?= sdl2-config

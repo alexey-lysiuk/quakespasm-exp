@@ -1300,7 +1300,7 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal, unsigned int needcr
 			return false;
 		}
 	}
-	Con_DPrintf ("%s occupies %iK.\n", filename, com_filesize/1024);
+	Con_DPrintf ("%s occupies %uK.\n", filename, (unsigned)(com_filesize/1024u));
 
 	qcvm->functions = (dfunction_t *)((byte *)qcvm->progs + qcvm->progs->ofs_functions);
 	qcvm->strings = (char *)qcvm->progs + qcvm->progs->ofs_strings;
