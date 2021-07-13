@@ -29,6 +29,7 @@ extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
 
 int		gl_lightmap_format;
 int		lightmap_bytes;
+qboolean lightmaps_latecached;
 
 #define MAX_SANITY_LIGHTMAPS (1u<<20)
 struct lightmap_s	*lightmap;
@@ -731,8 +732,15 @@ int AllocBlock (int w, int h, int *x, int *y)
 			/* FIXME: we leave 'gaps' in malloc()ed data,  CRC_Block() later accesses
 			 * that uninitialized data and valgrind complains for it.  use calloc() ? */
 			lightmap[texnum].data = (byte *) malloc(4*LMBLOCK_WIDTH*LMBLOCK_HEIGHT);
+			memset(lightmap[texnum].data, 0, 4*LMBLOCK_WIDTH*LMBLOCK_HEIGHT);
 			//as we're only tracking one texture, we don't need multiple copies of allocated any more.
 			memset(allocated, 0, sizeof(allocated));
+
+			lightmap[texnum].modified = true;
+			lightmap[texnum].rectchange.l = 0;
+			lightmap[texnum].rectchange.t = 0;
+			lightmap[texnum].rectchange.h = LMBLOCK_HEIGHT;
+			lightmap[texnum].rectchange.w = LMBLOCK_WIDTH;
 		}
 		best = LMBLOCK_HEIGHT;
 
@@ -887,6 +895,9 @@ void GL_BuildModel (qmodel_t *m)
 		//johnfitz
 	}
 
+	if (m->type == mod_brush)
+		lightmaps_latecached=true;
+
 //	GL_BuildBModelVertexBuffer();
 }
 
@@ -909,7 +920,11 @@ void GL_BuildLightmaps (void)
 
 	//Spike -- wipe out all the lightmap data (johnfitz -- the gltexture objects were already freed by Mod_ClearAll)
 	for (i=0; i < lightmap_count; i++)
+	{
+		if (lightmap[i].texture)
+			TexMgr_FreeTexture(lightmap[i].texture);
 		free(lightmap[i].data);
+	}
 	free(lightmap);
 	lightmap = NULL;
 	last_lightmap_allocated = 0;
@@ -933,7 +948,7 @@ void GL_BuildLightmaps (void)
 	{
 		m = cl.model_precache[j];
 		if (!m)
-			break;
+			continue;
 		GL_BuildModel(m);
 	}
 	for (j=1 ; j<MAX_MODELS ; j++)
@@ -1322,13 +1337,36 @@ void R_UploadLightmaps (void)
 {
 	int lmap;
 
+	if (lightmaps_latecached)
+	{
+		GL_BuildLightmaps ();
+		GL_BuildBModelVertexBuffer ();
+		lightmaps_latecached=false;
+	}
+
 	for (lmap = 0; lmap < lightmap_count; lmap++)
 	{
 		if (!lightmap[lmap].modified)
 			continue;
 
-		GL_Bind (lightmap[lmap].texture);
-		R_UploadLightmap(lmap);
+		if (!lightmap[lmap].texture)
+		{
+			char	name[24];
+			sprintf(name, "lightmap%07i",lmap);
+			lightmap[lmap].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+							SRC_LIGHTMAP, lightmap[lmap].data, "", (src_offset_t)lightmap[lmap].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
+
+			lightmap[lmap].modified = false;
+			lightmap[lmap].rectchange.l = LMBLOCK_WIDTH;
+			lightmap[lmap].rectchange.t = LMBLOCK_HEIGHT;
+			lightmap[lmap].rectchange.h = 0;
+			lightmap[lmap].rectchange.w = 0;
+		}
+		else
+		{
+			GL_Bind (lightmap[lmap].texture);
+			R_UploadLightmap(lmap);
+		}
 	}
 }
 
@@ -1366,8 +1404,24 @@ void R_RebuildAllLightmaps (void)
 	//for each lightmap, upload it
 	for (i=0; i<lightmap_count; i++)
 	{
-		GL_Bind (lightmap[i].texture);
-		glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, LMBLOCK_WIDTH, LMBLOCK_HEIGHT, gl_lightmap_format,
-				 GL_UNSIGNED_BYTE, lightmap[i].data);
+		if (!lightmap[i].texture)
+		{
+			char	name[24];
+			sprintf(name, "lightmap%07i",i);
+			lightmap[i].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+							SRC_LIGHTMAP, lightmap[i].data, "", (src_offset_t)lightmap[i].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
+		}
+		else
+		{
+			GL_Bind (lightmap[i].texture);
+			glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, LMBLOCK_WIDTH, LMBLOCK_HEIGHT, gl_lightmap_format,
+					GL_UNSIGNED_BYTE, lightmap[i].data);
+		}
+
+		lightmap[i].modified = false;
+		lightmap[i].rectchange.l = LMBLOCK_WIDTH;
+		lightmap[i].rectchange.t = LMBLOCK_HEIGHT;
+		lightmap[i].rectchange.h = 0;
+		lightmap[i].rectchange.w = 0;
 	}
 }

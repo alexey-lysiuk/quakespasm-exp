@@ -2047,6 +2047,9 @@ static void CL_ParsePrecache(void)
 			cl.model_precache[index] = Mod_ForName (name, false);
 			//FIXME: if its a bsp model, generate lightmaps.
 			//FIXME: update static entities with that modelindex
+
+			if (cl.model_precache[index])
+				GL_BuildModel(cl.model_precache[index]);
 		}
 		break;
 #ifdef PSET_SCRIPT
