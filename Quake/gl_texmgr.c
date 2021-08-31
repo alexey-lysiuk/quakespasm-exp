@@ -1544,13 +1544,10 @@ void TexMgr_ReloadImage (gltexture_t *glt, int shirt, int pants)
 	mark = Hunk_LowMark ();
 
 	if (glt->source_file[0] && glt->source_offset)
-	{
-		//lump inside file
-		long size;
+	{	//lump inside file
 		FILE *f;
 		COM_FOpenFile(glt->source_file, &f, NULL);
-		if (!f)
-			goto invalid;
+		if (!f) goto invalid;
 		fseek (f, glt->source_offset, SEEK_CUR);
 
 		size = TexMgr_ImageSize(glt->source_width, glt->source_height, glt->source_format);
@@ -1559,14 +1556,15 @@ void TexMgr_ReloadImage (gltexture_t *glt, int shirt, int pants)
 		fclose (f);
 	}
 	else if (glt->source_file[0] && !glt->source_offset)
-		data = Image_LoadImage (glt->source_file, (int *)&glt->source_width, (int *)&glt->source_height, &fmt, &malloced); //simple file
-	else if (!glt->source_file[0] && glt->source_offset)
-		data = (byte *) glt->source_offset; //image in memory
-
-	if (!data)
 	{
-invalid:
-		Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
+		data = Image_LoadImage (glt->source_file, (int *)&glt->source_width, (int *)&glt->source_height, &fmt, &malloced); //simple file
+	}
+	else if (!glt->source_file[0] && glt->source_offset)
+	{
+		data = (byte *) glt->source_offset; //image in memory
+	}
+	if (!data) {
+invalid:	Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
 		Hunk_FreeToLowMark(mark);
 		return;
 	}

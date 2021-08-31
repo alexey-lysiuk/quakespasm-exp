@@ -2700,6 +2700,13 @@ void M_ServerList_Key (int k)
 
 }
 
+//=============================================================================
+/* Credits menu -- used by the 2021 re-release */
+
+void M_Menu_Credits_f (void)
+{
+}
+
 static struct
 {
 	const char *name;
@@ -2718,6 +2725,7 @@ static struct
 	{"menu_video", M_Menu_Video_f},
 	{"help", M_Menu_Help_f},
 	{"menu_quit", M_Menu_Quit_f},
+	{"menu_credits", M_Menu_Credits_f}, // needed by the 2021 re-release
 };
 
 //=============================================================================

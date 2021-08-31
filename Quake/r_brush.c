@@ -32,7 +32,7 @@ int		lightmap_bytes;
 qboolean lightmaps_latecached;
 
 #define MAX_SANITY_LIGHTMAPS (1u<<20)
-struct lightmap_s	*lightmap;
+struct lightmap_s	*lightmaps;
 int					lightmap_count;
 int					last_lightmap_allocated;
 int					allocated[LMBLOCK_WIDTH];
@@ -666,8 +666,8 @@ void R_RenderDynamicLightmaps (qmodel_t *model, msurface_t *fa)
 		return;
 
 	// add to lightmap chain
-	fa->polys->chain = lightmap[fa->lightmaptexturenum].polys;
-	lightmap[fa->lightmaptexturenum].polys = fa->polys;
+	fa->polys->chain = lightmaps[fa->lightmaptexturenum].polys;
+	lightmaps[fa->lightmaptexturenum].polys = fa->polys;
 
 	// check for lightmap modification
 	for (maps=0; maps < MAXLIGHTMAPS && fa->styles[maps] != INVALID_LIGHTSTYLE; maps++)
@@ -680,7 +680,7 @@ void R_RenderDynamicLightmaps (qmodel_t *model, msurface_t *fa)
 dynamic:
 		if (r_dynamic.value)
 		{
-			struct lightmap_s *lm = &lightmap[fa->lightmaptexturenum];
+			struct lightmap_s *lm = &lightmaps[fa->lightmaptexturenum];
 			lm->modified = true;
 			theRect = &lm->rectchange;
 			if (fa->light_t < theRect->t) {
@@ -727,20 +727,17 @@ int AllocBlock (int w, int h, int *x, int *y)
 		if (texnum == lightmap_count)
 		{
 			lightmap_count++;
-			lightmap = (struct lightmap_s *) realloc(lightmap, sizeof(*lightmap)*lightmap_count);
-			memset(&lightmap[texnum], 0, sizeof(lightmap[texnum]));
-			/* FIXME: we leave 'gaps' in malloc()ed data,  CRC_Block() later accesses
-			 * that uninitialized data and valgrind complains for it.  use calloc() ? */
-			lightmap[texnum].data = (byte *) malloc(4*LMBLOCK_WIDTH*LMBLOCK_HEIGHT);
-			memset(lightmap[texnum].data, 0, 4*LMBLOCK_WIDTH*LMBLOCK_HEIGHT);
+			lightmaps = (struct lightmap_s *) realloc(lightmaps, sizeof(*lightmaps)*lightmap_count);
+			memset(&lightmaps[texnum], 0, sizeof(lightmaps[texnum]));
+			lightmaps[texnum].data = (byte *) calloc(1, 4*LMBLOCK_WIDTH*LMBLOCK_HEIGHT);
 			//as we're only tracking one texture, we don't need multiple copies of allocated any more.
 			memset(allocated, 0, sizeof(allocated));
 
-			lightmap[texnum].modified = true;
-			lightmap[texnum].rectchange.l = 0;
-			lightmap[texnum].rectchange.t = 0;
-			lightmap[texnum].rectchange.h = LMBLOCK_HEIGHT;
-			lightmap[texnum].rectchange.w = LMBLOCK_WIDTH;
+			lightmaps[texnum].modified = true;
+			lightmaps[texnum].rectchange.l = 0;
+			lightmaps[texnum].rectchange.t = 0;
+			lightmaps[texnum].rectchange.h = LMBLOCK_HEIGHT;
+			lightmaps[texnum].rectchange.w = LMBLOCK_WIDTH;
 		}
 		best = LMBLOCK_HEIGHT;
 
@@ -796,7 +793,7 @@ void GL_CreateSurfaceLightmap (qmodel_t *model, msurface_t *surf)
 	tmax = (surf->extents[1]>>surf->lmshift)+1;
 
 	surf->lightmaptexturenum = AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
-	base = lightmap[surf->lightmaptexturenum].data;
+	base = lightmaps[surf->lightmaptexturenum].data;
 	base += (surf->light_t * LMBLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	R_BuildLightMap (model, surf, base, LMBLOCK_WIDTH*lightmap_bytes);
 }
@@ -921,12 +918,12 @@ void GL_BuildLightmaps (void)
 	//Spike -- wipe out all the lightmap data (johnfitz -- the gltexture objects were already freed by Mod_ClearAll)
 	for (i=0; i < lightmap_count; i++)
 	{
-		if (lightmap[i].texture)
-			TexMgr_FreeTexture(lightmap[i].texture);
-		free(lightmap[i].data);
+		if (lightmaps[i].texture)
+			TexMgr_FreeTexture(lightmaps[i].texture);
+		free(lightmaps[i].data);
 	}
-	free(lightmap);
-	lightmap = NULL;
+	free(lightmaps);
+	lightmaps = NULL;
 	last_lightmap_allocated = 0;
 	lightmap_count = 0;
 
@@ -964,7 +961,7 @@ void GL_BuildLightmaps (void)
 	//
 	for (i=0; i<lightmap_count; i++)
 	{
-		lm = &lightmap[i];
+		lm = &lightmaps[i];
 		lm->modified = false;
 		lm->rectchange.l = LMBLOCK_WIDTH;
 		lm->rectchange.t = LMBLOCK_HEIGHT;
@@ -1316,7 +1313,7 @@ assumes lightmap texture is already bound
 */
 static void R_UploadLightmap(int lmap)
 {
-	struct lightmap_s *lm = &lightmap[lmap];
+	struct lightmap_s *lm = &lightmaps[lmap];
 
 	if (!lm->modified)
 		return;
@@ -1346,25 +1343,25 @@ void R_UploadLightmaps (void)
 
 	for (lmap = 0; lmap < lightmap_count; lmap++)
 	{
-		if (!lightmap[lmap].modified)
+		if (!lightmaps[lmap].modified)
 			continue;
 
-		if (!lightmap[lmap].texture)
+		if (!lightmaps[lmap].texture)
 		{
 			char	name[24];
 			sprintf(name, "lightmap%07i",lmap);
-			lightmap[lmap].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
-							SRC_LIGHTMAP, lightmap[lmap].data, "", (src_offset_t)lightmap[lmap].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
+			lightmaps[lmap].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+							SRC_LIGHTMAP, lightmaps[lmap].data, "", (src_offset_t)lightmaps[lmap].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
 
-			lightmap[lmap].modified = false;
-			lightmap[lmap].rectchange.l = LMBLOCK_WIDTH;
-			lightmap[lmap].rectchange.t = LMBLOCK_HEIGHT;
-			lightmap[lmap].rectchange.h = 0;
-			lightmap[lmap].rectchange.w = 0;
+			lightmaps[lmap].modified = false;
+			lightmaps[lmap].rectchange.l = LMBLOCK_WIDTH;
+			lightmaps[lmap].rectchange.t = LMBLOCK_HEIGHT;
+			lightmaps[lmap].rectchange.h = 0;
+			lightmaps[lmap].rectchange.w = 0;
 		}
 		else
 		{
-			GL_Bind (lightmap[lmap].texture);
+			GL_Bind (lightmaps[lmap].texture);
 			R_UploadLightmap(lmap);
 		}
 	}
@@ -1395,7 +1392,7 @@ void R_RebuildAllLightmaps (void)
 		{
 			if (fa->flags & SURF_DRAWTILED)
 				continue;
-			base = lightmap[fa->lightmaptexturenum].data;
+			base = lightmaps[fa->lightmaptexturenum].data;
 			base += fa->light_t * LMBLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
 			R_BuildLightMap (mod, fa, base, LMBLOCK_WIDTH*lightmap_bytes);
 		}
@@ -1404,24 +1401,24 @@ void R_RebuildAllLightmaps (void)
 	//for each lightmap, upload it
 	for (i=0; i<lightmap_count; i++)
 	{
-		if (!lightmap[i].texture)
+		if (!lightmaps[i].texture)
 		{
 			char	name[24];
 			sprintf(name, "lightmap%07i",i);
-			lightmap[i].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
-							SRC_LIGHTMAP, lightmap[i].data, "", (src_offset_t)lightmap[i].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
+			lightmaps[i].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+							SRC_LIGHTMAP, lightmaps[i].data, "", (src_offset_t)lightmaps[i].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
 		}
 		else
 		{
-			GL_Bind (lightmap[i].texture);
+			GL_Bind (lightmaps[i].texture);
 			glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, LMBLOCK_WIDTH, LMBLOCK_HEIGHT, gl_lightmap_format,
-					GL_UNSIGNED_BYTE, lightmap[i].data);
+					GL_UNSIGNED_BYTE, lightmaps[i].data);
 		}
 
-		lightmap[i].modified = false;
-		lightmap[i].rectchange.l = LMBLOCK_WIDTH;
-		lightmap[i].rectchange.t = LMBLOCK_HEIGHT;
-		lightmap[i].rectchange.h = 0;
-		lightmap[i].rectchange.w = 0;
+		lightmaps[i].modified = false;
+		lightmaps[i].rectchange.l = LMBLOCK_WIDTH;
+		lightmaps[i].rectchange.t = LMBLOCK_HEIGHT;
+		lightmaps[i].rectchange.h = 0;
+		lightmaps[i].rectchange.w = 0;
 	}
 }

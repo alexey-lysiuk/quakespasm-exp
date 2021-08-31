@@ -166,7 +166,7 @@ CFLAGS+= -DUSE_CODEC_UMX
 endif
 CFLAGS+= $(CODEC_INC)
 
-COMMON_LIBS:= -lm -lopengl32 -lwinmm
+COMMON_LIBS:= -lopengl32 -lwinmm
 
 ifeq ($(USE_ZLIB),1)
 CFLAGS+= -DUSE_ZLIB

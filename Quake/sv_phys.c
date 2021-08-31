@@ -1237,6 +1237,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 	case MOVETYPE_TOSS:
 	case MOVETYPE_BOUNCE:
+	case MOVETYPE_EXT_BOUNCEMISSILE:
 		SV_Physics_Toss (ent);
 		break;
 
@@ -1359,6 +1360,7 @@ void SV_Physics_Toss (edict_t *ent)
 	trace_t	trace;
 	vec3_t	move;
 	float	backoff;
+	int movetype;
 
 	// regular thinking
 	if (!SV_RunThink (ent))
@@ -1371,6 +1373,7 @@ void SV_Physics_Toss (edict_t *ent)
 	SV_CheckVelocity (ent);
 
 // add gravity
+	movetype = ent->v.movetype; if (movetype == MOVETYPE_EXT_BOUNCEMISSILE && qcvm->brokenbouncemissile) movetype = MOVETYPE_BOUNCE;
 	if (ent->v.movetype != MOVETYPE_FLY
 	&& ent->v.movetype != MOVETYPE_FLYMISSILE)
 		SV_AddGravity (ent);
@@ -1386,8 +1389,11 @@ void SV_Physics_Toss (edict_t *ent)
 	if (ent->free)
 		return;
 
-	if (ent->v.movetype == MOVETYPE_BOUNCE)
+	movetype = ent->v.movetype; if (movetype == MOVETYPE_EXT_BOUNCEMISSILE && qcvm->brokenbouncemissile) movetype = MOVETYPE_BOUNCE;
+	if (movetype == MOVETYPE_BOUNCE)
 		backoff = 1.5;
+	else if (movetype == MOVETYPE_EXT_BOUNCEMISSILE)
+		backoff = 2;	//bouncemissile.
 	else
 		backoff = 1;
 
@@ -1596,6 +1602,7 @@ void SV_Physics (void)
 		else if (ent->v.movetype == MOVETYPE_STEP)
 			SV_Physics_Step (ent);
 		else if (ent->v.movetype == MOVETYPE_TOSS
+		|| ent->v.movetype == MOVETYPE_EXT_BOUNCEMISSILE
 		|| ent->v.movetype == MOVETYPE_BOUNCE
 		|| ent->v.movetype == MOVETYPE_FLY
 		|| ent->v.movetype == MOVETYPE_FLYMISSILE)

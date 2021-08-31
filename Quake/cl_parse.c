@@ -91,7 +91,7 @@ const char *svc_strings[128] =
 //spike -- particle stuff, and padded to 128 to avoid possible crashes.
 	"50 svc_downloaddata_dp", // 50
 	"51 svc_updatestatbyte", // 51
-	"52 svc_effect_dp", // 52
+	"52 svc_effect_dp/svc_achievement_qx", // 52
 	"53 svc_effect2_dp", // 53
 	"54 svc_precache", // 54	//[short] type+idx [string] name
 	"55 svc_baseline2_dp", // 55
@@ -2759,11 +2759,21 @@ void CL_ParseServerMessage (void)
 			Con_DPrintf("Ignoring svcdp_hidepic\n");
 			break;
 
-		case svcdp_effect:
+		case 52:
+			if (cl.protocol == PROTOCOL_VERSION_DP7)
+			{	//svcdp_effect
+				CL_ParseEffect(false);
+			}
+			else
+			{	//2021 release: svc_achievement
+				str = MSG_ReadString();
+				Con_DPrintf("Ignoring svc_achievement (%s)\n", str);
+			}
+			break;
 		case svcdp_effect2:	//these are kinda pointless when the particle system can do it
 			if (cl.protocol != PROTOCOL_VERSION_DP7)
-				Host_Error ("Received svcdp_effect[1|2] but extension not active");
-			CL_ParseEffect(cmd==svcdp_effect2);
+				Host_Error ("Received svcdp_effect2 but extension not active");
+			CL_ParseEffect(true);
 			break;
 		case svcdp_csqcentities:	//FTE uses DP's svc number for nq, because compat (despite fte's svc being first). same payload either way.
 			if (!(cl.protocol_pext2 & PEXT2_REPLACEMENTDELTAS) && cl.protocol != PROTOCOL_VERSION_DP7)

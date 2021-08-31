@@ -233,6 +233,25 @@ void Sky_LoadSkyBox (const char *name)
 
 /*
 =================
+Sky_ClearAll
+
+Called on map unload/game change to avoid keeping pointers to freed data
+=================
+*/
+void Sky_ClearAll (void)
+{
+	int i;
+
+	skyroom_enabled = false;
+	skybox_name[0] = 0;
+	for (i=0; i<6; i++)
+		skybox_textures[i] = NULL;
+	solidskytexture = NULL;
+	alphaskytexture = NULL;
+}
+
+/*
+=================
 Sky_NewMap
 =================
 */
@@ -240,15 +259,7 @@ void Sky_NewMap (void)
 {
 	char	key[128], value[4096];
 	const char	*data;
-	int		i;
 
-	//
-	// initially no sky
-	//
-	skyroom_enabled = false;
-	skybox_name[0] = 0;
-	for (i=0; i<6; i++)
-		skybox_textures[i] = NULL;
 	skyfog = r_skyfog.value;
 
 	//
@@ -636,8 +647,7 @@ void Sky_ProcessTextureChains (void)
 			continue;
 
 		for (s = t->texturechains[chain_world]; s; s = s->texturechain)
-			if (!s->culled)
-				Sky_ProcessPoly (s->polys);
+			Sky_ProcessPoly (s->polys);
 	}
 }
 
@@ -779,7 +789,7 @@ FIXME: eliminate cracks by adding an extra vert on tjuncs
 */
 void Sky_DrawSkyBox (void)
 {
-	int		i;
+	int i;
 
 	for (i=0 ; i<6 ; i++)
 	{
@@ -989,7 +999,7 @@ void Sky_DrawFace (int axis)
 	vec3_t		verts[4];
 	int			i, j, start;
 	float		di,qi,dj,qj;
-	vec3_t		vup, vright, temp, temp2;
+	vec3_t		up, right, temp, temp2;
 
 	Sky_SetBoxVert(-1.0, -1.0, axis, verts[0]);
 	Sky_SetBoxVert(-1.0,  1.0, axis, verts[1]);
@@ -999,8 +1009,8 @@ void Sky_DrawFace (int axis)
 	start = Hunk_LowMark ();
 	p = (glpoly_t *) Hunk_Alloc(sizeof(glpoly_t));
 
-	VectorSubtract(verts[2],verts[3],vup);
-	VectorSubtract(verts[2],verts[1],vright);
+	VectorSubtract(verts[2],verts[3],up);
+	VectorSubtract(verts[2],verts[1],right);
 
 	di = q_max((int)r_sky_quality.value, 1);
 	qi = 1.0 / di;
@@ -1016,15 +1026,15 @@ void Sky_DrawFace (int axis)
 				continue;
 
 			//if (i&1 ^ j&1) continue; //checkerboard test
-			VectorScale (vright, qi*i, temp);
-			VectorScale (vup, qj*j, temp2);
+			VectorScale (right, qi*i, temp);
+			VectorScale (up, qj*j, temp2);
 			VectorAdd(temp,temp2,temp);
 			VectorAdd(verts[0],temp,p->verts[0]);
 
-			VectorScale (vup, qj, temp);
+			VectorScale (up, qj, temp);
 			VectorAdd (p->verts[0],temp,p->verts[1]);
 
-			VectorScale (vright, qi, temp);
+			VectorScale (right, qi, temp);
 			VectorAdd (p->verts[1],temp,p->verts[2]);
 
 			VectorAdd (p->verts[0],temp,p->verts[3]);
@@ -1066,7 +1076,7 @@ called once per frame before drawing anything else
 */
 void Sky_DrawSky (void)
 {
-	int				i;
+	int i;
 
 	//in these special render modes, the sky faces are handled in the normal world/brush renderer
 	if (r_drawflat_cheatsafe || r_lightmap_cheatsafe)
@@ -1090,12 +1100,11 @@ void Sky_DrawSky (void)
 				continue;
 
 			for (s = t->texturechains[chain_world]; s; s = s->texturechain)
-				if (!s->culled)
-				{
-					DrawGLPoly(s->polys);
-					rs_brushpasses++;
-					Sky_ProcessPoly (s->polys);
-				}
+			{
+				DrawGLPoly(s->polys);
+				rs_brushpasses++;
+				Sky_ProcessPoly (s->polys);
+			}
 		}
 		glEnable (GL_TEXTURE_2D);
 		glColorMask(true,true,true,true);
@@ -1136,7 +1145,7 @@ void Sky_DrawSky (void)
 		if (skybox_name[0])
 			Sky_DrawSkyBox ();
 		else
-			Sky_DrawSkyLayers();
+			Sky_DrawSkyLayers ();
 
 		glDepthMask(1);
 		glDepthFunc(GL_LEQUAL);

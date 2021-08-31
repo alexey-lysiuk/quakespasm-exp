@@ -347,6 +347,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svcfte_updateentities		86
 //spike -- end
 
+//used by the 2021 rerelease
+//Note: same value as svcdp_effect!
+#define svcqx_achievement				52		// [string] id
+
 //
 // client to server
 //

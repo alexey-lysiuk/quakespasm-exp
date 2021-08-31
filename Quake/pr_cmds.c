@@ -1745,6 +1745,15 @@ void PF_Fixme (void);
 //	PR_RunError ("unimplemented builtin");
 //}
 
+/*
+==============
+PF_finalefinished -- used by 2021 release.
+==============
+*/
+static void PF_finalefinished (void)
+{
+}
+
 void PR_spawnfunc_misc_model(edict_t *self)
 {
 	eval_t *val;
@@ -1853,7 +1862,10 @@ builtin_t pr_ssqcbuiltins[] =
 	PF_sv_precache_sound,	// precache_sound2 is different only for qcc
 	PF_precache_file,
 
-	PF_sv_setspawnparms
+	PF_sv_setspawnparms,
+
+	// 2021 release
+	PF_finalefinished,	// void() finaleFinished = #79
 };
 int pr_ssqcnumbuiltins = sizeof(pr_ssqcbuiltins)/sizeof(pr_ssqcbuiltins[0]);
 

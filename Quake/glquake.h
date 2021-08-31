@@ -344,7 +344,7 @@ struct lightmap_s
 	// main memory so texsubimage can update properly
 	byte		*data;//[4*LMBLOCK_WIDTH*LMBLOCK_HEIGHT];
 };
-extern struct lightmap_s *lightmap;
+extern struct lightmap_s *lightmaps;
 extern int lightmap_count;	//allocated lightmaps
 
 extern int gl_warpimagesize; //johnfitz -- for water warp
@@ -378,7 +378,6 @@ void R_NewGame (void);
 void CL_UpdateLightstyle(unsigned int idx, const char *stylestring);
 void R_AnimateLight (void);
 void R_MarkSurfaces (void);
-void R_CullSurfaces (void);
 qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
 void R_StoreEfrags (efrag_t **ppefrag);
 qboolean R_CullModelForEntity (entity_t *e);
@@ -436,6 +435,7 @@ void DrawWaterPoly (glpoly_t *p);
 void GL_MakeAliasModelDisplayLists (qmodel_t *m, aliashdr_t *hdr);
 
 void Sky_Init (void);
+void Sky_ClearAll (void);
 void Sky_DrawSky (void);
 void Sky_NewMap (void);
 void Sky_LoadTexture (texture_t *mt, enum srcformat fmt, unsigned int width, unsigned int height);

@@ -138,9 +138,9 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	if (strcmp("wav", COM_FileGetExtension(s->name)))
 	{	//if its an ogg (or even an mp3) then decode it now. our mixer doesn't support streaming anything but music.
 		//FIXME: I hate depending on extensions for this sort of thing. Its not a very quakey thing to do.
-		snd_stream_t *stream = S_CodecOpenStreamExt(namebuffer);
+		snd_stream_t *stream = S_CodecOpenStreamExt(namebuffer, false);
 		if (!stream)
-			stream = S_CodecOpenStreamExt(s->name);
+			stream = S_CodecOpenStreamExt(s->name, false);
 		if (stream)
 		{
 			size_t decodedsize = 1024*1024*16;

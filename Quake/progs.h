@@ -374,6 +374,7 @@ struct qcvm_s
 	qboolean cursorforced;
 	void *cursorhandle;	//video code.
 	qboolean nogameaccess;	//simplecsqc isn't allowed to poke properties of the actual game (to prevent cheats when there's no restrictions on what it can access)
+	qboolean brokenbouncemissile; //2021 rerelease redefined it, breaking any mod that depends on it.
 
 	//was static inside pr_edict
 	char		*strings;

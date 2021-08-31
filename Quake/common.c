@@ -305,7 +305,7 @@ void Q_memset (void *dest, int fill, size_t count)
 {
 	size_t		i;
 
-	if ( (((size_t)dest | count) & 3) == 0)
+	if ( (((uintptr_t)dest | count) & 3) == 0)
 	{
 		count >>= 2;
 		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
@@ -321,7 +321,7 @@ void Q_memcpy (void *dest, const void *src, size_t count)
 {
 	size_t		i;
 
-	if (( ( (size_t)dest | (size_t)src | count) & 3) == 0 )
+	if (( ( (uintptr_t)dest | (uintptr_t)src | count) & 3) == 0)
 	{
 		count >>= 2;
 		for (i = 0; i < count; i++)
@@ -2138,6 +2138,7 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 		&& strcmp(ext, "jpeg") != 0
 		&& strcmp(ext, "dds") != 0
 		&& strcmp(ext, "lit") != 0
+		&& strcmp(ext, "vis") != 0
 		&& strcmp(ext, "ent") != 0)
 		Con_DPrintf ("FindFile: can't find %s\n", filename);
 	else	Con_DPrintf2("FindFile: can't find %s\n", filename);
@@ -2989,6 +2990,7 @@ static void COM_Game_f (void)
 		//clear out and reload appropriate data
 		Cache_Flush ();
 		Mod_ResetAll();
+		Sky_ClearAll();
 		if (!isDedicated)
 			Draw_ReloadTextures(true);
 		ExtraMaps_NewGame ();

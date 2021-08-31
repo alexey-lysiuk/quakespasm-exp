@@ -87,17 +87,6 @@ static void R_SetClearColor_f (cvar_t *var)
 }
 
 /*
-====================
-R_Novis_f -- johnfitz
-====================
-*/
-static void R_VisChanged (cvar_t *var)
-{
-	extern int vis_changed;
-	vis_changed = 1;
-}
-
-/*
 ===============
 R_Model_ExtraFlags_List_f -- johnfitz -- called when r_nolerp_list or r_noshadow_list cvar changes
 ===============
@@ -198,7 +187,6 @@ void R_Init (void)
 	Cvar_SetCallback (&r_wateralpha, R_SetWateralpha_f);
 	Cvar_RegisterVariable (&r_dynamic);
 	Cvar_RegisterVariable (&r_novis);
-	Cvar_SetCallback (&r_novis, R_VisChanged);
 	Cvar_RegisterVariable (&r_speeds);
 	Cvar_RegisterVariable (&r_pos);
 
@@ -223,7 +211,6 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_drawflat);
 	Cvar_RegisterVariable (&r_flatlightstyles);
 	Cvar_RegisterVariable (&r_oldskyleaf);
-	Cvar_SetCallback (&r_oldskyleaf, R_VisChanged);
 	Cvar_RegisterVariable (&r_drawworld);
 	Cvar_RegisterVariable (&r_showtris);
 	Cvar_RegisterVariable (&r_showbboxes);
@@ -620,6 +607,7 @@ void R_DeleteShaders (void)
 	}
 	gl_num_programs = 0;
 }
+
 GLuint current_array_buffer, current_element_array_buffer;
 
 /*
@@ -635,7 +623,7 @@ void GL_BindBuffer (GLenum target, GLuint buffer)
 
 	if (!gl_vbo_able)
 		return;
-	
+
 	switch (target)
 	{
 		case GL_ARRAY_BUFFER:
@@ -648,7 +636,7 @@ void GL_BindBuffer (GLenum target, GLuint buffer)
 			Host_Error("GL_BindBuffer: unsupported target %d", (int)target);
 			return;
 	}
-	
+
 	if (*cache != buffer)
 	{
 		*cache = buffer;

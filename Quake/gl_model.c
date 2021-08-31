@@ -39,6 +39,7 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash);
 cvar_t	external_ents = {"external_ents", "1", CVAR_ARCHIVE};
 cvar_t	gl_load24bit = {"gl_load24bit", "1", CVAR_ARCHIVE};
 cvar_t	mod_ignorelmscale = {"mod_ignorelmscale", "0"};
+cvar_t	external_vis = {"external_vis", "1", CVAR_ARCHIVE};
 
 static byte	*mod_novis;
 static int	mod_novis_capacity;
@@ -61,6 +62,7 @@ Mod_Init
 void Mod_Init (void)
 {
 	Cvar_RegisterVariable (&gl_subdivide_size);
+	Cvar_RegisterVariable (&external_vis);
 	Cvar_RegisterVariable (&external_ents);
 	Cvar_RegisterVariable (&gl_load24bit);
 	Cvar_RegisterVariable (&mod_ignorelmscale);
@@ -846,7 +848,7 @@ void Mod_LoadTextures (lump_t *l)
 		if (!tx || tx->name[0] != '+')
 			continue;
 		if (tx->anim_next)
-			continue;	// allready sequenced
+			continue;	// already sequenced
 
 	// find the number of frames in the animation
 		memset (anims, 0, sizeof(anims));
@@ -1236,7 +1238,6 @@ void Mod_LoadTexinfo (lump_t *l)
 	texinfo_t *in;
 	mtexinfo_t *out;
 	int	i, j, count, miptex;
-	float	len1, len2;
 	int missing = 0; //johnfitz
 
 	in = (texinfo_t *)(mod_base + l->fileofs);
@@ -1255,23 +1256,6 @@ void Mod_LoadTexinfo (lump_t *l)
 			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
 			out->vecs[1][j] = LittleFloat (in->vecs[1][j]);
 		}
-		len1 = VectorLength (out->vecs[0]);
-		len2 = VectorLength (out->vecs[1]);
-		len1 = (len1 + len2)/2;
-		if (len1 < 0.32)
-			out->mipadjust = 4;
-		else if (len1 < 0.49)
-			out->mipadjust = 3;
-		else if (len1 < 0.99)
-			out->mipadjust = 2;
-		else
-			out->mipadjust = 1;
-#if 0
-		if (len1 + len2 < 0.001)
-			out->mipadjust = 1;		// don't crash
-		else
-			out->mipadjust = 1 / floor((len1+len2)/2 + 0.1);
-#endif
 
 		miptex = LittleLong (in->miptex);
 		out->flags = LittleLong (in->flags);
@@ -2171,10 +2155,10 @@ void Mod_LoadClipnodes (lump_t *l, qboolean bsp2)
 		{
 			out->planenum = LittleLong(ins->planenum);
 
-		//johnfitz -- bounds check
-		if (out->planenum < 0 || out->planenum >= loadmodel->numplanes)
-			Host_Error ("Mod_LoadClipnodes: planenum out of bounds");
-		//johnfitz
+			//johnfitz -- bounds check
+			if (out->planenum < 0 || out->planenum >= loadmodel->numplanes)
+				Host_Error ("Mod_LoadClipnodes: planenum out of bounds");
+			//johnfitz
 
 			//johnfitz -- support clipnodes > 32k
 			out->children[0] = (unsigned short)LittleShort(ins->children[0]);
@@ -2522,6 +2506,101 @@ void Mod_BoundsFromClipNode (qmodel_t *mod, int hull, int nodenum)
 	Mod_BoundsFromClipNode (mod, hull, node->children[1]);
 }
 
+/* EXTERNAL VIS FILE SUPPORT:
+ */
+typedef struct vispatch_s
+{
+	char	mapname[32];
+	int	filelen;	// length of data after header (VIS+Leafs)
+} vispatch_t;
+#define VISPATCH_HEADER_LEN 36
+
+static FILE *Mod_FindVisibilityExternal(void)
+{
+	vispatch_t header;
+	char visfilename[MAX_QPATH];
+	const char* shortname;
+	unsigned int path_id;
+	FILE *f;
+	long pos;
+	size_t r;
+
+	q_snprintf(visfilename, sizeof(visfilename), "maps/%s.vis", loadname);
+	if (COM_FOpenFile(visfilename, &f, &path_id) < 0)
+	{
+		Con_DPrintf("%s not found, trying ", visfilename);
+		q_snprintf(visfilename, sizeof(visfilename), "%s.vis", COM_SkipPath(com_gamedir));
+		Con_DPrintf("%s\n", visfilename);
+		if (COM_FOpenFile(visfilename, &f, &path_id) < 0)
+		{
+			Con_DPrintf("external vis not found\n");
+			return NULL;
+		}
+	}
+	if (path_id < loadmodel->path_id)
+	{
+		fclose(f);
+		Con_DPrintf("ignored %s from a gamedir with lower priority\n", visfilename);
+		return NULL;
+	}
+
+	Con_DPrintf("Found external VIS %s\n", visfilename);
+
+	shortname = COM_SkipPath(loadmodel->name);
+	pos = 0;
+	while ((r = fread(&header, 1, VISPATCH_HEADER_LEN, f)) == VISPATCH_HEADER_LEN)
+	{
+		header.filelen = LittleLong(header.filelen);
+		if (header.filelen <= 0) {	/* bad entry -- don't trust the rest. */
+			fclose(f);
+			return NULL;
+		}
+		if (!q_strcasecmp(header.mapname, shortname))
+			break;
+		pos += header.filelen + VISPATCH_HEADER_LEN;
+		fseek(f, pos, SEEK_SET);
+	}
+	if (r != VISPATCH_HEADER_LEN) {
+		fclose(f);
+		Con_DPrintf("%s not found in %s\n", shortname, visfilename);
+		return NULL;
+	}
+
+	return f;
+}
+
+static byte *Mod_LoadVisibilityExternal(FILE* f)
+{
+	int	filelen;
+	byte*	visdata;
+
+	filelen = 0;
+	fread(&filelen, 1, 4, f);
+	filelen = LittleLong(filelen);
+	if (filelen <= 0) return NULL;
+	Con_DPrintf("...%d bytes visibility data\n", filelen);
+	visdata = (byte *) Hunk_AllocName(filelen, "EXT_VIS");
+	if (!fread(visdata, filelen, 1, f))
+		return NULL;
+	return visdata;
+}
+
+static void Mod_LoadLeafsExternal(FILE* f)
+{
+	int	filelen;
+	void*	in;
+
+	filelen = 0;
+	fread(&filelen, 1, 4, f);
+	filelen = LittleLong(filelen);
+	if (filelen <= 0) return;
+	Con_DPrintf("...%d bytes leaf data\n", filelen);
+	in = Hunk_AllocName(filelen, "EXT_LEAF");
+	if (!fread(in, filelen, 1, f))
+		return;
+	Mod_ProcessLeafs_S((dsleaf_t *)in, filelen);
+}
+
 /*
 =================
 Mod_LoadBrushModel
@@ -2578,8 +2657,33 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	Mod_LoadEntities (&header->lumps[LUMP_ENTITIES]);	//Spike: moved this earlier, so that we can parse worldspawn keys earlier.
 	Mod_LoadFaces (&header->lumps[LUMP_FACES], bsp2);
 	Mod_LoadMarksurfaces (&header->lumps[LUMP_MARKSURFACES], bsp2);
+
+	if (!bsp2 && external_vis.value && sv.modelname[0] && !q_strcasecmp(loadname, sv.name))
+	{
+		FILE* fvis;
+		Con_DPrintf("trying to open external vis file\n");
+		fvis = Mod_FindVisibilityExternal();
+		if (fvis) {
+			int mark = Hunk_LowMark();
+			loadmodel->leafs = NULL;
+			loadmodel->numleafs = 0;
+			Con_DPrintf("found valid external .vis file for map\n");
+			loadmodel->visdata = Mod_LoadVisibilityExternal(fvis);
+			if (loadmodel->visdata) {
+				Mod_LoadLeafsExternal(fvis);
+			}
+			fclose(fvis);
+			if (loadmodel->visdata && loadmodel->leafs && loadmodel->numleafs) {
+				goto visdone;
+			}
+			Hunk_FreeToLowMark(mark);
+			Con_DPrintf("External VIS data failed, using standard vis.\n");
+		}
+	}
+
 	Mod_LoadVisibility (&header->lumps[LUMP_VISIBILITY]);
 	Mod_LoadLeafs (&header->lumps[LUMP_LEAFS], bsp2);
+visdone:
 	Mod_LoadNodes (&header->lumps[LUMP_NODES], bsp2);
 	Mod_LoadClipnodes (&header->lumps[LUMP_CLIPNODES], bsp2);
 	Mod_LoadSubmodels (&header->lumps[LUMP_MODELS]);
