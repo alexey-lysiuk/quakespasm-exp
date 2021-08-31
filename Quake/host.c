@@ -1085,6 +1085,8 @@ void Host_Init (void)
 		CL_Init ();
 	}
 
+	LOC_Init (); // for 2021 rerelease support.
+
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
@@ -1167,5 +1169,7 @@ void Host_Shutdown(void)
 	}
 
 	LOG_Close ();
+
+	LOC_Shutdown ();
 }
 
