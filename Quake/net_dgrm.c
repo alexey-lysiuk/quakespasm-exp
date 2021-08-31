@@ -464,6 +464,11 @@ qsocket_t *Datagram_GetAnyMessage(void)
 			if (BigLong(packetBuffer.length) & NETFLAG_CTL)
 			{
 				_Datagram_ServerControlPacket(sock, &addr, (byte *)&packetBuffer, length);
+
+				//rcon can mess some stuff up...
+				sock = dfunc.listeningSock;
+				if (sock == INVALID_SOCKET)
+					break;
 				continue;
 			}
 
@@ -570,7 +575,18 @@ int	Datagram_GetMessage (qsocket_t *sock)
 		length &= NETFLAG_LENGTH_MASK;
 
 		if (flags & NETFLAG_CTL)
+		{
+			SZ_Clear (&net_message);
+			SZ_Write (&net_message, (byte*)&packetBuffer + 4, length-4);
+			MSG_BeginReading();
+			switch(MSG_ReadByte())
+			{
+			case CCREP_RCON:
+				Con_Printf("%s\n", MSG_ReadString());
+				break;
+			}
 			continue;
+		}
 
 		sequence = BigLong(packetBuffer.sequence);
 		packetsReceived++;
@@ -1027,6 +1043,24 @@ JustDoIt:
 	SchedulePollProcedure(&test2PollProcedure, 0.05);
 }
 
+void NET_Rcon_f(void)
+{
+	qsocket_t *sock = cls.netcon;
+
+	if (!sock || !net_drivers[sock->driver].initialized || net_drivers[sock->driver].SendUnreliableMessage != Datagram_SendUnreliableMessage)
+		return;	//not dgram. probably loopback. just use the proper command or something.
+
+	SZ_Clear(&net_message);
+	MSG_WriteLong(&net_message, 0);
+	MSG_WriteByte(&net_message, CCREQ_RCON);
+	MSG_WriteString(&net_message, rcon_password.string);
+	MSG_WriteString(&net_message, Cmd_Args());
+
+	*(int*)net_message.data = BigLong(NETFLAG_CTL | (net_message.cursize & NETFLAG_LENGTH_MASK));
+
+	if (sfunc.Write (sock->socket, net_message.data, net_message.cursize, &sock->addr) == -1)
+		return;
+}
 
 int Datagram_Init (void)
 {
@@ -1064,6 +1098,7 @@ int Datagram_Init (void)
 #endif
 	Cmd_AddCommand ("test", Test_f);
 	Cmd_AddCommand ("test2", Test2_f);
+	Cmd_AddCommand ("rcon", NET_Rcon_f);
 
 	return 0;
 }
@@ -1369,9 +1404,15 @@ static void _Datagram_ServerControlPacket (sys_socket_t acceptsock, struct qsock
 			response = "rcon is not enabled on this server";
 		else if (!strcmp(password, rcon_password.string))
 		{
+			qcvm_t *oldvm = qcvm;
 			Con_Redirect(Datagram_Rcon_Flush);
+			PR_SwitchQCVM(NULL);
 			Cmd_ExecuteString(MSG_ReadString(), src_command);
+			PR_SwitchQCVM(oldvm);
 			Con_Redirect(NULL);
+			net_landriverlevel = rcon_response_landriver;
+			if (!sv.active)
+				Host_EndGame("Server shut down from rcon.");	//stuff got cleaned up that parent functions care about... like the socket.
 			return;
 		}
 		else if (!strcmp(password, "password"))

@@ -1818,6 +1818,16 @@ static void PF_cl_setmodelindex(void)
 		SetMinMaxSize (e, vec3_origin, vec3_origin, true);
 }
 
+static void PF_modelnameforidx(void)
+{
+	int idx = G_FLOAT(OFS_PARM0);
+	qmodel_t *mod = qcvm->GetModel(idx);
+	if (mod)
+		G_INT(OFS_RETURN) = PR_MakeTempString(mod->name);
+	else
+		G_INT(OFS_RETURN) = 0;
+}
+
 static void PF_frameforname(void)
 {
 	unsigned int modelindex	= G_FLOAT(OFS_PARM0);
@@ -2900,6 +2910,9 @@ static void PF_fopen(void)
 		}
 		file = fopen(name, "wb");
 		break;
+	default:
+		Con_Warning("PF_fopen: unsupported mode: %i\n", fmode);
+		return;
 	}
 	if (!file)
 		return;
@@ -6817,6 +6830,7 @@ static void PF_checkpvs (void)
 
 enum getrenderentityfield_e
 {
+	//DP's range
 	GE_MAXENTS			= -1,
 	GE_ACTIVE			= 0,
 	GE_ORIGIN			= 1,
@@ -6835,6 +6849,27 @@ enum getrenderentityfield_e
 //	GE_ABSMIN			= 14,
 //	GE_ABSMAX			= 15,
 //	GE_LIGHT			= 16,
+
+	//FTE's range.
+	GE_MODELINDEX		= 200,
+//	GE_MODELINDEX2		= 201,
+	GE_EFFECTS			= 202,
+	GE_FRAME			= 203,
+	GE_ANGLES			= 204,
+//	GE_FATNESS			= 205,
+//	GE_DRAWFLAGS		= 206,
+//	GE_ABSLIGHT			= 207,
+//	GE_GLOWMOD			= 208,
+//	GE_GLOWSIZE			= 209,
+//	GE_GLOWCOLOUR		= 210,
+//	GE_RTSTYLE			= 211,
+//	GE_RTPFLAGS			= 212,
+//	GE_RTCOLOUR			= 213,
+//	GE_RTRADIUS			= 214,
+	GE_TAGENTITY		= 215,
+	GE_TAGINDEX			= 216,
+//	GE_GRAVITYDIR		= 217,
+	GE_TRAILEFFECTNUM	= 218,
 };
 static void PF_cl_getrenderentity(void)
 {
@@ -6934,8 +6969,42 @@ static void PF_cl_getrenderentity(void)
 //	case GE_ABSMIN:
 //	case GE_ABSMAX:
 //	case GE_LIGHT:
+	case GE_MODELINDEX:
+		G_FLOAT(OFS_RETURN+0) = cl.entities[entnum].netstate.modelindex;
+		break;
+//	case GE_MODELINDEX2:
+	case GE_EFFECTS:
+		G_FLOAT(OFS_RETURN+0) = cl.entities[entnum].effects;
+		break;
+	case GE_FRAME:
+		G_FLOAT(OFS_RETURN+0) = cl.entities[entnum].frame;
+		break;
+	case GE_ANGLES:
+		VectorCopy(cl.entities[entnum].angles, G_VECTOR(OFS_RETURN));
+		break;
+//	case GE_FATNESS:
+//	case GE_DRAWFLAGS:
+//	case GE_ABSLIGHT:
+//	case GE_GLOWMOD:
+//	case GE_GLOWSIZE:
+//	case GE_GLOWCOLOUR:
+//	case GE_RTSTYLE:
+//	case GE_RTPFLAGS:
+//	case GE_RTCOLOUR:
+//	case GE_RTRADIUS:
+	case GE_TAGENTITY:
+		G_FLOAT(OFS_RETURN+0) = cl.entities[entnum].netstate.tagentity;
+		break;
+	case GE_TAGINDEX:
+		G_FLOAT(OFS_RETURN+0) = cl.entities[entnum].netstate.tagindex;
+		break;
+//	case GE_GRAVITYDIR:
+	case GE_TRAILEFFECTNUM:
+		G_FLOAT(OFS_RETURN+0) = cl.entities[entnum].netstate.traileffectnum;
+		break;
+
 	case GE_MAXENTS:
-//	default:
+	default:
 		Con_Printf("PF_cl_getrenderentity(,%i): not implemented\n", fldnum);
 		break;
 	}
@@ -7150,7 +7219,7 @@ static struct
 	{"getstats",		PF_NoSSQC,			PF_cl_getstat_string,332,	PF_NoMenu, D("string(float stnum)", "Retrieves the value of the given EV_STRING stat, as a tempstring.\nString stats use a separate pool of stats from numeric ones.\n")},
 //	{"getplayerstat",	PF_NoSSQC,			PF_FullCSQCOnly,	0,		PF_NoMenu, D("__variant(float playernum, float statnum, float stattype)", "Retrieves a specific player's stat, matching the type specified on the server. This builtin is primarily intended for mvd playback where ALL players are known. For EV_ENTITY, world will be returned if the entity is not in the pvs, use type-punning with EV_INTEGER to get the entity number if you just want to see if its set. STAT_ITEMS should be queried as an EV_INTEGER on account of runes and items2 being packed into the upper bits.")},
 	{"setmodelindex",	PF_sv_setmodelindex,PF_cl_setmodelindex,333,	PF_NoMenu, D("void(entity e, float mdlindex)", "Sets a model by precache index instead of by name. Otherwise identical to setmodel.")},//
-//	{"modelnameforindex",PF_modelnameforidx,PF_modelnameforidx,	334,	PF_NoMenu, D("string(float mdlindex)", "Retrieves the name of the model based upon a precache index. This can be used to reduce csqc network traffic by enabling model matching.")},//
+	{"modelnameforindex",PF_modelnameforidx,PF_modelnameforidx,	334,	PF_NoMenu, D("string(float mdlindex)", "Retrieves the name of the model based upon a precache index. This can be used to reduce csqc network traffic by enabling model matching.")},//
 	{"particleeffectnum",PF_sv_particleeffectnum,PF_cl_particleeffectnum,335,PF_NoMenu, D("float(string effectname)", "Precaches the named particle effect. If your effect name is of the form 'foo.bar' then particles/foo.cfg will be loaded by the client if foo.bar was not already defined.\nDifferent engines will have different particle systems, this specifies the QC API only.")},// (EXT_CSQC)
 	{"trailparticles",	PF_sv_trailparticles,PF_cl_trailparticles,336,	PF_NoMenu,	D("void(float effectnum, entity ent, vector start, vector end)", "Draws the given effect between the two named points. If ent is not world, distances will be cached in the entity in order to avoid framerate dependancies. The entity is not otherwise used.")},// (EXT_CSQC),
 	{"pointparticles",	PF_sv_pointparticles,PF_cl_pointparticles,337,	PF_NoMenu,	D("void(float effectnum, vector origin, optional vector dir, optional float count)", "Spawn a load of particles from the given effect at the given point traveling or aiming along the direction specified. The number of particles are scaled by the count argument.")},// (EXT_CSQC)
@@ -7476,6 +7545,7 @@ static struct
 #endif
 	{"DP_TE_STANDARDEFFECTBUILTINS"},
 	{"EXT_BITSHIFT"},
+	{"EXT_CSQC"},
 	{"FRIK_FILE"},				//lacks the file part, but does have the strings part.
 	{"FTE_CSQC_SERVERBROWSER"},	//callable from csqc too, for feature parity.
 	{"FTE_ENT_SKIN_CONTENTS"},	//SOLID_BSP&&skin==CONTENTS_FOO changes CONTENTS_SOLID to CONTENTS_FOO, allowing you to swim in moving ents without qc hacks, as well as correcting view cshifts etc.

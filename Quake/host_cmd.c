@@ -2828,6 +2828,8 @@ Host_InitCommands
 */
 void Host_InitCommands (void)
 {
+#define Cmd_AddCommand_ClientCommandQC(cmd,fnc) Cmd_AddCommand2(cmd,fnc,src_client,true)
+
 	Cmd_AddCommand ("maps", Host_Maps_f); //johnfitz
 	Cmd_AddCommand ("mods", Host_Mods_f); //johnfitz
 	Cmd_AddCommand ("games", Host_Mods_f); // as an alias to "mods" -- S.A. / QuakeSpasm
@@ -2840,9 +2842,9 @@ void Host_InitCommands (void)
 
 	Cmd_AddCommand_ClientCommand ("status", Host_Status_f);
 	Cmd_AddCommand ("quit", Host_Quit_f);
-	Cmd_AddCommand_ClientCommand ("god", Host_God_f);
-	Cmd_AddCommand_ClientCommand ("notarget", Host_Notarget_f);
-	Cmd_AddCommand_ClientCommand ("fly", Host_Fly_f);
+	Cmd_AddCommand_ClientCommandQC ("god", Host_God_f);
+	Cmd_AddCommand_ClientCommandQC ("notarget", Host_Notarget_f);
+	Cmd_AddCommand_ClientCommandQC ("fly", Host_Fly_f);
 	Cmd_AddCommand ("map", Host_Map_f);
 	Cmd_AddCommand ("restart", Host_Restart_f);
 	Cmd_AddCommand ("changelevel", Host_Changelevel_f);
@@ -2851,23 +2853,23 @@ void Host_InitCommands (void)
 	Cmd_AddCommand_ServerCommand ("reconnect", Host_Reconnect_Sv_f);
 	Cmd_AddCommand_ServerCommand ("ls", Host_Lightstyle_f);
 	Cmd_AddCommand_ClientCommand ("name", Host_Name_f);
-	Cmd_AddCommand_ClientCommand ("noclip", Host_Noclip_f);
-	Cmd_AddCommand_ClientCommand ("setpos", Host_SetPos_f); //QuakeSpasm
+	Cmd_AddCommand_ClientCommandQC ("noclip", Host_Noclip_f);
+	Cmd_AddCommand_ClientCommandQC ("setpos", Host_SetPos_f); //QuakeSpasm
 
-	Cmd_AddCommand_ClientCommand ("say", Host_Say_f);
-	Cmd_AddCommand_ClientCommand ("say_team", Host_Say_Team_f);
-	Cmd_AddCommand_ClientCommand ("tell", Host_Tell_f);
-	Cmd_AddCommand_ClientCommand ("color", Host_Color_f);
-	Cmd_AddCommand_ClientCommand ("kill", Host_Kill_f);
-	Cmd_AddCommand_ClientCommand ("pause", Host_Pause_f);
+	Cmd_AddCommand_ClientCommandQC ("say", Host_Say_f);
+	Cmd_AddCommand_ClientCommandQC ("say_team", Host_Say_Team_f);
+	Cmd_AddCommand_ClientCommandQC ("tell", Host_Tell_f);
+	Cmd_AddCommand_ClientCommandQC ("color", Host_Color_f);
+	Cmd_AddCommand_ClientCommandQC ("kill", Host_Kill_f);
+	Cmd_AddCommand_ClientCommandQC ("pause", Host_Pause_f);
 	Cmd_AddCommand_ClientCommand ("spawn", Host_Spawn_f);
 	Cmd_AddCommand_ClientCommand ("begin", Host_Begin_f);
 	Cmd_AddCommand_ClientCommand ("prespawn", Host_PreSpawn_f);
-	Cmd_AddCommand_ClientCommand ("kick", Host_Kick_f);
+	Cmd_AddCommand_ClientCommandQC ("kick", Host_Kick_f);
 	Cmd_AddCommand_ClientCommand ("ping", Host_Ping_f);
 	Cmd_AddCommand ("load", Host_Loadgame_f);
 	Cmd_AddCommand ("save", Host_Savegame_f);
-	Cmd_AddCommand_ClientCommand ("give", Host_Give_f);
+	Cmd_AddCommand_ClientCommandQC ("give", Host_Give_f);
 	Cmd_AddCommand_ClientCommand ("download", Host_Download_f);
 	Cmd_AddCommand_ClientCommand ("sv_startdownload", Host_StartDownload_f);
 	Cmd_AddCommand_ClientCommand ("enablecsqc", Host_EnableCSQC_f);

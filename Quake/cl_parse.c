@@ -1227,6 +1227,31 @@ static void CL_ParseStartSoundPacket(void)
 	for (i = 0; i < 3; i++)
 		pos[i] = MSG_ReadCoord (cl.protocolflags);
 
+
+
+	if (cl.qcvm.extfuncs.CSQC_Event_Sound && cl.sound_precache[sound_num] && !cl.qcvm.nogameaccess)
+	{	//blocked with csqc, too easy to do dead-reckoning.
+		qboolean ret = false;
+		PR_SwitchQCVM(&cl.qcvm);
+
+		if (qcvm->extglobals.player_localentnum)
+			*qcvm->extglobals.player_localentnum = cl.viewentity;
+
+		G_FLOAT(OFS_PARM0) = ent;
+		G_FLOAT(OFS_PARM1) = channel;
+		G_INT(OFS_PARM2) = PR_MakeTempString(cl.sound_precache[sound_num]->name);
+		G_FLOAT(OFS_PARM3) = volume;
+		G_FLOAT(OFS_PARM4) = attenuation;
+		VectorCopy(pos, G_VECTOR(OFS_PARM5));
+		G_FLOAT(OFS_PARM6) = 100;
+		G_FLOAT(OFS_PARM7) = field_mask>>8;
+		PR_ExecuteProgram(cl.qcvm.extfuncs.CSQC_Event_Sound);
+		ret = G_FLOAT(OFS_RETURN);
+		PR_SwitchQCVM(NULL);
+		if (ret)
+			return;
+	}
+
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
 }
 

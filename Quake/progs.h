@@ -176,28 +176,29 @@ struct pr_extfuncs_s
 	QCEXTFUNC(SV_RunClientCommand,		"void()")		\
 /*csqc*/
 #define QCEXTFUNCS_CS \
-	QCEXTFUNC(CSQC_Init,					"void(float apilevel, string enginename, float engineversion)")	\
-	QCEXTFUNC(CSQC_Shutdown,				"void()")	\
+	QCEXTFUNC(CSQC_Init,				"void(float apilevel, string enginename, float engineversion)")	\
+	QCEXTFUNC(CSQC_Shutdown,			"void()")	\
 	QCEXTFUNC(CSQC_DrawHud,				"void(vector virtsize, float showscores)")							/*simple: for the simple(+limited) hud-only csqc interface.*/	\
 	QCEXTFUNC(CSQC_DrawScores,			"void(vector virtsize, float showscores)")							/*simple: (optional) for the simple hud-only csqc interface.*/		\
 	QCEXTFUNC(CSQC_InputEvent,			"float(float evtype, float scanx, float chary, float devid)")		\
 	QCEXTFUNC(CSQC_ConsoleCommand,		"float(string cmdstr)")												\
 	QCEXTFUNC(CSQC_Parse_Event,			"void()")															\
-	QCEXTFUNC(CSQC_Parse_Damage,			"float(float save, float take, vector dir)")						\
+	QCEXTFUNC(CSQC_Parse_Damage,		"float(float save, float take, vector dir)")						\
 	QCEXTFUNC(CSQC_UpdateView,			"void(float vwidth, float vheight, float notmenu)")					/*full only: for the full csqc-draws-entire-screen interface*/	\
 	QCEXTFUNC(CSQC_Input_Frame,			"void()")															/*full only: input angles stuff.*/	\
 	QCEXTFUNC(CSQC_Parse_CenterPrint,	"float(string msg)")												\
 	QCEXTFUNC(CSQC_Parse_Print,			"void(string printmsg, float printlvl)")							\
 	QCEXTFUNC(CSQC_Ent_Update,			"void(float isnew)")												/*full: lots of reads needed to interpret the bytestream*/	\
 	QCEXTFUNC(CSQC_Ent_Remove,			"void()")															/*full: basically just remove(self)*/\
-	QCEXTFUNC(CSQC_Parse_TempEntity,		"float()")															/*full: evil... This is the bane of all protocol compatibility. Die.*/	\
+	QCEXTFUNC(CSQC_Event_Sound,			"void(float entnum, float channel, string soundname, float vol, float attenuation, vector pos, float pitchmod, float flags)") /*full: basically just remove(self)*/\
+	QCEXTFUNC(CSQC_Parse_TempEntity,	"float()")															/*full: evil... This is the bane of all protocol compatibility. Die.*/	\
 	QCEXTFUNC(CSQC_Parse_StuffCmd,		"void(string msg)")													/*full only: not in simple. Too easy to make cheats by ignoring server messages.*/	\
 /*menucsqc*/
 #define QCEXTFUNCS_MENU \
 	QCEXTFUNC(m_init,					"void()")															\
 	QCEXTFUNC(m_toggle,					"void(float wantmode)")												/*-1: toggle, 0: clear, 1: force*/	\
 	QCEXTFUNC(m_draw,					"void(vector screensize)")											\
-	QCEXTFUNC(m_keydown,					"void(float scan, float chr)")										/*obsoleted by Menu_InputEvent, included for dp compat.*/	\
+	QCEXTFUNC(m_keydown,				"void(float scan, float chr)")										/*obsoleted by Menu_InputEvent, included for dp compat.*/	\
 	QCEXTFUNC(m_keyup,					"void(float scan, float chr)")										/*obsoleted by Menu_InputEvent, included for dp compat.*/	\
 	QCEXTFUNC(m_consolecommand,			"float(string cmd)")												\
 	QCEXTFUNC(Menu_InputEvent,			"float(float evtype, float scanx, float chary, float devid)")		\

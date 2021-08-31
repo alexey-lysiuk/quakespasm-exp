@@ -695,7 +695,7 @@ Cmd_AddCommand
 spike -- added an extra arg for client (also renamed and made a macro)
 ============
 */
-cmd_function_t *Cmd_AddCommand2 (const char *cmd_name, xcommand_t function, cmd_source_t srctype)
+cmd_function_t *Cmd_AddCommand2 (const char *cmd_name, xcommand_t function, cmd_source_t srctype, qboolean qcinterceptable)
 {
 	cmd_function_t	*cmd;
 	cmd_function_t	*cursor,*prev; //johnfitz -- sorted list insert
@@ -732,6 +732,7 @@ cmd_function_t *Cmd_AddCommand2 (const char *cmd_name, xcommand_t function, cmd_
 	}
 	cmd->function = function;
 	cmd->srctype = srctype;
+	cmd->qcinterceptable = qcinterceptable;
 
 	//johnfitz -- insert each entry in alphabetical order
 	if (cmd_functions == NULL || strcmp(cmd->name, cmd_functions->name) < 0) //insert at front
@@ -845,16 +846,23 @@ qboolean	Cmd_ExecuteString (const char *text, cmd_source_t src)
 		if (!q_strcasecmp (cmd_argv[0],cmd->name))
 		{
 			if (src == src_client && cmd->srctype != src_client)
-				Con_DPrintf("%s tried to %s\n", host_client->name, text);	//src_client only allows client commands
+				continue;
 			else if (src == src_command && cmd->srctype == src_server)
 				continue;	//src_command can execute anything but server commands (which it ignores, allowing for alternative behaviour)
 			else if (src == src_server && cmd->srctype != src_server)
 				continue;	//src_server may only execute server commands (such commands must be safe to parse within the context of a network message, so no disconnect/connect/playdemo/etc)
-			else if (cmd->function)
-				cmd->function ();
 			else
 			{
 				qboolean ret = false;
+				qcvm_t *oldvm;
+				if (!ret && cmd->function && (!cmd->qcinterceptable || src == src_client))
+				{
+					cmd->function ();
+					ret = true;
+				}
+				oldvm = ret?NULL:qcvm;
+				if (oldvm)
+					PR_SwitchQCVM(NULL);
 				if (!ret && cl.qcvm.extfuncs.CSQC_ConsoleCommand)
 				{
 					PR_SwitchQCVM(&cl.qcvm);
@@ -871,9 +879,15 @@ qboolean	Cmd_ExecuteString (const char *text, cmd_source_t src)
 					ret = G_FLOAT(OFS_RETURN);
 					PR_SwitchQCVM(NULL);
 				}
+				if (oldvm)
+					PR_SwitchQCVM(oldvm);
+				if (!ret && cmd->function)
+				{
+					cmd->function ();
+					ret = true;
+				}
 				if (!ret)
 					Con_Printf ("gamecode not running, cannot \"%s\"\n", Cmd_Argv(0));
-				return true;
 			}
 			return true;
 		}

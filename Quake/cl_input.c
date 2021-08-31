@@ -529,6 +529,8 @@ CL_InitInput
 */
 void CL_InitInput (void)
 {
+#undef Cmd_AddCommand
+#define Cmd_AddCommand(cmd,fnc) Cmd_AddCommand2(cmd,fnc,src_command,true)
 	Cmd_AddCommand ("+moveup",IN_UpDown);
 	Cmd_AddCommand ("-moveup",IN_UpUp);
 	Cmd_AddCommand ("+movedown",IN_DownDown);
