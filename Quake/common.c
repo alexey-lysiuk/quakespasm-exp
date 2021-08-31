@@ -2642,7 +2642,7 @@ static qboolean COM_AddPackage(searchpath_t *basepath, const char *pakfile, cons
 
 	if (!q_strcasecmp(ext, "pak"))
 		pak = COM_LoadPackFile (pakfile);
-	else if (!q_strcasecmp(ext, "pk3") || !q_strcasecmp(ext, "pk4") || !q_strcasecmp(ext, "zip") || !q_strcasecmp(ext, "apk"))
+	else if (!q_strcasecmp(ext, "pk3") || !q_strcasecmp(ext, "pk4") || !q_strcasecmp(ext, "zip") || !q_strcasecmp(ext, "apk") || !q_strcasecmp(ext, "kpf"))
 	{
 		pak = FSZIP_LoadArchive(pakfile);
 		if (pak)
@@ -2663,7 +2663,7 @@ static qboolean COM_AddPackage(searchpath_t *basepath, const char *pakfile, cons
 	search = (searchpath_t *) Z_Malloc(sizeof(searchpath_t));
 	q_strlcpy(search->filename, pakfile, sizeof(search->filename));
 	q_strlcpy(search->purename, purename, sizeof(search->purename));
-	search->path_id = basepath->path_id;
+	search->path_id = basepath?basepath->path_id:0;
 	search->pack = pak;
 	search->next = com_searchpaths;
 	com_searchpaths = search;
@@ -3077,6 +3077,10 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 	if ((com_basedir[j-1] == '\\') || (com_basedir[j-1] == '/'))
 		com_basedir[j-1] = 0;
 
+	//this is horrible.
+	if (!fitzmode)
+		COM_AddPackage(NULL, va("%s/QuakeEX.kpf", com_basedir), "QuakeEX.kpf");
+
 	i = COM_CheckParmNext (i, "-basegame");
 	if (i)
 	{	//-basegame:
@@ -3437,22 +3441,12 @@ void LOC_LoadFile (const char *file)
 
 	Con_Printf("\nLanguage initialization\n");
 
-	q_snprintf(path, sizeof(path), "%s/%s", com_basedir, file);
-	fp = fopen(path, "r");
-	if (!fp) goto fail;
-	fseek(fp, 0, SEEK_END);
-	i = ftell(fp);
-	if (i <= 0) goto fail;
-	localization.text = (char *) calloc(1, i+1);
+	localization.text = COM_LoadFile(file, LOADFILE_MALLOC, NULL);
 	if (!localization.text)
 	{
-fail:		if (fp) fclose(fp);
 		Con_Printf("Couldn't load '%s'\nfrom '%s'\n", file, com_basedir);
 		return;
 	}
-	fseek(fp, 0, SEEK_SET);
-	fread(localization.text, 1, i, fp);
-	fclose(fp);
 
 	cursor = localization.text;
 
