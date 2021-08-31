@@ -2640,6 +2640,25 @@ static qboolean COM_AddPackage(searchpath_t *basepath, const char *pakfile, cons
 				return true;
 	}
 
+	{
+		struct stat sb;
+		char pakdir[MAX_OSPATH];
+		q_snprintf(pakdir, sizeof(pakdir), "%sdir", pakfile);
+		if (!stat(pakdir, &sb) && (sb.st_mode&S_IFMT)==S_IFDIR)
+		{
+			search = (searchpath_t *) Z_Malloc(sizeof(searchpath_t));
+			q_strlcpy(search->filename, pakdir, sizeof(search->filename));
+			q_strlcpy(search->purename, purename, sizeof(search->purename));
+			search->path_id = basepath?basepath->path_id:0;	//doesn't count as a new gamedir.
+			search->pack = NULL;
+			search->next = com_searchpaths;
+			com_searchpaths = search;
+
+			com_modified = true;
+			return true;
+		}
+	}
+
 	if (!q_strcasecmp(ext, "pak"))
 		pak = COM_LoadPackFile (pakfile);
 	else if (!q_strcasecmp(ext, "pk3") || !q_strcasecmp(ext, "pk4") || !q_strcasecmp(ext, "zip") || !q_strcasecmp(ext, "apk") || !q_strcasecmp(ext, "kpf"))
@@ -2774,7 +2793,7 @@ static void COM_AddGameDirectory (const char *dir)
 	q_strlcpy (com_gamedir, va("%s/%s", base, dir), sizeof(com_gamedir));
 
 	// assign a path_id to this game directory
-	if (com_searchpaths)
+	if (com_searchpaths && com_searchpaths->path_id)
 		path_id = com_searchpaths->path_id << 1;
 	else	path_id = 1U;
 
