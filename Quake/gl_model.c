@@ -339,7 +339,23 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	if (*mod->name == '*')
 		buf = NULL;
 	else
-		buf = COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf), & mod->path_id);
+	{
+		const char *exts = gl_load24bit.value?"iqm":"";
+		char *e;
+		char newname[MAX_QPATH];
+		buf = NULL;
+		q_strlcpy(newname, mod->name, sizeof(newname));
+		e = (char*)COM_FileGetExtension(newname);
+		if (*e) while ((exts = COM_Parse(exts)))
+		{
+			q_strlcpy(e, com_token, sizeof(newname)-(e-newname));
+			buf = COM_LoadStackFile (newname, stackbuf, sizeof(stackbuf), & mod->path_id);
+			if (buf)
+				break;
+		}
+		if (!buf)
+			buf = COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf), & mod->path_id);
+	}
 	if (!buf)
 	{
 		if (crash)

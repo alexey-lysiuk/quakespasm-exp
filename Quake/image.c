@@ -520,13 +520,19 @@ byte *Image_LoadImage (const char *name, int *width, int *height, enum srcformat
 	char *prefixes[3] = {"", "textures/", "textures/"};
 	int i;
 
+	const char *origname = name;
+
 	*malloced = false;
 	*fmt = SRC_RGBA;
 
 	for (i = 0; i < sizeof(prefixes)/sizeof(prefixes[0]); i++)
 	{
 		if (i == 2)	//last resort...
+		{
 			name = COM_SkipPath(name);
+			if (origname == name)
+				continue;	//no point trying.
+		}
 
 		q_snprintf (loadfilename, sizeof(loadfilename), "%s%s.dds", prefixes[i], name);
 		COM_FOpenFile (loadfilename, &f, NULL);
@@ -558,6 +564,12 @@ byte *Image_LoadImage (const char *name, int *width, int *height, enum srcformat
 		if (f)
 			return Image_LoadPCX (f, width, height);
 	}
+
+	name = origname;
+	q_snprintf (loadfilename, sizeof(loadfilename), "%s%s.lmp", "", name);
+	COM_FOpenFile (loadfilename, &f, NULL);
+	if (f)
+		return Image_LoadLMP (f, width, height);
 
 	return NULL;
 }
@@ -980,6 +992,58 @@ byte *Image_LoadPCX (FILE *f, int *width, int *height)
 
 	*width = w;
 	*height = h;
+	return data;
+}
+
+//==============================================================================
+//
+//  QPIC (aka '.lmp')
+//
+//==============================================================================
+
+typedef struct
+{
+    unsigned int width, height;
+} lmpheader_t;
+
+/*
+============
+Image_LoadLMP
+============
+*/
+byte *Image_LoadLMP (FILE *f, int *width, int *height)
+{
+	lmpheader_t	qpic;
+	size_t		pix;
+	void		*data;
+	byte		*src;
+	unsigned int *dest;
+
+	fread(&qpic, sizeof(qpic), 1, f);
+	qpic.width = LittleLong (qpic.width);
+	qpic.height = LittleLong (qpic.height);
+
+	pix = qpic.width*qpic.height;
+
+	if (com_filesize != 8+pix)
+	{
+		fclose(f);
+		return NULL;
+	}
+
+	data = (byte *) Hunk_Alloc(pix*4); //+1 to allow reading padding byte on last line
+	dest = data;
+	src = (byte *)data + pix*(4-1);
+
+	fread(src, 1, pix, f);
+
+	while(pix --> 0)
+		*dest++ = d_8to24table[*src++];
+
+	fclose(f);
+
+	*width = qpic.width;
+	*height = qpic.height;
 	return data;
 }
 

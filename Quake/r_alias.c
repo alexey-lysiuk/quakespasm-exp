@@ -223,7 +223,7 @@ void GLAlias_CreateShaders (void)
 		"	wmat[2] += BoneTable[2+3*int(BoneIndex.w)] * BoneWeight.w;"
 		"	wmat[3] = vec4(0.0,0.0,0.0,1.0);\n"
 		"	vec4 lerpedVert = (vec4(Pose1Vert.xyz, 1.0) * wmat);\n"
-		"	float dot1 = r_avertexnormal_dot((vec4(Pose1Vert.xyz, 0.0) * wmat).xyz);\n"
+		"	float dot1 = r_avertexnormal_dot(normalize((vec4(Pose1Normal.xyz, 0.0) * wmat).xyz));\n"
 		"#else\n"
 		"	vec4 lerpedVert = mix(vec4(Pose1Vert.xyz, 1.0), vec4(Pose2Vert.xyz, 1.0), Blend);\n"
 		"	float dot1 = mix(r_avertexnormal_dot(Pose1Normal), r_avertexnormal_dot(Pose2Normal), Blend);\n"

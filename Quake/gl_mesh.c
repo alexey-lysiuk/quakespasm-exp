@@ -849,14 +849,36 @@ struct iqmvertexarray
 {
     float bbmin[3], bbmax[3];
     float xyradius, radius;
-};
+};*/
 
 struct iqmextension
 {
     unsigned int name;
     unsigned int num_data, ofs_data;
     unsigned int ofs_extensions; // pointer to next extension
-};*/
+};
+
+//skin lump is made of 3 parts
+struct iqmext_fte_skin
+{
+	unsigned int numskinframes;
+	unsigned int nummeshskins;
+	//unsigned int numskins[nummeshes];
+	//iqmext_fte_skin_skinframe[numskinframes];
+	//iqmext_fte_skin_meshskin mesh0[numskins[0]];
+	//iqmext_fte_skin_meshskin mesh1[numskins[1]]; etc
+};
+struct iqmext_fte_skin_skinframe
+{	//as many as needed
+	unsigned int material_idx;
+	unsigned int shadertext_idx;
+};
+struct iqmext_fte_skin_meshskin
+{
+	unsigned int firstframe;	//index into skinframes
+	unsigned int countframes;	//skinframes
+	float interval;
+};
 
 //IQM Implementation: Copyright 2019 spike, licensed like the rest of quakespasm.
 static void IQM_LoadVertexes_Float(float *o, size_t c, size_t numverts, const byte *buffer, const struct iqmvertexarray *va)
@@ -1019,6 +1041,102 @@ static void Matrix3x4_Invert_Simple (const float *in1, float *out)
 	out[3] = -(in1[3] * out[0] + in1[7] * out[1] + in1[11] * out[2]);
 	out[7] = -(in1[3] * out[4] + in1[7] * out[5] + in1[11] * out[6]);
 	out[11] = -(in1[3] * out[8] + in1[7] * out[9] + in1[11] * out[10]);
+}
+
+
+static const void *IQM_FindExtension(const char *buffer, size_t buffersize, const char *extname, int index, size_t *extsize)
+{
+	const struct iqmheader *h = (const struct iqmheader *)buffer;
+	const char *strings = buffer + h->ofs_text;
+	const struct iqmextension *ext;
+	int i;
+	for (i = 0, ext = (const struct iqmextension*)(buffer + h->ofs_extensions); i < h->num_extensions; i++, ext = (const struct iqmextension*)(buffer + ext->ofs_extensions))
+	{
+		if ((const char*)ext > buffer+buffersize || ext->name > h->num_text || ext->ofs_data+ext->num_data>buffersize)
+			break;
+		if (!q_strcasecmp(strings + ext->name, extname) && index-->=0)
+		{
+			*extsize = ext->num_data;
+			return buffer + ext->ofs_data;
+		}
+	}
+	*extsize = 0;
+	return NULL;
+}
+static void Mod_LoadIQMSkin (qmodel_t *mod, const struct iqmheader	*pinheader, aliashdr_t *osurf, unsigned int meshidx, unsigned int nummeshes, const char *fallback)
+{
+	unsigned int j, k;
+	size_t extsize;
+	const struct iqmext_fte_skin *iqmext =  IQM_FindExtension((const char *)pinheader, pinheader->filesize, "FTE_SKINS", 0, &extsize);
+	if (iqmext)
+	{
+		const struct iqmext_fte_skin_skinframe *skinframe = (const struct iqmext_fte_skin_skinframe*)((const unsigned int*)(iqmext+1) + nummeshes), *sf;
+		const struct iqmext_fte_skin_meshskin *skin = (const struct iqmext_fte_skin_meshskin*)(skinframe+iqmext->numskinframes);
+		osurf->numskins = ((const unsigned int*)(iqmext+1))[meshidx];
+
+		for (j = 0; j < meshidx; j++)
+			skin += ((const unsigned int*)(iqmext+1))[j];
+		for (j = 0; j < osurf->numskins && j < MAX_SKINS; j++, skin++)
+		{
+			if (!skin->countframes)
+				break;	//doesn't make sense.
+			if (skin->firstframe+skin->countframes>iqmext->numskinframes)
+				break;	//some kind of error
+			sf = skinframe+skin->firstframe;
+			for (k = 0; k < skin->countframes && k < 4; k++, sf++)
+			{
+				const char *texturename = (const char *)pinheader + pinheader->ofs_text + sf->material_idx;
+				char hackytexturename[MAX_QPATH];
+				COM_StripExtension(texturename, hackytexturename, sizeof(hackytexturename));
+				osurf->gltextures[j][k] = TexMgr_LoadImage(mod, texturename, osurf->skinwidth, osurf->skinheight, SRC_EXTERNAL, NULL, hackytexturename, 0, TEXPREF_PAD|TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP);
+				osurf->fbtextures[j][k] = NULL;//TexMgr_LoadImage(mod, fullbrightname, osurf->skinwidth, osurf->skinheight, SRC_EXTERNAL, NULL, fullbrightname, 0, TEXPREF_PAD|TEXPREF_ALPHA|TEXPREF_FULLBRIGHT|TEXPREF_MIPMAP);
+			}
+			for (; k < 4; k++)
+			{
+				osurf->gltextures[j][k] = osurf->gltextures[j][k%skin->countframes];
+				osurf->fbtextures[j][k] = osurf->fbtextures[j][k%skin->countframes];
+			}
+		}
+		osurf->numskins = j;
+	}
+	else
+	{
+		osurf->numskins = 1;
+		for (j = 0; j < 1; j++)
+		{
+			char texturename[MAX_QPATH];
+			char fullbrightname[MAX_QPATH];
+			char *ext;
+			//texture names in md3s are kinda fucked. they could be just names relative to the mdl, or full paths, or just simple shader names.
+			//our texture manager is too lame to scan all 1000 possibilities
+			if (strchr(fallback, '/') || strchr(fallback, '\\'))
+			{	//so if there's a path then we want to use that.
+				q_strlcpy(texturename, fallback, sizeof(texturename));
+			}
+			else
+			{	//and if there's no path then we want to prefix it with our own.
+				q_strlcpy(texturename, mod->name, sizeof(texturename));
+				*(char*)COM_SkipPath(texturename) = 0;
+				//and concat the specified name
+				q_strlcat(texturename, fallback, sizeof(texturename));
+			}
+			//and make sure there's no extensions. these get ignored in q3, which is kinda annoying, but this is an md3 and standards are standards (and it makes luma easier).
+			ext = (char*)COM_FileGetExtension(texturename);
+			if (*ext)
+				*--ext = 0;
+			//luma has an extra postfix.
+			q_snprintf(fullbrightname, sizeof(fullbrightname), "%s_luma", texturename);
+			osurf->gltextures[j][0] = TexMgr_LoadImage(mod, texturename, osurf->skinwidth, osurf->skinheight, SRC_EXTERNAL, NULL, texturename, 0, TEXPREF_PAD|TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP);
+			osurf->fbtextures[j][0] = NULL;//TexMgr_LoadImage(mod, fullbrightname, osurf->skinwidth, osurf->skinheight, SRC_EXTERNAL, NULL, fullbrightname, 0, TEXPREF_PAD|TEXPREF_ALPHA|TEXPREF_FULLBRIGHT|TEXPREF_MIPMAP);
+			osurf->gltextures[j][3] = osurf->gltextures[j][2] = osurf->gltextures[j][1] = osurf->gltextures[j][0];
+			osurf->fbtextures[j][3] = osurf->fbtextures[j][2] = osurf->fbtextures[j][1] = osurf->fbtextures[j][0];
+		}
+	}
+	if (osurf->numskins)
+	{
+		osurf->skinwidth = osurf->gltextures[0][0]->source_width;
+		osurf->skinheight = osurf->gltextures[0][0]->source_height;
+	}
 }
 
 void Mod_LoadIQMModel (qmodel_t *mod, const void *buffer)
@@ -1238,44 +1356,7 @@ void Mod_LoadIQMModel (qmodel_t *mod, const void *buffer)
 
 		//load the textures
 		if (!isDedicated)
-		{
-			const char *pinshader = pintext + LittleLong(pinsurface->material);
-			osurf->numskins = 1;
-			for (j = 0; j < 1; j++, pinshader++)
-			{
-				char texturename[MAX_QPATH];
-				char fullbrightname[MAX_QPATH];
-				char *ext;
-				//texture names in md3s are kinda fucked. they could be just names relative to the mdl, or full paths, or just simple shader names.
-				//our texture manager is too lame to scan all 1000 possibilities
-				if (strchr(pinshader, '/') || strchr(pinshader, '\\'))
-				{	//so if there's a path then we want to use that.
-					q_strlcpy(texturename, pinshader, sizeof(texturename));
-				}
-				else
-				{	//and if there's no path then we want to prefix it with our own.
-					q_strlcpy(texturename, mod->name, sizeof(texturename));
-					*(char*)COM_SkipPath(texturename) = 0;
-					//and concat the specified name
-					q_strlcat(texturename, pinshader, sizeof(texturename));
-				}
-				//and make sure there's no extensions. these get ignored in q3, which is kinda annoying, but this is an md3 and standards are standards (and it makes luma easier).
-				ext = (char*)COM_FileGetExtension(texturename);
-				if (*ext)
-					*--ext = 0;
-				//luma has an extra postfix.
-				q_snprintf(fullbrightname, sizeof(fullbrightname), "%s_luma", texturename);
-				osurf->gltextures[j][0] = TexMgr_LoadImage(mod, texturename, osurf->skinwidth, osurf->skinheight, SRC_EXTERNAL, NULL, texturename, 0, TEXPREF_PAD|TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP);
-				osurf->fbtextures[j][0] = NULL;//TexMgr_LoadImage(mod, fullbrightname, osurf->skinwidth, osurf->skinheight, SRC_EXTERNAL, NULL, fullbrightname, 0, TEXPREF_PAD|TEXPREF_ALPHA|TEXPREF_FULLBRIGHT|TEXPREF_MIPMAP);
-				osurf->gltextures[j][3] = osurf->gltextures[j][2] = osurf->gltextures[j][1] = osurf->gltextures[j][0];
-				osurf->fbtextures[j][3] = osurf->fbtextures[j][2] = osurf->fbtextures[j][1] = osurf->fbtextures[j][0];
-			}
-			if (osurf->numskins)
-			{
-				osurf->skinwidth = osurf->gltextures[0][0]->source_width;
-				osurf->skinheight = osurf->gltextures[0][0]->source_height;
-			}
-		}
+			Mod_LoadIQMSkin (mod, pinheader, osurf, surf, pinheader->num_meshes, pintext + LittleLong(pinsurface->material));
 	}
 	GLMesh_LoadVertexBuffer (mod, outhdr);
 
