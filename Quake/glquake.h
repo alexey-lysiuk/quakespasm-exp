@@ -21,8 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef __GLQUAKE_H
-#define __GLQUAKE_H
+#ifndef GLQUAKE_H
+#define GLQUAKE_H
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
@@ -439,6 +439,7 @@ void Sky_ClearAll (void);
 void Sky_DrawSky (void);
 void Sky_NewMap (void);
 void Sky_LoadTexture (texture_t *mt, enum srcformat fmt, unsigned int width, unsigned int height);
+void Sky_LoadTextureQ64 (texture_t *mt);
 void Sky_LoadSkyBox (const char *name);
 extern qboolean skyroom_drawn, skyroom_drawing;		//we draw a skyroom this frame
 extern qboolean skyroom_enabled;	//we know where the skyroom is ...
@@ -462,5 +463,4 @@ void R_ScaleView_DeleteTexture (void);
 
 float GL_WaterAlphaForSurface (msurface_t *fa);
 
-#endif	/* __GLQUAKE_H */
-
+#endif	/* GLQUAKE_H */

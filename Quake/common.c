@@ -3442,7 +3442,6 @@ LOC_LoadFile
 void LOC_LoadFile (const char *file)
 {
 	char path[1024];
-	FILE *fp = NULL;
 	int i,lineno;
 	char *cursor;
 

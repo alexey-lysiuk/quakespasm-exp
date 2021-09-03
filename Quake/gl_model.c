@@ -585,8 +585,11 @@ static texture_t *Mod_LoadMipTex(miptex_t *mt, byte *lumpend, enum srcformat *fm
 	texture_t *tx;
 	byte *srcdata = NULL;
 	size_t sz;
+	int shift = 0;
 
-	if (!mt->offsets[0])	//the legacy data was omitted. we may still have block-compression though.
+	if (loadmodel->bspversion == BSPVERSION_QUAKE64)
+		extdata = lumpend;	//don't bother, I'm too lazy to validate offsets.
+	else if (!mt->offsets[0])	//the legacy data was omitted. we may still have block-compression though.
 		extdata = (byte*)(mt+1);
 	else if (mt->offsets[0] == sizeof(miptex_t) &&
 			 mt->offsets[1] == mt->offsets[0]+(mt->width>>0)*(mt->height>>0) &&
@@ -629,8 +632,18 @@ static texture_t *Mod_LoadMipTex(miptex_t *mt, byte *lumpend, enum srcformat *fm
 		*width = mt->width;
 		*height = mt->height;
 		*pixelbytes = mt->width*mt->height;
-		if (LittleLong (mt->offsets[0]))
-			srcdata = (byte*)mt+LittleLong(mt->offsets[0]);
+
+		if (loadmodel->bspversion == BSPVERSION_QUAKE64)
+		{
+			miptex64_t *mt64 = (miptex64_t*)mt;
+			srcdata = (byte*)(mt64 + 1);	//revert to lameness
+			shift = mt64->shift;
+		}
+		else
+		{
+			if (LittleLong (mt->offsets[0]))
+				srcdata = (byte*)mt+LittleLong(mt->offsets[0]);
+		}
 	}
 
 	tx = (texture_t *) Hunk_AllocName (sizeof(texture_t) + *pixelbytes, loadname );
@@ -638,6 +651,7 @@ static texture_t *Mod_LoadMipTex(miptex_t *mt, byte *lumpend, enum srcformat *fm
 	tx->name[sizeof(tx->name)-1] = 0;	//just in case...
 	tx->width = mt->width;
 	tx->height = mt->height;
+	tx->shift = shift;
 
 	if (srcdata)
 	{
@@ -662,6 +676,26 @@ static texture_t *Mod_LoadMipTex(miptex_t *mt, byte *lumpend, enum srcformat *fm
 	}
 	return tx;
 }
+/*
+=================
+Mod_CheckAnimTextureArrayQ64
+
+Quake64 bsp
+Check if we have any missing textures in the array
+=================
+*/
+qboolean Mod_CheckAnimTextureArrayQ64(texture_t *anims[], int numTex)
+{
+	int i;
+
+	for (i = 0; i < numTex; i++)
+	{
+		if (!anims[i])
+			return false;
+	}
+	return true;
+}
+
 /*
 =================
 Mod_LoadTextures
@@ -722,14 +756,14 @@ void Mod_LoadTextures (lump_t *l)
 			mt->offsets[j] = LittleLong (mt->offsets[j]);
 
 		if ( (mt->width & 15) || (mt->height & 15) )
-			Sys_Error ("Texture %s is not 16 aligned", mt->name);
+		{
+			if (loadmodel->bspversion != BSPVERSION_QUAKE64)
+				Sys_Error ("Texture %s is not 16 aligned", mt->name);
+		}
+
 
 		tx = Mod_LoadMipTex(mt, (mod_base + l->fileofs + mipend), &fmt, &imgwidth, &imgheight, &imgpixels);
 		loadmodel->textures[i] = tx;
-
-		tx->update_warp = false; //johnfitz
-		tx->warpimage = NULL; //johnfitz
-		tx->fullbright = NULL; //johnfitz
 
 		mipend = m->dataofs[i];
 
@@ -737,7 +771,12 @@ void Mod_LoadTextures (lump_t *l)
 		if (!isDedicated) //no texture uploading for dedicated server
 		{
 			if (!q_strncasecmp(tx->name,"sky",3)) //sky texture //also note -- was Q_strncmp, changed to match qbsp
-				Sky_LoadTexture (tx, fmt, imgwidth, imgheight);
+			{
+				if (loadmodel->bspversion == BSPVERSION_QUAKE64)
+					Sky_LoadTextureQ64 (tx);
+				else
+					Sky_LoadTexture (tx, fmt, imgwidth, imgheight);
+			}
 			else if (tx->name[0] == '*') //warping texture
 			{
 				enum srcformat rfmt = SRC_RGBA;
@@ -920,6 +959,9 @@ void Mod_LoadTextures (lump_t *l)
 				Sys_Error ("Bad animating texture %s", tx->name);
 		}
 
+		if (loadmodel->bspversion == BSPVERSION_QUAKE64 && !Mod_CheckAnimTextureArrayQ64(anims, maxanim))
+			continue; // Just pretend this is a normal texture
+
 #define	ANIM_CYCLE	2
 	// link them all together
 		for (j=0 ; j<maxanim ; j++)
@@ -958,7 +1000,7 @@ void Mod_LoadLighting (lump_t *l)
 {
 	int i, mark;
 	byte *in, *out, *data;
-	byte d;
+	byte d, q64_b0, q64_b1;
 	char litfilename[MAX_OSPATH];
 	unsigned int path_id;
 	int	bspxsize;
@@ -1009,6 +1051,29 @@ void Mod_LoadLighting (lump_t *l)
 	// LordHavoc: no .lit found, expand the white lighting data to color
 	if (!l->filelen)
 		return;
+
+	// Quake64 bsp lighmap data
+	if (loadmodel->bspversion == BSPVERSION_QUAKE64)
+	{
+		// RGB lightmap samples are packed in 16bits.
+		// RRRRR GGGGG BBBBBB
+
+		loadmodel->lightdata = (byte *) Hunk_AllocName ( (l->filelen / 2)*3, litfilename);
+		in = mod_base + l->fileofs;
+		out = loadmodel->lightdata;
+
+		for (i = 0;i < (l->filelen / 2) ;i++)
+		{
+			q64_b0 = *in++;
+			q64_b1 = *in++;
+
+			*out++ = q64_b0 & 0xf8;/* 0b11111000 */
+			*out++ = ((q64_b0 & 0x07) << 5) + ((q64_b1 & 0xc0) >> 5);/* 0b00000111, 0b11000000 */
+			*out++ = (q64_b1 & 0x3f) << 2;/* 0b00111111 */
+		}
+		return;
+	}
+
 	in = Q1BSPX_FindLump("RGBLIGHTING", &bspxsize);
 	if (loadmodel->lightdata && bspxsize == l->filelen*3)
 	{
@@ -1608,6 +1673,9 @@ void Mod_LoadFaces (lump_t *l, qboolean bsp2)
 		Mod_CalcSurfaceBounds (out); //johnfitz -- for per-surface frustum culling
 
 	// lighting info
+		if (loadmodel->bspversion == BSPVERSION_QUAKE64)
+			lofs /= 2; // Q64 samples are 16bits instead 8 in normal Quake 
+
 		if (lofs == -1)
 			out->samples = NULL;
 		else
@@ -2662,9 +2730,12 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	case BSP2VERSION_BSP2:
 		bsp2 = 2;	//sanitised revision
 		break;
+	case BSPVERSION_QUAKE64:
+		bsp2 = false;
+		break;
 	default:
 		loadmodel->type = mod_ext_invalid;
-		Con_Warning ("Mod_LoadBrushModel: %s has wrong version number (%i should be %i)\n", mod->name, mod->bspversion, BSPVERSION);
+		Con_Warning ("Mod_LoadBrushModel: %s has unsupported version number (%i should be %i)\n", mod->name, mod->bspversion, BSPVERSION);
 		return;
 	}
 
@@ -2689,7 +2760,7 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	Mod_LoadFaces (&header->lumps[LUMP_FACES], bsp2);
 	Mod_LoadMarksurfaces (&header->lumps[LUMP_MARKSURFACES], bsp2);
 
-	if (!bsp2 && external_vis.value && sv.modelname[0] && !q_strcasecmp(loadname, sv.name))
+	if (mod->bspversion == BSPVERSION && external_vis.value && sv.modelname[0] && !q_strcasecmp(loadname, sv.name))
 	{
 		FILE* fvis;
 		Con_DPrintf("trying to open external vis file\n");

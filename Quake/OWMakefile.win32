@@ -213,6 +213,7 @@ OBJS = strlcat.obj &
 	wad.obj &
 	cmd.obj &
 	common.obj &
+	mdfour.obj &
 	fs_zip.obj &
 	crc.obj &
 	cvar.obj &
