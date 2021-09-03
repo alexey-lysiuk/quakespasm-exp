@@ -737,12 +737,19 @@ void CL_RelinkEntities (void)
 			dl->radius = 400 + (rand()&31);
 			dl->die = cl.time + 0.001;
 		}
-		if (ent->effects & EF_DIMLIGHT)
+		if (ent->effects & (EF_DIMLIGHT|EF_RED|EF_BLUE|EF_GREEN))
 		{
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin,  dl->origin);
 			dl->radius = 200 + (rand()&31);
 			dl->die = cl.time + 0.001;
+
+			if (ent->effects & (EF_RED|EF_BLUE|EF_GREEN))
+			{
+				dl->color[0] = !!(ent->effects&EF_RED);
+				dl->color[1] = !!(ent->effects&EF_GREEN);
+				dl->color[2] = !!(ent->effects&EF_BLUE);
+			}
 		}
 
 #ifdef PSET_SCRIPT

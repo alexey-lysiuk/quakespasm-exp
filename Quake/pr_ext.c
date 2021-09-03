@@ -7483,6 +7483,8 @@ static struct
 	{"DP_CON_SETA"},
 	{"DP_CSQC_QUERYRENDERENTITY"},
 	{"DP_EF_NOSHADOW"},
+	{"DP_EF_BLUE"},
+	{"DP_EF_RED"},
 	{"DP_ENT_ALPHA",			PR_Can_Ent_Alpha},	//already in quakespasm, supposedly.
 	{"DP_ENT_COLORMOD",			PR_Can_Ent_ColorMod},
 	{"DP_ENT_SCALE",			PR_Can_Ent_Scale},
