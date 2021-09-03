@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qboolean	r_cache_thrash;		// compatability
 
 vec3_t		modelorg, r_entorigin;
+
+static entity_t r_worldentity;	//so we can make sure currententity is valid
 entity_t	*currententity;
 
 int			r_visframecount;	// bumped when going to a new PVS
@@ -614,7 +616,9 @@ void R_SetupView (void)
 
 	if (r_refdef.drawworld)
 	{
+		currententity = &r_worldentity;
 		R_MarkSurfaces (); //johnfitz -- create texture chains from PVS
+		currententity = NULL;
 
 		if (!skyroom_drawn)
 			R_UpdateWarpTextures (); //johnfitz -- do this before R_Clear
@@ -959,7 +963,6 @@ R_RenderScene
 */
 void R_RenderScene (void)
 {
-	static entity_t r_worldentity;	//so we can make sure currententity is valid
 	currententity = &r_worldentity;
 	R_SetupScene (); //johnfitz -- this does everything that should be done once per call to RenderScene
 
@@ -1137,7 +1140,7 @@ void R_RenderView (void)
 	if (r_norefresh.value)
 		return;
 
-	if (!cl.worldmodel)
+	if (r_refdef.drawworld && !cl.worldmodel)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
 	time1 = 0; /* avoid compiler warning */
@@ -1155,7 +1158,7 @@ void R_RenderView (void)
 
 	//Spike -- quickly draw the world from the skyroom camera's point of view.
 	skyroom_drawn = false;
-	if (skyroom_enabled && skyroom_visible)
+	if (r_refdef.drawworld && skyroom_enabled && skyroom_visible)
 	{
 		vec3_t vieworg;
 		vec3_t viewang;
@@ -1232,11 +1235,14 @@ void R_RenderView (void)
 	//johnfitz
 
 	//Spike: flag whether the skyroom was actually visible, so we don't needlessly draw it when its not (1 frame's lag, hopefully not too noticable)
-	if (r_viewleaf->contents == CONTENTS_SOLID || r_drawflat_cheatsafe || r_lightmap_cheatsafe)
-		skyroom_visible = false;	//don't do skyrooms when the view is in the void, for framerate reasons while debugging.
-	else
-		skyroom_visible = R_SkyroomWasVisible();
-	skyroom_drawn = false;
+	if (r_refdef.drawworld)
+	{
+		if (r_viewleaf->contents == CONTENTS_SOLID || r_drawflat_cheatsafe || r_lightmap_cheatsafe)
+			skyroom_visible = false;	//don't do skyrooms when the view is in the void, for framerate reasons while debugging.
+		else
+			skyroom_visible = R_SkyroomWasVisible();
+		skyroom_drawn = false;
+	}
 	//skyroom end
 
 	R_ScaleView ();
