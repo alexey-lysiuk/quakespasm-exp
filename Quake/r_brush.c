@@ -978,7 +978,7 @@ void GL_BuildLightmaps (void)
 
 		//johnfitz -- use texture manager
 		sprintf(name, "lightmap%07i",i);
-		lm->texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+		lm->texture = TexMgr_LoadImage (NULL, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
 						SRC_LIGHTMAP, lm->data, "", (src_offset_t)lm->data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
 		//johnfitz
 	}
@@ -1358,7 +1358,7 @@ void R_UploadLightmaps (void)
 		{
 			char	name[24];
 			sprintf(name, "lightmap%07i",lmap);
-			lightmaps[lmap].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+			lightmaps[lmap].texture = TexMgr_LoadImage (NULL, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
 							SRC_LIGHTMAP, lightmaps[lmap].data, "", (src_offset_t)lightmaps[lmap].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
 
 			lightmaps[lmap].modified = false;
@@ -1413,7 +1413,7 @@ void R_RebuildAllLightmaps (void)
 		{
 			char	name[24];
 			sprintf(name, "lightmap%07i",i);
-			lightmaps[i].texture = TexMgr_LoadImage (cl.worldmodel, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
+			lightmaps[i].texture = TexMgr_LoadImage (NULL, name, LMBLOCK_WIDTH, LMBLOCK_HEIGHT,
 							SRC_LIGHTMAP, lightmaps[i].data, "", (src_offset_t)lightmaps[i].data, TEXPREF_LINEAR | TEXPREF_NOPICMIP);
 		}
 		else
