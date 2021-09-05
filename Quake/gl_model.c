@@ -33,6 +33,7 @@ void Mod_LoadSpriteModel (qmodel_t *mod, void *buffer);
 void Mod_LoadBrushModel (qmodel_t *mod, void *buffer);
 void Mod_LoadAliasModel (qmodel_t *mod, void *buffer, int pvtype);
 void Mod_LoadMD3Model (qmodel_t *mod, void *buffer);
+void Mod_LoadMD5MeshModel (qmodel_t *mod, void *buffer);
 void Mod_LoadIQMModel (qmodel_t *mod, const void *buffer);
 qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash);
 
@@ -405,6 +406,11 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	//Spike -- md3 support
 	case (('I'<<0)+('D'<<8)+('P'<<16)+('3'<<24)):	//md3
 		Mod_LoadMD3Model(mod, buf);
+		break;
+
+	//Spike -- md5 support
+	case (('M'<<0)+('D'<<8)+('5'<<16)+('V'<<24)):
+		Mod_LoadMD5MeshModel(mod, buf);
 		break;
 
 	//Spike -- iqm support

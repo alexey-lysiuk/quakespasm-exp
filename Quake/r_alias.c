@@ -1051,7 +1051,7 @@ void R_DrawAliasModel (entity_t *e)
 	R_SetupAliasFrame (paliashdr, e, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 
-	glsl = &r_alias_glsl[(paliashdr->poseverttype==PV_IQM)?ALIAS_GLSL_SKELETAL:ALIAS_GLSL_BASIC];
+	glsl = &r_alias_glsl[(paliashdr->poseverttype==PV_IQM&&lerpdata.bonestate)?ALIAS_GLSL_SKELETAL:ALIAS_GLSL_BASIC];
 
 	if (e->eflags & EFLAGS_VIEWMODEL)
 	{
@@ -1195,7 +1195,7 @@ void R_DrawAliasModel (entity_t *e)
 		}
 	// call fast path if possible. if the shader compliation failed for some reason,
 	// r_alias_program will be 0.
-		else if (glsl->program != 0 && paliashdr->numbones <= glsl->maxbones)
+		else if (glsl->program != 0 && (paliashdr->numbones <= glsl->maxbones||!lerpdata.bonestate))
 		{
 			GL_DrawAliasFrame_GLSL (glsl, paliashdr, lerpdata, tx, fb);
 		}

@@ -1382,3 +1382,382 @@ void Mod_LoadIQMModel (qmodel_t *mod, const void *buffer)
 
 	Hunk_FreeToLowMark (start);
 }
+
+
+/*
+=================================================================
+MD5 Models, for compat with the rerelease and NOT doom3.
+=================================================================
+md5mesh:
+MD5Version 10
+commandline ""
+numJoints N
+numMeshes N
+joints {
+	"name" ParentIdx ( Pos_X Y Z ) ( Quat_X Y Z )
+}
+mesh {
+	shader "name"	//file-relative path, with _%02d_%02d postfixed for skin/framegroup support. unlike doom3.
+	numverts N
+	vert # ( S T ) FirstWeight count
+	numtris N
+	tri # A B C
+	numweights N
+	weight # BoneIdx Scale ( X Y Z )
+}
+
+*/
+
+static qboolean MD5_ParseCheck(const char *s, const void **buffer)
+{
+	if (strcmp(com_token, s))
+		return false;
+	*buffer = COM_Parse(*buffer);
+	return true;
+}
+static size_t MD5_ParseUInt(const void **buffer)
+{
+	size_t i = SDL_strtoull(com_token, NULL, 0);
+	*buffer = COM_Parse(*buffer);
+	return i;
+}
+static long MD5_ParseSInt(const void **buffer)
+{
+	long i = SDL_strtol(com_token, NULL, 0);
+	*buffer = COM_Parse(*buffer);
+	return i;
+}
+static double MD5_ParseFloat(const void **buffer)
+{
+	double i = SDL_strtod(com_token, NULL);
+	*buffer = COM_Parse(*buffer);
+	return i;
+}
+#define MD5EXPECT(s) do{if (strcmp(com_token, s)) Sys_Error ("Mod_LoadMD5MeshModel(%s): Expected \"%s\"", mod->name, s); buffer = COM_Parse(buffer); }while(0)
+#define MD5UINT() MD5_ParseUInt(&buffer)
+#define MD5SINT() MD5_ParseSInt(&buffer)
+#define MD5FLOAT() MD5_ParseFloat(&buffer)
+#define MD5CHECK(s) MD5_ParseCheck(s, &buffer)
+
+struct md5vertinfo_s
+{
+	size_t firstweight;
+	unsigned int count;
+};
+struct md5weightinfo_s
+{
+	size_t bone;
+	vec4_t pos;
+};
+
+static void Matrix3x4_RM_Transform4(const float *matrix, const float *vector, float *product)
+{
+	product[0] = matrix[0]*vector[0] + matrix[1]*vector[1] + matrix[2]*vector[2] + matrix[3]*vector[3];
+	product[1] = matrix[4]*vector[0] + matrix[5]*vector[1] + matrix[6]*vector[2] + matrix[7]*vector[3];
+	product[2] = matrix[8]*vector[0] + matrix[9]*vector[1] + matrix[10]*vector[2] + matrix[11]*vector[3];
+}
+static void MD5_BakeInfluences(bonepose_t *outposes, iqmvert_t *vert, struct md5vertinfo_s *vinfo, struct md5weightinfo_s *weight, size_t numverts, size_t numweights)
+{
+	size_t v, i, lowidx, k;
+	struct md5weightinfo_s *w;
+	vec3_t pos;
+	float lowval, scale;
+	unsigned int overinfluenced = 0;
+	for (v = 0; v < numverts; v++, vert++, vinfo++)
+	{
+		//st were already loaded
+		//norm will need to be calculated after we have xyz info
+		vert->xyz[0] = vert->xyz[1] = vert->xyz[2] = 0;
+		vert->idx[0] = vert->idx[1] = vert->idx[2] = vert->idx[3] = 0;
+		vert->weight[0] = vert->weight[1] = vert->weight[2] = vert->weight[3] = 0;
+		vert->rgba[0] = vert->rgba[1] = vert->rgba[2] = vert->rgba[3] = 1;	//for consistency with iqm, though irrelevant here
+
+		if (vinfo->firstweight + vinfo->count > numweights)
+			Sys_Error ("weight index out of bounds");
+		w = weight + vinfo->firstweight;
+		for (i = 0; i < vinfo->count; i++, w++)
+		{
+			Matrix3x4_RM_Transform4(outposes[w->bone].mat, w->pos, pos);
+			VectorAdd(vert->xyz, pos, vert->xyz);
+
+			if (i < countof(vert->weight))
+			{
+				vert->weight[i] = w->pos[3];
+				vert->idx[i] = w->bone;
+			}
+			else
+			{
+				//obnoxious code to find the lowest of the current possible bone indexes.
+				lowval = vert->weight[0];
+				lowidx = 0;
+				for (k = 1; k < countof(vert->weight); k++)
+					if (vert->weight[k] < lowval)
+					{
+						lowval = vert->weight[k];
+						lowidx = k;
+					}
+				if (vert->weight[lowidx] < w->pos[3])
+				{	//found a lower/unset weight, replace it.
+					vert->weight[lowidx] = w->pos[3];
+					vert->idx[lowidx] = w->bone;
+				}
+				else
+					overinfluenced++;
+			}
+		}
+
+		//normalize in case we dropped some weights.
+		scale = vert->weight[0] + vert->weight[1] + vert->weight[2] + vert->weight[3];
+		if (scale>0)
+		{
+			scale = 1/scale;
+			for (k = 0; k < 4; k++)
+				vert->weight[k] *= scale;
+		}
+		else	//something bad...
+			vert->weight[0] = 1, vert->weight[1] = vert->weight[2] = vert->weight[3] = 0;
+	}
+	if (overinfluenced)
+		Con_Warning("%u too many influences\n", overinfluenced);
+}
+static void MD5_ComputeNormals(iqmvert_t *vert, size_t numverts, unsigned short *indexes, size_t numindexes)
+{
+	size_t v, t;
+	iqmvert_t *v0, *v1, *v2;
+	vec3_t d1, d2, norm;
+	for (v = 0; v < numverts; v++)
+		vert[v].norm[0] = vert[v].norm[1] = vert[v].norm[2] = 0;
+	for (t = 0; t < numindexes; t+=3)
+	{
+		v0 = &vert[indexes[t+0]];
+		v1 = &vert[indexes[t+1]];
+		v2 = &vert[indexes[t+2]];
+
+		VectorSubtract(v1->xyz, v0->xyz, d1);
+		VectorSubtract(v2->xyz, v0->xyz, d2);
+		CrossProduct(d1, d2, norm);
+		VectorNormalize(norm);
+
+		//FIXME: this should be weighted by each vertex angle.
+		VectorAdd(v0->norm, norm, v0->norm);
+		VectorAdd(v1->norm, norm, v1->norm);
+		VectorAdd(v2->norm, norm, v2->norm);
+	}
+
+	//and make sure it actually makes sense.
+	for (v = 0; v < numverts; v++)
+		VectorNormalize(vert[v].norm);
+}
+
+static unsigned int MD5_HackyModelFlags(const char *name)
+{
+	unsigned int ret = 0;
+	char oldmodel[MAX_QPATH];
+	mdl_t *f;
+	COM_StripExtension(name, oldmodel, sizeof(oldmodel));
+	COM_AddExtension(oldmodel, ".mdl", sizeof(oldmodel));
+
+	f = (mdl_t*)COM_LoadMallocFile(oldmodel, NULL);
+	if (f)
+	{
+		if (com_filesize >= sizeof(*f) && LittleLong(f->ident) == IDPOLYHEADER && LittleLong(f->version) == ALIAS_VERSION)
+			ret = f->flags;
+		free(f);
+	}
+	return ret;
+}
+
+void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
+{
+	unsigned short			*poutindexes;
+	iqmvert_t				*poutvert;
+	int						start, end, total;
+	aliashdr_t				*outhdr, *surf;
+
+	bonepose_t				*outposes;
+	boneinfo_t				*outbones;
+
+	size_t					numjoints, j;
+	size_t					nummeshes, m;
+	char					texname[MAX_QPATH];
+	struct md5vertinfo_s	*vinfo;
+	struct md5weightinfo_s	*weight;
+	size_t					numweights;
+
+	start = Hunk_LowMark ();
+
+	buffer = COM_Parse(buffer);
+
+	MD5EXPECT("MD5Version");
+	MD5EXPECT("10");
+	if (MD5CHECK("commandline"))	buffer = COM_Parse(buffer);
+	MD5EXPECT("numJoints");	numjoints = MD5UINT();
+	MD5EXPECT("numMeshes");	nummeshes = MD5UINT();
+
+	if (numjoints <= 0)
+		Sys_Error ("%s has no bones", mod->name);
+	if (nummeshes <= 0)
+		Sys_Error ("%s has no meshes", mod->name);
+
+	outhdr = Hunk_Alloc(sizeof(*outhdr)*numjoints);
+	outbones = Hunk_Alloc(sizeof(*outbones)*numjoints);
+	outposes = Z_Malloc(sizeof(*outposes)*numjoints);
+	MD5EXPECT("joints");
+	MD5EXPECT("{");
+	for (j = 0; j < numjoints; j++)
+	{
+		vec3_t pos;
+		static vec3_t scale = {1,1,1};
+		vec4_t quat;
+		q_strlcpy(outbones[j].name, com_token, sizeof(outbones[j].name));	buffer = COM_Parse(buffer);
+		outbones[j].parent = MD5SINT();
+		if (outbones[j].parent < -1 && outbones[j].parent >= numjoints)
+			Sys_Error ("bone index out of bounds");
+		MD5EXPECT("(");
+		pos[0] = MD5FLOAT();
+		pos[1] = MD5FLOAT();
+		pos[2] = MD5FLOAT();
+		MD5EXPECT(")");
+		MD5EXPECT("(");
+		quat[0] = MD5FLOAT();
+		quat[1] = MD5FLOAT();
+		quat[2] = MD5FLOAT();
+		quat[3] = 1 - DotProduct(quat,quat);
+		if (quat[3] < 0)
+			quat[3] = 0;//we have no imagination.
+		quat[3] = -sqrt(quat[3]);
+		MD5EXPECT(")");
+
+		GenMatrixPosQuat4Scale(pos, quat, scale, outposes[j].mat);
+		Matrix3x4_Invert_Simple(outposes[j].mat, outbones[j].inverse.mat);	//absolute, so we can just invert now.
+	}
+	MD5EXPECT("}");
+	for (m = 0; m < nummeshes; m++)
+	{
+		MD5EXPECT("mesh");
+		MD5EXPECT("{");
+
+		surf = &outhdr[m];
+		if (m+1 < nummeshes)
+			surf->nextsurface = sizeof(*surf);
+		else
+			surf->nextsurface = 0;
+		surf->poseverttype = PV_IQM;
+		for (j = 0; j < 3; j++)
+		{
+			surf->scale_origin[j] = 0;
+			surf->scale[j] = 1.0;
+		}
+
+		surf->numbones = numjoints;
+		surf->boneinfo = (byte*)outbones-(byte*)surf;
+
+		MD5EXPECT("shader");
+		//MD5 violation: the skin is a single material. adding prefixes/postfixes here is the wrong thing to do.
+		//but we do so anyway, because rerelease compat.
+		for (surf->numskins = 0; surf->numskins < MAX_SKINS; surf->numskins++)
+		{
+			q_snprintf(texname, sizeof(texname), "progs/%s_%02d_%02d", com_token, surf->numskins, 0);
+			surf->gltextures[surf->numskins][0] = TexMgr_LoadImage(mod, texname, surf->skinwidth, surf->skinheight, SRC_EXTERNAL, NULL, texname, 0, TEXPREF_ALLOWMISSING|TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP);
+			if (!surf->gltextures[surf->numskins][0])
+				continue;
+			surf->gltextures[surf->numskins][3] = surf->gltextures[surf->numskins][2] = surf->gltextures[surf->numskins][1] = surf->gltextures[surf->numskins][0];
+			surf->fbtextures[surf->numskins][0] = surf->fbtextures[surf->numskins][1] = surf->fbtextures[surf->numskins][2] = surf->fbtextures[surf->numskins][3] = NULL;
+		}
+		surf->skinwidth = surf->gltextures[0][0]?surf->gltextures[0][0]->width:1;
+		surf->skinheight = surf->gltextures[0][0]?surf->gltextures[0][0]->height:1;
+		buffer = COM_Parse(buffer);
+		MD5EXPECT("numverts");
+		surf->numverts_vbo = surf->numverts = MD5UINT();
+
+		vinfo = Z_Malloc(sizeof(*vinfo)*surf->numverts);
+		poutvert = Hunk_Alloc(sizeof(*poutvert)*surf->numverts);
+		surf->vertexes = (byte*)poutvert-(byte*)surf;
+		surf->nummorphposes = 1;
+		while (MD5CHECK("vert"))
+		{
+			size_t idx = MD5UINT();
+			if (idx >= surf->numverts)
+				Sys_Error ("vertex index out of bounds");
+			MD5EXPECT("(");
+			poutvert[idx].st[0] = MD5FLOAT();
+			poutvert[idx].st[1] = MD5FLOAT();
+			MD5EXPECT(")");
+			vinfo[idx].firstweight = MD5UINT();
+			vinfo[idx].count = MD5UINT();
+		}
+		MD5EXPECT("numtris");
+		surf->numtris = MD5UINT();
+		surf->numindexes = surf->numtris*3;
+		poutindexes = Hunk_Alloc(sizeof(*poutindexes)*surf->numindexes);
+		surf->indexes = (byte*)poutindexes-(byte*)surf;
+		while (MD5CHECK("tri"))
+		{
+			size_t idx = MD5UINT();
+			if (idx >= surf->numtris)
+				Sys_Error ("triangle index out of bounds");
+			idx *= 3;
+			for (j = 0; j < 3; j++)
+			{
+				size_t t = MD5UINT();
+				if (t > surf->numverts)
+					Sys_Error ("vertex index out of bounds");
+				poutindexes[idx+j] = t;
+			}
+		}
+
+		//md5 is a gpu-unfriendly interchange format. :(
+		MD5EXPECT("numweights");
+		numweights = MD5UINT();
+		weight = Z_Malloc(sizeof(*weight)*numweights);
+		while (MD5CHECK("weight"))
+		{
+			size_t idx = MD5UINT();
+			if (idx >= numweights)
+				Sys_Error ("weight index out of bounds");
+
+			weight[idx].bone = MD5UINT();
+			if (weight[idx].bone >= numjoints)
+				Sys_Error ("bone index out of bounds");
+			weight[idx].pos[3] = MD5FLOAT();
+			MD5EXPECT("(");
+			weight[idx].pos[0] = MD5FLOAT()*weight[idx].pos[3];
+			weight[idx].pos[1] = MD5FLOAT()*weight[idx].pos[3];
+			weight[idx].pos[2] = MD5FLOAT()*weight[idx].pos[3];
+			MD5EXPECT(")");
+		}
+		//so make it gpu-friendly.
+		MD5_BakeInfluences(outposes, poutvert, vinfo, weight, surf->numverts, numweights);
+		//and now make up the normals that the format lacks. we'll still probably have issues from seams, but then so did qme, so at least its faithful... :P
+		MD5_ComputeNormals(poutvert, surf->numverts, poutindexes, surf->numindexes);
+
+		Z_Free(weight);
+		Z_Free(vinfo);
+
+		MD5EXPECT("}");
+	}
+	Z_Free(outposes);
+
+	GLMesh_LoadVertexBuffer (mod, outhdr);
+
+	//the md5 format does not have its own modelflags, yet we still need to know about trails and rotating etc
+	mod->flags = MD5_HackyModelFlags(mod->name);
+
+	mod->synctype = ST_FRAMETIME;	//keep IQM animations synced to when .frame is changed. framegroups are otherwise not very useful.
+	mod->type = mod_alias;
+
+	Mod_CalcAliasBounds (outhdr); //johnfitz
+
+//
+// move the complete, relocatable alias model to the cache
+//
+	end = Hunk_LowMark ();
+	total = end - start;
+
+	Cache_Alloc (&mod->cache, total, loadname);
+	if (!mod->cache.data)
+		return;
+	memcpy (mod->cache.data, outhdr, total);
+
+	Hunk_FreeToLowMark (start);
+}
