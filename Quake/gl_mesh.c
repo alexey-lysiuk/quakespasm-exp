@@ -1406,6 +1406,27 @@ mesh {
 	weight # BoneIdx Scale ( X Y Z )
 }
 
+md5anim:
+MD5Version 10
+commandline ""
+numFrames N
+numJoints N
+frameRate FPS
+numAnimatedComponents N	//bones*6ish
+hierachy {
+	"name" ParentIdx Flags DataStart
+}
+bounds {
+	( X Y Z ) ( X Y Z )
+}
+baseframe {
+	( pos_X Y Z ) ( quad_X Y Z )
+}
+frame # {
+	RAW ...
+}
+
+We'll unpack the animation to separate framegroups (one-pose per, for consistency with most q1 models).
 */
 
 static qboolean MD5_ParseCheck(const char *s, const void **buffer)
@@ -1433,7 +1454,7 @@ static double MD5_ParseFloat(const void **buffer)
 	*buffer = COM_Parse(*buffer);
 	return i;
 }
-#define MD5EXPECT(s) do{if (strcmp(com_token, s)) Sys_Error ("Mod_LoadMD5MeshModel(%s): Expected \"%s\"", mod->name, s); buffer = COM_Parse(buffer); }while(0)
+#define MD5EXPECT(s) do{if (strcmp(com_token, s)) Sys_Error ("Mod_LoadMD5MeshModel(%s): Expected \"%s\"", fname, s); buffer = COM_Parse(buffer); }while(0)
 #define MD5UINT() MD5_ParseUInt(&buffer)
 #define MD5SINT() MD5_ParseSInt(&buffer)
 #define MD5FLOAT() MD5_ParseFloat(&buffer)
@@ -1567,12 +1588,166 @@ static unsigned int MD5_HackyModelFlags(const char *name)
 	return ret;
 }
 
+struct md5animctx_s
+{
+	void *animfile;
+	const void *buffer;
+	char fname[MAX_QPATH];
+	size_t numposes;
+	size_t numjoints;
+	bonepose_t *posedata;
+};
+//This is split into two because aliashdr_t has silly trailing framegroup info.
+static void MD5Anim_Begin(struct md5animctx_s *ctx, const char *fname)
+{
+	//Load an md5anim into it, if we can.
+	COM_StripExtension(fname, ctx->fname, sizeof(ctx->fname));
+	COM_AddExtension(ctx->fname, ".md5anim", sizeof(ctx->fname));
+	fname = ctx->fname;
+	ctx->animfile = COM_LoadMallocFile(fname, NULL);
+	ctx->numposes = 0;
+
+	if (ctx->animfile)
+	{
+		const void *buffer = COM_Parse(ctx->animfile);
+		MD5EXPECT("MD5Version");
+		MD5EXPECT("10");
+		if (MD5CHECK("commandline"))	buffer = COM_Parse(buffer);
+		MD5EXPECT("numFrames");	ctx->numposes = MD5UINT();
+		MD5EXPECT("numJoints");	ctx->numjoints = MD5UINT();
+		MD5EXPECT("frameRate"); /*irrelevant here*/
+
+		if (ctx->numposes <= 0)
+			Sys_Error ("%s has no poses", fname);
+
+		ctx->buffer = buffer;
+	}
+}
+static void MD5Anim_Load(struct md5animctx_s *ctx, boneinfo_t *bones, size_t numbones)
+{
+	const char *fname = ctx->fname;
+	struct {unsigned int flags, offset;} *ab;
+	size_t rawcount;
+	float *raw, *r;
+	bonepose_t *outposes;
+	const void *buffer = COM_Parse(ctx->buffer);
+	size_t j;
+
+	if (!buffer)
+	{
+		free(ctx->animfile);
+		return;
+	}
+
+	MD5EXPECT("numAnimatedComponents");	rawcount = MD5UINT();
+
+	if (ctx->numjoints != numbones)
+		Sys_Error ("%s has incorrect bone count", fname);
+
+	raw = Z_Malloc(sizeof(*raw)*(rawcount+6));
+	ab = Z_Malloc(sizeof(*ab)*ctx->numjoints);
+
+	ctx->posedata = outposes = Hunk_Alloc(sizeof(*outposes)*ctx->numjoints*ctx->numposes);
+
+
+	MD5EXPECT("hierarchy");
+	MD5EXPECT("{");
+	for (j = 0; j < ctx->numjoints; j++)
+	{
+		//validate stuff
+		if (strcmp(bones[j].name, com_token))
+			Sys_Error ("%s: bone was renamed", fname);
+		buffer = COM_Parse(buffer);
+		if (bones[j].parent != MD5SINT())
+			Sys_Error ("%s: bone has wrong parent", fname);
+		//new info
+		ab[j].flags = MD5UINT();
+		if (ab[j].flags & ~63)
+			Sys_Error ("%s: bone has unsupported flags", fname);
+		ab[j].offset = MD5UINT();
+		if (ab[j].offset > rawcount+6)
+			Sys_Error ("%s: bone has bad offset", fname);
+	}
+	MD5EXPECT("}");
+	MD5EXPECT("bounds");
+	MD5EXPECT("{");
+	while(MD5CHECK("("))
+	{
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		MD5EXPECT(")");
+
+		MD5EXPECT("(");
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		MD5EXPECT(")");
+	}
+	MD5EXPECT("}");
+
+	MD5EXPECT("baseframe");
+	MD5EXPECT("{");
+	while(MD5CHECK("("))
+	{
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		MD5EXPECT(")");
+
+		MD5EXPECT("(");
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		(void)MD5FLOAT();
+		MD5EXPECT(")");
+	}
+	MD5EXPECT("}");
+
+	while(MD5CHECK("frame"))
+	{
+		size_t idx = MD5UINT();
+		if (idx >= ctx->numposes)
+			Sys_Error ("%s: invalid pose index", fname);
+		MD5EXPECT("{");
+		for (j = 0; j < rawcount; j++)
+			raw[j] = MD5FLOAT();
+		MD5EXPECT("}");
+
+		//okay, we have our raw info, unpack the actual bone info.
+		for (j = 0; j < ctx->numjoints; j++)
+		{
+			vec3_t pos = {0,0,0};
+			static vec3_t scale = {1,1,1};
+			vec4_t quat = {0,0,0};
+			r = raw + ab[j].offset;
+			if (ab[j].flags & 1)	pos[0] = *r++;
+			if (ab[j].flags & 2)	pos[1] = *r++;
+			if (ab[j].flags & 4)	pos[2] = *r++;
+
+			if (ab[j].flags & 8)	quat[0] = *r++;
+			if (ab[j].flags & 16)	quat[1] = *r++;
+			if (ab[j].flags & 32)	quat[2] = *r++;
+
+			quat[3] = 1 - DotProduct(quat,quat);
+			if (quat[3] < 0)
+				quat[3] = 0;//we have no imagination.
+			quat[3] = -sqrt(quat[3]);
+
+			GenMatrixPosQuat4Scale(pos, quat, scale, outposes[idx*ctx->numjoints + j].mat);
+		}
+	}
+	Z_Free(raw);
+	Z_Free(ab);
+	free(ctx->animfile);
+}
 void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 {
+	const char				*fname = mod->name;
 	unsigned short			*poutindexes;
 	iqmvert_t				*poutvert;
 	int						start, end, total;
 	aliashdr_t				*outhdr, *surf;
+	size_t					hdrsize;
 
 	bonepose_t				*outposes;
 	boneinfo_t				*outbones;
@@ -1583,6 +1758,8 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 	struct md5vertinfo_s	*vinfo;
 	struct md5weightinfo_s	*weight;
 	size_t					numweights;
+
+	struct md5animctx_s		anim = {NULL};
 
 	start = Hunk_LowMark ();
 
@@ -1599,10 +1776,16 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 	if (nummeshes <= 0)
 		Sys_Error ("%s has no meshes", mod->name);
 
-	outhdr = Hunk_Alloc(sizeof(*outhdr)*numjoints);
+	if (strcmp(com_token, "joints")) Sys_Error ("Mod_LoadMD5MeshModel(%s): Expected \"%s\"", fname, "joints");
+	MD5Anim_Begin(&anim, fname);
+	buffer = COM_Parse(buffer);
+
+	hdrsize = sizeof(*outhdr) - sizeof(outhdr->frames);
+	hdrsize += sizeof(outhdr->frames)*anim.numposes;
+	outhdr = Hunk_Alloc(hdrsize*numjoints);
 	outbones = Hunk_Alloc(sizeof(*outbones)*numjoints);
 	outposes = Z_Malloc(sizeof(*outposes)*numjoints);
-	MD5EXPECT("joints");
+
 	MD5EXPECT("{");
 	for (j = 0; j < numjoints; j++)
 	{
@@ -1631,17 +1814,22 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 		GenMatrixPosQuat4Scale(pos, quat, scale, outposes[j].mat);
 		Matrix3x4_Invert_Simple(outposes[j].mat, outbones[j].inverse.mat);	//absolute, so we can just invert now.
 	}
-	MD5EXPECT("}");
+
+	if (strcmp(com_token, "}")) Sys_Error ("Mod_LoadMD5MeshModel(%s): Expected \"%s\"", fname, "}");
+	MD5Anim_Load(&anim, outbones, numjoints);
+	buffer = COM_Parse(buffer);
+
 	for (m = 0; m < nummeshes; m++)
 	{
 		MD5EXPECT("mesh");
 		MD5EXPECT("{");
 
-		surf = &outhdr[m];
+		surf = (aliashdr_t*)((byte*)outhdr + m*hdrsize);
 		if (m+1 < nummeshes)
-			surf->nextsurface = sizeof(*surf);
+			surf->nextsurface = hdrsize;
 		else
 			surf->nextsurface = 0;
+
 		surf->poseverttype = PV_IQM;
 		for (j = 0; j < 3; j++)
 		{
@@ -1651,6 +1839,20 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 
 		surf->numbones = numjoints;
 		surf->boneinfo = (byte*)outbones-(byte*)surf;
+
+		if (anim.numposes)
+		{
+			surf->boneposedata = (byte*)anim.posedata-(byte*)surf;
+			surf->numboneposes = anim.numposes;
+
+			for (j = 0; j < anim.numposes; j++)
+			{
+				surf->frames[j].firstpose = j;
+				surf->frames[j].numposes = 1;
+				surf->frames[j].interval = 0.1;
+			}
+			surf->numframes = j;
+		}
 
 		MD5EXPECT("shader");
 		//MD5 violation: the skin is a single material. adding prefixes/postfixes here is the wrong thing to do.
