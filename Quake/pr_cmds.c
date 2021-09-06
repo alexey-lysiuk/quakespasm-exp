@@ -1079,7 +1079,16 @@ static void PF_vtos (void)
 	char	*s;
 
 	s = PR_GetTempString();
-	sprintf (s, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
+	if (!pr_checkextension.value)
+		sprintf (s, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
+	else
+	{
+		char x[64], y[64], z[64];
+		Q_ftoa(x, G_VECTOR(OFS_PARM0)[0]);
+		Q_ftoa(y, G_VECTOR(OFS_PARM0)[1]);
+		Q_ftoa(z, G_VECTOR(OFS_PARM0)[2]);
+		sprintf (s, "'%s %s %s'", x, y, z);
+	}
 	G_INT(OFS_RETURN) = PR_SetEngineString(s);
 }
 
@@ -1148,13 +1157,19 @@ int SV_Precache_Sound(const char *s)
 {	//must be a persistent string.
 	int		i;
 
+	if (sv.state != ss_loading && !qcvm->precacheanytime)
+	{
+		Con_Warning("PF_precache_sound(\"%s\"): 'DP_SV_PRECACHEANYTIME' not checked, so precaches should only be done in spawn functions\n", s);
+		if (!developer.value)
+			qcvm->precacheanytime = true;	//don't spam too much
+	}
+
 	for (i = 0; i < MAX_SOUNDS; i++)
 	{
 		if (!sv.sound_precache[i])
 		{
 			if (sv.state != ss_loading)	//spike -- moved this so that there's no actual error any more.
 			{
-				Con_Warning("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
 				//let existing clients know about it
 				MSG_WriteByte(&sv.reliable_datagram, svcdp_precache);
 				MSG_WriteShort(&sv.reliable_datagram, i|0x8000);
@@ -1164,11 +1179,7 @@ int SV_Precache_Sound(const char *s)
 			return i;
 		}
 		if (!strcmp(sv.sound_precache[i], s))
-		{
-			if (sv.state != ss_loading && !pr_checkextension.value)
-				Con_Warning("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
 			return i;
-		}
 	}
 	return 0;
 }
@@ -1219,13 +1230,19 @@ static void PF_sv_precache_model (void)
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
 
+	if (sv.state != ss_loading && !qcvm->precacheanytime)
+	{
+		Con_Warning ("PF_precache_model(\"%s\"): 'DP_SV_PRECACHEANYTIME' not checked, so precaches should only be done in spawn functions\n", s);
+		if (!developer.value)
+			qcvm->precacheanytime = true;	//don't spam too much
+	}
+
 	for (i = 0; i < MAX_MODELS; i++)
 	{
 		if (!sv.model_precache[i])
 		{
 			if (sv.state != ss_loading)
 			{
-				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
 				//let existing clients know about it
 				MSG_WriteByte(&sv.reliable_datagram, svcdp_precache);
 				MSG_WriteShort(&sv.reliable_datagram, i|0x8000);
@@ -1237,11 +1254,7 @@ static void PF_sv_precache_model (void)
 			return;
 		}
 		if (!strcmp(sv.model_precache[i], s))
-		{
-			if (sv.state != ss_loading && !pr_checkextension.value)
-				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
 			return;
-		}
 	}
 	PR_RunError ("PF_precache_model: overflow");
 }

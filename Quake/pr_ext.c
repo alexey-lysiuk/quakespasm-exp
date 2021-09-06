@@ -7473,6 +7473,11 @@ qboolean PR_Can_Ent_Scale(unsigned int prot, unsigned int pext1, unsigned int pe
 	else
 		return false;	//sorry. don't report it as supported.
 }
+qboolean PR_CanPrecacheAnyTime(unsigned int prot, unsigned int pext1, unsigned int pext2)
+{
+	qcvm->precacheanytime = true;
+	return true;
+}
 static struct
 {
 	const char *name;
@@ -7536,6 +7541,7 @@ static struct
 	{"DP_SV_DROPCLIENT"},
 //	{"DP_SV_POINTPARTICLES",	PR_Can_Particles},	//can't enable this, because certain mods then assume that we're DP and all the particles break.
 	{"DP_SV_POINTSOUND"},
+	{"DP_SV_PRECACHEANYTIME",	PR_CanPrecacheAnyTime},
 	{"DP_SV_PRINT"},
 	{"DP_SV_SETCOLOR"},
 	{"DP_SV_SPAWNFUNC_PREFIX"},
