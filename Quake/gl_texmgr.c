@@ -130,6 +130,14 @@ static glmode_t glmodes[] = {
 #define NUM_GLMODES (int)(sizeof(glmodes)/sizeof(glmodes[0]))
 static int glmode_idx = 5; /* trilinear */
 
+int TexMgr_GetTextureMode(void)
+{
+	if (glmodes[glmode_idx].magfilter == GL_NEAREST)
+		return 0;
+	else
+		return q_max(1, gl_texture_anisotropy.value);
+}
+
 /*
 ===============
 TexMgr_DescribeTextureModes_f -- report available texturemodes

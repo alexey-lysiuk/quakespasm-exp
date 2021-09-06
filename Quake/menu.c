@@ -42,6 +42,7 @@ void M_Menu_Main_f (void);
 		void M_Menu_ServerList_f (void);
 	void M_Menu_Options_f (void);
 		void M_Menu_Keys_f (void);
+		void M_Menu_Extras_f (void);
 		void M_Menu_Video_f (void);
 	void M_Menu_Help_f (void);
 	void M_Menu_Quit_f (void);
@@ -967,6 +968,7 @@ enum
 //#ifdef _WIN32
 //	OPT_USEMOUSE,
 //#endif
+	OPT_EXTRAS,
 	OPT_VIDEO,	// This is the last before OPTIONS_ITEMS
 	OPTIONS_ITEMS
 };
@@ -1225,6 +1227,9 @@ void M_Options_Draw (void)
 	M_Print (16, 32 + 8*OPT_LOOKSTRAFE,	"            Lookstrafe");
 	M_DrawCheckbox (220, 32 + 8*OPT_LOOKSTRAFE, lookstrafe.value);
 
+	// OPT_EXTRAS:
+	M_Print (16, 32 + 8*OPT_EXTRAS,	    "         Extra Options");
+
 	// OPT_VIDEO:
 	if (vid_menudrawfn)
 		M_Print (16, 32 + 8*OPT_VIDEO,	"         Video Options");
@@ -1263,6 +1268,9 @@ void M_Options_Key (int k)
 				Cbuf_AddText ("resetcfg\n");
 				Cbuf_AddText ("exec default.cfg\n");
 			}
+			break;
+		case OPT_EXTRAS:
+			M_Menu_Extras_f ();
 			break;
 		case OPT_VIDEO:
 			M_Menu_Video_f ();
@@ -1605,6 +1613,263 @@ void M_Keys_Key (int k)
 	case K_DEL:
 		S_LocalSound ("misc/menu2.wav");
 		M_UnbindCommand (bindnames[keys_cursor].cmd);
+		break;
+	}
+}
+
+//=============================================================================
+/* QSS's EXTRAS MENU */
+
+static enum extras_e
+{
+	EXTRAS_FILTERING,
+	EXTRAS_EXTERNALTEX,
+	EXTRAS_REPLACEMENTMODELS,
+	EXTRAS_MODELLERP,
+	EXTRAS_FPSCAP,
+	EXTRAS_YIELD,
+	EXTRAS_RENDERSCALE,
+	EXTRAS_NETEXTENSIONS,
+	EXTRAS_QCEXTENSIONS,
+	EXTRAS_CLASSICPARTICLES,
+	EXTRAS_ITEMS
+} extras_cursor;
+
+void M_Menu_Extras_f (void)
+{
+	key_dest = key_menu;
+	m_state = m_extras;
+	m_entersound = true;
+
+	IN_UpdateGrabs();
+}
+
+
+static void M_Extras_AdjustSliders (int dir)
+{
+	extern cvar_t pr_checkextension, r_replacemodels, gl_load24bit, cl_nopext, r_lerpmodels, r_lerpmove, host_maxfps, sys_throttle, r_particles;
+	int m;
+	S_LocalSound ("misc/menu3.wav");
+
+	switch (extras_cursor)
+	{
+	case EXTRAS_FILTERING:
+		m = TexMgr_GetTextureMode() + dir;
+		while (m == 3 || (m>4&&m<8) || (m>8&&m<16))
+			m += dir;
+		if (m < 0)
+			m = 16;
+		else if (m > 16)
+			m = 0;
+		if (m == 0)
+		{
+			Cvar_Set ("gl_texturemode", "nll");	//use linear minification filter to reduce distant noise without uglifying the visuals.
+			Cvar_Set ("gl_texture_anisotropy", "1");
+		}
+		else
+		{
+			Cvar_Set ("gl_texturemode", "GL_LINEAR_MIPMAP_LINEAR");
+			Cvar_SetValue ("gl_texture_anisotropy", m);
+		}
+		break;
+	case EXTRAS_EXTERNALTEX:
+		Cvar_SetValueQuick (&gl_load24bit, !gl_load24bit.value);
+		Cbuf_AddText("flush\n");	//needs to be a vid_reload, but qs doesn't exactly do that nicely...
+		break;
+	case EXTRAS_REPLACEMENTMODELS:
+		Cvar_SetQuick (&r_replacemodels, *r_replacemodels.string?"":"iqm md5mesh md3");
+		Cbuf_AddText("flush\n");
+		break;
+	case EXTRAS_MODELLERP:
+		if (r_lerpmodels.value || r_lerpmove.value)
+		{
+			Cvar_SetValueQuick(&r_lerpmodels, 0);
+			Cvar_SetValueQuick(&r_lerpmove, 0);
+		}
+		else
+		{
+			Cvar_SetValueQuick(&r_lerpmodels, 1);
+			Cvar_SetValueQuick(&r_lerpmove,  1);
+		}
+		break;
+	case EXTRAS_FPSCAP:
+		{
+			static int caps[] = {30, 60, 72, 120, 144, 500, 0};
+			int best = 0, bestdiff = INT_MAX, diff, i;
+			for (i = 0; i < countof(caps); i++)
+			{
+				diff = abs((int)host_maxfps.value - caps[i]);
+				if (diff < bestdiff)
+				{
+					bestdiff = diff;
+					best = i;
+				}
+			}
+			best += dir;
+			best = CLAMP(0, best, countof(caps)-1);
+			Cvar_SetValueQuick (&host_maxfps, caps[best]);
+		}
+		break;
+	case EXTRAS_YIELD:
+		Cvar_SetQuick (&sys_throttle, sys_throttle.value?"0":sys_throttle.default_string);
+		break;
+	case EXTRAS_RENDERSCALE:
+		m = r_scale.value-dir;
+		m = CLAMP(1, m, 4);
+		Cvar_SetValueQuick(&r_scale, m);
+		break;
+	case EXTRAS_NETEXTENSIONS:
+		Cvar_SetValueQuick (&cl_nopext, !cl_nopext.value);
+		break;
+	case EXTRAS_QCEXTENSIONS:
+		Cvar_SetValueQuick (&pr_checkextension, !pr_checkextension.value);
+		break;
+	case EXTRAS_CLASSICPARTICLES:
+		Cvar_SetValueQuick (&r_particles, (r_particles.value==1)?2:1);
+		break;
+	case EXTRAS_ITEMS:	//not a real option
+		break;
+	}
+}
+
+void M_Extras_Draw (void)
+{
+	extern cvar_t pr_checkextension, r_replacemodels, gl_load24bit, cl_nopext, r_lerpmodels, r_lerpmove, host_maxfps, sys_throttle, r_particles;
+	int m;
+	qpic_t	*p;
+	enum extras_e i;
+
+	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
+	p = Draw_CachePic ("gfx/p_option.lmp");
+	M_DrawPic ( (320-p->width)/2, 4, p);
+
+	for (i = 0; i < EXTRAS_ITEMS; i++)
+	{
+		int y = 32 + 8*i;
+		switch(i)
+		{
+		case EXTRAS_FILTERING:
+			M_Print (16, y,	"     Texture Filtering");
+			m = TexMgr_GetTextureMode();
+			switch(m)
+			{
+			case 0:
+				M_Print (220, 32 + 8*i, "nearest");
+				break;
+			case 1:
+				M_Print (220, 32 + 8*i, "linear");
+				break;
+			default:
+				M_Print (220, 32 + 8*i, va("anisotropic %i", m));
+				break;
+			}
+			break;
+		case EXTRAS_EXTERNALTEX:
+			M_Print (16, y,	"  Replacement Textures");
+			M_DrawCheckbox (220, y, !!gl_load24bit.value);
+			break;
+		case EXTRAS_REPLACEMENTMODELS:
+			M_Print (16, y,	"    Replacement Models");
+			M_DrawCheckbox (220, y, !!*r_replacemodels.string);
+			break;
+		case EXTRAS_MODELLERP:
+			M_Print (16, y,	"            Model Lerp");
+			M_DrawCheckbox(220, y, !!r_lerpmodels.value && !!r_lerpmove.value);
+			break;
+		case EXTRAS_FPSCAP:
+			M_Print (16, y,	"           Maximum FPS");
+			if (host_maxfps.value)
+				M_Print (220, y, va("%g", host_maxfps.value));
+			else
+				M_Print (220, y, "uncapped");
+			break;
+		case EXTRAS_YIELD:
+			M_Print (16, y,	"  Sleep Between Frames");
+			if (sys_throttle.value)
+				M_Print (220, y, "on");
+			else
+				M_Print (220, y, "off");
+			break;
+		case EXTRAS_RENDERSCALE:
+			M_Print (16, y,	"          Render Scale");
+			if (r_scale.value==1)
+				M_Print (220, y, "native");
+			else
+				M_Print (220, y, va("1/%g", r_scale.value));
+			break;
+		case EXTRAS_NETEXTENSIONS:
+			M_Print (16, y,	"   Protocol Extensions");
+			M_Print (220, y, cl_nopext.value?"blocked":"enabled");
+			break;
+		case EXTRAS_QCEXTENSIONS:
+			M_Print (16, y,	"         QC Extensions");
+			M_Print (220, y, pr_checkextension.value?"enabled":"blocked");
+			break;
+
+		case EXTRAS_CLASSICPARTICLES:
+			M_Print (16, y,	"     Classic Particles");
+			if (r_particles.value == 1)
+				M_Print (220, y, "disabled");
+			else if (r_particles.value == 1)
+				M_Print (220, y, "round");
+			else if (r_particles.value == 2)
+				M_Print (220, y, "square");
+			else
+				M_Print (220, y, "?!?");
+			break;
+
+		case EXTRAS_ITEMS:	//unreachable.
+			break;
+		}
+	}
+
+// cursor
+	M_DrawCharacter (200, 32 + extras_cursor*8, 12+((int)(realtime*4)&1));
+}
+
+
+void M_Extras_Key (int k)
+{
+	switch (k)
+	{
+	case K_ESCAPE:
+	case K_BBUTTON:
+		M_Menu_Main_f ();
+		break;
+
+	case K_ENTER:
+	case K_KP_ENTER:
+	case K_ABUTTON:
+		m_entersound = true;
+		switch (extras_cursor)
+		{
+		default:
+			M_Extras_AdjustSliders (1);
+			break;
+		}
+		return;
+
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (extras_cursor <= 0)
+			extras_cursor = EXTRAS_ITEMS-1;
+		else
+			extras_cursor--;
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		extras_cursor++;
+		if (extras_cursor >= EXTRAS_ITEMS)
+			extras_cursor = 0;
+		break;
+
+	case K_LEFTARROW:
+		M_Extras_AdjustSliders (-1);
+		break;
+
+	case K_RIGHTARROW:
+		M_Extras_AdjustSliders (1);
 		break;
 	}
 }
@@ -2722,6 +2987,7 @@ static struct
 	{"menu_setup", M_Menu_Setup_f},
 	{"menu_options", M_Menu_Options_f},
 	{"menu_keys", M_Menu_Keys_f},
+	{"menu_extras", M_Menu_Extras_f},
 	{"menu_video", M_Menu_Video_f},
 	{"help", M_Menu_Help_f},
 	{"menu_quit", M_Menu_Quit_f},
@@ -2969,6 +3235,10 @@ void M_Draw (void)
 		M_Keys_Draw ();
 		break;
 
+	case m_extras:
+		M_Extras_Draw ();
+		return;
+
 	case m_video:
 		M_Video_Draw ();
 		break;
@@ -3058,6 +3328,10 @@ void M_Keydown (int key)
 
 	case m_keys:
 		M_Keys_Key (key);
+		return;
+
+	case m_extras:
+		M_Extras_Key (key);
 		return;
 
 	case m_video:

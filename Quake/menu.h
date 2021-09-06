@@ -34,6 +34,7 @@ enum m_state_e {
 	m_net,
 	m_options,
 	m_video,
+	m_extras,
 	m_keys,
 	m_help,
 	m_quit,

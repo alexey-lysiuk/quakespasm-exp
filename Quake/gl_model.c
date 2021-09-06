@@ -40,6 +40,7 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash);
 cvar_t	external_ents = {"external_ents", "1", CVAR_ARCHIVE};
 cvar_t	gl_load24bit = {"gl_load24bit", "1", CVAR_ARCHIVE};
 cvar_t	mod_ignorelmscale = {"mod_ignorelmscale", "0"};
+cvar_t	r_replacemodels = {"r_replacemodels", "", CVAR_ARCHIVE};
 cvar_t	external_vis = {"external_vis", "1", CVAR_ARCHIVE};
 
 static byte	*mod_novis;
@@ -66,6 +67,7 @@ void Mod_Init (void)
 	Cvar_RegisterVariable (&external_vis);
 	Cvar_RegisterVariable (&external_ents);
 	Cvar_RegisterVariable (&gl_load24bit);
+	Cvar_RegisterVariable (&r_replacemodels);
 	Cvar_RegisterVariable (&mod_ignorelmscale);
 
 	//johnfitz -- create notexture miptex
@@ -341,7 +343,7 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 		buf = NULL;
 	else
 	{
-		const char *exts = gl_load24bit.value?"iqm":"";
+		const char *exts = r_replacemodels.string;
 		char *e;
 		char newname[MAX_QPATH];
 		buf = NULL;
