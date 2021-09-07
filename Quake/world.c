@@ -606,7 +606,7 @@ edict_t	*SV_TestEntityPosition (edict_t *ent)
 {
 	trace_t	trace;
 
-	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, 0, ent);
+	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, ((ent->v.solid == SOLID_NOT || ent->v.solid == SOLID_TRIGGER || ent->v.solid == SOLID_EXT_BSPTRIGGER)?MOVE_NOMONSTERS:0), ent);
 
 	if (trace.startsolid)
 		return qcvm->edicts;
