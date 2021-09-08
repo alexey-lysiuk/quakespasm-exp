@@ -681,7 +681,7 @@ void SV_PushMove (edict_t *pusher, float movetime)
 	int			mark; //johnfitz
 	float	solid_backup;
 
-	if ((pusher->v.avelocity[0] || pusher->v.avelocity[1] || pusher->v.avelocity[2]) && pr_checkextension.value)
+	if ((pusher->v.avelocity[0] || pusher->v.avelocity[1] || pusher->v.avelocity[2]) && !qcvm->brokenpushrotate)
 	{	//spike -- added this block for proper rotations
 		mark = Hunk_LowMark ();
 		if (SV_PushMoveAngles (pusher, movetime))

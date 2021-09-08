@@ -7476,7 +7476,17 @@ qboolean PR_Can_Ent_Scale(unsigned int prot, unsigned int pext1, unsigned int pe
 qboolean PR_CanPrecacheAnyTime(unsigned int prot, unsigned int pext1, unsigned int pext2)
 {
 	qcvm->precacheanytime = true;
-	return true;
+	return qcvm->precacheanytime;
+}
+qboolean PR_CanPushRotate(unsigned int prot, unsigned int pext1, unsigned int pext2)
+{
+	qcvm->brokenpushrotate = false;
+	return !qcvm->brokenpushrotate;
+}
+qboolean PR_Can_EF_Red_Blue(unsigned int prot, unsigned int pext1, unsigned int pext2)
+{
+	qcvm->brokeneffects = false;
+	return !qcvm->brokeneffects;
 }
 static struct
 {
@@ -7488,8 +7498,8 @@ static struct
 	{"DP_CON_SETA"},
 	{"DP_CSQC_QUERYRENDERENTITY"},
 	{"DP_EF_NOSHADOW"},
-	{"DP_EF_BLUE"},
-	{"DP_EF_RED"},
+	{"DP_EF_BLUE",				PR_Can_EF_Red_Blue},
+	{"DP_EF_RED",				PR_Can_EF_Red_Blue},
 	{"DP_ENT_ALPHA",			PR_Can_Ent_Alpha},	//already in quakespasm, supposedly.
 	{"DP_ENT_COLORMOD",			PR_Can_Ent_ColorMod},
 	{"DP_ENT_SCALE",			PR_Can_Ent_Scale},
@@ -7543,6 +7553,7 @@ static struct
 	{"DP_SV_POINTSOUND"},
 	{"DP_SV_PRECACHEANYTIME",	PR_CanPrecacheAnyTime},
 	{"DP_SV_PRINT"},
+	{"DP_SV_ROTATINGBMODEL",	PR_CanPushRotate},
 	{"DP_SV_SETCOLOR"},
 	{"DP_SV_SPAWNFUNC_PREFIX"},
 	{"DP_SV_WRITEUNTERMINATEDSTRING"},
@@ -7887,8 +7898,15 @@ void PR_EnableExtensions(ddef_t *pr_globaldefs)
 	qcvm->numbuiltins = i;
 	if (!pr_checkextension.value && qcvm == &sv.qcvm)
 	{
+		qcvm->brokenpushrotate = true;
 		Con_DPrintf("not enabling qc extensions\n");
 		return;
+	}
+	if (PR_FindExtGlobal(ev_float, "FL_ISBOT"))
+	{
+		qcvm->brokenpushrotate = true;
+		qcvm->brokenbouncemissile = true;
+		qcvm->brokeneffects = true;
 	}
 
 #define QCEXTFUNC(n,t) qcvm->extfuncs.n = PR_FindExtFunction(#n);
@@ -8319,6 +8337,8 @@ void PR_DumpPlatform_f(void)
 		fprintf(f, "const float EF_MUZZLEFLASH = %i;\n", EF_MUZZLEFLASH);
 		fprintf(f, "const float EF_BRIGHTLIGHT = %i;\n", EF_BRIGHTLIGHT);
 		fprintf(f, "const float EF_DIMLIGHT = %i;\n", EF_DIMLIGHT);
+		fprintf(f, "const float EF_BLUE = %i;\n", EF_BLUE);
+		fprintf(f, "const float EF_RED = %i;\n", EF_RED);
 		fprintf(f, "const float EF_FULLBRIGHT = %i;\n", EF_FULLBRIGHT);
 		fprintf(f, "const float EF_NOSHADOW = %i;\n", EF_NOSHADOW);
 		fprintf(f, "const float EF_NOMODELFLAGS = %i;\n", EF_NOMODELFLAGS);

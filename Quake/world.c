@@ -439,7 +439,7 @@ void SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 		return;
 
 // set the abs box
-	if ((ent->v.solid == SOLID_BSP||ent->v.solid == SOLID_EXT_BSPTRIGGER) && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]) && pr_checkextension.value)
+	if ((ent->v.solid == SOLID_BSP||ent->v.solid == SOLID_EXT_BSPTRIGGER) && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]) && !qcvm->brokenpushrotate)
 	{	// expand for rotation the lame way. hopefully there's an origin brush in there.
 		int i;
 		float v1,v2;
@@ -839,7 +839,7 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 	VectorSubtract (end, offset, end_l);
 
 // trace a line through the apropriate clipping hull
-	if ((ent->v.solid == SOLID_BSP || ent->v.solid == SOLID_EXT_BSPTRIGGER) && (ent->v.angles[0]||ent->v.angles[1]||ent->v.angles[2]) && pr_checkextension.value && qcvm->edicts != ent)	//don't rotate the world entity's collisions (its not networked, and some maps are buggy, resulting in screwed collisions)
+	if ((ent->v.solid == SOLID_BSP || ent->v.solid == SOLID_EXT_BSPTRIGGER) && (ent->v.angles[0]||ent->v.angles[1]||ent->v.angles[2]) && !qcvm->brokenpushrotate && qcvm->edicts != ent)	//don't rotate the world entity's collisions (its not networked, and some maps are buggy, resulting in screwed collisions)
 	{
 #define DotProductTranspose(v,m,a) ((v)[0]*(m)[0][a] + (v)[1]*(m)[1][a] + (v)[2]*(m)[2][a])
 		vec3_t axis[3], start_r, end_r, tmp;
@@ -1074,7 +1074,7 @@ static void World_ClipToNetwork ( moveclip_t *clip )
 			VectorSubtract (clip->end, offset, end_l);
 
 		// trace a line through the apropriate clipping hull
-			if (touch->netstate.solidsize == ES_SOLID_BSP && (touch->angles[0]||touch->angles[1]||touch->angles[2]) && pr_checkextension.value)	//don't rotate the world entity's collisions (its not networked, and some maps are buggy, resulting in screwed collisions)
+			if (touch->netstate.solidsize == ES_SOLID_BSP && (touch->angles[0]||touch->angles[1]||touch->angles[2]) && !qcvm->brokenpushrotate)	//don't rotate the world entity's collisions (its not networked, and some maps are buggy, resulting in screwed collisions)
 			{
 		#define DotProductTranspose(v,m,a) ((v)[0]*(m)[0][a] + (v)[1]*(m)[1][a] + (v)[2]*(m)[2][a])
 				vec3_t axis[3], start_r, end_r, tmp;

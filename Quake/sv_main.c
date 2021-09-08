@@ -1031,7 +1031,9 @@ sendremove:
 
 				pr_global_struct->self = EDICT_TO_PROG(ed);
 				G_INT(OFS_PARM0) = EDICT_TO_PROG(client->edict);
-				G_FLOAT(OFS_PARM1) = bits & SENDFLAG_USABLE;
+				G_FLOAT(OFS_PARM1+0) = (bits>>0) & 0xffffff;
+				G_FLOAT(OFS_PARM1+1) = (bits>>24) & 0xffffff;
+				G_FLOAT(OFS_PARM1+2) = 0;//(bits>>48) & SENDFLAG_USABLE;
 				PR_ExecuteProgram(GetEdictFieldEval(ed, SendEntity)->function);
 				if (G_FLOAT(OFS_RETURN))
 				{
@@ -1135,6 +1137,8 @@ void SV_BuildEntityState(edict_t *ent, entity_state_t *state)
 	else
 		state->tagindex = 0;
 	state->effects = ent->v.effects;
+	if (qcvm->brokeneffects)
+		state->effects &= ~0xf0u;
 	if ((val = GetEdictFieldValue(ent, qcvm->extfields.modelflags)))
 		state->effects |= ((unsigned int)val->_float)<<24;
 	if (!ent->v.movetype || ent->v.movetype == MOVETYPE_STEP)

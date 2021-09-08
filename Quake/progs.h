@@ -374,7 +374,9 @@ struct qcvm_s
 	qboolean cursorforced;
 	void *cursorhandle;	//video code.
 	qboolean nogameaccess;	//simplecsqc isn't allowed to poke properties of the actual game (to prevent cheats when there's no restrictions on what it can access)
-	qboolean brokenbouncemissile; //2021 rerelease redefined it, breaking any mod that depends on it.
+	qboolean brokenbouncemissile;	//2021 rerelease redefined it, breaking any mod that depends on it.
+	qboolean brokenpushrotate;		//2021 rerelease fucks over avelocity on movetype_push.
+	qboolean brokeneffects;			//2021 rerelease redefined EF_RED and EF_BLUE.
 	qboolean precacheanytime; //mod queried for support. this is used to spam warnings to anyone that doesn't bother checking for it first. this annoyance is to reduce compat issues.
 
 	//was static inside pr_edict
