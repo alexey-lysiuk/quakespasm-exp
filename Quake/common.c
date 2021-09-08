@@ -3446,7 +3446,6 @@ LOC_LoadFile
 */
 void LOC_LoadFile (const char *file)
 {
-	char path[1024];
 	int i,lineno;
 	char *cursor;
 
@@ -3464,7 +3463,7 @@ void LOC_LoadFile (const char *file)
 
 	Con_Printf("\nLanguage initialization\n");
 
-	localization.text = COM_LoadFile(file, LOADFILE_MALLOC, NULL);
+	localization.text = (char*)COM_LoadFile(file, LOADFILE_MALLOC, NULL);
 	if (!localization.text)
 	{
 		Con_Printf("Couldn't load '%s'\nfrom '%s'\n", file, com_basedir);
@@ -3714,13 +3713,11 @@ otherwise returns a negative value and leaves the pointer unchanged
 static int LOC_ParseArg (const char **pstr)
 {
 	int arg;
-	const char *start;
 	const char *str = *pstr;
 
 	// opening brace
-	if (*str != '{')
+	if (*str++ != '{')
 		return -1;
-	start = ++str;
 
 	// optional index, defaulting to 0
 	arg = 0;
