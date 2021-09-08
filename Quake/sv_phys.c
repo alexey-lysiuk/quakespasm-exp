@@ -444,7 +444,7 @@ trace_t SV_PushEntity (edict_t *ent, vec3_t push)
 
 	if (ent->v.movetype == MOVETYPE_FLYMISSILE)
 		trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_MISSILE, ent);
-	else if (ent->v.solid == SOLID_TRIGGER || ent->v.solid == SOLID_NOT)
+	else if (ent->v.solid == SOLID_TRIGGER || ent->v.solid == SOLID_EXT_BSPTRIGGER || ent->v.solid == SOLID_NOT)
 	// only clip against bmodels
 		trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_NOMONSTERS, ent);
 	else
@@ -633,7 +633,7 @@ static qboolean SV_PushMoveAngles (edict_t *pusher, float movetime)
 		if (pusher->v.skin < 0)
 			continue;
 
-		if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER)
+		if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER || check->v.solid == SOLID_EXT_BSPTRIGGER)
 		{	// corpse
 			check->v.mins[0] = check->v.mins[1] = 0;
 			VectorCopy (check->v.mins, check->v.maxs);
@@ -792,7 +792,7 @@ void SV_PushMove (edict_t *pusher, float movetime)
 		{	// fail the move
 			if (check->v.mins[0] == check->v.maxs[0])
 				continue;
-			if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER)
+			if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER || check->v.solid == SOLID_EXT_BSPTRIGGER)
 			{	// corpse
 				check->v.mins[0] = check->v.mins[1] = 0;
 				VectorCopy (check->v.mins, check->v.maxs);

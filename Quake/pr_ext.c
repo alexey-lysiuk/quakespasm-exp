@@ -7570,6 +7570,7 @@ static struct
 	{"FTE_QC_INFOKEY"},
 	{"FTE_QC_INTCONV"},
 	{"FTE_QC_MULTICAST"},
+	{"FTE_SOLID_BSPTRIGGER"},
 	{"FTE_STRINGS"},
 #ifdef PSET_SCRIPT
 	{"FTE_SV_POINTPARTICLES",	PR_Can_Particles},
@@ -8265,6 +8266,7 @@ void PR_DumpPlatform_f(void)
 		fprintf(f, "const float SOLID_NOT = %i;\n", SOLID_NOT);
 		fprintf(f, "const float SOLID_SLIDEBOX = %i;\n", SOLID_SLIDEBOX);
 		fprintf(f, "const float SOLID_TRIGGER = %i;\n", SOLID_TRIGGER);
+		fprintf(f, "const float SOLID_BSPTRIGGER = %i; /*requires FTE_SOLID_BSPTRIGGER*/\n", SOLID_EXT_BSPTRIGGER);
 
 		fprintf(f, "const float MOVETYPE_NONE = %i;\n", MOVETYPE_NONE);
 		fprintf(f, "const float MOVETYPE_WALK = %i;\n", MOVETYPE_WALK);

@@ -138,7 +138,7 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 	hull_t		*hull;
 
 // decide which clipping hull to use, based on the size
-	if (ent->v.solid == SOLID_BSP)
+	if (ent->v.solid == SOLID_BSP || ent->v.solid == SOLID_EXT_BSPTRIGGER)
 	{	// explicit hulls in the BSP model
 		if (ent->v.movetype != MOVETYPE_PUSH && !pr_checkextension.value)
 			Con_Warning ("SOLID_BSP without MOVETYPE_PUSH (%s at %f %f %f)\n",
@@ -284,7 +284,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		touch = EDICT_FROM_AREA(l);
 		if (touch == ent)
 			continue;
-		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
+		if (!touch->v.touch || (touch->v.solid != SOLID_TRIGGER && touch->v.solid != SOLID_EXT_BSPTRIGGER))
 			continue;
 		if (ent->v.absmin[0] > touch->v.absmax[0]
 		|| ent->v.absmin[1] > touch->v.absmax[1]
@@ -342,7 +342,7 @@ void SV_TouchLinks (edict_t *ent)
 	// edicts later in the list no longer touch
 		if (touch == ent)
 			continue;
-		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
+		if (!touch->v.touch || (touch->v.solid != SOLID_TRIGGER && touch->v.solid != SOLID_EXT_BSPTRIGGER))
 			continue;
 		if (ent->v.absmin[0] > touch->v.absmax[0]
 		|| ent->v.absmin[1] > touch->v.absmax[1]
@@ -351,6 +351,13 @@ void SV_TouchLinks (edict_t *ent)
 		|| ent->v.absmax[1] < touch->v.absmin[1]
 		|| ent->v.absmax[2] < touch->v.absmin[2] )
 			continue;
+
+		if (touch->v.solid == SOLID_EXT_BSPTRIGGER)
+		{
+			if (!SV_ClipMoveToEntity(touch, ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, CONTENTMASK_ANYSOLID).startsolid)
+				continue;
+		}
+
 		old_self = pr_global_struct->self;
 		old_other = pr_global_struct->other;
 
@@ -432,7 +439,7 @@ void SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 		return;
 
 // set the abs box
-	if (ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]) && pr_checkextension.value)
+	if ((ent->v.solid == SOLID_BSP||ent->v.solid == SOLID_EXT_BSPTRIGGER) && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]) && pr_checkextension.value)
 	{	// expand for rotation the lame way. hopefully there's an origin brush in there.
 		int i;
 		float v1,v2;
@@ -503,7 +510,7 @@ void SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 
 // link it in
 
-	if (ent->v.solid == SOLID_TRIGGER)
+	if (ent->v.solid == SOLID_TRIGGER || ent->v.solid == SOLID_EXT_BSPTRIGGER)
 		InsertLinkBefore (&ent->area, &node->trigger_edicts);
 	else
 		InsertLinkBefore (&ent->area, &node->solid_edicts);
@@ -832,7 +839,7 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 	VectorSubtract (end, offset, end_l);
 
 // trace a line through the apropriate clipping hull
-	if (ent->v.solid == SOLID_BSP && (ent->v.angles[0]||ent->v.angles[1]||ent->v.angles[2]) && pr_checkextension.value && qcvm->edicts != ent)	//don't rotate the world entity's collisions (its not networked, and some maps are buggy, resulting in screwed collisions)
+	if ((ent->v.solid == SOLID_BSP || ent->v.solid == SOLID_EXT_BSPTRIGGER) && (ent->v.angles[0]||ent->v.angles[1]||ent->v.angles[2]) && pr_checkextension.value && qcvm->edicts != ent)	//don't rotate the world entity's collisions (its not networked, and some maps are buggy, resulting in screwed collisions)
 	{
 #define DotProductTranspose(v,m,a) ((v)[0]*(m)[0][a] + (v)[1]*(m)[1][a] + (v)[2]*(m)[2][a])
 		vec3_t axis[3], start_r, end_r, tmp;
@@ -892,7 +899,7 @@ static void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 			continue;
 		if (touch == clip->passedict)
 			continue;
-		if (touch->v.solid == SOLID_TRIGGER)
+		if (touch->v.solid == SOLID_TRIGGER || touch->v.solid == SOLID_EXT_BSPTRIGGER)
 			Sys_Error ("Trigger in clipping list");
 
 		if (clip->type == MOVE_NOMONSTERS && touch->v.solid != SOLID_BSP)

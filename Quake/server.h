@@ -249,6 +249,7 @@ typedef struct client_s
 #define	SOLID_SLIDEBOX			3		// touch on edge, but not an onground
 #define	SOLID_BSP				4		// bsp clip, touch on edge, block
 #define SOLID_EXT_CORPSE		5		// passes through slidebox+other corpses, but not bsp/bbox/triggers
+#define SOLID_EXT_BSPTRIGGER	22
 
 // edict->deadflag values
 #define	DEAD_NO					0
