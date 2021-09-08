@@ -2137,6 +2137,11 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 		&& strcmp(ext, "jpg") != 0
 		&& strcmp(ext, "jpeg") != 0
 		&& strcmp(ext, "dds") != 0
+		&& strcmp(ext, "lmp") != 0
+		&& strcmp(ext, "iqm") != 0
+		&& strcmp(ext, "md3") != 0
+		&& strcmp(ext, "md5mesh") != 0
+		&& strcmp(ext, "md5anim") != 0
 		&& strcmp(ext, "lit") != 0
 		&& strcmp(ext, "vis") != 0
 		&& strcmp(ext, "ent") != 0)

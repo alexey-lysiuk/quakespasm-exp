@@ -754,15 +754,19 @@ static void CL_LoadCSProgs(void)
 		char versionedname[MAX_QPATH];
 		unsigned int csqchash;
 		size_t csqcsize;
+		const char *val;
 		PR_SwitchQCVM(&cl.qcvm);
-		csqchash = strtoul(Info_GetKey(cl.serverinfo, "*csprogs", versionedname, sizeof(versionedname)), NULL, 0);
+		val = Info_GetKey(cl.serverinfo, "*csprogs", versionedname, sizeof(versionedname));
+		csqchash = (unsigned int)strtoul(val, NULL, 0);
+		if (*val)
+			snprintf(versionedname, MAX_QPATH, "csprogsvers/%x.dat", csqchash);
+		else
+			*versionedname = 0;
 		csqcsize = strtoul(Info_GetKey(cl.serverinfo, "*csprogssize", versionedname, sizeof(versionedname)), NULL, 0);
-
-		snprintf(versionedname, MAX_QPATH, "csprogsvers/%x.dat", csqchash);
 
 		//try csprogs.dat first, then fall back on progs.dat in case someone tried merging the two.
 		//we only care about it if it actually contains a CSQC_DrawHud, otherwise its either just a (misnamed) ssqc progs or a full csqc progs that would just crash us on 3d stuff.
-		if ((PR_LoadProgs(versionedname, false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||cl.qcvm.extfuncs.CSQC_UpdateView))||
+		if ((*versionedname && PR_LoadProgs(versionedname, false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||cl.qcvm.extfuncs.CSQC_UpdateView))||
 			(PR_LoadProgs("csprogs.dat", false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||qcvm->extfuncs.CSQC_DrawScores||cl.qcvm.extfuncs.CSQC_UpdateView))||
 			(PR_LoadProgs("progs.dat",   false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||cl.qcvm.extfuncs.CSQC_UpdateView)))
 		{
@@ -772,7 +776,7 @@ static void CL_LoadCSProgs(void)
 			memset(qcvm->edicts, 0, qcvm->num_edicts*qcvm->edict_size);
 
 			//in terms of exploit protection this is kinda pointless as someone can just strip out this check and compile themselves. oh well.
-			if ((qcvm->progshash == csqchash && qcvm->progssize == csqcsize) || cls.demoplayback)
+			if ((*versionedname && qcvm->progshash == csqchash && qcvm->progssize == csqcsize) || cls.demoplayback)
 				fullcsqc = true;
 			else
 			{	//okay, it doesn't match. full csqc is disallowed to prevent cheats, but we still allow simplecsqc...

@@ -1477,13 +1477,14 @@ static void Matrix3x4_RM_Transform4(const float *matrix, const float *vector, fl
 	product[1] = matrix[4]*vector[0] + matrix[5]*vector[1] + matrix[6]*vector[2] + matrix[7]*vector[3];
 	product[2] = matrix[8]*vector[0] + matrix[9]*vector[1] + matrix[10]*vector[2] + matrix[11]*vector[3];
 }
-static void MD5_BakeInfluences(bonepose_t *outposes, iqmvert_t *vert, struct md5vertinfo_s *vinfo, struct md5weightinfo_s *weight, size_t numverts, size_t numweights)
+static void MD5_BakeInfluences(const char *fname, bonepose_t *outposes, iqmvert_t *vert, struct md5vertinfo_s *vinfo, struct md5weightinfo_s *weight, size_t numverts, size_t numweights)
 {
 	size_t v, i, lowidx, k;
 	struct md5weightinfo_s *w;
 	vec3_t pos;
 	float lowval, scale;
-	unsigned int overinfluenced = 0;
+	unsigned int maxinfluences = 0;
+	float scaleimprecision = 1;
 	for (v = 0; v < numverts; v++, vert++, vinfo++)
 	{
 		//st were already loaded
@@ -1494,7 +1495,9 @@ static void MD5_BakeInfluences(bonepose_t *outposes, iqmvert_t *vert, struct md5
 		vert->rgba[0] = vert->rgba[1] = vert->rgba[2] = vert->rgba[3] = 1;	//for consistency with iqm, though irrelevant here
 
 		if (vinfo->firstweight + vinfo->count > numweights)
-			Sys_Error ("weight index out of bounds");
+			Sys_Error ("%s: weight index out of bounds", fname);
+		if (maxinfluences < vinfo->count)
+			maxinfluences = vinfo->count;
 		w = weight + vinfo->firstweight;
 		for (i = 0; i < vinfo->count; i++, w++)
 		{
@@ -1522,8 +1525,6 @@ static void MD5_BakeInfluences(bonepose_t *outposes, iqmvert_t *vert, struct md5
 					vert->weight[lowidx] = w->pos[3];
 					vert->idx[lowidx] = w->bone;
 				}
-				else
-					overinfluenced++;
 			}
 		}
 
@@ -1531,15 +1532,17 @@ static void MD5_BakeInfluences(bonepose_t *outposes, iqmvert_t *vert, struct md5
 		scale = vert->weight[0] + vert->weight[1] + vert->weight[2] + vert->weight[3];
 		if (scale>0)
 		{
+			if (scaleimprecision < scale)
+				scaleimprecision = scale;
 			scale = 1/scale;
-			for (k = 0; k < 4; k++)
+			for (k = 0; k < countof(vert->weight); k++)
 				vert->weight[k] *= scale;
 		}
 		else	//something bad...
 			vert->weight[0] = 1, vert->weight[1] = vert->weight[2] = vert->weight[3] = 0;
 	}
-	if (overinfluenced)
-		Con_Warning("%u too many influences\n", overinfluenced);
+	if (maxinfluences > countof(vert->weight))
+		Con_DWarning("%s uses up to %u influences per vertex (weakest: %g)\n", fname, maxinfluences, scaleimprecision);
 }
 static void MD5_ComputeNormals(iqmvert_t *vert, size_t numverts, unsigned short *indexes, size_t numindexes)
 {
@@ -1862,7 +1865,7 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 			q_snprintf(texname, sizeof(texname), "progs/%s_%02d_%02d", com_token, surf->numskins, 0);
 			surf->gltextures[surf->numskins][0] = TexMgr_LoadImage(mod, texname, surf->skinwidth, surf->skinheight, SRC_EXTERNAL, NULL, texname, 0, TEXPREF_ALLOWMISSING|TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP);
 			if (!surf->gltextures[surf->numskins][0])
-				continue;
+				break;
 			surf->gltextures[surf->numskins][3] = surf->gltextures[surf->numskins][2] = surf->gltextures[surf->numskins][1] = surf->gltextures[surf->numskins][0];
 			surf->fbtextures[surf->numskins][0] = surf->fbtextures[surf->numskins][1] = surf->fbtextures[surf->numskins][2] = surf->fbtextures[surf->numskins][3] = NULL;
 		}
@@ -1929,7 +1932,7 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 			MD5EXPECT(")");
 		}
 		//so make it gpu-friendly.
-		MD5_BakeInfluences(outposes, poutvert, vinfo, weight, surf->numverts, numweights);
+		MD5_BakeInfluences(fname, outposes, poutvert, vinfo, weight, surf->numverts, numweights);
 		//and now make up the normals that the format lacks. we'll still probably have issues from seams, but then so did qme, so at least its faithful... :P
 		MD5_ComputeNormals(poutvert, surf->numverts, poutindexes, surf->numindexes);
 
