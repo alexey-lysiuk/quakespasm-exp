@@ -3072,6 +3072,30 @@ static void COM_Dir_f(void)
 		COM_ListAllFiles(NULL, Cmd_Argv(i), COM_Dir_Result, 0, NULL);
 }
 
+static qboolean COM_SameDirs(const char *dir1, const char *dir2)
+{
+#ifdef _WIN32
+	//windows docs say it doesn't provide any inode equivelent for most windows filesystems.
+	char p1[4096], p2[4096];
+	size_t l;
+	GetFullPathName(dir1, countof(p1), p1, NULL);
+	GetFullPathName(dir2, countof(p2), p2, NULL);
+	//kill any trailing slashes, to make sure they're actually the same...
+	for (l = strlen(p1); l > 0 && (p1[l-1] == '/' || p1[l-1] == '\\'); )
+		p1[--l] = 0;
+	for (l = strlen(p2); l > 0 && (p2[l-1] == '/' || p2[l-1] == '\\'); )
+		p2[--l] = 0;
+	return !strcmp(p1, p2);
+#else
+	struct stat bd, gd;
+	if (!stat(dir1, &bd) && bd.st_ino &&
+		!stat(dir2, &gd) && gd.st_ino &&
+		bd.st_dev == gd.st_dev && bd.st_ino == gd.st_ino)
+		return true;
+#endif
+	return false;
+}
+
 /*
 =================
 COM_InitFilesystem
@@ -3161,6 +3185,32 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 		if (p != NULL)
 			COM_AddGameDirectory (p);
 	}
+
+	if (com_argc>1 && (p=com_argv[1]))
+		if (*p != '+' && *p != '-')
+		{
+			//weird variation of COM_SkipPath that doesn't get confused over trailing slashes.
+			char *n = va("%s", p);
+			size_t l = strlen(n);
+			p = n;
+			while (l > 0 && (n[l-1] == '/' || n[l-1] == '\\'))
+				n[--l] = 0;
+
+			while (l --> 0)
+			{
+				if (n[l] == '/' || n[l] == '\\')
+				{
+					l++;
+					break;
+				}
+			}
+			n+=l;
+			if (COM_SameDirs(va("%s", p), va("%s/%s", com_basedir, n)))
+			{
+				com_modified = true;
+				COM_AddGameDirectory (n);
+			}
+		}
 
 	COM_CheckRegistered ();
 }
