@@ -1845,7 +1845,10 @@ void COM_Init (void)
 	}
 
 	if (COM_CheckParm("-fitz"))
+	{
 		fitzmode = true;
+		cl_demoreel.string = "1";	//shouldn't be registered yet.
+	}
 #ifdef _DEBUG
 	Cmd_AddCommand ("fitztest", FitzTest_f); //johnfitz
 #endif

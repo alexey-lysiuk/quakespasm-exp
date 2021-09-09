@@ -251,8 +251,10 @@ void M_Main_Key (int key)
 		m_state = m_none;
 		cls.demonum = m_save_demonum;
 		IN_UpdateGrabs();
-		if (!fitzmode)	/* QuakeSpasm customization: */
+		if (!cl_demoreel.value)	/* QuakeSpasm customization: */
 			break;
+		if (cl_demoreel.value >= 2 && cls.demonum == -1)
+			cls.demonum = 0;
 		if (cls.demonum != -1 && !cls.demoplayback && cls.state != ca_connected)
 			CL_NextDemo ();
 		break;
@@ -1628,6 +1630,7 @@ static enum extras_e
 	EXTRAS_MODELLERP,
 	EXTRAS_FPSCAP,
 	EXTRAS_YIELD,
+	EXTRAS_DEMOREEL,
 	EXTRAS_RENDERSCALE,
 	EXTRAS_NETEXTENSIONS,
 	EXTRAS_QCEXTENSIONS,
@@ -1713,6 +1716,14 @@ static void M_Extras_AdjustSliders (int dir)
 	case EXTRAS_YIELD:
 		Cvar_SetQuick (&sys_throttle, sys_throttle.value?"0":sys_throttle.default_string);
 		break;
+	case EXTRAS_DEMOREEL:
+		m = cl_demoreel.value+dir;
+		if (m < 0)
+			m = 2;
+		else if (m > 2)
+			m = 0;
+		Cvar_SetValueQuick (&cl_demoreel, m);
+		break;
 	case EXTRAS_RENDERSCALE:
 		m = r_scale.value-dir;
 		m = CLAMP(1, m, 4);
@@ -1787,6 +1798,15 @@ void M_Extras_Draw (void)
 			M_Print (16, y,	"  Sleep Between Frames");
 			if (sys_throttle.value)
 				M_Print (220, y, "on");
+			else
+				M_Print (220, y, "off");
+			break;
+		case EXTRAS_DEMOREEL:
+			M_Print (16, y,	"          Attract Mode");
+			if (cl_demoreel.value>1)
+				M_Print (220, y, "on");
+			else if (cl_demoreel.value)
+				M_Print (220, y, "startup only");
 			else
 				M_Print (220, y, "off");
 			break;
@@ -3237,7 +3257,7 @@ void M_Draw (void)
 
 	case m_extras:
 		M_Extras_Draw ();
-		return;
+		break;
 
 	case m_video:
 		M_Video_Draw ();

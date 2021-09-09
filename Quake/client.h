@@ -339,6 +339,7 @@ extern	cvar_t	cl_autofire;
 extern	cvar_t	cl_recordingdemo;
 extern	cvar_t	cl_shownet;
 extern	cvar_t	cl_nolerp;
+extern	cvar_t	cl_demoreel;
 
 extern	cvar_t	cfg_unbindall;
 
