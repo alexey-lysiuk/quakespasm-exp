@@ -46,10 +46,9 @@ WINDRES = windres
 
 STRIP = strip
 
-#CPUFLAGS= -mtune=i686
-#CPUFLAGS= -march=pentium4
 CPUFLAGS=
-LDFLAGS = -m32 -mwindows -Wl,--large-address-aware
+LDFLAGS = -m32 -mwindows -static-libgcc
+LDFLAGS += -Wl,--large-address-aware	#don't crash out with larger hunk sizes
 LDFLAGS += $(QSS_LDFLAGS)
 LDFLAGS += -Wl,--no-insert-timestamp   #prevent non-determinism in the exe header. mustn't be used for dlls.
 DFLAGS ?=

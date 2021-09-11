@@ -1770,18 +1770,6 @@ void COM_InitArgv (int argc, char **argv)
 	}
 }
 
-/*
-================
-Test_f -- johnfitz
-================
-*/
-#ifdef _DEBUG
-static void FitzTest_f (void)
-{
-}
-#endif
-
-
 entity_state_t nullentitystate;
 static void COM_SetupNullState(void)
 {
@@ -1849,9 +1837,6 @@ void COM_Init (void)
 		fitzmode = true;
 		cl_demoreel.string = "1";	//shouldn't be registered yet.
 	}
-#ifdef _DEBUG
-	Cmd_AddCommand ("fitztest", FitzTest_f); //johnfitz
-#endif
 
 	COM_SetupNullState();
 }
@@ -3179,11 +3164,13 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 			break;
 
 		p = com_argv[i + 1];
-		if (!*p || !strcmp(p, ".") || strstr(p, "..") || *p=='/' || *p=='\\' || strstr(p, ":"))
-			Sys_Error ("gamedir should be a single directory name, not a path\n");
-		com_modified = true;
 		if (p != NULL)
+		{
+			if (!*p || !strcmp(p, ".") || strstr(p, "..") || *p=='/' || *p=='\\' || strstr(p, ":"))
+				Sys_Error ("gamedir should be a single directory name, not a path\n");
+			com_modified = true;
 			COM_AddGameDirectory (p);
+		}
 	}
 
 	if (com_argc>1 && (p=com_argv[1]))

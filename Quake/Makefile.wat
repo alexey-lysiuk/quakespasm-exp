@@ -29,6 +29,8 @@ USE_ZLIB=0
 # ---------------------------
 
 CFLAGS_BASE = -zq -wx -bm -bt=nt -5s -sg -otexan -fp5 -fpi87 -ei -j -zp8
+# newer OpenWatcom versions enable W303 by default
+CFLAGS_BASE+= -wcd=303
 CFLAGS = $(CFLAGS_BASE)
 
 !ifneq USE_SDL2 1
