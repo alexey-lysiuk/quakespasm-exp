@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+extern gltexture_t *playertextures[MAX_SCOREBOARD]; //spike - to ensure skins don't get screwed randomly.
+
 qmodel_t	*loadmodel;
 char	loadname[32];	// for hunk tags
 
@@ -324,6 +326,7 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	byte	*buf;
 	byte	stackbuf[1024];		// avoid dirtying the cache heap
 	int	mod_type;
+	int i;
 
 	if (!mod->needload)
 	{
@@ -456,6 +459,10 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	}
 
 	Mod_SetExtraFlags (mod); //johnfitz. spike -- moved this to be generic, because most of the flags are anyway.
+
+	for (i = 0; i < countof(playertextures); i++)
+		if (playertextures[i] && playertextures[i]->owner == mod)
+			R_TranslateNewPlayerSkin(i);
 
 	return mod;
 }

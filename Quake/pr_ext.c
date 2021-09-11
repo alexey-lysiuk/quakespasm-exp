@@ -5435,20 +5435,20 @@ void PF_cl_playerkey_internal(int player, const char *key, qboolean retfloat)
 		q_snprintf(buf, sizeof(buf), "%g", cl.scores[player].entertime);
 	else if (!strcmp(key, "topcolor_rgb"))
 	{
-		byte *pal = (byte *)d_8to24table + 4*Sbar_ColorForMap((cl.scores[player].colors)&0xf0); //johnfitz -- use d_8to24table instead of host_basepal
+		byte *pal = CL_PLColours_ToRGB(&cl.scores[player].shirt);
 		q_snprintf(buf, sizeof(buf), "%g %g %g", pal[0]/255.0, pal[1]/255.0, pal[2]/255.0);
 	}
 	else if (!strcmp(key, "bottomcolor_rgb"))
 	{
-		byte *pal = (byte *)d_8to24table + 4*Sbar_ColorForMap((cl.scores[player].colors<<4)&0xf0); //johnfitz -- use d_8to24table instead of host_basepal
+		byte *pal = CL_PLColours_ToRGB(&cl.scores[player].pants);
 		q_snprintf(buf, sizeof(buf), "%g %g %g", pal[0]/255.0, pal[1]/255.0, pal[2]/255.0);
 	}
 	else if (!strcmp(key, "topcolor"))
-		q_snprintf(buf, sizeof(buf), "%i", (cl.scores[player].colors>>4)&0xf);
+		ret = CL_PLColours_ToString(cl.scores[player].shirt);
 	else if (!strcmp(key, "bottomcolor"))
-		q_snprintf(buf, sizeof(buf), "%i", cl.scores[player].colors&0xf);
+		ret = CL_PLColours_ToString(cl.scores[player].pants);
 	else if (!strcmp(key, "team"))	//quakeworld uses team infokeys to decide teams (instead of colours). but NQ never did, so that's fun. Lets allow mods to use either so that they can favour QW and let the engine hide differences .
-		q_snprintf(buf, sizeof(buf), "%i", (cl.scores[player].colors&0xf)+1);
+		q_snprintf(buf, sizeof(buf), "%i", (cl.scores[player].pants.basic)+1);
 	else if (!strcmp(key, "userid"))
 		ret = NULL;	//unknown
 //	else if (!strcmp(key, "vignored"))	//checks to see this player's voicechat is ignored.
@@ -6941,9 +6941,10 @@ static void PF_cl_getrenderentity(void)
 		{
 			int palidx = cl.entities[entnum].netstate.colormap;
 			byte *pal;
-			if (!(cl.entities[entnum].netstate.eflags & EFLAGS_COLOURMAPPED))
-				palidx = cl.scores[palidx].colors;
-			pal = (byte *)d_8to24table + 4*Sbar_ColorForMap(palidx&0x0f);
+			if ((cl.entities[entnum].netstate.eflags & EFLAGS_COLOURMAPPED) || palidx >= cl.maxclients)
+				pal = (byte *)d_8to24table + 4*Sbar_ColorForMap(palidx&0x0f);
+			else
+				pal = CL_PLColours_ToRGB(&cl.scores[palidx].pants);
 			G_FLOAT(OFS_RETURN+0) = pal[0] / 255.0;
 			G_FLOAT(OFS_RETURN+1) = pal[1] / 255.0;
 			G_FLOAT(OFS_RETURN+2) = pal[2] / 255.0;
@@ -6953,9 +6954,10 @@ static void PF_cl_getrenderentity(void)
 		{
 			int palidx = cl.entities[entnum].netstate.colormap;
 			byte *pal;
-			if (!(cl.entities[entnum].netstate.eflags & EFLAGS_COLOURMAPPED))
-				palidx = cl.scores[palidx].colors;
-			pal = (byte *)d_8to24table + 4*Sbar_ColorForMap(palidx&0xf0);
+			if ((cl.entities[entnum].netstate.eflags & EFLAGS_COLOURMAPPED) || palidx >= cl.maxclients)
+				pal = (byte *)d_8to24table + 4*Sbar_ColorForMap(palidx&0xf0);
+			else
+				pal = CL_PLColours_ToRGB(&cl.scores[palidx].shirt);
 			G_FLOAT(OFS_RETURN+0) = pal[0] / 255.0;
 			G_FLOAT(OFS_RETURN+1) = pal[1] / 255.0;
 			G_FLOAT(OFS_RETURN+2) = pal[2] / 255.0;

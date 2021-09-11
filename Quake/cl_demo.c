@@ -329,7 +329,7 @@ void CL_Record_Prespawn(void)
 void CL_Record_Spawn(void)
 {
 	const char *cmd;
-	int i;
+	int i, c;
 
 	// player names, colors, and frag counts
 	for (i = 0; i < cl.maxclients; i++)
@@ -342,7 +342,12 @@ void CL_Record_Spawn(void)
 		MSG_WriteShort (&net_message, cl.scores[i].frags);
 		MSG_WriteByte (&net_message, svc_updatecolors);
 		MSG_WriteByte (&net_message, i);
-		MSG_WriteByte (&net_message, cl.scores[i].colors);
+		c = 0;
+		if (cl.scores[i].shirt.type == 1)
+			c |= (cl.scores[i].shirt.rgb[0]<<4)&0xf;
+		if (cl.scores[i].pants.type == 1)
+			c |= (cl.scores[i].pants.rgb[0]<<0)&0xf;
+		MSG_WriteByte (&net_message, c);
 	}
 
 	// send all current light styles

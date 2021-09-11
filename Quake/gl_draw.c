@@ -705,12 +705,12 @@ Draw_TransPicTranslate -- johnfitz -- rewritten to use texmgr to do translation
 Only used for the player color selection menu
 =============
 */
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, int top, int bottom)
+void Draw_TransPicTranslate (int x, int y, qpic_t *pic, plcolour_t top, plcolour_t bottom)
 {
-	static int oldtop = -2;
-	static int oldbottom = -2;
+	static plcolour_t oldtop = {-2};
+	static plcolour_t oldbottom = {-2};
 
-	if (top != oldtop || bottom != oldbottom)
+	if (!CL_PLColours_Equals(top, oldtop) || !CL_PLColours_Equals(bottom, oldbottom))
 	{
 		glpic_t *p = (glpic_t *)pic->data;
 		gltexture_t *glt = p->gltexture;
@@ -814,6 +814,31 @@ void Draw_Fill (int x, int y, int w, int h, int c, float alpha) //johnfitz -- ad
 	glEnable (GL_BLEND); //johnfitz -- for alpha
 	glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
 	glColor4f (pal[c*4]/255.0, pal[c*4+1]/255.0, pal[c*4+2]/255.0, alpha); //johnfitz -- added alpha
+
+	glBegin (GL_QUADS);
+	glVertex2f (x,y);
+	glVertex2f (x+w, y);
+	glVertex2f (x+w, y+h);
+	glVertex2f (x, y+h);
+	glEnd ();
+
+	glColor3f (1,1,1);
+	glDisable (GL_BLEND); //johnfitz -- for alpha
+	glEnable (GL_ALPHA_TEST); //johnfitz -- for alpha
+	glEnable (GL_TEXTURE_2D);
+}
+void Draw_FillPlayer (int x, int y, int w, int h, plcolour_t c, float alpha)
+{
+	glDisable (GL_TEXTURE_2D);
+	glEnable (GL_BLEND); //johnfitz -- for alpha
+	glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
+	if (c.type == 2)
+		glColor4f (c.rgb[0]/255.0, c.rgb[1]/255.0, c.rgb[2]/255.0, alpha); //johnfitz -- added alpha
+	else
+	{
+		byte *pal = (byte *)&d_8to24table[(c.basic<<4) + 8]; //johnfitz -- use d_8to24table instead of host_basepal
+		glColor4f (pal[0]/255.0, pal[1]/255.0, pal[2]/255.0, alpha); //johnfitz -- added alpha
+	}
 
 	glBegin (GL_QUADS);
 	glVertex2f (x,y);

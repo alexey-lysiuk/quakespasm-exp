@@ -254,15 +254,10 @@ R_TranslatePlayerSkin -- johnfitz -- rewritten.  also, only handles new colors, 
 */
 void R_TranslatePlayerSkin (int playernum)
 {
-	int			top, bottom;
-
-	top = (cl.scores[playernum].colors & 0xf0)>>4;
-	bottom = cl.scores[playernum].colors &15;
-
 	//FIXME: if gl_nocolors is on, then turned off, the textures may be out of sync with the scoreboard colors.
 	if (!gl_nocolors.value)
 		if (playertextures[playernum])
-			TexMgr_ReloadImage (playertextures[playernum], top, bottom);
+			TexMgr_ReloadImage (playertextures[playernum], cl.scores[playernum].shirt, cl.scores[playernum].pants);
 }
 
 /*

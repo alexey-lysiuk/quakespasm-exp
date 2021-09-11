@@ -464,11 +464,6 @@ void Sbar_DrawNum (int x, int y, int num, int digits, int color)
 //=============================================================================
 
 int		fragsort[MAX_SCOREBOARD];
-
-char		scoreboardtext[MAX_SCOREBOARD][20];
-int		scoreboardtop[MAX_SCOREBOARD];
-int		scoreboardbottom[MAX_SCOREBOARD];
-int		scoreboardcount[MAX_SCOREBOARD];
 int		scoreboardlines;
 
 /*
@@ -508,35 +503,6 @@ void Sbar_SortFrags (void)
 int	Sbar_ColorForMap (int m)
 {
 	return m < 128 ? m + 8 : m + 8;
-}
-
-/*
-===============
-Sbar_UpdateScoreboard
-===============
-*/
-void Sbar_UpdateScoreboard (void)
-{
-	int		i, k;
-	int		top, bottom;
-	scoreboard_t	*s;
-
-	Sbar_SortFrags ();
-
-// draw the text
-	memset (scoreboardtext, 0, sizeof(scoreboardtext));
-
-	for (i = 0; i < scoreboardlines; i++)
-	{
-		k = fragsort[i];
-		s = &cl.scores[k];
-		sprintf (&scoreboardtext[i][1], "%3i %s", s->frags, s->name);
-
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15) <<4;
-		scoreboardtop[i] = Sbar_ColorForMap (top);
-		scoreboardbottom[i] = Sbar_ColorForMap (bottom);
-	}
 }
 
 /*
@@ -829,7 +795,7 @@ Sbar_DrawFrags -- johnfitz -- heavy revision
 */
 void Sbar_DrawFrags (void)
 {
-	int	numscores, i, x, color;
+	int	numscores, i, x;
 	char	num[12];
 	scoreboard_t	*s;
 
@@ -845,14 +811,10 @@ void Sbar_DrawFrags (void)
 			continue;
 
 	// top color
-		color = s->colors & 0xf0;
-		color = Sbar_ColorForMap (color);
-		Draw_Fill (x + 10, 1, 28, 4, color, 1);
+		Draw_FillPlayer (x + 10, 1, 28, 4, s->shirt, 1);
 
 	// bottom color
-		color = (s->colors & 15)<<4;
-		color = Sbar_ColorForMap (color);
-		Draw_Fill (x + 10, 5, 28, 3, color, 1);
+		Draw_FillPlayer (x + 10, 5, 28, 3, s->pants, 1);
 
 	// number
 		sprintf (num, "%3i", s->frags);
@@ -885,32 +847,26 @@ void Sbar_DrawFace (void)
 // PGM 03/02/97 - fixed so color swatch only appears in CTF modes
 	if (rogue && (cl.maxclients != 1) && (teamplay.value>3) && (teamplay.value<7))
 	{
-		int	top, bottom;
 		int	xofs;
 		char	num[12];
 		scoreboard_t	*s;
 
 		s = &cl.scores[cl.viewentity - 1];
 		// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
 		if (cl.gametype == GAME_DEATHMATCH)
 			xofs = 113;
 		else
 			xofs = ((vid.width - 320)>>1) + 113;
 
 		Sbar_DrawPic (112, 0, rsb_teambord);
-		Draw_Fill (xofs, /*vid.height-*/24+3, 22, 9, top, 1); //johnfitz -- sbar coords are now relative
-		Draw_Fill (xofs, /*vid.height-*/24+12, 22, 9, bottom, 1); //johnfitz -- sbar coords are now relative
+		Draw_FillPlayer (xofs, /*vid.height-*/24+3, 22, 9, s->shirt, 1); //johnfitz -- sbar coords are now relative
+		Draw_FillPlayer (xofs, /*vid.height-*/24+12, 22, 9, s->pants, 1); //johnfitz -- sbar coords are now relative
 
 		// draw number
 		f = s->frags;
 		sprintf (num, "%3i",f);
 
-		if (top == 8)
+		if (s->shirt.type == 1 && s->shirt.basic == 0) //white team. FIXME: vanilla says top, but I suspect it should be the lower colour, as that's the actual team nq sees.
 		{
 			if (num[0] != ' ')
 				Sbar_DrawCharacter(113, 3, 18 + num[0] - '0');
@@ -1240,7 +1196,6 @@ void Sbar_DeathmatchOverlay (void)
 {
 	qpic_t	*pic;
 	int	i, k, l;
-	int	top, bottom;
 	int	x, y, f;
 	char	num[12];
 	scoreboard_t	*s;
@@ -1266,16 +1221,11 @@ void Sbar_DeathmatchOverlay (void)
 			continue;
 
 	// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
 		if (S_Voip_Speaking(k))	//spike -- display an underlay for people who are speaking
 			Draw_Fill ( x, y, 320-x*2, 8, ((k+1)==cl.viewentity)?75:73, 1);
 
-		Draw_Fill ( x, y, 40, 4, top, 1); //johnfitz -- stretched overlays
-		Draw_Fill ( x, y+4, 40, 4, bottom, 1); //johnfitz -- stretched overlays
+		Draw_FillPlayer ( x, y, 40, 4, s->shirt, 1); //johnfitz -- stretched overlays
+		Draw_FillPlayer ( x, y+4, 40, 4, s->pants, 1); //johnfitz -- stretched overlays
 
 	// draw number
 		f = s->frags;
@@ -1332,7 +1282,7 @@ Sbar_MiniDeathmatchOverlay
 */
 void Sbar_MiniDeathmatchOverlay (void)
 {
-	int	i, k, top, bottom, x, y, f, numlines;
+	int	i, k, x, y, f, numlines;
 	char	num[12];
 	float	scale; //johnfitz
 	scoreboard_t	*s;
@@ -1372,13 +1322,8 @@ void Sbar_MiniDeathmatchOverlay (void)
 			continue;
 
 	// colors
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
-		Draw_Fill (x, y+1, 40, 4, top, 1);
-		Draw_Fill (x, y+5, 40, 3, bottom, 1);
+		Draw_FillPlayer (x, y+1, 40, 4, s->shirt, 1);
+		Draw_FillPlayer (x, y+5, 40, 3, s->pants, 1);
 
 	// number
 		f = s->frags;

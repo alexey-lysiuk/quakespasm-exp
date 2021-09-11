@@ -1382,15 +1382,67 @@ static void CL_ServerExtension_ServerinfoUpdate_f(void)
 	Info_SetKey(cl.serverinfo, sizeof(cl.serverinfo), newserverkey, newservervalue);
 }
 
+int	Sbar_ColorForMap (int m);
+byte *CL_PLColours_ToRGB(plcolour_t *c)
+{
+	if (c->type == 2)
+		return c->rgb;
+	else if (c->type == 1)
+		return (byte *)(d_8to24table + (c->basic<<4)+8);
+	else
+		return (byte*)&d_8to24table[15];
+}
+char *CL_PLColours_ToString(plcolour_t c)
+{
+	if (c.type == 2)
+		return va("0x%02x%02x%02x", c.rgb[0], c.rgb[1], c.rgb[2]);
+	else if (c.type == 1)
+		return va("%i", c.basic);
+	return "0";
+}
+
+plcolour_t CL_PLColours_Parse(const char *s)
+{
+	plcolour_t c;
+	unsigned int v = strtoul(s, NULL, 0);
+	if (!strncmp(s, "0x", 2))
+	{
+		c.type = 2;
+		c.basic = 0;
+		c.rgb[0] = 0xff&(v>>16);
+		c.rgb[1] = 0xff&(v>>8);
+		c.rgb[2] = 0xff&(v>>0);
+	}
+	else if (*s)
+	{
+		c.type = 1;
+		c.basic = v;
+		c.rgb[0] = c.rgb[1] = c.rgb[2] = v&0xf;
+	}
+	else
+	{
+		c.type = 0;
+		c.rgb[0] = c.rgb[1] = c.rgb[2] = 0;
+	}
+	return c;
+}
 static void CL_UserinfoChanged(scoreboard_t *sb)
 {
 	char tmp[64];
+	plcolour_t top, bot;
 	Info_GetKey(sb->userinfo, "name", sb->name, sizeof(sb->name));
 
 	Info_GetKey(sb->userinfo, "topcolor", tmp, sizeof(tmp));
-	sb->colors = (atoi(tmp)&15)<<4;
+	top = CL_PLColours_Parse(tmp);
 	Info_GetKey(sb->userinfo, "bottomcolor", tmp, sizeof(tmp));
-	sb->colors |= (atoi(tmp)&15);
+	bot = CL_PLColours_Parse(tmp);
+
+	if (!CL_PLColours_Equals(top, sb->shirt) || !CL_PLColours_Equals(bot, sb->pants))
+	{
+		sb->shirt = top;
+		sb->pants = bot;
+		R_TranslateNewPlayerSkin (sb-cl.scores);
+	}
 }
 static void CL_ServerExtension_FullUserinfo_f(void)
 {

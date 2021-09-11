@@ -1972,10 +1972,14 @@ static void CL_ParseClientdata (void)
 CL_NewTranslation
 =====================
 */
-static void CL_NewTranslation (int slot)
+static void CL_NewTranslation (int slot, int vanillacolour)
 {
 	if (slot > cl.maxclients)
 		Sys_Error ("CL_NewTranslation: slot > cl.maxclients");
+
+	//clumsy, but ensures its initialised properly.
+	cl.scores[slot].shirt = CL_PLColours_Parse(va("%i", (vanillacolour>>4)&0xf));
+	cl.scores[slot].pants = CL_PLColours_Parse(va("%i", (vanillacolour>>0)&0xf));
 	R_TranslatePlayerSkin (slot);
 }
 
@@ -2586,8 +2590,7 @@ void CL_ParseServerMessage (void)
 			i = MSG_ReadByte ();
 			if (i >= cl.maxclients)
 				Host_Error ("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
-			cl.scores[i].colors = MSG_ReadByte ();
-			CL_NewTranslation (i);
+			CL_NewTranslation (i, MSG_ReadByte());
 			break;
 
 		case svc_particle:

@@ -26,6 +26,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // draw.h -- these are the only functions outside the refresh allowed
 // to touch the vid buffer
 
+typedef struct
+{
+	byte type; //0 for none, 1 for legacy colours, 2 for rgb.
+	byte basic;
+	byte rgb[3];
+} plcolour_t;
+plcolour_t CL_PLColours_Parse(const char *s);
+char *CL_PLColours_ToString(plcolour_t c);
+byte *CL_PLColours_ToRGB(plcolour_t *c);
+#define CL_PLColours_Equals(a,b) (!memcmp(&a,&b, sizeof(plcolour_t)))
+
 extern	qpic_t		*draw_disc;	// also used on sbar
 
 void Draw_Init (void);
@@ -33,10 +44,11 @@ void Draw_Character (int x, int y, int num);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 void Draw_SubPic (float x, float y, float w, float h, qpic_t *pic, float s1, float t1, float s2, float t2);
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, int top, int bottom); //johnfitz -- more parameters
+void Draw_TransPicTranslate (int x, int y, qpic_t *pic, plcolour_t top, plcolour_t bottom); //johnfitz -- more parameters
 void Draw_ConsoleBackground (void); //johnfitz -- removed parameter int lines
 void Draw_TileClear (int x, int y, int w, int h);
 void Draw_Fill (int x, int y, int w, int h, int c, float alpha); //johnfitz -- added alpha
+void Draw_FillPlayer (int x, int y, int w, int h, plcolour_t c, float alpha); //Spike - for richer player colours.
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, const char *str);
 qpic_t *Draw_PicFromWad2 (const char *name, unsigned int texflags);

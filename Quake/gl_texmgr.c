@@ -37,6 +37,8 @@ static int numgltextures;
 static gltexture_t	*active_gltextures, *free_gltextures;
 gltexture_t		*notexture, *nulltexture;
 
+plcolour_t plcolour_none = {0};
+
 unsigned int d_8to24table[256];
 unsigned int d_8to24table_fbright[256];
 unsigned int d_8to24table_fbright_fence[256];
@@ -1321,7 +1323,7 @@ static void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 	extern cvar_t gl_fullbrights;
 	qboolean padw = false, padh = false;
 	byte padbyte;
-	unsigned int *usepal;
+	unsigned int *usepal, translation[256];
 	int i;
 
 	// HACK HACK HACK -- taken from tomazquake
@@ -1371,6 +1373,68 @@ static void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 	{
 		usepal = d_8to24table;
 		padbyte = 255;
+	}
+
+	if (glt->shirt.type || glt->pants.type)
+	{
+		int shirt, pants, m;
+		//create new translation table
+		for (i = 0; i < 256; i++)
+			translation[i] = usepal[i];
+
+		if (glt->shirt.type == 2)
+		{
+			for (i = 0; i < 16; i++)
+			{
+				m = i|(i<<4);
+				((byte *) &translation[TOP_RANGE+i])[0] = (m * glt->shirt.rgb[0])>>8;
+				((byte *) &translation[TOP_RANGE+i])[1] = (m * glt->shirt.rgb[1])>>8;
+				((byte *) &translation[TOP_RANGE+i])[2] = (m * glt->shirt.rgb[2])>>8;
+				((byte *) &translation[TOP_RANGE+i])[3] = 255;
+			}
+		}
+		else if (glt->shirt.type == 1)
+		{
+			shirt = glt->shirt.rgb[0] * 16;
+			if (shirt < 128)
+			{
+				for (i = 0; i < 16; i++)
+					translation[TOP_RANGE+i] = usepal[shirt + i];
+			}
+			else
+			{
+				for (i = 0; i < 16; i++)
+					translation[TOP_RANGE+i] = usepal[shirt+15-i];
+			}
+		}
+
+		if (glt->pants.type == 2)
+		{
+			for (i = 0; i < 16; i++)
+			{
+				m = i|(i<<4);
+				((byte *) &translation[BOTTOM_RANGE+i])[0] = (m * glt->pants.rgb[0])>>8;
+				((byte *) &translation[BOTTOM_RANGE+i])[1] = (m * glt->pants.rgb[1])>>8;
+				((byte *) &translation[BOTTOM_RANGE+i])[2] = (m * glt->pants.rgb[2])>>8;
+				((byte *) &translation[BOTTOM_RANGE+i])[3] = 255;
+			}
+		}
+		else if (glt->pants.type == 1)
+		{
+			pants = glt->pants.rgb[0] * 16;
+			if (pants < 128)
+			{
+				for (i = 0; i < 16; i++)
+					translation[BOTTOM_RANGE+i] = usepal[pants + i];
+			}
+			else
+			{
+				for (i = 0; i < 16; i++)
+					translation[BOTTOM_RANGE+i] = usepal[pants+15-i];
+			}
+		}
+
+		usepal = translation;
 	}
 
 	// pad each dimention, but only if it's not going to be downsampled later
@@ -1467,8 +1531,8 @@ gltexture_t *TexMgr_LoadImage (qmodel_t *owner, const char *name, int width, int
 	glt->width = width;
 	glt->height = height;
 	glt->flags = flags;
-	glt->shirt = -1;
-	glt->pants = -1;
+	glt->shirt.type = 0;
+	glt->pants.type = 0;
 	q_strlcpy (glt->source_file, source_file, sizeof(glt->source_file));
 	glt->source_offset = source_offset;
 	glt->source_format = format;
@@ -1539,11 +1603,10 @@ gltexture_t *TexMgr_LoadImage (qmodel_t *owner, const char *name, int width, int
 TexMgr_ReloadImage -- reloads a texture, and colormaps it if needed
 ================
 */
-void TexMgr_ReloadImage (gltexture_t *glt, int shirt, int pants)
+void TexMgr_ReloadImage (gltexture_t *glt, plcolour_t shirt, plcolour_t pants)
 {
-	byte	translation[256];
-	byte	*src, *dst, *data = NULL, *translated;
-	int	mark, size, i;
+	byte	*data = NULL;
+	int	mark, size;
 	qboolean malloced = false;
 	enum srcformat fmt = glt->source_format;
 //
@@ -1584,9 +1647,9 @@ invalid:	Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
 //
 // if shirt and pants are -1,-1, use existing shirt and pants colors
 // if existing shirt and pants colors are -1,-1, don't bother colormapping
-	if (shirt > -1 && pants > -1)
+	if (shirt.type || pants.type)
 	{
-		if (glt->source_format == SRC_INDEXED)
+		if (fmt == SRC_INDEXED)
 		{
 			glt->shirt = shirt;
 			glt->pants = pants;
@@ -1594,50 +1657,11 @@ invalid:	Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
 		else
 			Con_Printf ("TexMgr_ReloadImage: can't colormap a non SRC_INDEXED texture: %s\n", glt->name);
 	}
-	if (glt->shirt > -1 && glt->pants > -1)
-	{
-		//create new translation table
-		for (i = 0; i < 256; i++)
-			translation[i] = i;
 
-		shirt = glt->shirt * 16;
-		if (shirt < 128)
-		{
-			for (i = 0; i < 16; i++)
-				translation[TOP_RANGE+i] = shirt + i;
-		}
-		else
-		{
-			for (i = 0; i < 16; i++)
-				translation[TOP_RANGE+i] = shirt+15-i;
-		}
-
-		pants = glt->pants * 16;
-		if (pants < 128)
-		{
-			for (i = 0; i < 16; i++)
-				translation[BOTTOM_RANGE+i] = pants + i;
-		}
-		else
-		{
-			for (i = 0; i < 16; i++)
-				translation[BOTTOM_RANGE+i] = pants+15-i;
-		}
-
-		//translate texture
-		size = glt->width * glt->height;
-		dst = translated = (byte *) Hunk_Alloc (size);
-		src = data;
-
-		for (i = 0; i < size; i++)
-			*dst++ = translation[*src++];
-
-		data = translated;
-	}
 //
 // upload it
 //
-	switch (glt->source_format)
+	switch (fmt)
 	{
 	case SRC_INDEXED:
 		TexMgr_LoadImage8 (glt, data);
@@ -1681,7 +1705,7 @@ void TexMgr_ReloadImages (void)
 	for (glt = active_gltextures; glt; glt = glt->next)
 	{
 		glGenTextures(1, &glt->texnum);
-		TexMgr_ReloadImage (glt, -1, -1);
+		TexMgr_ReloadImage (glt, plcolour_none, plcolour_none);
 	}
 	
 	in_reload_images = false;
@@ -1698,7 +1722,7 @@ void TexMgr_ReloadNobrightImages (void)
 
 	for (glt = active_gltextures; glt; glt = glt->next)
 		if (glt->flags & TEXPREF_NOBRIGHT)
-			TexMgr_ReloadImage(glt, -1, -1);
+			TexMgr_ReloadImage(glt, plcolour_none, plcolour_none);
 }
 
 /*

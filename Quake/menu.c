@@ -138,7 +138,7 @@ void M_DrawPic (int x, int y, qpic_t *pic)
 	Draw_Pic (x, y, pic); //johnfitz -- simplified becuase centering is handled elsewhere
 }
 
-void M_DrawTransPicTranslate (int x, int y, qpic_t *pic, int top, int bottom) //johnfitz -- more parameters
+void M_DrawTransPicTranslate (int x, int y, qpic_t *pic, plcolour_t top, plcolour_t bottom) //johnfitz -- more parameters
 {
 	Draw_TransPicTranslate (x, y, pic, top, bottom); //johnfitz -- simplified becuase centering is handled elsewhere
 }
@@ -653,15 +653,28 @@ void M_MultiPlayer_Key (int key)
 //=============================================================================
 /* SETUP MENU */
 
-int		setup_cursor = 4;
-int		setup_cursor_table[] = {40, 56, 80, 104, 140};
+static int		setup_cursor = 4;
+static int		setup_cursor_table[] = {40, 56, 80, 104, 140};
 
-char	setup_hostname[16];
-char	setup_myname[16];
-int		setup_oldtop;
-int		setup_oldbottom;
-int		setup_top;
-int		setup_bottom;
+static char	setup_hostname[16];
+static char	setup_myname[16];
+static plcolour_t	setup_oldtop;
+static plcolour_t	setup_oldbottom;
+static plcolour_t	setup_top;
+static plcolour_t	setup_bottom;
+
+void M_AdjustColour(plcolour_t *tr, int dir)
+{
+	{
+		tr->type = 1;
+		if (tr->basic+dir < 0)
+			tr->basic = 13;
+		else if (tr->basic+dir > 13)
+			tr->basic = 0;
+		else
+			tr->basic += dir;
+	}
+}
 
 #define	NUM_SETUP_CMDS	5
 
@@ -672,8 +685,8 @@ void M_Menu_Setup_f (void)
 	m_entersound = true;
 	Q_strcpy(setup_myname, cl_name.string);
 	Q_strcpy(setup_hostname, hostname.string);
-	setup_top = setup_oldtop = ((int)cl_topcolor.value) >> 4;
-	setup_bottom = setup_oldbottom = ((int)cl_bottomcolor.value) & 15;
+	setup_top = setup_oldtop = CL_PLColours_Parse(cl_topcolor.string);
+	setup_bottom = setup_oldbottom = CL_PLColours_Parse(cl_bottomcolor.string);
 
 	IN_UpdateGrabs();
 }
@@ -744,9 +757,9 @@ void M_Setup_Key (int k)
 			return;
 		S_LocalSound ("misc/menu3.wav");
 		if (setup_cursor == 2)
-			setup_top = setup_top - 1;
+			M_AdjustColour(&setup_top, -1);
 		if (setup_cursor == 3)
-			setup_bottom = setup_bottom - 1;
+			M_AdjustColour(&setup_bottom, -1);
 		break;
 	case K_RIGHTARROW:
 		if (setup_cursor < 2)
@@ -754,9 +767,9 @@ void M_Setup_Key (int k)
 forward:
 		S_LocalSound ("misc/menu3.wav");
 		if (setup_cursor == 2)
-			setup_top = setup_top + 1;
+			M_AdjustColour(&setup_top, +1);
 		if (setup_cursor == 3)
-			setup_bottom = setup_bottom + 1;
+			M_AdjustColour(&setup_bottom, +1);
 		break;
 
 	case K_ENTER:
@@ -773,8 +786,8 @@ forward:
 			Cbuf_AddText ( va ("name \"%s\"\n", setup_myname) );
 		if (Q_strcmp(hostname.string, setup_hostname) != 0)
 			Cvar_Set("hostname", setup_hostname);
-		if (setup_top != setup_oldtop || setup_bottom != setup_oldbottom)
-			Cbuf_AddText( va ("color %i %i\n", setup_top, setup_bottom) );
+		if (!CL_PLColours_Equals(setup_top, setup_oldtop) || !CL_PLColours_Equals(setup_bottom, setup_oldbottom))
+			Cbuf_AddText( va ("color %s %s\n", CL_PLColours_ToString(setup_top), CL_PLColours_ToString(setup_bottom)) );
 		m_entersound = true;
 		M_Menu_MultiPlayer_f ();
 		break;
@@ -793,15 +806,6 @@ forward:
 		}
 		break;
 	}
-
-	if (setup_top > 13)
-		setup_top = 0;
-	if (setup_top < 0)
-		setup_top = 13;
-	if (setup_bottom > 13)
-		setup_bottom = 0;
-	if (setup_bottom < 0)
-		setup_bottom = 13;
 }
 
 

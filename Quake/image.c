@@ -569,7 +569,7 @@ byte *Image_LoadImage (const char *name, int *width, int *height, enum srcformat
 	q_snprintf (loadfilename, sizeof(loadfilename), "%s%s.lmp", "", name);
 	COM_FOpenFile (loadfilename, &f, NULL);
 	if (f)
-		return Image_LoadLMP (f, width, height);
+		return Image_LoadLMP (f, width, height, fmt);
 
 	return NULL;
 }
@@ -1011,13 +1011,11 @@ typedef struct
 Image_LoadLMP
 ============
 */
-byte *Image_LoadLMP (FILE *f, int *width, int *height)
+byte *Image_LoadLMP (FILE *f, int *width, int *height, enum srcformat *fmt)
 {
 	lmpheader_t	qpic;
 	size_t		pix;
 	void		*data;
-	byte		*src;
-	unsigned int *dest;
 
 	fread(&qpic, sizeof(qpic), 1, f);
 	qpic.width = LittleLong (qpic.width);
@@ -1031,19 +1029,13 @@ byte *Image_LoadLMP (FILE *f, int *width, int *height)
 		return NULL;
 	}
 
-	data = (byte *) Hunk_Alloc(pix*4); //+1 to allow reading padding byte on last line
-	dest = data;
-	src = (byte *)data + pix*(4-1);
-
-	fread(src, 1, pix, f);
-
-	while(pix --> 0)
-		*dest++ = d_8to24table[*src++];
-
+	data = (byte *) Hunk_Alloc(pix); //+1 to allow reading padding byte on last line
+	fread(data, 1, pix, f);
 	fclose(f);
 
 	*width = qpic.width;
 	*height = qpic.height;
+	*fmt = SRC_INDEXED;
 	return data;
 }
 

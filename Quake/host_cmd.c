@@ -1671,7 +1671,7 @@ void Host_Color_f(void)
 
 	if (Cmd_Argc() == 1)
 	{
-		Con_Printf ("\"%s\" is \"%i %i\"\n", Cmd_Argv(0), ((int)cl_topcolor.value), ((int)cl_bottomcolor.value));
+		Con_Printf ("\"%s\" is \"%s %s\"\n", Cmd_Argv(0), CL_PLColours_ToString(CL_PLColours_Parse(cl_topcolor.string)), CL_PLColours_ToString(CL_PLColours_Parse(cl_bottomcolor.string)));
 		Con_Printf ("color <0-13> [0-13]\n");
 		return;
 	}

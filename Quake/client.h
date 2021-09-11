@@ -38,9 +38,9 @@ typedef struct
 	char	name[MAX_SCOREBOARDNAME];
 	float	entertime;
 	int		frags;
-	int		colors;			// two 4 bit fields
+	plcolour_t shirt;
+	plcolour_t pants;
 	int		ping;
-	byte	translations[VID_GRADES*256];
 
 	char	userinfo[8192];
 } scoreboard_t;
