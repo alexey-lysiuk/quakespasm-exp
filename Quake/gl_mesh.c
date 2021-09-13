@@ -1862,12 +1862,73 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 		//but we do so anyway, because rerelease compat.
 		for (surf->numskins = 0; surf->numskins < MAX_SKINS; surf->numskins++)
 		{
-			q_snprintf(texname, sizeof(texname), "progs/%s_%02d_%02d", com_token, surf->numskins, 0);
-			surf->gltextures[surf->numskins][0] = TexMgr_LoadImage(mod, texname, surf->skinwidth, surf->skinheight, SRC_EXTERNAL, NULL, texname, 0, TEXPREF_ALLOWMISSING|TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP);
-			if (!surf->gltextures[surf->numskins][0])
-				break;
-			surf->gltextures[surf->numskins][3] = surf->gltextures[surf->numskins][2] = surf->gltextures[surf->numskins][1] = surf->gltextures[surf->numskins][0];
-			surf->fbtextures[surf->numskins][0] = surf->fbtextures[surf->numskins][1] = surf->fbtextures[surf->numskins][2] = surf->fbtextures[surf->numskins][3] = NULL;
+			unsigned int fwidth, fheight, f;
+			enum srcformat fmt;
+			qboolean malloced;
+			void *data;
+			int mark = Hunk_LowMark ();
+			for (f = 0; f < countof(surf->gltextures[0]); f++)
+			{
+				q_snprintf(texname, sizeof(texname), "progs/%s_%02u_%02u", com_token, surf->numskins, f);
+
+				data = Image_LoadImage (texname, &fwidth, &fheight, &fmt, &malloced);
+				//now load whatever we found
+				if (data) //load external image
+				{
+					surf->gltextures[surf->numskins][f] = TexMgr_LoadImage (mod, texname, fwidth, fheight, fmt, data, texname, 0, TEXPREF_ALPHA|TEXPREF_NOBRIGHT|TEXPREF_MIPMAP );
+					surf->fbtextures[surf->numskins][f] = NULL;
+					if (fmt == SRC_INDEXED)
+					{	//8bit base texture. use it for fullbrights.
+						for (j = 0; j < fwidth*fheight; j++)
+						{
+							if (((byte*)data)[j] > 223)
+							{
+								surf->fbtextures[surf->numskins][f] = TexMgr_LoadImage (mod, va("%s_luma", texname), fwidth, fheight, fmt, data, texname, 0, TEXPREF_ALPHA|TEXPREF_FULLBRIGHT|TEXPREF_MIPMAP );
+								break;
+							}
+						}
+					}
+					else
+					{	//we found a 32bit base texture.
+						if (!surf->fbtextures[surf->numskins][f])
+						{
+							q_snprintf(texname, sizeof(texname), "progs/%s_%02u_%02u_glow", com_token, surf->numskins, f);
+							surf->fbtextures[surf->numskins][f] = TexMgr_LoadImage(mod, texname, surf->skinwidth, surf->skinheight, SRC_EXTERNAL, NULL, texname, 0, TEXPREF_ALLOWMISSING|TEXPREF_MIPMAP);
+						}
+						if (!surf->fbtextures[surf->numskins][f])
+						{
+							q_snprintf(texname, sizeof(texname), "progs/%s_%02u_%02u_luma", com_token, surf->numskins, f);
+							surf->fbtextures[surf->numskins][f] = TexMgr_LoadImage(mod, texname, surf->skinwidth, surf->skinheight, SRC_EXTERNAL, NULL, texname, 0, TEXPREF_ALLOWMISSING|TEXPREF_MIPMAP);
+						}
+					}
+
+					//now try to load glow/luma image from the same place
+					if (malloced)
+						free(data);
+					Hunk_FreeToLowMark (mark);
+				}
+				else
+					break;
+			}
+			if (f == 0)
+				break;	//no images loaded...
+
+			//this stuff is hideous.
+			if (f < 2)
+			{
+				surf->gltextures[surf->numskins][1] = surf->gltextures[surf->numskins][0];
+				surf->fbtextures[surf->numskins][1] = surf->fbtextures[surf->numskins][0];
+			}
+			if (f == 3)
+				Con_Warning("progs/%s_%02u_##: 3 skinframes found...\n", com_token, surf->numskins);
+			if (f < 4)
+			{
+				surf->gltextures[surf->numskins][3] = surf->gltextures[surf->numskins][1];
+				surf->gltextures[surf->numskins][2] = surf->gltextures[surf->numskins][0];
+
+				surf->fbtextures[surf->numskins][3] = surf->fbtextures[surf->numskins][1];
+				surf->fbtextures[surf->numskins][2] = surf->fbtextures[surf->numskins][0];
+			}
 		}
 		surf->skinwidth = surf->gltextures[0][0]?surf->gltextures[0][0]->width:1;
 		surf->skinheight = surf->gltextures[0][0]?surf->gltextures[0][0]->height:1;
