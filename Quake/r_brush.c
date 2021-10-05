@@ -900,9 +900,6 @@ void GL_BuildModel (qmodel_t *m)
 		//johnfitz
 	}
 
-	if (m->type == mod_brush)
-		lightmaps_latecached=true;
-
 //	GL_BuildBModelVertexBuffer();
 }
 

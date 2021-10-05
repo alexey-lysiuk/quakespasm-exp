@@ -1998,8 +1998,8 @@ int CL_Precache_Model(const char *name)
 	{
 		strcpy(cl.model_name_csqc[i], name);
 		cl.model_precache_csqc[i] = Mod_ForName (name, false);
-		if (cl.model_precache_csqc[i])
-			GL_BuildModel(cl.model_precache_csqc[i]);
+		if (cl.model_precache_csqc[i] && cl.model_precache_csqc[i]->type == mod_brush)
+			lightmaps_latecached=true;
 		return -i;
 	}
 

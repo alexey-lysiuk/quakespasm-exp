@@ -1159,6 +1159,14 @@ void R_RenderView (void)
 	else if (gl_finish.value)
 		glFinish ();
 
+	if (lightmaps_latecached)
+	{
+		GL_BuildLightmaps ();
+		GL_BuildBModelVertexBuffer ();
+		lightmaps_latecached=false;
+	}
+
+
 	//Spike -- quickly draw the world from the skyroom camera's point of view.
 	skyroom_drawn = false;
 	if (r_refdef.drawworld && skyroom_enabled && skyroom_visible)

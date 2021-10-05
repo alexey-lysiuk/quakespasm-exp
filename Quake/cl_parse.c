@@ -2073,12 +2073,15 @@ static void CL_ParsePrecache(void)
 	case 0:	//models
 		if (index < MAX_MODELS)
 		{
-			cl.model_precache[index] = Mod_ForName (name, false);
-			//FIXME: if its a bsp model, generate lightmaps.
-			//FIXME: update static entities with that modelindex
-
-			if (cl.model_precache[index])
-				GL_BuildModel(cl.model_precache[index]);
+			q_strlcpy (cl.model_name[index], name, MAX_QPATH);
+			Mod_TouchModel (name);
+			if (!cl.sendprespawn)
+			{
+				cl.model_precache[index] = Mod_ForName (name, (index==1)?true:false);
+				//FIXME: update static entities with that modelindex
+				if (cl.model_precache[index] && cl.model_precache[index]->type == mod_brush)
+					lightmaps_latecached=true;
+			}
 		}
 		break;
 #ifdef PSET_SCRIPT
@@ -2241,13 +2244,11 @@ static void CL_ParseStatString(int stat, const char *str)
 //proquake has its own extension coding thing.
 static void CL_ParseStuffText(const char *msg)
 {
-	const char *str;
+	char *str;
 	q_strlcat(cl.stuffcmdbuf, msg, sizeof(cl.stuffcmdbuf));
 	for (; (str = strchr(cl.stuffcmdbuf, '\n')); memmove(cl.stuffcmdbuf, str, Q_strlen(str)+1))
 	{
 		qboolean handled = false;
-
-		str++;//skip past the \n
 
 		if (*cl.stuffcmdbuf == 0x01 && cl.protocol == PROTOCOL_NETQUAKE) //proquake message, just strip this and try again (doesn't necessarily have a trailing \n straight away)
 		{
@@ -2255,6 +2256,8 @@ static void CL_ParseStuffText(const char *msg)
 				;//FIXME: parse properly
 			continue;
 		}
+
+		*str++ = 0;//skip past the \n
 
 		//handle special commands
 		if (cl.stuffcmdbuf[0] == '/' && cl.stuffcmdbuf[1] == '/')
@@ -2282,7 +2285,10 @@ static void CL_ParseStuffText(const char *msg)
 
 		//let the server exec general user commands (massive security hole)
 		if (!handled)
+		{
 			Cbuf_AddTextLen(cl.stuffcmdbuf, str-cl.stuffcmdbuf);
+			Cbuf_AddTextLen("\n", 1);
+		}
 	}
 }
 

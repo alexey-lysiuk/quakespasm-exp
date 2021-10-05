@@ -571,6 +571,8 @@ int	Datagram_GetMessage (qsocket_t *sock)
 		}
 
 		length = BigLong(packetBuffer.length);
+		if (length == 0xffffffff)
+			continue;	//some kind of lingering QW or DP response?
 		flags = length & (~NETFLAG_LENGTH_MASK);
 		length &= NETFLAG_LENGTH_MASK;
 
