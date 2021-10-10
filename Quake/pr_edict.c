@@ -687,6 +687,41 @@ void ED_FindSecrets(void)
 	}
 }
 
+void ED_FindMonsters(void)
+{
+	if (!sv.active)
+		return;
+
+	int dest = Q_atoi(Cmd_Argv(1));
+	int c = 1;
+
+	for (int e = 0; e < sv.num_edicts; ++e)
+	{
+		edict_t *ed = EDICT_NUM(e);
+
+		if (ed->free)
+			continue;
+
+		if ((int)ed->v.flags & FL_MONSTER)
+		{
+			if (dest <= 0)
+			{
+				Con_SafePrintf("%i: %.0f %.0f %.0f\n", c, ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
+			}
+			else if (dest == c)
+			{
+				Cbuf_AddText(va("setpos %.0f %.0f %.0f %.0f %.0f %.0f",
+					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2],
+					ed->v.angles[0], ed->v.angles[1], ed->v.angles[2]));
+				break;
+			}
+
+			c++;
+		}
+	}
+}
+
+
 /*
 ==============================================================================
 
@@ -1201,6 +1236,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
 	Cmd_AddCommand ("secrets", ED_FindSecrets);
+	Cmd_AddCommand ("monsters", ED_FindMonsters);
 	Cvar_RegisterVariable (&nomonsters);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);
