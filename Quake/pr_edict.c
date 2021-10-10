@@ -706,7 +706,9 @@ void ED_FindMonsters(void)
 		{
 			if (dest <= 0)
 			{
-				Con_SafePrintf("%i: %.0f %.0f %.0f\n", c, ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
+				const char *classname = PR_GetString(ed->v.classname);
+				Con_SafePrintf("%i: %s at %.0f %.0f %.0f\n", c, classname,
+					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
 			}
 			else if (dest == c)
 			{
