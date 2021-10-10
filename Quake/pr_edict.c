@@ -646,6 +646,47 @@ static void ED_Count (void)
 }
 
 
+void ED_FindSecrets(void)
+{
+	if (!sv.active)
+		return;
+
+	int dest = Q_atoi(Cmd_Argv(1));
+	int c = 1;
+
+	for (int e = 0; e < sv.num_edicts; ++e)
+	{
+		edict_t *ed = EDICT_NUM(e);
+
+		if (ed->free)
+			continue;
+
+		const char *classname = PR_GetString(ed->v.classname);
+
+		if (strcmp(classname, "trigger_secret") == 0)
+		{
+			vec_t minx = ed->v.absmin[0];
+			vec_t miny = ed->v.absmin[1];
+			vec_t minz = ed->v.absmin[2];
+			vec_t maxx = ed->v.absmax[0];
+			vec_t maxy = ed->v.absmax[1];
+			vec_t maxz = ed->v.absmax[2];
+
+			if (dest <= 0)
+			{
+				Con_SafePrintf("%i: %.0f %.0f %.0f\n", c, minx + (maxx - minx) / 2.f, miny + (maxy - miny) / 2.f, minz + (maxz - minz) / 2.0);
+			}
+			else if (dest == c)
+			{
+				Cbuf_AddText(va("setpos %.0f %.0f %.0f", minx + (maxx - minx) / 2.f, miny + (maxy - miny) / 2.f, minz + (maxz - minz) / 2.0));
+				break;
+			}
+
+			c++;
+		}
+	}
+}
+
 /*
 ==============================================================================
 
@@ -1159,6 +1200,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
+	Cmd_AddCommand ("secrets", ED_FindSecrets);
 	Cvar_RegisterVariable (&nomonsters);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);
