@@ -161,7 +161,67 @@ void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
 
-void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
+// Tonik ...
+void IN_Impulse(void)
+{
+	int best, i, imp;
+
+	in_impulse = Q_atoi(Cmd_Argv(1));
+
+	if (Cmd_Argc() <= 2)
+	{
+		return;
+	}
+
+	best = 0;
+
+	for (i = Cmd_Argc() - 1; i > 0; i--)
+	{
+		imp = Q_atoi(Cmd_Argv(i));
+		if (imp < 1 || imp > 8)
+			continue;
+		switch (imp)
+		{
+		case 1:
+			if (cl.items & IT_AXE)
+				best = 1;
+			break;
+		case 2:
+			if (cl.items & IT_SHOTGUN && cl.stats[STAT_SHELLS] >= 1)
+				best = 2;
+			break;
+		case 3:
+			if (cl.items & IT_SUPER_SHOTGUN && cl.stats[STAT_SHELLS] >= 2)
+				best = 3;
+			break;
+		case 4:
+			if (cl.items & IT_NAILGUN && cl.stats[STAT_NAILS] >= 1)
+				best = 4;
+			break;
+		case 5:
+			if (cl.items & IT_SUPER_NAILGUN && cl.stats[STAT_NAILS] >= 2)
+				best = 5;
+			break;
+		case 6:
+			if (cl.items & IT_GRENADE_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
+				best = 6;
+			break;
+		case 7:
+			if (cl.items & IT_ROCKET_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
+				best = 7;
+			break;
+		case 8:
+			if (cl.items & IT_LIGHTNING && cl.stats[STAT_CELLS] > 0)
+				best = 8;
+		}
+	}
+
+	if (best)
+	{
+		in_impulse = best;
+	}
+}
+//... Tonik
 
 /*
 ===============
