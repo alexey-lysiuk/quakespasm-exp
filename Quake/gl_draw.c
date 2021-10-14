@@ -473,6 +473,41 @@ void Draw_Character (int x, int y, int num)
 	glEnd ();
 }
 
+void Draw_CharacterScaled (int x, int y, int num)
+{
+	int	row, col, size;
+	float	frow, fcol;
+
+	if (y <= -8)
+		return;		// totally off screen
+
+	if (num == 32)
+		return;		// space
+
+	num &= 255;
+	
+	row = num >> 4;
+	col = num & 15;
+
+	frow = row * 0.0625;
+	fcol = col * 0.0625;
+
+	size = 8 * scr_sbarscale.value;
+
+	GL_Bind (char_texture);
+
+	glBegin (GL_QUADS);
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	glTexCoord2f (fcol + 0.0625, frow);
+	glVertex2f (x + size, y);
+	glTexCoord2f (fcol + 0.0625, frow + 0.0625);
+	glVertex2f (x + size, y + size);
+	glTexCoord2f (fcol, frow + 0.0625);
+	glVertex2f (x, y + size);
+	glEnd ();
+}
+
 /*
 ================
 Draw_String -- johnfitz -- modified to call Draw_CharacterQuad
@@ -519,6 +554,43 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 	glVertex2f (x+pic->width, y+pic->height);
 	glTexCoord2f (gl->sl, gl->th);
 	glVertex2f (x, y+pic->height);
+	glEnd ();
+}
+
+/*
+=============
+Draw_SubPic
+=============
+*/
+void Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+{
+	if (scrap_dirty)
+		Scrap_Upload ();
+
+	glpic_t *gl = (glpic_t *)pic->data;
+
+	float oldglwidth = gl->sh - gl->sl;
+	float oldglheight = gl->th - gl->tl;
+
+	float newsl = gl->sl + (srcx*oldglwidth)/pic->width;
+	float newsh = newsl + (width*oldglwidth)/pic->width;
+
+	float newtl = gl->tl + (srcy*oldglheight)/pic->height;
+	float newth = newtl + (height*oldglheight)/pic->height;
+
+	float scale = scr_sbarscale.value;
+
+	glColor4f (1,1,1,1);
+	GL_Bind (gl->gltexture);
+	glBegin (GL_QUADS);
+	glTexCoord2f (newsl, newtl);
+	glVertex2f (x, y);
+	glTexCoord2f (newsh, newtl);
+	glVertex2f (x + (int)(width * scale), y);
+	glTexCoord2f (newsh, newth);
+	glVertex2f (x + (int)(width * scale), y + (int)(height * scale));
+	glTexCoord2f (newsl, newth);
+	glVertex2f (x, y + (int)(height * scale));
 	glEnd ();
 }
 

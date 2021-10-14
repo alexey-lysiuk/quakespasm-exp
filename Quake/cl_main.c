@@ -36,6 +36,9 @@ cvar_t	cl_nolerp = {"cl_nolerp","0",CVAR_NONE};
 
 cvar_t	cfg_unbindall = {"cfg_unbindall", "1", CVAR_ARCHIVE};
 
+cvar_t	cl_sbar = {"cl_sbar", "0", CVAR_ARCHIVE, true};
+cvar_t	cl_hudswap = {"cl_hudswap", "0", CVAR_ARCHIVE, true};
+
 cvar_t	lookspring = {"lookspring","0", CVAR_ARCHIVE};
 cvar_t	lookstrafe = {"lookstrafe","0", CVAR_ARCHIVE};
 cvar_t	sensitivity = {"sensitivity","3", CVAR_ARCHIVE};
@@ -800,6 +803,9 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&m_side);
 
 	Cvar_RegisterVariable (&cfg_unbindall);
+
+	Cvar_RegisterVariable (&cl_sbar);
+	Cvar_RegisterVariable (&cl_hudswap);
 
 	Cvar_RegisterVariable (&cl_maxpitch); //johnfitz -- variable pitch clamping
 	Cvar_RegisterVariable (&cl_minpitch); //johnfitz -- variable pitch clamping

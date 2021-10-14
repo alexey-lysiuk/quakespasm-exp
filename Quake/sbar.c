@@ -276,6 +276,18 @@ void Sbar_DrawPic (int x, int y, qpic_t *pic)
 
 /*
 =============
+Sbar_DrawSubPic
+=============
+JACK: Draws a portion of the picture in the status bar.
+*/
+
+void Sbar_DrawSubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+{
+	Draw_SubPic (x, y + (vid.height - 24), pic, srcx, srcy, width, height);
+}
+
+/*
+=============
 Sbar_DrawPicAlpha -- johnfitz
 =============
 */
@@ -551,6 +563,8 @@ void Sbar_DrawScoreboard (void)
 Sbar_DrawInventory
 ===============
 */
+void Draw_CharacterScaled (int x, int y, int num);
+
 void Sbar_DrawInventory (void)
 {
 	int	i, val;
@@ -558,19 +572,27 @@ void Sbar_DrawInventory (void)
 	float	time;
 	int	flashon;
 
-	if (rogue)
+	qboolean headsup = !(cl_sbar.value == 1 || scr_viewsize.value < 100);
+	float scale = scr_sbarscale.value;
+
+	if (!headsup)
 	{
-		if ( cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN )
-			Sbar_DrawPicAlpha (0, -24, rsb_invbar[0], scr_sbaralpha.value); //johnfitz -- scr_sbaralpha
+		if (rogue)
+		{
+			if ( cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN )
+				Sbar_DrawPicAlpha (0, -24, rsb_invbar[0], scr_sbaralpha.value); //johnfitz -- scr_sbaralpha
+			else
+				Sbar_DrawPicAlpha (0, -24, rsb_invbar[1], scr_sbaralpha.value); //johnfitz -- scr_sbaralpha
+		}
 		else
-			Sbar_DrawPicAlpha (0, -24, rsb_invbar[1], scr_sbaralpha.value); //johnfitz -- scr_sbaralpha
-	}
-	else
-	{
-		Sbar_DrawPicAlpha (0, -24, sb_ibar, scr_sbaralpha.value); //johnfitz -- scr_sbaralpha
+		{
+			Sbar_DrawPicAlpha (0, -24, sb_ibar, scr_sbaralpha.value); //johnfitz -- scr_sbaralpha
+		}
 	}
 
 // weapons
+	int ystart = hipnotic ? -100 : -68;
+
 	for (i = 0; i < 7; i++)
 	{
 		if (cl.items & (IT_SHOTGUN<<i) )
@@ -587,7 +609,15 @@ void Sbar_DrawInventory (void)
 			else
 				flashon = (flashon%5) + 2;
 
-			Sbar_DrawPic (i*24, -16, sb_weapons[flashon][i]);
+			if (headsup)
+			{
+				if (i || vid.height>200)
+					Sbar_DrawSubPic ((vid.width - (int)(24 * scale)), (int)((ystart - (7-i)*16) * scale), sb_weapons[flashon][i], 0, 0, 24, 16);
+			}
+			else
+			{
+				Sbar_DrawPic (i*24, -16, sb_weapons[flashon][i]);
+			}
 
 			if (flashon > 1)
 				sb_updates = 0;		// force update to remove flash
@@ -673,12 +703,27 @@ void Sbar_DrawInventory (void)
 		val = cl.stats[STAT_SHELLS+i];
 		val = (val < 0)? 0 : q_min(999,val);//johnfitz -- cap displayed value to 999
 		sprintf (num, "%3i", val);
-		if (num[0] != ' ')
-			Sbar_DrawCharacter ( (6*i+1)*8 + 2, -24, 18 + num[0] - '0');
-		if (num[1] != ' ')
-			Sbar_DrawCharacter ( (6*i+2)*8 + 2, -24, 18 + num[1] - '0');
-		if (num[2] != ' ')
-			Sbar_DrawCharacter ( (6*i+3)*8 + 2, -24, 18 + num[2] - '0');
+		if (headsup)
+		{
+			int sbar_height = 24; // sb_lines * scale;
+
+			Sbar_DrawSubPic ((vid.width - (int)(42 * scale)), (int)((-24 - (4-i)*11) * scale), sb_ibar, 3+(i*48), 0, 42, 11);
+			if (num[0] != ' ')
+				Draw_CharacterScaled ((vid.width - (int)(35 * scale)), vid.height - sbar_height - (int)(24 * scale) - (int)((4-i)*11 * scale), 18 + num[0] - '0'/*, true*/);
+			if (num[1] != ' ')
+				Draw_CharacterScaled ((vid.width - (int)(27 * scale)), vid.height - sbar_height - (int)(24 * scale) - (int)((4-i)*11 * scale), 18 + num[1] - '0'/*, true*/);
+			if (num[2] != ' ')
+				Draw_CharacterScaled ((vid.width - (int)(19 * scale)), vid.height - sbar_height - (int)(24 * scale) - (int)((4-i)*11 * scale), 18 + num[2] - '0'/*, true*/);
+		}
+		else
+		{
+			if (num[0] != ' ')
+				Sbar_DrawCharacter ( (6*i+1)*8 + 2, -24, 18 + num[0] - '0');
+			if (num[1] != ' ')
+				Sbar_DrawCharacter ( (6*i+2)*8 + 2, -24, 18 + num[1] - '0');
+			if (num[2] != ' ')
+				Sbar_DrawCharacter ( (6*i+3)*8 + 2, -24, 18 + num[2] - '0');
+		}
 	}
 
 	flashon = 0;
@@ -957,7 +1002,8 @@ void Sbar_Draw (void)
 	}
 	//johnfitz
 
-	GL_SetCanvas (CANVAS_SBAR); //johnfitz
+	if (cl_sbar.value == 1)
+		GL_SetCanvas (CANVAS_SBAR); //johnfitz
 
 	if (scr_viewsize.value < 110) //johnfitz -- check viewsize instead of sb_lines
 	{

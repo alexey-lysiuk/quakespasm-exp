@@ -308,7 +308,7 @@ static void SCR_CalcRefdef (void)
 	size = scr_viewsize.value;
 	scale = CLAMP (1.0, scr_sbarscale.value, (float)glwidth / 320.0);
 
-	if (size >= 120 || cl.intermission || scr_sbaralpha.value < 1) //johnfitz -- scr_sbaralpha.value
+	if (size >= 120 || cl.intermission || scr_sbaralpha.value < 1 || !cl_sbar.value) //johnfitz -- scr_sbaralpha.value
 		sb_lines = 0;
 	else if (size >= 110)
 		sb_lines = 24 * scale;
@@ -413,6 +413,7 @@ void SCR_Init (void)
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
 	Cvar_SetCallback (&scr_fov_adapt, SCR_Callback_refdef);
 	Cvar_SetCallback (&scr_viewsize, SCR_Callback_refdef);
+	Cvar_SetCallback (&cl_sbar, SCR_Callback_refdef);
 	Cvar_RegisterVariable (&scr_fov);
 	Cvar_RegisterVariable (&scr_fov_adapt);
 	Cvar_RegisterVariable (&scr_viewsize);
