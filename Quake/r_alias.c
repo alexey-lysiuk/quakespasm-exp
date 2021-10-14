@@ -945,15 +945,29 @@ void R_SetupAliasLighting (entity_t	*e)
 	int			i;
 	int		quantizedangle;
 	float		radiansangle;
-	float		*origin = e->origin;
+	float		*origin;
 
 	if (!r_refdef.drawworld)
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
 	else
 	{
 		if (e->eflags & EFLAGS_VIEWMODEL)
+		{
 			origin = r_refdef.vieworg;
-		R_LightPoint (origin);
+			R_LightPoint (origin);
+		}
+		else
+		{
+			vec3_t		lpos;
+			origin = e->origin;
+			VectorCopy (origin, lpos);
+			// start the light trace from slightly above the origin
+			// this helps with models whose origin is below ground level, but are otherwise visible
+			// (e.g. some of the candles in the DOTM start map, which would otherwise appear black)
+			if (e->model->maxs[2] > 0)
+				lpos[2] += e->model->maxs[2] * 0.5f;
+			R_LightPoint (lpos);
+		}
 
 		//add dlights
 		for (i=0 ; i<MAX_DLIGHTS ; i++)

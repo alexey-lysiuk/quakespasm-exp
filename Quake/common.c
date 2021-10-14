@@ -2135,7 +2135,6 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 		&& strcmp(ext, "ent") != 0)
 		Con_DPrintf ("FindFile: can't find %s\n", filename);
 	else	Con_DPrintf2("FindFile: can't find %s\n", filename);
-		// Log pcx, tga, lit, ent misses only if (developer.value >= 2)
 
 	if (handle)
 		*handle = -1;
@@ -2934,7 +2933,6 @@ void COM_ResetGameDirectories(char *newgamedirs)
 //==============================================================================
 //johnfitz -- dynamic gamedir stuff -- modified by QuakeSpasm team.
 //==============================================================================
-void ExtraMaps_NewGame (void);
 static void COM_Game_f (void)
 {
 	if (Cmd_Argc() > 1)
@@ -3115,7 +3113,10 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 
 	//this is horrible.
 	if (!fitzmode)
-		COM_AddPackage(NULL, va("%s/QuakeEX.kpf", com_basedir), "QuakeEX.kpf");
+	{
+		if (!COM_AddPackage(NULL, va("%s/QuakeEX.kpf", host_parms->userdir), "QuakeEX.kpf") && strcmp(com_basedir, host_parms->userdir))
+			COM_AddPackage(NULL, va("%s/QuakeEX.kpf", com_basedir), "QuakeEX.kpf");
+	}
 
 	i = COM_CheckParmNext (i, "-basegame");
 	if (i)

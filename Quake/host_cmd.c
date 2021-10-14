@@ -37,7 +37,6 @@ void Mod_Print (void);
 Host_Quit_f
 ==================
 */
-
 void Host_Quit_f (void)
 {
 	if (key_dest != key_console && cls.state != ca_dedicated && !cls.menu_qcvm.progs)
@@ -60,7 +59,7 @@ void Host_Quit_f (void)
 FileList_Add
 ==================
 */
-void FileList_Add (const char *name, filelist_item_t **list)
+static void FileList_Add (const char *name, filelist_item_t **list)
 {
 	filelist_item_t	*item,*cursor,*prev;
 
@@ -98,7 +97,7 @@ void FileList_Add (const char *name, filelist_item_t **list)
 static void FileList_Clear (filelist_item_t **list)
 {
 	filelist_item_t *blah;
-	
+
 	while (*list)
 	{
 		blah = (*list)->next;
@@ -109,7 +108,7 @@ static void FileList_Clear (filelist_item_t **list)
 
 filelist_item_t	*extralevels;
 
-void ExtraMaps_Add (const char *name)
+static void ExtraMaps_Add (const char *name)
 {
 	FileList_Add(name, &extralevels);
 }
@@ -200,7 +199,7 @@ void ExtraMaps_NewGame (void)
 Host_Maps_f
 ==================
 */
-void Host_Maps_f (void)
+static void Host_Maps_f (void)
 {
 	int i;
 	filelist_item_t	*level;
@@ -220,7 +219,7 @@ void Host_Maps_f (void)
 
 filelist_item_t	*modlist;
 
-void Modlist_Add (const char *name)
+static void Modlist_Add (const char *name)
 {
 	FileList_Add(name, &modlist);
 }
@@ -316,7 +315,7 @@ void DemoList_Init (void)
 	searchpath_t	*search;
 	pack_t		*pak;
 	int		i;
-	
+
 	// we don't want to list the demos in id1 pakfiles,
 	// because these are not "add-on" demos
 	q_snprintf (ignorepakdir, sizeof(ignorepakdir), "/%s/", GAMENAME);
@@ -368,7 +367,6 @@ void DemoList_Init (void)
 	}
 }
 
-
 /*
 ==================
 Host_Mods_f -- johnfitz
@@ -376,7 +374,7 @@ Host_Mods_f -- johnfitz
 list all potential mod directories (contain either a pak file or a progs.dat)
 ==================
 */
-void Host_Mods_f (void)
+static void Host_Mods_f (void)
 {
 	int i;
 	filelist_item_t	*mod;
@@ -397,7 +395,7 @@ void Host_Mods_f (void)
 Host_Mapname_f -- johnfitz
 =============
 */
-void Host_Mapname_f (void)
+static void Host_Mapname_f (void)
 {
 	if (sv.active)
 	{
@@ -419,7 +417,7 @@ void Host_Mapname_f (void)
 Host_Status_f
 ==================
 */
-void Host_Status_f (void)
+static void Host_Status_f (void)
 {
 	void	(*print_fn) (const char *fmt, ...)
 				 FUNCP_PRINTF(1,2);
@@ -518,7 +516,7 @@ Host_God_f
 Sets client to godmode
 ==================
 */
-void Host_God_f (void)
+static void Host_God_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -563,7 +561,7 @@ void Host_God_f (void)
 Host_Notarget_f
 ==================
 */
-void Host_Notarget_f (void)
+static void Host_Notarget_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -610,7 +608,7 @@ qboolean noclip_anglehack;
 Host_Noclip_f
 ==================
 */
-void Host_Noclip_f (void)
+static void Host_Noclip_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -666,17 +664,17 @@ Host_SetPos_f
 adapted from fteqw, originally by Alex Shadowalker
 ====================
 */
-void Host_SetPos_f(void)
+static void Host_SetPos_f(void)
 {
 	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
 	}
-	
+
 	if (pr_global_struct->deathmatch)
 		return;
-	
+
 	if (Cmd_Argc() != 7 && Cmd_Argc() != 4)
 	{
 		SV_ClientPrintf("usage:\n");
@@ -692,14 +690,14 @@ void Host_SetPos_f(void)
 			(int)sv_player->v.v_angle[2]);
 		return;
 	}
-	
+
 	if (sv_player->v.movetype != MOVETYPE_NOCLIP)
 	{
 		noclip_anglehack = true;
 		sv_player->v.movetype = MOVETYPE_NOCLIP;
 		SV_ClientPrintf ("noclip ON\n");
 	}
-	
+
 	//make sure they're not going to whizz away from it
 	sv_player->v.velocity[0] = 0;
 	sv_player->v.velocity[1] = 0;
@@ -727,7 +725,7 @@ Host_Fly_f
 Sets client to flymode
 ==================
 */
-void Host_Fly_f (void)
+static void Host_Fly_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -772,14 +770,13 @@ void Host_Fly_f (void)
 	//johnfitz
 }
 
-
 /*
 ==================
 Host_Ping_f
 
 ==================
 */
-void Host_Ping_f (void)
+static void Host_Ping_f (void)
 {
 	int		i, j;
 	float		total;
@@ -812,7 +809,6 @@ SERVER TRANSITIONS
 ===============================================================================
 */
 
-
 /*
 ======================
 Host_Map_f
@@ -822,7 +818,7 @@ map <servername>
 command from the console.  Active clients are kicked off.
 ======================
 */
-void Host_Map_f (void)
+static void Host_Map_f (void)
 {
 	int		i;
 	char	name[MAX_QPATH], *p;
@@ -892,7 +888,7 @@ Host_Randmap_f
 Loads a random map from the "maps" list.
 ======================
 */
-void Host_Randmap_f (void)
+static void Host_Randmap_f (void)
 {
 	int	i, randlevel, numlevels;
 	filelist_item_t	*level;
@@ -929,7 +925,7 @@ Host_Changelevel_f
 Goes to a new map, taking all clients along
 ==================
 */
-void Host_Changelevel_f (void)
+static void Host_Changelevel_f (void)
 {
 	char	level[MAX_QPATH];
 
@@ -971,7 +967,7 @@ Host_Restart_f
 Restarts the current server for a dead player
 ==================
 */
-void Host_Restart_f (void)
+static void Host_Restart_f (void)
 {
 	char	mapname[MAX_QPATH];
 
@@ -1003,7 +999,7 @@ This is sent just before a server changes levels
 for compatibility with quakeworld et al, we also allow this as a user-command to reconnect to the last server we tried, but we can only reliably do that when we're not already connected
 ==================
 */
-void Host_Reconnect_Con_f (void)
+static void Host_Reconnect_Con_f (void)
 {
 	CL_Disconnect_f();
 	cls.demonum = -1;		// stop demo loop in case this fails
@@ -1014,7 +1010,7 @@ void Host_Reconnect_Con_f (void)
 	}
 	CL_EstablishConnection (NULL);
 }
-void Host_Reconnect_Sv_f (void)
+static void Host_Reconnect_Sv_f (void)
 {
 	if (cls.demoplayback)	// cross-map demo playback fix from Baker
 		return;
@@ -1024,7 +1020,7 @@ void Host_Reconnect_Sv_f (void)
 	cls.signon = 0;		// need new connection messages
 }
 
-void Host_Lightstyle_f (void)
+static void Host_Lightstyle_f (void)
 {
 	CL_UpdateLightstyle(atoi(Cmd_Argv(1)), Cmd_Argv(2));
 }
@@ -1036,7 +1032,7 @@ Host_Connect_f
 User command to connect to server
 =====================
 */
-void Host_Connect_f (void)
+static void Host_Connect_f (void)
 {
 	char	name[MAX_QPATH];
 
@@ -1069,7 +1065,7 @@ Host_SavegameComment
 Writes a SAVEGAME_COMMENT_LENGTH character comment describing the current
 ===============
 */
-void Host_SavegameComment (char *text)
+static void Host_SavegameComment (char *text)
 {
 	int		i;
 	char	kills[20];
@@ -1099,13 +1095,12 @@ void Host_SavegameComment (char *text)
 	text[SAVEGAME_COMMENT_LENGTH] = '\0';
 }
 
-
 /*
 ===============
 Host_Savegame_f
 ===============
 */
-void Host_Savegame_f (void)
+static void Host_Savegame_f (void)
 {
 	char	name[MAX_OSPATH];
 	FILE	*f;
@@ -1177,7 +1172,6 @@ void Host_Savegame_f (void)
 	fprintf (f, "%f\n", qcvm->time);
 
 // write the light styles
-
 	for (i = 0; i < MAX_LIGHTSTYLES_VANILLA; i++)
 	{
 		if (sv.lightstyles[i])
@@ -1185,7 +1179,6 @@ void Host_Savegame_f (void)
 		else
 			fprintf (f,"m\n");
 	}
-
 
 	ED_WriteGlobals (f);
 	for (i = 0; i < qcvm->num_edicts; i++)
@@ -1235,13 +1228,12 @@ void Host_Savegame_f (void)
 	PR_SwitchQCVM(NULL);
 }
 
-
 /*
 ===============
 Host_Loadgame_f
 ===============
 */
-void Host_Loadgame_f (void)
+static void Host_Loadgame_f (void)
 {
 	static char	*start;
 	
@@ -1480,7 +1472,7 @@ void Host_Loadgame_f (void)
 Host_Name_f
 ======================
 */
-void Host_Name_f (void)
+static void Host_Name_f (void)
 {
 	char	newName[32];
 
@@ -1505,7 +1497,7 @@ void Host_Name_f (void)
 		SV_UpdateInfo((host_client-svs.clients)+1, "name", newName);
 }
 
-void Host_Say(qboolean teamonly)
+static void Host_Say(qboolean teamonly)
 {
 	int		j;
 	client_t	*client;
@@ -1582,20 +1574,17 @@ void Host_Say(qboolean teamonly)
 		Sys_Printf("%s", &text[1]);
 }
 
-
-void Host_Say_f(void)
+static void Host_Say_f(void)
 {
 	Host_Say(false);
 }
 
-
-void Host_Say_Team_f(void)
+static void Host_Say_Team_f(void)
 {
 	Host_Say(true);
 }
 
-
-void Host_Tell_f(void)
+static void Host_Tell_f(void)
 {
 	int		j;
 	client_t	*client;
@@ -1659,13 +1648,12 @@ void Host_Tell_f(void)
 	host_client = save;
 }
 
-
 /*
 ==================
 Host_Color_f
 ==================
 */
-void Host_Color_f(void)
+static void Host_Color_f(void)
 {
 	const char *top, *bottom;
 
@@ -1702,7 +1690,7 @@ void Host_Color_f(void)
 Host_Kill_f
 ==================
 */
-void Host_Kill_f (void)
+static void Host_Kill_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -1721,13 +1709,12 @@ void Host_Kill_f (void)
 	PR_ExecuteProgram (pr_global_struct->ClientKill);
 }
 
-
 /*
 ==================
 Host_Pause_f
 ==================
 */
-void Host_Pause_f (void)
+static void Host_Pause_f (void)
 {
 //ericw -- demo pause support (inspired by MarkV)
 	if (cls.demoplayback)
@@ -1765,13 +1752,12 @@ void Host_Pause_f (void)
 
 //===========================================================================
 
-
 /*
 ==================
 Host_PreSpawn_f
 ==================
 */
-void Host_PreSpawn_f (void)
+static void Host_PreSpawn_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -1795,7 +1781,7 @@ void Host_PreSpawn_f (void)
 Host_Spawn_f
 ==================
 */
-void Host_Spawn_f (void)
+static void Host_Spawn_f (void)
 {
 	int		i;
 	client_t	*client;
@@ -1853,7 +1839,6 @@ void Host_Spawn_f (void)
 
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
 	}
-
 
 // send all current names, colors, and frag counts
 	SZ_Clear (&host_client->message);
@@ -1952,7 +1937,7 @@ void Host_Spawn_f (void)
 Host_Begin_f
 ==================
 */
-void Host_Begin_f (void)
+static void Host_Begin_f (void)
 {
 	if (cmd_source != src_client)
 	{
@@ -1965,7 +1950,6 @@ void Host_Begin_f (void)
 
 //===========================================================================
 
-
 /*
 ==================
 Host_Kick_f
@@ -1973,7 +1957,7 @@ Host_Kick_f
 Kicks a user off of the server
 ==================
 */
-void Host_Kick_f (void)
+static void Host_Kick_f (void)
 {
 	const char	*who;
 	const char	*message = NULL;
@@ -2065,7 +2049,7 @@ DEBUGGING TOOLS
 Host_Give_f
 ==================
 */
-void Host_Give_f (void)
+static void Host_Give_f (void)
 {
 	const char	*t;
 	int	v;
@@ -2290,7 +2274,7 @@ void Host_Give_f (void)
 	//johnfitz
 }
 
-edict_t	*FindViewthing (void)
+static edict_t	*FindViewthing (void)
 {
 	int		i;
 	edict_t	*e = NULL;
@@ -2333,7 +2317,7 @@ edict_t	*FindViewthing (void)
 Host_Viewmodel_f
 ==================
 */
-void Host_Viewmodel_f (void)
+static void Host_Viewmodel_f (void)
 {
 	edict_t	*e;
 	qmodel_t	*m;
@@ -2366,7 +2350,7 @@ void Host_Viewmodel_f (void)
 Host_Viewframe_f
 ==================
 */
-void Host_Viewframe_f (void)
+static void Host_Viewframe_f (void)
 {
 	edict_t	*e;
 	int		f;
@@ -2386,8 +2370,7 @@ void Host_Viewframe_f (void)
 	}
 }
 
-
-void PrintFrameName (qmodel_t *m, int frame)
+static void PrintFrameName (qmodel_t *m, int frame)
 {
 	aliashdr_t 			*hdr;
 	maliasframedesc_t	*pframedesc;
@@ -2405,7 +2388,7 @@ void PrintFrameName (qmodel_t *m, int frame)
 Host_Viewnext_f
 ==================
 */
-void Host_Viewnext_f (void)
+static void Host_Viewnext_f (void)
 {
 	edict_t	*e;
 	qmodel_t	*m;
@@ -2429,7 +2412,7 @@ void Host_Viewnext_f (void)
 Host_Viewprev_f
 ==================
 */
-void Host_Viewprev_f (void)
+static void Host_Viewprev_f (void)
 {
 	edict_t	*e;
 	qmodel_t	*m;
@@ -2457,13 +2440,12 @@ DEMO LOOP CONTROL
 ===============================================================================
 */
 
-
 /*
 ==================
 Host_Startdemos_f
 ==================
 */
-void Host_Startdemos_f (void)
+static void Host_Startdemos_f (void)
 {
 	int		i, c;
 
@@ -2499,7 +2481,6 @@ void Host_Startdemos_f (void)
 	}
 }
 
-
 /*
 ==================
 Host_Demos_f
@@ -2507,7 +2488,7 @@ Host_Demos_f
 Return to looping demos
 ==================
 */
-void Host_Demos_f (void)
+static void Host_Demos_f (void)
 {
 	if (cls.state == ca_dedicated)
 		return;
@@ -2524,7 +2505,7 @@ Host_Stopdemo_f
 Return to looping demos
 ==================
 */
-void Host_Stopdemo_f (void)
+static void Host_Stopdemo_f (void)
 {
 	if (cls.state == ca_dedicated)
 		return;
