@@ -7012,6 +7012,85 @@ static void PF_cl_getrenderentity(void)
 	}
 }
 
+
+/*
+==============
+Various QuakeEX-compatible builtins in order to run the rerelease's progs
+==============
+*/
+static const char* PR_GetStringArg(int idx, void* userdata)
+{
+	if (userdata)
+		idx += *(int*)userdata;
+	if (idx < 0 || idx >= qcvm->argc)
+		return "";
+	return LOC_GetString(G_STRING(OFS_PARM0 + idx * 3));
+}
+const char *PR_VarString_qex (int	first)
+{
+	static char out[1024];
+	const char *format;
+	size_t s;
+	int offset = first + 1;
+
+	out[0] = 0;
+	s = 0;
+
+	if (first >= qcvm->argc)
+		return out;
+
+	format = LOC_GetString(G_STRING((OFS_PARM0 + first * 3)));
+	first++;
+	s = LOC_Format(format, PR_GetStringArg, &offset, out, sizeof(out));
+
+	if (s > 255)
+	{
+		if (!dev_overflows.varstring || dev_overflows.varstring + CONSOLE_RESPAM_TIME < realtime)
+		{
+			Con_DWarning("PF_VarString: %i characters exceeds standard limit of 255 (max = %d).\n", (int) s, (int)(sizeof(out) - 1));
+			dev_overflows.varstring = realtime;
+		}
+	}
+	return out;
+}
+static void PF_finaleFinished_qex (void)
+{
+	G_FLOAT(OFS_RETURN) = 0;
+}
+static void PF_bprint_qex (void)
+{
+	const char		*s = PR_VarString_qex(0);
+	SV_BroadcastPrintf ("%s", s);
+}
+static void PF_sprint_qex (void)
+{
+	int entnum = G_EDICTNUM(OFS_PARM0);
+	const char *s = PR_VarString_qex(1);
+	client_t	*client;
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf ("tried to sprint to a non-client\n");
+		return;
+	}
+	client = &svs.clients[entnum-1];
+	MSG_WriteChar (&client->message,svc_print);
+	MSG_WriteString (&client->message, s );
+}
+static void PF_centerprint_qex (void)
+{
+	int entnum = G_EDICTNUM(OFS_PARM0);
+	const char *s = PR_VarString_qex(1);
+	client_t	*client;
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf ("tried to sprint to a non-client\n");
+		return;
+	}
+	client = &svs.clients[entnum-1];
+	MSG_WriteChar (&client->message,svc_centerprint);
+	MSG_WriteString (&client->message, s);
+}
+
 //A quick note on number ranges.
 //0: automatically assigned. more complicated, but no conflicts over numbers, just names...
 //   NOTE: #0 is potentially ambiguous - vanilla will interpret it as instruction 0 (which is normally reserved) rather than a builtin.
@@ -7039,6 +7118,23 @@ static struct
 #define PF_FullCSQCOnly NULL
 #define PF_NoMenu NULL,0
 {
+//QuakeEx (aka: quake rerelease). These conflict with core extensions so we don't register them by default.
+	{"finaleFinished_qex",PF_finaleFinished_qex,PF_NoCSQC,		0/*79*/,PF_NoMenu,	"DEP float()", "Behaviour is undocumented."},
+//	{"localsound_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*80*/,PF_NoMenu,	"DEP void(entity client, string sample)", "Behaviour is undocumented."},
+//	{"draw_point_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*81*/,PF_NoMenu,	"DEP void(vector point, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_line_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*82*/,PF_NoMenu,	"DEP void(vector start, vector end, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_arrow_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*83*/,PF_NoMenu,	"DEP void(vector start, vector end, float colormap, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_ray_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*84*/,PF_NoMenu,	"DEP void(vector start, vector direction, float length, float colormap, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_circle_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*85*/,PF_NoMenu,	"DEP void(vector origin, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_bounds_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*86*/,PF_NoMenu,	"DEP void(vector min, vector max, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_worldtext_qex",PF_Fixme_noext,	PF_NoCSQC,			0/*87*/,PF_NoMenu,	"DEP void(string s, vector origin, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_sphere_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*88*/,PF_NoMenu,	"DEP void(vector origin, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"draw_cylinder_qex",PF_Fixme_noext,	PF_NoCSQC,			0/*89*/,PF_NoMenu,	"DEP void(vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+	{"centerprint_qex",	PF_centerprint_qex,	PF_NoCSQC,			0/*90*/,PF_NoMenu,	"void(entity ent, string text, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5)", "Remaster: Sends the strings to the client, which will order according to {#}. Also substitutes localised strings for $NAME strings."},
+	{"bprint_qex",		PF_bprint_qex,		PF_NoCSQC,			0/*91*/,PF_NoMenu,	"void(string s, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5, optional string s6)", "Remaster: Sends the strings to all clients, which will order them according to {#}. Also substitutes localised strings for $NAME strings."},
+	{"sprint_qex",		PF_sprint_qex,		PF_NoCSQC,			0/*92*/,PF_NoMenu,	"void(entity client, string s, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5)", "Remaster: Sends the strings to the client, which will order according to {#}. Also substitutes localised strings for $NAME strings."},
+//End QuakeEx, for now. :(
+
 	{"setmodel",		PF_NoSSQC,			PF_NoCSQC,			3,	PF_m_setmodel,		90, "void(entity ent, string modelname)", ""},
 	{"precache_model",	PF_NoSSQC,			PF_NoCSQC,			20,	PF_m_precache_model,91, "string(string modelname)", ""},
 
@@ -7048,6 +7144,7 @@ static struct
 	{"sqrt",			PF_Sqrt,			PF_Sqrt,			62,	PF_Sqrt,40, "float(float value)"},	//62
 	{"tracetoss",		PF_TraceToss,		PF_TraceToss,		64,	PF_NoMenu, "void(entity ent, entity ignore)"},
 	{"etos",			PF_etos,			PF_etos,			65,	PF_NoMenu, "string(entity ent)"},
+
 	{"etof",			PF_num_for_edict,	PF_num_for_edict,	0, PF_num_for_edict,79, "float(entity ent)"},
 	{"ftoe",			PF_edict_for_num,	PF_edict_for_num,	0, PF_edict_for_num,80, "entity(float ent)"},
 	{"infokey",			PF_infokey_s,		PF_NoCSQC,			80,	PF_NoMenu, D("string(entity e, string key)", "If e is world, returns the field 'key' from either the serverinfo or the localinfo. If e is a player, returns the value of 'key' from the player's userinfo string. There are a few special exceptions, like 'ip' which is not technically part of the userinfo.")},	//80
@@ -7490,6 +7587,12 @@ qboolean PR_Can_EF_Red_Blue(unsigned int prot, unsigned int pext1, unsigned int 
 	qcvm->brokeneffects = false;
 	return !qcvm->brokeneffects;
 }
+qboolean PR_NotQEX(unsigned int prot, unsigned int pext1, unsigned int pext2)
+{	//extensions with builtins in the relevant range are broken by quakeex
+	if (qcvm->brokenbouncemissile)
+		return false;
+	return true;
+}
 static struct
 {
 	const char *name;
@@ -7523,16 +7626,16 @@ static struct
 	{"DP_QC_FINDCHAINFLAGS"},
 	{"DP_QC_FINDCHAINFLOAT"},
 	{"DP_QC_FINDFLAGS"},
-	{"DP_QC_FINDFLOAT"},
-	{"DP_QC_GETLIGHT"},
+	{"DP_QC_FINDFLOAT",			PR_NotQEX},
+	{"DP_QC_GETLIGHT",			PR_NotQEX},
 	{"DP_QC_GETSURFACE"},
 	{"DP_QC_GETSURFACETRIANGLE"},
 	{"DP_QC_GETSURFACEPOINTATTRIBUTE"},
-	{"DP_QC_MINMAXBOUND"},
+	{"DP_QC_MINMAXBOUND",		PR_NotQEX},
 	{"DP_QC_MULTIPLETEMPSTRINGS"},
-	{"DP_QC_RANDOMVEC"},
+	{"DP_QC_RANDOMVEC",			PR_NotQEX},
 	{"DP_QC_RENDER_SCENE"},	//meaningful for menuqc
-	{"DP_QC_SINCOSSQRTPOW"},
+	{"DP_QC_SINCOSSQRTPOW",		PR_NotQEX},
 	{"DP_QC_SPRINTF"},
 	{"DP_QC_STRFTIME"},
 	{"DP_QC_STRING_CASE_FUNCTIONS"},
@@ -7540,7 +7643,7 @@ static struct
 	{"DP_QC_STRINGCOLORFUNCTIONS"},
 	{"DP_QC_STRREPLACE"},
 	{"DP_QC_TOKENIZEBYSEPARATOR"},
-	{"DP_QC_TRACEBOX"},
+	{"DP_QC_TRACEBOX",			PR_NotQEX},
 	{"DP_QC_TRACETOSS"},
 	{"DP_QC_TRACE_MOVETYPES"},
 	{"DP_QC_URI_ESCAPE"},
@@ -7548,7 +7651,7 @@ static struct
 	{"DP_QC_VECTORVECTORS"},
 	{"DP_QC_WHICHPACK"},
 	{"DP_VIEWZOOM"},
-	{"DP_REGISTERCVAR"},
+	{"DP_REGISTERCVAR",			PR_NotQEX},
 	{"DP_SV_BOTCLIENT"},
 	{"DP_SV_DROPCLIENT"},
 //	{"DP_SV_POINTPARTICLES",	PR_Can_Particles},	//can't enable this, because certain mods then assume that we're DP and all the particles break.
@@ -7567,7 +7670,7 @@ static struct
 	{"DP_TE_STANDARDEFFECTBUILTINS"},
 	{"EXT_BITSHIFT"},
 	{"EXT_CSQC"},
-	{"FRIK_FILE"},				//lacks the file part, but does have the strings part.
+	{"FRIK_FILE",				PR_NotQEX},		//lacks the file part, but does have the strings part.
 	{"FTE_CSQC_SERVERBROWSER"},	//callable from csqc too, for feature parity.
 	{"FTE_ENT_SKIN_CONTENTS"},	//SOLID_BSP&&skin==CONTENTS_FOO changes CONTENTS_SOLID to CONTENTS_FOO, allowing you to swim in moving ents without qc hacks, as well as correcting view cshifts etc.
 #ifdef PSET_SCRIPT
@@ -7580,16 +7683,16 @@ static struct
 	{"FTE_QC_CHECKCOMMAND"},
 	{"FTE_QC_CROSSPRODUCT"},
 	{"FTE_QC_HARDWARECURSORS"},
-	{"FTE_QC_INFOKEY"},
+	{"FTE_QC_INFOKEY",			PR_NotQEX},
 	{"FTE_QC_INTCONV"},
-	{"FTE_QC_MULTICAST"},
+	{"FTE_QC_MULTICAST",		PR_NotQEX},
 	{"FTE_SOLID_BSPTRIGGER"},
-	{"FTE_STRINGS"},
+	{"FTE_STRINGS",				PR_NotQEX},
 #ifdef PSET_SCRIPT
 	{"FTE_SV_POINTPARTICLES",	PR_Can_Particles},
 #endif
 	{"KRIMZON_SV_PARSECLIENTCOMMAND"},
-	{"ZQ_QC_STRINGS"},
+	{"ZQ_QC_STRINGS",			PR_NotQEX},
 };
 
 static void PF_checkextension(void)
@@ -7794,6 +7897,22 @@ void PF_Fixme (void)
 	PR_RunError ("PF_Fixme: not a builtin...");
 }
 
+static void PF_Fixme_noext (void)
+{
+	//interrogate the vm to try to figure out exactly which builtin they just tried to execute.
+	dstatement_t *st = &qcvm->statements[qcvm->xstatement];
+	eval_t *glob = (eval_t*)&qcvm->globals[st->a];
+	if ((unsigned int)glob->function < (unsigned int)qcvm->progs->numfunctions)
+	{
+		dfunction_t *fnc = &qcvm->functions[(unsigned int)glob->function];
+		const char *funcname = PR_GetString(fnc->s_name);
+		int binum = -fnc->first_statement;
+		if (binum >= 0)
+			PR_RunError ("unimplemented builtin #%i - %s", binum, funcname);
+	}
+	PR_RunError ("PF_Fixme: not a builtin...");
+}
+
 
 //called at map end
 void PR_ShutdownExtensions(void)
@@ -7888,6 +8007,26 @@ void PR_InitExtensions(void)
 	}
 }
 
+static qboolean PR_IsQEX(void)
+{
+	//if centerprint is mapped to #90 and no other builtins are also mapped there (eg tracebox) then assume it targets QuakeEX (Aka: KexQuake aka its part of the rerelease)
+	size_t i;
+	qboolean isqex=false;
+
+	for (i = 1; i < qcvm->progs->numfunctions; i++)
+	{
+		if (qcvm->functions[i].first_statement == -90)
+		{
+			const char *biname = PR_GetString(qcvm->functions[i].s_name);
+			if (strstr(biname, "centerprint"))
+				isqex = true;
+			else
+				return false;
+		}
+	}
+	return isqex;
+}
+
 //called at map start
 void PR_EnableExtensions(ddef_t *pr_globaldefs)
 {
@@ -7898,17 +8037,41 @@ void PR_EnableExtensions(ddef_t *pr_globaldefs)
 	for (i = qcvm->numbuiltins; i < countof(qcvm->builtins); i++)
 		qcvm->builtins[i] = PF_Fixme;
 	qcvm->numbuiltins = i;
+	if (qcvm == &sv.qcvm && PR_IsQEX())
+	{	//make sure we don't stomp on them
+		qcvm->builtins[79] = PF_finaleFinished_qex;
+		qcvm->builtins[80] = PF_Fixme_noext;//localsound_qex
+		qcvm->builtins[81] = PF_Fixme_noext;//draw_point_qex
+		qcvm->builtins[82] = PF_Fixme_noext;//draw_line_qex
+		qcvm->builtins[83] = PF_Fixme_noext;//draw_arrow_qex
+		qcvm->builtins[84] = PF_Fixme_noext;//draw_ray_qex
+		qcvm->builtins[85] = PF_Fixme_noext;//draw_circle_qex
+		qcvm->builtins[86] = PF_Fixme_noext;//draw_bounds_qex
+		qcvm->builtins[87] = PF_Fixme_noext;//draw_worldtext_qex
+		qcvm->builtins[88] = PF_Fixme_noext;//draw_sphere_qex
+		qcvm->builtins[89] = PF_Fixme_noext;//draw_cylinder_qex
+		qcvm->builtins[90] = PF_centerprint_qex;
+		qcvm->builtins[91] = PF_bprint_qex;
+		qcvm->builtins[92] = PF_sprint_qex;
+		qcvm->builtins[93] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[94] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[95] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[96] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[97] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[97] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[98] = PF_Fixme_noext;//reserved...
+		qcvm->builtins[99] = PF_checkextension;
+
+		qcvm->brokenpushrotate = true;
+		qcvm->brokenbouncemissile = true;
+		qcvm->brokeneffects = true;
+		return;
+	}
 	if (!pr_checkextension.value && qcvm == &sv.qcvm)
 	{
 		qcvm->brokenpushrotate = true;
 		Con_DPrintf("not enabling qc extensions\n");
 		return;
-	}
-	if (PR_FindExtGlobal(ev_float, "FL_ISBOT"))
-	{
-		qcvm->brokenpushrotate = true;
-		qcvm->brokenbouncemissile = true;
-		qcvm->brokeneffects = true;
 	}
 
 #define QCEXTFUNC(n,t) qcvm->extfuncs.n = PR_FindExtFunction(#n);

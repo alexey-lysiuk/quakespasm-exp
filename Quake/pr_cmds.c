@@ -42,20 +42,10 @@ char *PR_GetTempString (void)
 ===============================================================================
 */
 
-static const char* PF_GetStringArg(int idx, void* userdata)
-{
-	if (userdata)
-		idx += *(int*)userdata;
-	if (idx < 0 || idx >= qcvm->argc)
-		return "";
-	return LOC_GetString(G_STRING(OFS_PARM0 + idx * 3));
-}
-
 char *PF_VarString (int	first)
 {
 	int		i;
 	static char out[1024];
-	const char *format;
 	size_t s;
 
 	out[0] = 0;
@@ -64,22 +54,13 @@ char *PF_VarString (int	first)
 	if (first >= qcvm->argc)
 		return out;
 
-	format = LOC_GetString(G_STRING((OFS_PARM0 + first * 3)));
-	if (LOC_HasPlaceholders(format))
+	for (i = first; i < qcvm->argc; i++)
 	{
-		int offset = first + 1;
-		s = LOC_Format(format, PF_GetStringArg, &offset, out, sizeof(out));
-	}
-	else
-	{
-		for (i = first; i < qcvm->argc; i++)
+		s = q_strlcat(out, G_STRING(OFS_PARM0+i*3), sizeof(out));
+		if (s >= sizeof(out))
 		{
-			s = q_strlcat(out, LOC_GetString(G_STRING(OFS_PARM0+i*3)), sizeof(out));
-			if (s >= sizeof(out))
-			{
-				Con_Warning("PF_VarString: overflow (string truncated)\n");
-				return out;
-			}
+			Con_Warning("PF_VarString: overflow (string truncated)\n");
+			return out;
 		}
 	}
 	if (s > 255)
@@ -378,9 +359,10 @@ bprint(value)
 */
 static void PF_bprint (void)
 {
-	char		*s;
+	const char		*s;
 
 	s = PF_VarString(0);
+	s = LOC_GetString(s);
 	SV_BroadcastPrintf ("%s", s);
 }
 
@@ -395,12 +377,13 @@ sprint(clientent, value)
 */
 static void PF_sprint (void)
 {
-	char		*s;
+	const char		*s;
 	client_t	*client;
 	int	entnum;
 
 	entnum = G_EDICTNUM(OFS_PARM0);
 	s = PF_VarString(1);
+	s = LOC_GetString(s);
 
 	if (entnum < 1 || entnum > svs.maxclients)
 	{
@@ -426,12 +409,13 @@ centerprint(clientent, value)
 */
 static void PF_centerprint (void)
 {
-	char		*s;
+	const char		*s;
 	client_t	*client;
 	int	entnum;
 
 	entnum = G_EDICTNUM(OFS_PARM0);
 	s = PF_VarString(1);
+	s = LOC_GetString(s);
 
 	if (entnum < 1 || entnum > svs.maxclients)
 	{
@@ -1781,16 +1765,6 @@ void PF_Fixme (void);
 //	PR_RunError ("unimplemented builtin");
 //}
 
-/*
-==============
-PF_finalefinished -- used by 2021 release.
-==============
-*/
-static void PF_finalefinished (void)
-{
-	G_FLOAT(OFS_RETURN) = 0;
-}
-
 void PR_spawnfunc_misc_model(edict_t *self)
 {
 	eval_t *val;
@@ -1900,22 +1874,6 @@ builtin_t pr_ssqcbuiltins[] =
 	PF_precache_file,
 
 	PF_sv_setspawnparms,
-
-	// 2021 release
-	PF_finalefinished,	// float() finaleFinished = #79
-	PF_Fixme,		// void localsound (entity client, string sample) = #80
-	PF_Fixme,		// void draw_point (vector point, float colormap, float lifetime, float depthtest) = #81
-	PF_Fixme,		// void draw_line (vector start, vector end, float colormap, float lifetime, float depthtest) = #82
-	PF_Fixme,		// void draw_arrow (vector start, vector end, float colormap, float size, float lifetime, float depthtest) = #83
-	PF_Fixme,		// void draw_ray (vector start, vector direction, float length, float colormap, float size, float lifetime, float depthtest) = #84
-	PF_Fixme,		// void draw_circle (vector origin, float radius, float colormap, float lifetime, float depthtest) = #85
-	PF_Fixme,		// void draw_bounds (vector min, vector max, float colormap, float lifetime, float depthtest) = #86
-	PF_Fixme,		// void draw_worldtext (string s, vector origin, float size, float lifetime, float depthtest) = #87
-	PF_Fixme,		// void draw_sphere (vector origin, float radius, float colormap, float lifetime, float depthtest) = #88
-	PF_Fixme,		// void draw_cylinder (vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest) = #89
-	PF_centerprint ,	// #90
-	PF_bprint,
-	PF_sprint,
 };
 int pr_ssqcnumbuiltins = sizeof(pr_ssqcbuiltins)/sizeof(pr_ssqcbuiltins[0]);
 
