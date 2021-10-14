@@ -44,6 +44,7 @@ static void S_Play (void);
 static void S_PlayVol (void);
 static void S_SoundList (void);
 static void S_Update_ (void);
+static void GetSoundtime (void);
 void S_StopAllSounds (qboolean clear);
 static void S_StopAllSoundsC (void);
 
@@ -91,7 +92,7 @@ cvar_t		precache = {"precache", "1", CVAR_NONE};
 cvar_t		loadas8bit = {"loadas8bit", "0", CVAR_NONE};
 
 cvar_t		sndspeed = {"sndspeed", "11025", CVAR_NONE};
-cvar_t		snd_mixspeed = {"snd_mixspeed", "44100", CVAR_NONE};
+cvar_t		snd_mixspeed = {"snd_mixspeed", "44100", CVAR_ARCHIVE};
 
 #if defined(_WIN32)
 #define SND_FILTERQUALITY_DEFAULT "5"
@@ -165,8 +166,46 @@ void S_Startup (void)
 				(shm->channels == 2) ? "stereo" : "mono",
 				shm->speed);
 	}
+	GetSoundtime();
+	paintedtime = soundtime;
 }
 
+/*
+snd_restart console command
+*/
+void S_Restart_f(void)
+{
+	sfx_t *s;
+	size_t i;
+	int oldspeed = shm->speed;
+	if (!snd_initialized)
+		return;
+	S_Shutdown();
+	S_Startup ();
+	S_CodecInit ();
+
+	paintedtime = soundtime;
+	//we changed the sound time and probably the rates too...
+	//any timing of sounds will be way off. so lets just kill any currently playing sounds
+	//(note that this lazy way of killing them will ensure that looping sounds restart)
+	for (i = 0; i < total_channels; i++)
+	{
+		snd_channels[i].pos = 0;
+		snd_channels[i].end = 0;
+	}
+	s_rawend = 0;	//clear any music too...
+
+	//reload any sounds if their rates changed.
+	if (shm->speed != oldspeed)
+	{
+		for (i = 0; i < num_sfx; i++)
+		{
+			s = &known_sfx[i];
+			if (s->cache.data)
+				Cache_Free(&s->cache, false);
+		}
+	}
+}
 
 /*
 ================
@@ -210,6 +249,7 @@ void S_Init (void)
 	Cmd_AddCommand("stopsound", S_StopAllSoundsC);
 	Cmd_AddCommand("soundlist", S_SoundList);
 	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
+	Cmd_AddCommand("snd_restart", S_Restart_f);
 
 	i = COM_CheckParm("-sndspeed");
 	if (i && i < com_argc-1)

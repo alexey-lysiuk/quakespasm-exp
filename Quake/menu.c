@@ -1639,6 +1639,7 @@ static enum extras_e
 	EXTRAS_NETEXTENSIONS,
 	EXTRAS_QCEXTENSIONS,
 	EXTRAS_CLASSICPARTICLES,
+	EXTRAS_AUDIORATE,
 	EXTRAS_ITEMS
 } extras_cursor;
 
@@ -1742,6 +1743,10 @@ static void M_Extras_AdjustSliders (int dir)
 	case EXTRAS_CLASSICPARTICLES:
 		Cvar_SetValueQuick (&r_particles, (r_particles.value==1)?2:1);
 		break;
+	case EXTRAS_AUDIORATE:
+		Cvar_SetValueQuick (&snd_mixspeed, (snd_mixspeed.value==48000)?44100:48000);
+		Cbuf_AddText("\nsnd_restart\n");
+		break;
 	case EXTRAS_ITEMS:	//not a real option
 		break;
 	}
@@ -1840,6 +1845,16 @@ void M_Extras_Draw (void)
 				M_Print (220, y, "square");
 			else
 				M_Print (220, y, "?!?");
+			break;
+
+		case EXTRAS_AUDIORATE:
+			M_Print (16, y,	"            Audio Rate");
+			if (snd_mixspeed.value == 48000)
+				M_Print (220, y, "48000 hz (DVD)");
+			else if (r_particles.value == 1)
+				M_Print (220, y, "44100 hz (CD)");
+			else
+				M_Print (220, y, va("%i hz", (int)snd_mixspeed.value));
 			break;
 
 		case EXTRAS_ITEMS:	//unreachable.
