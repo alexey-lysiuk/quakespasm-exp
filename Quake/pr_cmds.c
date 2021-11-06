@@ -270,7 +270,7 @@ PF_setmodel
 setmodel(entity, model)
 =================
 */
-cvar_t sv_gameplayfix_setmodelrealbox = {"sv_gameplayfix_setmodelrealbox", "1"};
+cvar_t sv_gameplayfix_setmodelrealbox = {"sv_gameplayfix_setmodelrealbox", "0"};
 static void PF_sv_setmodel (void)
 {
 	int		i;
