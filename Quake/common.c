@@ -2088,7 +2088,7 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 			{ /* if not a registered version, don't ever go beyond base */
 				if ( strchr (filename, '/') || strchr (filename,'\\'))
 					continue;
-				if (q_strcasecmp(COM_FileGetExtension(filename), "dat"))	//don't load custom progs.dats either
+				if (!q_strcasecmp(COM_FileGetExtension(filename), "dat"))	//don't load custom progs.dats either
 					continue;
 			}
 
