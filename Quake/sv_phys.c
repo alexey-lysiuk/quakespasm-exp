@@ -48,6 +48,7 @@ cvar_t	sv_maxvelocity = {"sv_maxvelocity","2000",CVAR_NONE};
 cvar_t	sv_nostep = {"sv_nostep","0",CVAR_NONE};
 cvar_t	sv_freezenonclients = {"sv_freezenonclients","0",CVAR_NONE};
 cvar_t	sv_gameplayfix_spawnbeforethinks = {"sv_gameplayfix_spawnbeforethinks","0",CVAR_NONE};
+cvar_t	sv_gameplayfix_bouncedownslopes = {"sv_gameplayfix_bouncedownslopes","0",CVAR_NONE};	//fixes grenades making horrible noises on slopes.
 
 cvar_t	sv_sound_watersplash	= {"sv_sound_watersplash",	"misc/h2ohit1.wav", CVAR_NONE};
 cvar_t	sv_sound_land			= {"sv_sound_land",			"demon/dland2.wav", CVAR_NONE};
@@ -756,7 +757,8 @@ void SV_PushMove (edict_t *pusher, float movetime)
 
 	// remove the onground flag for non-players
 		if (check->v.movetype != MOVETYPE_WALK)
-			check->v.flags = (int)check->v.flags & ~FL_ONGROUND;
+			if (!pr_checkextension.value || PROG_TO_EDICT(check->v.groundentity) != pusher) //unless they're already riding us (prevents grenade sound spam)
+				check->v.flags = (int)check->v.flags & ~FL_ONGROUND;
 
 		VectorCopy (check->v.origin, entorig);
 		VectorCopy (check->v.origin, moved_from[num_moved]);
@@ -1402,7 +1404,7 @@ void SV_Physics_Toss (edict_t *ent)
 // stop if on ground
 	if (trace.plane.normal[2] > 0.7)
 	{
-		if (ent->v.velocity[2] < 60 || ent->v.movetype != MOVETYPE_BOUNCE)
+		if (ent->v.movetype != MOVETYPE_BOUNCE || (sv_gameplayfix_bouncedownslopes.value?DotProduct(trace.plane.normal, ent->v.velocity):ent->v.velocity[2]) < 60)
 		{
 			ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
 			ent->v.groundentity = EDICT_TO_PROG(trace.ent);
