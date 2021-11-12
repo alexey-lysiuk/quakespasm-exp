@@ -1871,7 +1871,7 @@ void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 			{
 				q_snprintf(texname, sizeof(texname), "progs/%s_%02u_%02u", com_token, surf->numskins, f);
 
-				data = Image_LoadImage (texname, &fwidth, &fheight, &fmt, &malloced);
+				data = Image_LoadImage (texname, (int*)&fwidth, (int*)&fheight, &fmt, &malloced);
 				//now load whatever we found
 				if (data) //load external image
 				{
