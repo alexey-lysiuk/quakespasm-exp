@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-extern cvar_t gl_fullbrights, r_drawflat, gl_overbright, r_oldwater, r_oldskyleaf, r_showtris; //johnfitz
+extern cvar_t gl_fullbrights, r_drawflat, gl_overbright, r_oldskyleaf, r_showtris; //johnfitz
 
 byte *SV_FatPVS (vec3_t org, qmodel_t *worldmodel);
 
@@ -147,8 +147,6 @@ void R_MarkSurfaces (void)
 							rs_brushpolys++; //count wpolys here
 							R_ChainSurface(surf, chain_world);
 							R_RenderDynamicLightmaps(cl.worldmodel, surf);
-							if (surf->texinfo->texture->warpimage)
-								surf->texinfo->texture->update_warp = true;
 						}
 					}
 				}
@@ -216,7 +214,7 @@ void R_DrawTextureChains_ShowTris (qmodel_t *model, texchain_t chain)
 		if (!t)
 			continue;
 
-		if (r_oldwater.value && t->texturechains[chain] && (t->texturechains[chain]->flags & SURF_DRAWTURB))
+		if (!gl_glsl_water_able && t->texturechains[chain] && (t->texturechains[chain]->flags & SURF_DRAWTURB))
 		{
 			for (s = t->texturechains[chain]; s; s = s->texturechain)
 				for (p = s->polys->next; p; p = p->next)
@@ -252,7 +250,7 @@ void R_DrawTextureChains_Drawflat (qmodel_t *model, texchain_t chain)
 		if (!t)
 			continue;
 
-		if (r_oldwater.value && t->texturechains[chain] && (t->texturechains[chain]->flags & SURF_DRAWTURB))
+		if (!gl_glsl_water_able  && t->texturechains[chain] && (t->texturechains[chain]->flags & SURF_DRAWTURB))
 		{
 			for (s = t->texturechains[chain]; s; s = s->texturechain)
 				for (p = s->polys->next; p; p = p->next)
@@ -412,7 +410,7 @@ void R_DrawTextureChains_Multitexture (qmodel_t *model, entity_t *ent, texchain_
 	{
 		t = model->textures[i];
 
-		if (!t || !t->texturechains[chain] || t->texturechains[chain]->flags & (SURF_DRAWTILED | SURF_NOTEXTURE))
+		if (!t || !t->texturechains[chain] || t->texturechains[chain]->flags & (SURF_DRAWTURB | SURF_DRAWTILED | SURF_NOTEXTURE))
 			continue;
 
 		bound = false;
@@ -541,6 +539,151 @@ float GL_WaterAlphaForEntitySurface (entity_t *ent, msurface_t *s)
 	return entalpha;
 }
 
+
+static struct
+{
+	GLuint program;
+
+	GLuint light_scale;
+	GLuint alpha_scale;
+	GLuint time;
+} r_water[2];
+
+#define vertAttrIndex 0
+#define texCoordsAttrIndex 1
+#define LMCoordsAttrIndex 2
+
+/*
+=============
+GLWorld_CreateShaders
+=============
+*/
+static void GLWater_CreateShaders (void)
+{
+	const char *modedefines[countof(r_water)] = {
+		"",
+		"#define LIT\n"
+	};
+	const glsl_attrib_binding_t bindings[] = {
+		{ "Vert", vertAttrIndex },
+		{ "TexCoords", texCoordsAttrIndex },
+		{ "LMCoords", LMCoordsAttrIndex }
+	};
+
+	// Driver bug workarounds:
+	// - "Intel(R) UHD Graphics 600" version "4.6.0 - Build 26.20.100.7263"
+	//    crashing on glUseProgram with `vec3 Vert` and
+	//    `gl_ModelViewProjectionMatrix * vec4(Vert, 1.0);`. Work around with
+	//    making Vert a vec4. (https://sourceforge.net/p/quakespasm/bugs/39/)
+	const GLchar *vertSource = \
+		"#version 110\n"
+		"%s"
+		"\n"
+		"attribute vec4 Vert;\n"
+		"attribute vec2 TexCoords;\n"
+"#ifdef LIT\n"
+		"attribute vec2 LMCoords;\n"
+		"varying vec2 tc_lm;\n"
+"#endif\n"
+		"\n"
+		"varying float FogFragCoord;\n"
+		"varying vec2 tc_tex;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	tc_tex = TexCoords;\n"
+"#ifdef LIT\n"
+		"	tc_lm = LMCoords;\n"
+"#endif\n"
+		"	gl_Position = gl_ModelViewProjectionMatrix * Vert;\n"
+		"	FogFragCoord = gl_Position.w;\n"
+		"}\n";
+
+	const GLchar *fragSource = \
+		"#version 110\n"
+		"%s"
+		"\n"
+		"uniform sampler2D Tex;\n"
+"#ifdef LIT\n"
+		"uniform sampler2D LMTex;\n"
+		"uniform float LightScale;\n"
+		"varying vec2 tc_lm;\n"
+"#endif\n"
+		"uniform float Alpha;\n"
+		"uniform float WarpTime;\n"
+		"\n"
+		"varying float FogFragCoord;\n"
+		"varying vec2 tc_tex;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	vec2 ntc = tc_tex;\n"
+		//CYCLE 128
+		//AMP 8*0x10000
+		//SPEED 20
+		//	sintable[i] = AMP + sin(i*3.14159*2/CYCLE)*AMP;
+		//
+		//  r_turb_turb = sintable + ((int)(cl.time*SPEED)&(CYCLE-1));
+		//
+		//	sturb = ((r_turb_s + r_turb_turb[(r_turb_t>>16)&(CYCLE-1)])>>16)&63;
+        //	tturb = ((r_turb_t + r_turb_turb[(r_turb_s>>16)&(CYCLE-1)])>>16)&63;
+        //The following 4 lines SHOULD match the software renderer, except normalised coords rather than snapped texels
+        "#define M_PI 3.14159\n"
+		"#define TIMEBIAS (((WarpTime*20.0)*M_PI*2.0)/128.0)\n"
+		"	ntc.s += 0.125 + sin(tc_tex.t*M_PI + TIMEBIAS)*0.125;\n"
+		"	ntc.t += 0.125 + sin(tc_tex.s*M_PI + TIMEBIAS)*0.125;\n"
+		"	vec4 result = texture2D(Tex, ntc.st);\n"
+"#ifdef LIT\n"
+		"	result *= texture2D(LMTex, tc_lm.xy);\n"
+		"	result.rgb *= LightScale;\n"
+"#endif\n"
+		"	result.a *= Alpha;\n"
+		"	result = clamp(result, 0.0, 1.0);\n"
+		"	float fog = exp(-gl_Fog.density * gl_Fog.density * FogFragCoord * FogFragCoord);\n"
+		"	fog = clamp(fog, 0.0, 1.0);\n"
+		"	result.rgb = mix(gl_Fog.color.rgb, result.rgb, fog);\n"
+		"	gl_FragColor = result;\n"
+		"}\n";
+
+	size_t i;
+	char vtext[1024];
+	char ftext[1024];
+	gl_glsl_water_able = false;
+
+	if (!gl_glsl_able)
+		return;
+
+	for (i = 0; i < countof(r_water); i++)
+	{
+		snprintf(vtext, sizeof(vtext), vertSource, modedefines[i]);
+		snprintf(ftext, sizeof(ftext), fragSource, modedefines[i]);
+		r_water[i].program = GL_CreateProgram (vtext, ftext, sizeof(bindings)/sizeof(bindings[0]), bindings);
+
+		if (r_water[i].program != 0)
+		{
+			// get uniform locations
+			GLuint texLoc				= GL_GetUniformLocation (&r_water[i].program, "Tex");
+			GLuint LMTexLoc				= (i?GL_GetUniformLocation (&r_water[i].program, "LMTex"):-1);
+			r_water[i].light_scale		= (i?GL_GetUniformLocation (&r_water[i].program, "LightScale"):-1);
+			r_water[i].alpha_scale		= GL_GetUniformLocation (&r_water[i].program, "Alpha");
+			r_water[i].time				= GL_GetUniformLocation (&r_water[i].program, "WarpTime");
+
+			if (!r_water[i].program)
+				return;
+
+			//bake constants here.
+			GL_UseProgramFunc (r_water[i].program);
+			GL_Uniform1iFunc (texLoc, 0);
+			if (LMTexLoc != -1)
+				GL_Uniform1iFunc (LMTexLoc, 1);
+			GL_UseProgramFunc (0);
+		}
+		else
+			return;	//erk?
+	}
+	gl_glsl_water_able = true;
+}
+
 /*
 ================
 R_DrawTextureChains_Water -- johnfitz
@@ -558,7 +701,82 @@ void R_DrawTextureChains_Water (qmodel_t *model, entity_t *ent, texchain_t chain
 	if (r_drawflat_cheatsafe || r_lightmap_cheatsafe) // ericw -- !r_drawworld_cheatsafe check moved to R_DrawWorld_Water ()
 		return;
 
-	if (r_oldwater.value)
+	if (gl_glsl_water_able)
+	{
+		extern GLuint gl_bmodel_vbo;
+		int lastlightmap = -2;
+		int mode = -1;
+		for (i=0 ; i<model->numtextures ; i++)
+		{
+			t = model->textures[i];
+			if (!t || !t->texturechains[chain] || !(t->texturechains[chain]->flags & SURF_DRAWTURB))
+				continue;
+			s = t->texturechains[chain];
+
+			entalpha = GL_WaterAlphaForEntitySurface (ent, s);
+			if (entalpha < 1.0f)
+			{
+				glDepthMask (GL_FALSE);
+				glEnable (GL_BLEND);
+			}
+
+// Bind the buffers
+			GL_BindBuffer (GL_ARRAY_BUFFER, gl_bmodel_vbo);
+			GL_BindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0); // indices come from client memory!
+			GL_VertexAttribPointerFunc (vertAttrIndex,      3, GL_FLOAT, GL_FALSE, VERTEXSIZE * sizeof(float), ((float *)0));
+			GL_VertexAttribPointerFunc (texCoordsAttrIndex, 2, GL_FLOAT, GL_FALSE, VERTEXSIZE * sizeof(float), ((float *)0) + 3);
+			GL_VertexAttribPointerFunc (LMCoordsAttrIndex,  2, GL_FLOAT, GL_FALSE, VERTEXSIZE * sizeof(float), ((float *)0) + 5);
+
+			//actually use the buffers...
+			GL_EnableVertexAttribArrayFunc (vertAttrIndex);
+			GL_EnableVertexAttribArrayFunc (texCoordsAttrIndex);
+
+			GL_SelectTexture (GL_TEXTURE0);
+			GL_Bind (t->gltexture);
+			GL_SelectTexture (GL_TEXTURE1);
+			for (; s; s = s->texturechain)
+			{
+				if (s->lightmaptexturenum != lastlightmap)
+				{
+					R_FlushBatch ();
+
+					mode = s->lightmaptexturenum>=0 && !r_fullbright_cheatsafe;
+					if (mode)
+					{
+						GL_EnableVertexAttribArrayFunc (LMCoordsAttrIndex);
+						GL_Bind (lightmaps[s->lightmaptexturenum].texture);
+					}
+					else
+						GL_DisableVertexAttribArrayFunc (LMCoordsAttrIndex);
+
+					GL_UseProgramFunc (r_water[mode].program);
+					GL_Uniform1fFunc (r_water[mode].time, cl.time);
+					if (r_water[mode].light_scale != -1)
+						GL_Uniform1fFunc (r_water[mode].light_scale, gl_overbright.value?2:1);
+					GL_Uniform1fFunc (r_water[mode].alpha_scale, entalpha);
+					lastlightmap = s->lightmaptexturenum;
+				}
+				R_BatchSurface (s);
+
+				rs_brushpasses++;
+			}
+
+			R_FlushBatch ();
+			GL_UseProgramFunc (0);
+			GL_DisableVertexAttribArrayFunc (vertAttrIndex);
+			GL_DisableVertexAttribArrayFunc (texCoordsAttrIndex);
+			GL_DisableVertexAttribArrayFunc (LMCoordsAttrIndex);
+			GL_SelectTexture (GL_TEXTURE0);
+			lastlightmap = -2;
+
+			if (entalpha < 1.0f)
+			{
+				glDepthMask (GL_TRUE);
+				glDisable (GL_BLEND);
+			}
+		}
+	}
+	else
 	{
 		for (i=0 ; i<model->numtextures ; i++)
 		{
@@ -581,39 +799,6 @@ void R_DrawTextureChains_Water (qmodel_t *model, entity_t *ent, texchain_t chain
 					DrawWaterPoly (p);
 					rs_brushpasses++;
 				}
-			}
-			R_EndTransparentDrawing (entalpha);
-		}
-	}
-	else
-	{
-		for (i=0 ; i<model->numtextures ; i++)
-		{
-			t = model->textures[i];
-			if (!t || !t->texturechains[chain] || !(t->texturechains[chain]->flags & SURF_DRAWTURB))
-				continue;
-			bound = false;
-			entalpha = 1.0f;
-			for (s = t->texturechains[chain]; s; s = s->texturechain)
-			{
-				if (!bound) //only bind once we are sure we need this texture
-				{
-					entalpha = GL_WaterAlphaForEntitySurface (ent, s);
-					R_BeginTransparentDrawing (entalpha);
-					GL_Bind (t->warpimage);
-
-					if (model != cl.worldmodel)
-					{
-						// ericw -- this is copied from R_DrawSequentialPoly.
-						// If the poly is not part of the world we have to
-						// set this flag
-						t->update_warp = true; // FIXME: one frame too late!
-					}
-
-					bound = true;
-				}
-				DrawGLPoly (s->polys);
-				rs_brushpasses++;
 			}
 			R_EndTransparentDrawing (entalpha);
 		}
@@ -783,6 +968,8 @@ void GLWorld_CreateShaders (void)
 		useAlphaTestLoc = GL_GetUniformLocation (&r_world_program, "UseAlphaTest");
 		alphaLoc = GL_GetUniformLocation (&r_world_program, "Alpha");
 	}
+
+	GLWater_CreateShaders();
 }
 
 extern GLuint gl_bmodel_vbo;
@@ -841,7 +1028,7 @@ void R_DrawTextureChains_GLSL (qmodel_t *model, entity_t *ent, texchain_t chain)
 	{
 		t = model->textures[i];
 
-		if (!t || !t->texturechains[chain] || t->texturechains[chain]->flags & (SURF_DRAWTILED | SURF_NOTEXTURE))
+		if (!t || !t->texturechains[chain] || t->texturechains[chain]->flags & (SURF_DRAWTURB | SURF_DRAWTILED | SURF_NOTEXTURE))
 			continue;
 
 	// Enable/disable TMU 2 (fullbrights)

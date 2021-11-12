@@ -790,6 +790,12 @@ void GL_CreateSurfaceLightmap (qmodel_t *model, msurface_t *surf)
 	int		smax, tmax;
 	byte	*base;
 
+	if (surf->flags & SURF_DRAWTILED)
+	{
+		surf->lightmaptexturenum = -1;
+		return;
+	}
+
 	smax = (surf->extents[0]>>surf->lmshift)+1;
 	tmax = (surf->extents[1]>>surf->lmshift)+1;
 
@@ -878,6 +884,10 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 	//johnfitz -- removed gl_keeptjunctions code
 
 	poly->numverts = lnumverts;
+
+	//oldwater is lame. subdivide it now.
+	if ((fa->flags & SURF_DRAWTURB) && !gl_glsl_water_able)
+		GL_SubdivideSurface (fa);
 }
 
 /*
@@ -893,8 +903,6 @@ void GL_BuildModel (qmodel_t *m)
 	for (i=0 ; i<m->numsurfaces ; i++)
 	{
 		//johnfitz -- rewritten to use SURF_DRAWTILED instead of the sky/water flags
-		if (m->surfaces[i].flags & SURF_DRAWTILED)
-			continue;
 		GL_CreateSurfaceLightmap (m, m->surfaces + i);
 		BuildSurfaceDisplayList (m->surfaces + i);
 		//johnfitz

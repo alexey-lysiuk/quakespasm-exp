@@ -35,7 +35,6 @@ extern cvar_t gl_farclip;
 extern cvar_t gl_overbright;
 extern cvar_t gl_overbright_models;
 extern cvar_t r_waterquality;
-extern cvar_t r_oldwater;
 extern cvar_t r_waterwarp;
 extern cvar_t r_oldskyleaf;
 extern cvar_t r_drawworld;
@@ -206,7 +205,6 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_clearcolor);
 	Cvar_SetCallback (&r_clearcolor, R_SetClearColor_f);
 	Cvar_RegisterVariable (&r_waterquality);
-	Cvar_RegisterVariable (&r_oldwater);
 	Cvar_RegisterVariable (&r_waterwarp);
 	Cvar_RegisterVariable (&r_drawflat);
 	Cvar_RegisterVariable (&r_flatlightstyles);

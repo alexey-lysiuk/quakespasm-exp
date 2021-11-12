@@ -622,9 +622,6 @@ void R_SetupView (void)
 		currententity = &r_worldentity;
 		R_MarkSurfaces (); //johnfitz -- create texture chains from PVS
 		currententity = NULL;
-
-		if (!skyroom_drawn)
-			R_UpdateWarpTextures (); //johnfitz -- do this before R_Clear
 	}
 
 	R_Clear ();

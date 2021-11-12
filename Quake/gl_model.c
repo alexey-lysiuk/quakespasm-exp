@@ -823,13 +823,7 @@ void Mod_LoadTextures (lump_t *l)
 						fmt, (byte *)(tx+1), loadmodel->name, offset, TEXPREF_NONE);
 				}
 
-				//now create the warpimage, using dummy data from the hunk to create the initial image
-				Hunk_Alloc (gl_warpimagesize*gl_warpimagesize*4); //make sure hunk is big enough so we don't reach an illegal address
 				Hunk_FreeToLowMark (mark);
-				q_snprintf (texturename, sizeof(texturename), "%s_warp", texturename);
-				tx->warpimage = TexMgr_LoadImage (loadmodel, texturename, gl_warpimagesize,
-					gl_warpimagesize, SRC_RGBA, hunk_base, "", (src_offset_t)hunk_base, TEXPREF_NOPICMIP | TEXPREF_WARPIMAGE);
-				tx->update_warp = true;
 				if (malloced)
 					free(data);
 			}
@@ -1700,11 +1694,13 @@ void Mod_LoadFaces (lump_t *l, qboolean bsp2)
 		if (!q_strncasecmp(out->texinfo->texture->name,"sky",3)) // sky surface //also note -- was Q_strncmp, changed to match qbsp
 		{
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
-			Mod_PolyForUnlitSurface (out); //no more subdivision
 		}
 		else if (out->texinfo->texture->name[0] == '*') // warp surface
 		{
-			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+			out->flags |= SURF_DRAWTURB;
+			if (out->texinfo->flags & TEX_SPECIAL)
+				out->flags |= SURF_DRAWTILED;	//unlit water
+			out->lightmaptexturenum = -1;
 
 		// detect special liquid types
 			if (!strncmp (out->texinfo->texture->name, "*lava", 5))
@@ -1714,9 +1710,6 @@ void Mod_LoadFaces (lump_t *l, qboolean bsp2)
 			else if (!strncmp (out->texinfo->texture->name, "*tele", 5))
 				out->flags |= SURF_DRAWTELE;
 			else out->flags |= SURF_DRAWWATER;
-
-			Mod_PolyForUnlitSurface (out);
-			GL_SubdivideSurface (out);
 		}
 		else if (out->texinfo->texture->name[0] == '{') // ericw -- fence textures
 		{
@@ -1731,7 +1724,6 @@ void Mod_LoadFaces (lump_t *l, qboolean bsp2)
 			else // not lightmapped
 			{
 				out->flags |= (SURF_NOTEXTURE | SURF_DRAWTILED);
-				Mod_PolyForUnlitSurface (out);
 			}
 		}
 		//johnfitz
