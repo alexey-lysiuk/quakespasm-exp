@@ -1306,7 +1306,7 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 	memset ( &clip, 0, sizeof ( moveclip_t ) );
 
 	if (type & MOVE_HITALLCONTENTS)
-		clip.hitcontents = ~0u;
+		clip.hitcontents = ~CONTENTMASK_FROMQ1(CONTENTS_EMPTY);
 	else
 		clip.hitcontents = CONTENTMASK_ANYSOLID;
 
