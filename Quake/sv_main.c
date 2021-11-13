@@ -1740,7 +1740,7 @@ void SV_StartSound2 (edict_t *entity, float *origin, int channel, const char *sa
 }
 void SV_StartSound (edict_t *entity, float *origin, int channel, const char *sample, int volume, float attenuation)
 {
-	SV_StartSound2 (entity, origin, channel, sample, volume, attenuation, 100, 0, 0);
+	SV_StartSound2 (entity, origin, channel, sample, volume, attenuation, 1, 0, 0);
 }
 
 /*

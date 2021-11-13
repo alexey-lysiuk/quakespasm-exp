@@ -661,7 +661,7 @@ static void PF_sound (void)
 	edict_t		*entity;
 	int		volume;
 	float	attenuation;
-	float	ratepct;
+	float	rate;
 	unsigned int flags;
 	float	offset;
 
@@ -671,7 +671,7 @@ static void PF_sound (void)
 	volume = G_FLOAT(OFS_PARM3) * 255;
 	attenuation = G_FLOAT(OFS_PARM4);
 
-	ratepct	= (qcvm->argc<6)?100:G_FLOAT(OFS_PARM5);
+	rate	= (qcvm->argc<6)?1:G_FLOAT(OFS_PARM5)/100;
 	flags	= (qcvm->argc<7)?0:G_FLOAT(OFS_PARM6);
 	offset	= (qcvm->argc<8)?0:G_FLOAT(OFS_PARM7);
 
@@ -681,7 +681,7 @@ static void PF_sound (void)
 		return;
 	}
 
-	if (ratepct && ratepct != 100)
+	if (rate && rate != 1)
 		Con_DPrintf("sound() rate scaling is not supported\n");
 	if (flags)
 		Con_DPrintf("sound() flags %#x not supported\n", flags);
@@ -698,7 +698,7 @@ static void PF_sound (void)
 	if (channel < 0 || channel > 7)
 		Host_Error ("SV_StartSound: channel = %i", channel);
 */
-	SV_StartSound (entity, NULL, channel, sample, volume, attenuation);
+	SV_StartSound2 (entity, NULL, channel, sample, volume, attenuation, rate, flags, offset);
 }
 
 /*
