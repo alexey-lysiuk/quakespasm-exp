@@ -460,9 +460,10 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 
 	Mod_SetExtraFlags (mod); //johnfitz. spike -- moved this to be generic, because most of the flags are anyway.
 
-	for (i = 0; i < countof(playertextures); i++)
-		if (playertextures[i] && playertextures[i]->owner == mod)
-			R_TranslateNewPlayerSkin(i);
+	if (cls.state == ca_connected)
+		for (i = 0; i < countof(playertextures); i++)
+			if (playertextures[i] && playertextures[i]->owner == mod)
+				R_TranslateNewPlayerSkin(i);
 
 	return mod;
 }
