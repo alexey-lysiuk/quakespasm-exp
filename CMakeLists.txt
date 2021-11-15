@@ -208,6 +208,7 @@ endif()
 
 if(APPLE)
 	option(QUAKE_MACOS_BUNDLE "Create macOS application bundle" ON)
+	option(QUAKE_MACOS_MOUSE_ACCELERATION "Enable mouse acceleration on macOS" OFF)
 endif()
 
 if(QUAKE_MACOS_BUNDLE)
@@ -229,6 +230,10 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE Quake)
 
 if(APPLE)
+	if(NOT QUAKE_MACOS_MOUSE_ACCELERATION)
+		target_compile_definitions(${PROJECT_NAME} PRIVATE MACOS_X_ACCELERATION_HACK)
+	endif()
+
 	target_compile_definitions(${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION)
 	target_link_libraries(${PROJECT_NAME} PRIVATE
 		"-framework AppKit"

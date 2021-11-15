@@ -36,11 +36,6 @@ static qboolean	textmode;
 
 static cvar_t in_debugkeys = {"in_debugkeys", "0", CVAR_NONE};
 
-#ifdef __APPLE__
-/* Mouse acceleration needs to be disabled on OS X */
-//#define MACOS_X_ACCELERATION_HACK
-#endif
-
 #ifdef MACOS_X_ACCELERATION_HACK
 #include <IOKit/IOTypes.h>
 #include <IOKit/hidsystem/IOHIDLib.h>
