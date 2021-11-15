@@ -225,6 +225,12 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 if(MSVC)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 	set(CMAKE_C_FLAGS "/MP /wd4996 ${CMAKE_C_FLAGS}")
+else()
+	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
+
+	if(QUAKE_SEARCH_USERDIRS)
+		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
+	endif()
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake)
