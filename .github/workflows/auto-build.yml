@@ -1,0 +1,29 @@
+name: Auto Build
+
+on:
+  push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-10.15]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: macOS Build
+      if: runner.os == 'macOS'
+      run: |
+          cd MacOSX
+          ./build-macos.sh
+
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v2
+      if: runner.os == 'macOS'
+      with:
+        name: macos
+        path: |
+          MacOSX/build/Release/*.zip

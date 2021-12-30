@@ -216,6 +216,8 @@
 		668A0130277D1B4E009D9427 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 668A0123277D1B4E009D9427 /* libopus.a */; };
 		668A0131277D1B4E009D9427 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 668A0124277D1B4E009D9427 /* libz.a */; };
 		668A0132277D1B4E009D9427 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 668A0124277D1B4E009D9427 /* libz.a */; };
+		668A0136277D809A009D9427 /* Quakespasm-Spiked.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 668A0133277D8068009D9427 /* Quakespasm-Spiked.txt */; };
+		668A0137277D80B0009D9427 /* Quakespasm-Spiked.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 668A0133277D8068009D9427 /* Quakespasm-Spiked.txt */; };
 		66991C071DBAB4A600C373C0 /* quakespasm.pak in CopyFiles */ = {isa = PBXBuildFile; fileRef = 66991C061DBAB48000C373C0 /* quakespasm.pak */; };
 		66991C081DBAB4A600C373C0 /* LICENSE.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 66991C021DBAB47000C373C0 /* LICENSE.txt */; };
 		66991C091DBAB4A600C373C0 /* Quakespasm-Music.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 66991C031DBAB47000C373C0 /* Quakespasm-Music.txt */; };
@@ -288,6 +290,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				668A0137277D80B0009D9427 /* Quakespasm-Spiked.txt in CopyFiles */,
 				66991C071DBAB4A600C373C0 /* quakespasm.pak in CopyFiles */,
 				66991C081DBAB4A600C373C0 /* LICENSE.txt in CopyFiles */,
 				66991C091DBAB4A600C373C0 /* Quakespasm-Music.txt in CopyFiles */,
@@ -302,6 +305,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				668A0136277D809A009D9427 /* Quakespasm-Spiked.txt in CopyFiles */,
 				66991C0D1DBAB4B300C373C0 /* quakespasm.pak in CopyFiles */,
 				66991C0E1DBAB4B300C373C0 /* LICENSE.txt in CopyFiles */,
 				66991C0F1DBAB4B300C373C0 /* Quakespasm-Music.txt in CopyFiles */,
@@ -494,6 +498,7 @@
 		668A0122277D1B4E009D9427 /* libogg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libogg.a; path = "vcpkg/installed/x64-osx-10.9/lib/libogg.a"; sourceTree = "<group>"; };
 		668A0123277D1B4E009D9427 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopus.a; path = "vcpkg/installed/x64-osx-10.9/lib/libopus.a"; sourceTree = "<group>"; };
 		668A0124277D1B4E009D9427 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libz.a; path = "vcpkg/installed/x64-osx-10.9/lib/libz.a"; sourceTree = "<group>"; };
+		668A0133277D8068009D9427 /* Quakespasm-Spiked.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "Quakespasm-Spiked.txt"; path = "../Quakespasm-Spiked.txt"; sourceTree = "<group>"; };
 		66991C021DBAB47000C373C0 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE.txt; path = ../LICENSE.txt; sourceTree = "<group>"; };
 		66991C031DBAB47000C373C0 /* Quakespasm-Music.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Quakespasm-Music.txt"; path = "../Quakespasm-Music.txt"; sourceTree = "<group>"; };
 		66991C041DBAB47000C373C0 /* Quakespasm.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Quakespasm.html; path = ../Quakespasm.html; sourceTree = "<group>"; };
@@ -891,6 +896,7 @@
 				66991C061DBAB48000C373C0 /* quakespasm.pak */,
 				66991C021DBAB47000C373C0 /* LICENSE.txt */,
 				66991C031DBAB47000C373C0 /* Quakespasm-Music.txt */,
+				668A0133277D8068009D9427 /* Quakespasm-Spiked.txt */,
 				66991C041DBAB47000C373C0 /* Quakespasm.html */,
 				66991C051DBAB47000C373C0 /* Quakespasm.txt */,
 			);
@@ -1252,9 +1258,7 @@
 		664D98F819CF6B78000D395C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					x86_64,
-				);
+				ARCHS = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
