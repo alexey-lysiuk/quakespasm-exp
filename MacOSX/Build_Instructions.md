@@ -2,11 +2,15 @@
 
 Tested on macOS 10.15.7, Xcode 12.4, x86_64.
 
-1. Run `setup-vcpkg.sh` (fetches + builds vorbis, opus, zlib from vcpkg, as static libraries.)
+1. Prerequisites:
+
+    - vcpkg requires `brew install pkg-config`
+
+2. Run `setup-vcpkg.sh` (fetches + builds vorbis, opus, zlib from vcpkg, as static libraries.)
 
    The Opus .dylibs included with QuakeSpasm lack the encoder, which is needed by `snd_voip.c`, necessitating building it from source.
 
-2. For a release build, run `xcodebuild -project QuakeSpasm.xcodeproj -target QuakeSpasm-Spiked-SDL2`
+3. For a release build, run `xcodebuild -project QuakeSpasm.xcodeproj -target QuakeSpasm-Spiked-SDL2`
 
 
 ## Limitations
