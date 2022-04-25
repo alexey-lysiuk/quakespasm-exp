@@ -692,8 +692,8 @@ void Mod_LoadMD3Model (qmodel_t *mod, void *buffer)
 		for (j = 0; j < osurf->numverts; j++)
 		{
 			poutst[j].vertindex = j;	//how is this useful?
-			poutst[j].st[0] = pinst->s;
-			poutst[j].st[1] = pinst->t;
+			poutst[j].st[0] = pinst[j].s;
+			poutst[j].st[1] = pinst[j].t;
 		}
 	}
 	GLMesh_LoadVertexBuffer (mod, outhdr);
