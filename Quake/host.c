@@ -546,20 +546,18 @@ void Host_ShutdownServer(qboolean crash)
 	do
 	{
 		count = 0;
+		NET_GetServerMessage();	//read packets to make sure we're receiving their acks. we're going to drop them all so we don't actually care to read the data, just the acks so we can flush our outgoing properly.
 		for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 		{
 			if (host_client->active && host_client->message.cursize && host_client->netconnection)
 			{
-				if (NET_CanSendMessage (host_client->netconnection))
+				if (NET_CanSendMessage (host_client->netconnection))	//also sends pending data too.
 				{
 					NET_SendMessage(host_client->netconnection, &host_client->message);
 					SZ_Clear (&host_client->message);
 				}
 				else
-				{
-					NET_GetMessage(host_client->netconnection);
 					count++;
-				}
 			}
 		}
 		if ((Sys_DoubleTime() - start) > 3.0)
