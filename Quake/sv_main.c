@@ -1137,8 +1137,14 @@ void SV_BuildEntityState(edict_t *ent, entity_state_t *state)
 	else
 		state->tagindex = 0;
 	state->effects = ent->v.effects;
-	if (qcvm->brokeneffects)
+	if (qcvm->brokeneffects && (state->effects & 0xf0u))
+	{	//translate qe effects to something more standard.
 		state->effects &= ~0xf0u;
+		if ((int)ent->v.effects & EFQE_QUADLIGHT)
+			state->effects |= EF_BLUE;
+		if ((int)ent->v.effects & EFQE_PENTLIGHT)
+			state->effects |= EF_RED;
+	}
 	if ((val = GetEdictFieldValue(ent, qcvm->extfields.modelflags)))
 		state->effects |= ((unsigned int)val->_float)<<24;
 	if (!ent->v.movetype || ent->v.movetype == MOVETYPE_STEP)
@@ -1744,6 +1750,49 @@ void SV_StartSound (edict_t *entity, float *origin, int channel, const char *sam
 }
 
 /*
+==================
+SV_LocalSound - for 2021 rerelease
+==================
+*/
+void SV_LocalSound (client_t *client, const char *sample)
+{
+	int	sound_num, field_mask, i;
+	sizebuf_t *msg = &client->message;
+	edict_t *entity = client->edict;
+
+	for (sound_num = 1; sound_num < MAX_SOUNDS && sv.sound_precache[sound_num]; sound_num++)
+	{
+		if (!strcmp(sample, sv.sound_precache[sound_num]))
+			break;
+	}
+	if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num])
+	{
+		Con_Printf ("SV_LocalSound: %s not precached\n", sample);
+		return;
+	}
+
+	field_mask = SND_ATTENUATION;
+	if (sound_num >= 256)
+	{
+		if (sv.protocol == PROTOCOL_NETQUAKE)
+			return;
+		field_mask = SND_LARGESOUND;
+	}
+
+	MSG_WriteByte (msg, svc_sound);
+	MSG_WriteByte (msg, field_mask);
+	if (field_mask & SND_ATTENUATION)
+		MSG_WriteByte (msg, 0);	//attenuation
+	MSG_WriteShort (msg, (0<<3) | 0);
+	if ((field_mask & SND_LARGESOUND) || sv.protocol == PROTOCOL_VERSION_BJP3)
+		MSG_WriteShort (msg, sound_num);
+	else
+		MSG_WriteByte (msg, sound_num);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord (msg, entity->v.origin[i]+0.5*(entity->v.mins[i]+entity->v.maxs[i]), sv.protocolflags);
+}
+
+/*
 ==============================================================================
 
 CLIENT SPAWNING
@@ -1942,7 +1991,7 @@ retry:
 	MSG_WriteString (&client->message, PR_GetString(qcvm->edicts->v.message));
 
 	//johnfitz -- only send the first 256 model and sound precaches if protocol is 15
-	for (i=1,s = sv.model_precache+1 ; *s && i < client->limit_models; s++,i++)
+	for (i = 1,s = sv.model_precache+1 ; *s && i < client->limit_models; s++,i++)
 		MSG_WriteString (&client->message, *s);
 	MSG_WriteByte (&client->message, 0);
 	client->signon_models = i;
@@ -1950,7 +1999,7 @@ retry:
 	//Spike: if we have svc_precache then use it for sounds. this reduces the stress on the serverinfo message size.
 	if (host_client->protocol_pext2 && truncated)
 		i=1;	//we tried, it didn't fit.
-	else for (i=1, s = sv.sound_precache+1 ; *s && i < client->limit_sounds; s++,i++)
+	else for (i = 1, s = sv.sound_precache+1 ; *s && i < client->limit_sounds; s++,i++)
 		MSG_WriteString (&client->message, *s);
 	MSG_WriteByte (&client->message, 0);
 	client->signon_sounds = i;
@@ -2341,6 +2390,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 	edict_t	*ent;
 	eval_t	*val;
 	int maxsize = msg->maxsize;
+	int effects;
 
 	//try to avoid sounds getting lost. flickering entities are weird, but missing sounds+particles are just eerie.
 	maxsize -= client->datagram.cursize;
@@ -2383,9 +2433,11 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 				continue;		// not visible
 		}
 
-		//johnfitz -- max size for protocol 15 is 18 bytes, not 16 as originally
-		//assumed here.  And, for protocol 85 the max size is actually 24 bytes.
-		if (msg->cursize + 24 > maxsize)
+		// johnfitz -- max size for protocol 15 is 18 bytes, not 16 as originally
+		// assumed here.  And, for protocol 85 the max size is actually 24 bytes.
+		// For float coords and angles the limit is 39. 
+		// FIXME: Use tighter limit according to protocol flags and send bits.
+		if (msg->cursize + 39 > msg->maxsize)
 		{
 			//johnfitz -- less spammy overflow message
 			if (!dev_overflows.packetsize || dev_overflows.packetsize + CONSOLE_RESPAM_TIME < realtime )
@@ -2428,7 +2480,16 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 		if (ent->baseline.frame != ent->v.frame)
 			bits |= U_FRAME;
 
-		if (ent->baseline.effects != ent->v.effects)
+		effects = ent->v.effects;
+		if (qcvm->brokeneffects && (effects & 0xf0u))
+		{	//translate qe effects to something more standard.
+			effects &= ~0xf0u;
+			if ((int)ent->v.effects & EFQE_QUADLIGHT)
+				effects |= EF_BLUE;
+			if ((int)ent->v.effects & EFQE_PENTLIGHT)
+				effects |= EF_RED;
+		}
+		if (ent->baseline.effects ^ effects)
 			bits |= U_EFFECTS;
 
 		if (ent->baseline.modelindex != ent->v.modelindex)
@@ -2441,7 +2502,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 			ent->alpha = ENTALPHA_ENCODE(val->_float);
 
 		//don't send invisible entities unless they have effects
-		if (ent->alpha == ENTALPHA_ZERO && !ent->v.effects)
+		if (ent->alpha == ENTALPHA_ZERO && !effects)
 			continue;
 		//johnfitz
 
@@ -2511,7 +2572,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 		if (bits & U_SKIN)
 			MSG_WriteByte (msg, ent->v.skin);
 		if (bits & U_EFFECTS)
-			MSG_WriteByte (msg, ent->v.effects);
+			MSG_WriteByte (msg, effects);
 		if (bits & U_ORIGIN1)
 			MSG_WriteCoord (msg, ent->v.origin[0], sv.protocolflags);
 		if (bits & U_ANGLE1)

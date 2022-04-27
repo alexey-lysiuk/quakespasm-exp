@@ -1290,7 +1290,7 @@ static void Host_Loadgame_f (void)
 	{
 		free (start);
 		start = NULL;
-		Con_Printf ("Savegame is version %i, not %i\n", version, SAVEGAME_VERSION);
+		Host_Error ("Savegame is version %i, not %i", version, SAVEGAME_VERSION);
 		return;
 	}
 	data = COM_ParseStringNewline (data);
@@ -1317,6 +1317,7 @@ static void Host_Loadgame_f (void)
 		PR_SwitchQCVM(NULL);
 		free (start);
 		start = NULL;
+		SCR_EndLoadingPlaque ();
 		Con_Printf ("Couldn't load map\n");
 		return;
 	}
@@ -1324,7 +1325,6 @@ static void Host_Loadgame_f (void)
 	sv.loadgame = true;
 
 // load the light styles
-
 	for (i = 0; i < MAX_LIGHTSTYLES_VANILLA; i++)
 	{
 		data = COM_ParseStringNewline (data);
@@ -1420,7 +1420,7 @@ static void Host_Loadgame_f (void)
 			break;		// end of file
 		if (strcmp(com_token,"{"))
 		{
-			Sys_Error ("First token isn't a brace");
+			Host_Error ("First token isn't a brace");
 		}
 
 		if (entnum == -1)

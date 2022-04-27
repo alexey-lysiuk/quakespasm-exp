@@ -7053,16 +7053,16 @@ const char *PR_VarString_qex (int	first)
 	}
 	return out;
 }
-static void PF_finaleFinished_qex (void)
+static void PF_ex_finaleFinished (void)
 {
 	G_FLOAT(OFS_RETURN) = 0;
 }
-static void PF_bprint_qex (void)
+static void PF_ex_bprint (void)
 {
 	const char		*s = PR_VarString_qex(0);
 	SV_BroadcastPrintf ("%s", s);
 }
-static void PF_sprint_qex (void)
+static void PF_ex_sprint (void)
 {
 	int entnum = G_EDICTNUM(OFS_PARM0);
 	const char *s = PR_VarString_qex(1);
@@ -7076,7 +7076,7 @@ static void PF_sprint_qex (void)
 	MSG_WriteChar (&client->message,svc_print);
 	MSG_WriteString (&client->message, s );
 }
-static void PF_centerprint_qex (void)
+static void PF_ex_centerprint (void)
 {
 	int entnum = G_EDICTNUM(OFS_PARM0);
 	const char *s = PR_VarString_qex(1);
@@ -7089,6 +7089,35 @@ static void PF_centerprint_qex (void)
 	client = &svs.clients[entnum-1];
 	MSG_WriteChar (&client->message,svc_centerprint);
 	MSG_WriteString (&client->message, s);
+}
+static void PF_ex_CheckPlayerEXFlags (void)
+{
+	G_FLOAT(OFS_RETURN) = 0;
+}
+static void PF_ex_walkpathtogoal (void)
+{
+	G_FLOAT(OFS_RETURN) = 0; /* PATH_ERROR (pretend there's no waypoints) */
+}
+static void PF_ex_bot_movetopoint (void)
+{
+	G_FLOAT(OFS_RETURN) = 0; /* BOT_GOAL_ERROR (pretend there's no waypoints) */
+}
+static void PF_ex_bot_followentity (void)
+{
+	G_FLOAT(OFS_RETURN) = 0; /* BOT_GOAL_ERROR (pretend there's no waypoints) */
+}
+static void PF_ex_localsound (void)
+{
+	const char	*sample;
+	int		entnum;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	sample = G_STRING(OFS_PARM1);
+	if (entnum < 1 || entnum > svs.maxclients) {
+		Con_Printf ("tried to localsound to a non-client\n");
+		return;
+	}
+	SV_LocalSound (&svs.clients[entnum-1], sample);
 }
 
 //A quick note on number ranges.
@@ -7119,20 +7148,26 @@ static struct
 #define PF_NoMenu NULL,0
 {
 //QuakeEx (aka: quake rerelease). These conflict with core extensions so we don't register them by default.
-	{"finaleFinished_qex",PF_finaleFinished_qex,PF_NoCSQC,		0/*79*/,PF_NoMenu,	"DEP float()", "Behaviour is undocumented."},
-//	{"localsound_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*80*/,PF_NoMenu,	"DEP void(entity client, string sample)", "Behaviour is undocumented."},
-//	{"draw_point_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*81*/,PF_NoMenu,	"DEP void(vector point, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_line_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*82*/,PF_NoMenu,	"DEP void(vector start, vector end, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_arrow_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*83*/,PF_NoMenu,	"DEP void(vector start, vector end, float colormap, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_ray_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*84*/,PF_NoMenu,	"DEP void(vector start, vector direction, float length, float colormap, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_circle_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*85*/,PF_NoMenu,	"DEP void(vector origin, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_bounds_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*86*/,PF_NoMenu,	"DEP void(vector min, vector max, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_worldtext_qex",PF_Fixme_noext,	PF_NoCSQC,			0/*87*/,PF_NoMenu,	"DEP void(string s, vector origin, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_sphere_qex",	PF_Fixme_noext,		PF_NoCSQC,			0/*88*/,PF_NoMenu,	"DEP void(vector origin, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
-//	{"draw_cylinder_qex",PF_Fixme_noext,	PF_NoCSQC,			0/*89*/,PF_NoMenu,	"DEP void(vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
-	{"centerprint_qex",	PF_centerprint_qex,	PF_NoCSQC,			0/*90*/,PF_NoMenu,	"void(entity ent, string text, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5)", "Remaster: Sends the strings to the client, which will order according to {#}. Also substitutes localised strings for $NAME strings."},
-	{"bprint_qex",		PF_bprint_qex,		PF_NoCSQC,			0/*91*/,PF_NoMenu,	"void(string s, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5, optional string s6)", "Remaster: Sends the strings to all clients, which will order them according to {#}. Also substitutes localised strings for $NAME strings."},
-	{"sprint_qex",		PF_sprint_qex,		PF_NoCSQC,			0/*92*/,PF_NoMenu,	"void(entity client, string s, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5)", "Remaster: Sends the strings to the client, which will order according to {#}. Also substitutes localised strings for $NAME strings."},
+	{"ex_finaleFinished",PF_ex_finaleFinished,PF_NoCSQC,		0/*79*/,PF_NoMenu,	"DEP float()", "Behaviour is undocumented."},
+	{"ex_localsound",	PF_ex_localsound,	PF_NoCSQC,			0/*80*/,PF_NoMenu,	"void(entity client, string sample)", "Plays a sound to the specific client at full volume without attenuation nor spacialisation."},
+//	{"ex_draw_point",	PF_Fixme_noext,		PF_NoCSQC,			0/*81*/,PF_NoMenu,	"DEP void(vector point, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_line",	PF_Fixme_noext,		PF_NoCSQC,			0/*82*/,PF_NoMenu,	"DEP void(vector start, vector end, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_arrow",	PF_Fixme_noext,		PF_NoCSQC,			0/*83*/,PF_NoMenu,	"DEP void(vector start, vector end, float colormap, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_ray",		PF_Fixme_noext,		PF_NoCSQC,			0/*84*/,PF_NoMenu,	"DEP void(vector start, vector direction, float length, float colormap, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_circle",	PF_Fixme_noext,		PF_NoCSQC,			0/*85*/,PF_NoMenu,	"DEP void(vector origin, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_bounds",	PF_Fixme_noext,		PF_NoCSQC,			0/*86*/,PF_NoMenu,	"DEP void(vector min, vector max, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_worldtext",PF_Fixme_noext,	PF_NoCSQC,			0/*87*/,PF_NoMenu,	"DEP void(string s, vector origin, float size, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_sphere",	PF_Fixme_noext,		PF_NoCSQC,			0/*88*/,PF_NoMenu,	"DEP void(vector origin, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+//	{"ex_draw_cylinder",PF_Fixme_noext,		PF_NoCSQC,			0/*89*/,PF_NoMenu,	"DEP void(vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest)", "Behaviour is undocumented."},
+	{"ex_centerprint",	PF_ex_centerprint,	PF_NoCSQC,			0/*90*/,PF_NoMenu,	"void(entity ent, string text, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5)", "Remaster: Sends the strings to the client, which will order according to {#}. Also substitutes localised strings for $NAME strings."},
+	{"ex_bprint",		PF_ex_bprint,		PF_NoCSQC,			0/*91*/,PF_NoMenu,	"void(string s, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5, optional string s6)", "Remaster: Sends the strings to all clients, which will order them according to {#}. Also substitutes localised strings for $NAME strings."},
+	{"ex_sprint",		PF_ex_sprint,		PF_NoCSQC,			0/*92*/,PF_NoMenu,	"void(entity client, string s, optional string s0, optional string s1, optional string s2, optional string s3, optional string s4, optional string s5)", "Remaster: Sends the strings to the client, which will order according to {#}. Also substitutes localised strings for $NAME strings."},
+	{"ex_CheckPlayerEXFlags",PF_ex_CheckPlayerEXFlags,PF_NoCSQC,0,	PF_NoMenu,		"DEP float(entity playerEnt)", "Stub, for now."},
+	{"ex_walkpathtogoal",PF_ex_walkpathtogoal,PF_NoCSQC,		0,	PF_NoMenu,		"DEP float(float movedist, vector goal)", "Stub, for now."},
+	{"ex_bot_movetopoint",PF_ex_bot_movetopoint,PF_NoCSQC,		0,	PF_NoMenu,		"DEP float(entity bot, vector point)", "Stub, for now."},
+	{"ex_bot_followentity",PF_ex_bot_followentity,PF_NoCSQC,	0,	PF_NoMenu,		"DEP float(entity bot, entity goal)", "Stub, for now."},
+
+
 //End QuakeEx, for now. :(
 
 	{"setmodel",		PF_NoSSQC,			PF_NoCSQC,			3,	PF_m_setmodel,		90, "void(entity ent, string modelname)", ""},
@@ -8037,35 +8072,14 @@ void PR_EnableExtensions(ddef_t *pr_globaldefs)
 	for (i = qcvm->numbuiltins; i < countof(qcvm->builtins); i++)
 		qcvm->builtins[i] = PF_Fixme;
 	qcvm->numbuiltins = i;
-	if (qcvm == &sv.qcvm && PR_IsQEX())
-	{	//make sure we don't stomp on them
-		qcvm->builtins[79] = PF_finaleFinished_qex;
-		qcvm->builtins[80] = PF_Fixme_noext;//localsound_qex
-		qcvm->builtins[81] = PF_Fixme_noext;//draw_point_qex
-		qcvm->builtins[82] = PF_Fixme_noext;//draw_line_qex
-		qcvm->builtins[83] = PF_Fixme_noext;//draw_arrow_qex
-		qcvm->builtins[84] = PF_Fixme_noext;//draw_ray_qex
-		qcvm->builtins[85] = PF_Fixme_noext;//draw_circle_qex
-		qcvm->builtins[86] = PF_Fixme_noext;//draw_bounds_qex
-		qcvm->builtins[87] = PF_Fixme_noext;//draw_worldtext_qex
-		qcvm->builtins[88] = PF_Fixme_noext;//draw_sphere_qex
-		qcvm->builtins[89] = PF_Fixme_noext;//draw_cylinder_qex
-		qcvm->builtins[90] = PF_centerprint_qex;
-		qcvm->builtins[91] = PF_bprint_qex;
-		qcvm->builtins[92] = PF_sprint_qex;
-		qcvm->builtins[93] = PF_Fixme_noext;//reserved...
-		qcvm->builtins[94] = PF_Fixme_noext;//reserved...
-		qcvm->builtins[95] = PF_Fixme_noext;//reserved...
-		qcvm->builtins[96] = PF_Fixme_noext;//reserved...
-		qcvm->builtins[97] = PF_Fixme_noext;//reserved...
-		qcvm->builtins[97] = PF_Fixme_noext;//reserved...
-		qcvm->builtins[98] = PF_Fixme_noext;//reserved...
+	if (qcvm == &sv.qcvm &&
+		(PR_FindExtFunction("ex_centerprint") && !PR_FindExtFunction("centerprint")))
+	{
 		qcvm->builtins[99] = PF_checkextension;
 
 		qcvm->brokenpushrotate = true;
 		qcvm->brokenbouncemissile = true;
 		qcvm->brokeneffects = true;
-		return;
 	}
 	if (!pr_checkextension.value && qcvm == &sv.qcvm)
 	{
@@ -8139,6 +8153,10 @@ void PR_EnableExtensions(ddef_t *pr_globaldefs)
 					qcvm->functions[i].first_statement = -(menuqc?extensionbuiltins[j].number_menuqc:extensionbuiltins[j].number);
 					break;
 				}
+			}
+			if (j == sizeof(extensionbuiltins)/sizeof(extensionbuiltins[0]))
+			{
+				Con_DPrintf("QC builtin %s is not known\n", name);
 			}
 		}
 	}

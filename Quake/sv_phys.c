@@ -1064,9 +1064,9 @@ int SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 		clip = SV_FlyMove (ent, 0.1, &steptrace);
 
 		if ( fabs(oldorg[1] - ent->v.origin[1]) > 4
-		|| fabs(oldorg[0] - ent->v.origin[0]) > 4 )
+			|| fabs(oldorg[0] - ent->v.origin[0]) > 4 )
 		{
-//Con_DPrintf ("unstuck!\n");
+		//	Con_DPrintf ("unstuck!\n");
 			return clip;
 		}
 
@@ -1574,7 +1574,7 @@ void SV_Physics (void)
 	if (sv_freezenonclients.value && qcvm == &sv.qcvm)
 		entity_cap = svs.maxclients + 1; // Only run physics on clients and the world
 	else
-		entity_cap = qcvm->num_edicts; 
+		entity_cap = qcvm->num_edicts;
 
 	//for (i=0 ; i<sv.num_edicts ; i++, ent = NEXT_EDICT(ent))
 	for (i=0 ; i<entity_cap ; i++, ent = NEXT_EDICT(ent))

@@ -233,7 +233,7 @@ void GLSLGamma_GammaCorrect (void)
 			Sys_Error("GLSLGamma_CreateShaders failed");
 		}
 	}
-	
+
 // copy the framebuffer to the texture
 	glCopyTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, glx, gly, glwidth, glheight);
 
@@ -261,9 +261,9 @@ void GLSLGamma_GammaCorrect (void)
 	glTexCoord2f (0, tmax);
 	glVertex2f (-1, 1);
 	glEnd ();
-	
+
 	GL_UseProgramFunc (0);
-	
+
 // clear cached binding
 	GL_ClearBindings ();
 }
@@ -281,6 +281,7 @@ qboolean R_CullBox (vec3_t emins, vec3_t emaxs)
 	mplane_t *p;
 	byte signbits;
 	float vec[3];
+
 	for (i = 0;i < 4;i++)
 	{
 		p = frustum + i;
@@ -397,7 +398,6 @@ assumes side and forward are perpendicular, and normalized
 to turn away from side, use a negative angle
 ===============
 */
-#define DEG2RAD( a ) ( (a) * M_PI_DIV_180 )
 void TurnVector (vec3_t out, const vec3_t forward, const vec3_t side, float angle)
 {
 	float scale_forward, scale_side;

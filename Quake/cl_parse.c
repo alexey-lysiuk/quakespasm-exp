@@ -74,28 +74,28 @@ const char *svc_strings[128] =
 	"svc_showpic_dp",	// 35
 	"svc_hidepic_dp",	// 36
 	"svc_skybox_fitz", // 37					// [string] skyname
-	"38", // 38
+	"38/qe_botchat", // 38
 	"39", // 39
 	"svc_bf_fitz", // 40						// no data
 	"svc_fog_fitz", // 41					// [byte] density [byte] red [byte] green [byte] blue [float] time
 	"svc_spawnbaseline2_fitz", //42			// support for large modelindex, large framenum, alpha, using flags
 	"svc_spawnstatic2_fitz", // 43			// support for large modelindex, large framenum, alpha, using flags
 	"svc_spawnstaticsound2_fitz", //	44		// [coord3] [short] samp [byte] vol [byte] aten
-	"45", // 45
-	"46", // 46
-	"47", // 47
-	"48", // 48
-	"49", // 49
+	"45/qe_setviews", // 45
+	"46/qe_updateping", // 46
+	"47/qe_updatesocial", // 47
+	"48/qe_updateplinfo", // 48
+	"49/qe_rawprint", // 49
 //johnfitz
 
 //spike -- particle stuff, and padded to 128 to avoid possible crashes.
-	"50 svc_downloaddata_dp", // 50
-	"51 svc_updatestatbyte", // 51
-	"52 svc_effect_dp/svc_achievement_qx", // 52
-	"53 svc_effect2_dp", // 53
-	"54 svc_precache", // 54	//[short] type+idx [string] name
-	"55 svc_baseline2_dp", // 55
-	"56 svc_spawnstatic2_dp", // 56
+	"50 svc_downloaddata_dp/qe_servervars", // 50
+	"51 svc_updatestatbyte/qe_seq", // 51
+	"52 svc_effect_dp/qe_achievement", // 52
+	"53 svc_effect2_dp/qe_chat", // 53
+	"54 svc_precache/qe_levelcompleted", // 54	//[short] type+idx [string] name
+	"55 svc_baseline2_dp/qe_backtolobby", // 55
+	"56 svc_spawnstatic2_dp/qe_localsound", // 56
 	"57 svc_entities_dp", // 57
 	"58 svc_csqcentities", // 58
 	"59 svc_spawnstaticsound2_dp", // 59
@@ -168,6 +168,7 @@ const char *svc_strings[128] =
 	"126", // 126
 	"127", // 127
 };
+#define	NUM_SVC_STRINGS	(sizeof(svc_strings) / sizeof(svc_strings[0]))
 
 qboolean warn_about_nehahra_protocol; //johnfitz
 
@@ -1258,6 +1259,23 @@ static void CL_ParseStartSoundPacket(void)
 #if 0
 /*
 ==================
+CL_ParseLocalSound - for 2021 rerelease
+==================
+*/
+void CL_ParseLocalSound(void)
+{
+	int field_mask, sound_num;
+
+	field_mask = MSG_ReadByte();
+	sound_num = (field_mask&SND_LARGESOUND) ? MSG_ReadShort() : MSG_ReadByte();
+	if (sound_num >= MAX_SOUNDS)
+		Host_Error ("CL_ParseLocalSound: %i > MAX_SOUNDS", sound_num);
+
+	S_LocalSound (cl.sound_precache[sound_num]->name);
+}
+
+/*
+==================
 CL_KeepaliveMessage
 
 When the client is taking a long time to load stuff, send keepalive messages
@@ -1476,7 +1494,7 @@ static void CL_ParseServerInfo (void)
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
-		if (cl.model_count==MAX_MODELS)
+		if (cl.model_count == MAX_MODELS)
 		{
 			Host_Error ("Server sent too many model precaches");
 		}
@@ -1496,7 +1514,7 @@ static void CL_ParseServerInfo (void)
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
-		if (cl.sound_count==MAX_SOUNDS)
+		if (cl.sound_count == MAX_SOUNDS)
 		{
 			Host_Error ("Server sent too many sound precaches");
 		}
@@ -2202,6 +2220,41 @@ static void CL_ParseParticles(int type)
 #endif
 
 
+#if 0	/* for debugging. from fteqw. */
+static void CL_DumpPacket (void)
+{
+	int			i, pos;
+	unsigned char	*packet = net_message.data;
+
+	Con_Printf("CL_DumpPacket, BEGIN:\n");
+	pos = 0;
+	while (pos < net_message.cursize)
+	{
+		Con_Printf("%5i ", pos);
+		for (i = 0; i < 16; i++)
+		{
+			if (pos >= net_message.cursize)
+				Con_Printf(" X ");
+			else	Con_Printf("%2x ", packet[pos]);
+			pos++;
+		}
+		pos -= 16;
+		for (i = 0; i < 16; i++)
+		{
+			if (pos >= net_message.cursize)
+				Con_Printf("X");
+			else if (packet[pos] == 0)
+				Con_Printf(".");
+			else	Con_Printf("%c", packet[pos]);
+			pos++;
+		}
+		Con_Printf("\n");
+	}
+
+	Con_Printf("CL_DumpPacket, --- END ---\n");
+}
+#endif	/* CL_DumpPacket */
+
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
 
 static void CL_ParseStatNumeric(int stat, int ival, float fval)
@@ -2446,8 +2499,8 @@ void CL_ParseServerMessage (void)
 	else if (cl_shownet.value == 2)
 		Con_Printf ("------------------\n");
 
-	if (!(cl.protocol_pext2 & PEXT2_PREDINFO))
-		cl.onground = false;	// unless the server says otherwise
+//	cl.onground = false;	// unless the server says otherwise
+
 //
 // parse the message
 //
@@ -2488,13 +2541,16 @@ void CL_ParseServerMessage (void)
 			continue;
 		}
 
-		SHOWNET(svc_strings[cmd]);
+		if (cmd < (int)NUM_SVC_STRINGS) {
+			SHOWNET(svc_strings[cmd]);
+		}
 
 	// other commands
 		switch (cmd)
 		{
 		default:
 			Host_Error ("Illegible server message %s, previous was %s", svc_strings[cmd], svc_strings[lastcmd]); //johnfitz -- added svc_strings[lastcmd]
+		//	CL_DumpPacket ();
 			break;
 
 		case svc_nop:
@@ -2679,6 +2735,7 @@ void CL_ParseServerMessage (void)
 			cl.intermission = 1;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
+			V_RestoreAngles ();
 			break;
 
 		case svc_finale:
@@ -2688,6 +2745,7 @@ void CL_ParseServerMessage (void)
 			//johnfitz -- log centerprints to console
 			CL_ParseCenterPrint (MSG_ReadString());
 			//johnfitz
+			V_RestoreAngles ();
 			break;
 
 		case svc_cutscene:
@@ -2697,6 +2755,7 @@ void CL_ParseServerMessage (void)
 			//johnfitz -- log centerprints to console
 			CL_ParseCenterPrint (MSG_ReadString ());
 			//johnfitz
+			V_RestoreAngles ();
 			break;
 
 		case svc_sellscreen:
@@ -2879,7 +2938,6 @@ void CL_ParseServerMessage (void)
 				Host_Error ("Received svcfte_voicechat but extension not active");
 			S_Voip_Parse();
 			break;
-		//spike
 		}
 
 		lastcmd = cmd; //johnfitz

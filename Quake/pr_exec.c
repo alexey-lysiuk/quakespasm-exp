@@ -293,7 +293,7 @@ static int PR_EnterFunction (dfunction_t *f)
 	// save off any locals that the new function steps on
 	c = f->locals;
 	if (qcvm->localstack_used + c > LOCALSTACK_SIZE)
-		PR_RunError("PR_ExecuteProgram: locals stack overflow\n");
+		PR_RunError("PR_ExecuteProgram: locals stack overflow");
 
 	for (i = 0; i < c ; i++)
 		qcvm->localstack[qcvm->localstack_used + i] = ((int *)qcvm->globals)[f->parm_start + i];
@@ -610,7 +610,7 @@ void PR_ExecuteProgram (func_t fnum)
 		if (!OPA->function)
 			PR_RunError("NULL function");
 		newf = &qcvm->functions[OPA->function];
-		if (newf->first_statement < 0)
+		if (newf->first_statement <= 0)
 		{ // Built-in function
 			int i = -newf->first_statement;
 			if (i >= qcvm->numbuiltins)

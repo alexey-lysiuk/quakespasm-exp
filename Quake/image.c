@@ -694,15 +694,15 @@ byte *Image_LoadTGA (FILE *fin, int *width, int *height)
 	if (targa_header.image_type==1)
 	{
 		if (targa_header.pixel_size != 8 || targa_header.colormap_size != 24 || targa_header.colormap_length > 256)
-			Sys_Error ("Image_LoadTGA: %s has an %ibit palette\n", loadfilename, targa_header.colormap_type);
+			Sys_Error ("Image_LoadTGA: %s has an %ibit palette", loadfilename, targa_header.colormap_type);
 	}
 	else
 	{
 		if (targa_header.image_type!=2 && targa_header.image_type!=10)
-			Sys_Error ("Image_LoadTGA: %s is not a type 2 or type 10 targa (%i)\n", loadfilename, targa_header.image_type);
+			Sys_Error ("Image_LoadTGA: %s is not a type 2 or type 10 targa (%i)", loadfilename, targa_header.image_type);
 
 		if (targa_header.colormap_type !=0 || (targa_header.pixel_size!=32 && targa_header.pixel_size!=24))
-			Sys_Error ("Image_LoadTGA: %s is not a 24bit or 32bit targa\n", loadfilename);
+			Sys_Error ("Image_LoadTGA: %s is not a 24bit or 32bit targa", loadfilename);
 	}
 
 	columns = targa_header.width;
