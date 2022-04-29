@@ -8042,26 +8042,6 @@ void PR_InitExtensions(void)
 	}
 }
 
-static qboolean PR_IsQEX(void)
-{
-	//if centerprint is mapped to #90 and no other builtins are also mapped there (eg tracebox) then assume it targets QuakeEX (Aka: KexQuake aka its part of the rerelease)
-	size_t i;
-	qboolean isqex=false;
-
-	for (i = 1; i < qcvm->progs->numfunctions; i++)
-	{
-		if (qcvm->functions[i].first_statement == -90)
-		{
-			const char *biname = PR_GetString(qcvm->functions[i].s_name);
-			if (strstr(biname, "centerprint"))
-				isqex = true;
-			else
-				return false;
-		}
-	}
-	return isqex;
-}
-
 //called at map start
 void PR_EnableExtensions(ddef_t *pr_globaldefs)
 {
