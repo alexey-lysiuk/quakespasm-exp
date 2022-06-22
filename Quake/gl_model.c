@@ -2099,10 +2099,10 @@ void Mod_CheckWaterVis(void)
 			if ((contenttransparent & (SURF_DRAWWATER|SURF_DRAWTELE))==(SURF_DRAWWATER|SURF_DRAWTELE))
 				continue;
 			//this check is somewhat risky, but we should be able to get away with it.
-			for (contenttype = 0, i = 0; i < leaf->nummarksurfaces; i++)
-				if (leaf->firstmarksurface[i]->flags & (SURF_DRAWWATER|SURF_DRAWTELE))
+			for (contenttype = 0, j = 0; j < leaf->nummarksurfaces; j++)
+				if (leaf->firstmarksurface[j]->flags & (SURF_DRAWWATER|SURF_DRAWTELE))
 				{
-					contenttype = leaf->firstmarksurface[i]->flags & (SURF_DRAWWATER|SURF_DRAWTELE);
+					contenttype = leaf->firstmarksurface[j]->flags & (SURF_DRAWWATER|SURF_DRAWTELE);
 					break;
 				}
 			//its possible that this leaf has absolutely no surfaces in it, turb or otherwise.
