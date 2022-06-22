@@ -1422,7 +1422,8 @@ plcolour_t CL_PLColours_Parse(const char *s)
 	else
 	{
 		c.type = 0;
-		c.rgb[0] = c.rgb[1] = c.rgb[2] = 0;
+		c.basic = 0;
+		c.rgb[0] = c.rgb[1] = c.rgb[2] = 0xff;
 	}
 	return c;
 }

@@ -1380,7 +1380,7 @@ static void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 		}
 		else if (glt->shirt.type == 1)
 		{
-			shirt = glt->shirt.rgb[0] * 16;
+			shirt = glt->shirt.basic * 16;
 			if (shirt < 128)
 			{
 				for (i = 0; i < 16; i++)

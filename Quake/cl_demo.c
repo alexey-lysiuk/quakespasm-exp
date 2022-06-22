@@ -344,9 +344,9 @@ void CL_Record_Spawn(void)
 		MSG_WriteByte (&net_message, i);
 		c = 0;
 		if (cl.scores[i].shirt.type == 1)
-			c |= (cl.scores[i].shirt.rgb[0]<<4)&0xf;
+			c |= (cl.scores[i].shirt.basic<<4)&0xf;
 		if (cl.scores[i].pants.type == 1)
-			c |= (cl.scores[i].pants.rgb[0]<<0)&0xf;
+			c |= (cl.scores[i].pants.basic<<0)&0xf;
 		MSG_WriteByte (&net_message, c);
 	}
 
