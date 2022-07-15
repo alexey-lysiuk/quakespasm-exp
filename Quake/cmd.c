@@ -301,7 +301,9 @@ void Cmd_Exec_f (void)
 
 	Cbuf_InsertText ("\n");	//just in case there was no trailing \n.
 	Cbuf_InsertText (f);
-	Hunk_FreeToLowMark (mark);
+	if (f != default_cfg) {
+		Hunk_FreeToLowMark (mark);
+	}
 }
 
 

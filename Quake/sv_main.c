@@ -1565,7 +1565,7 @@ void SV_StartParticle (vec3_t org, vec3_t dir, int color, int count)
 {
 	int		i, v;
 
-	if (sv.datagram.cursize > MAX_DATAGRAM-16)
+	if (sv.datagram.cursize > MAX_DATAGRAM-18)
 		return;
 	MSG_WriteByte (&sv.datagram, svc_particle);
 	MSG_WriteCoord (&sv.datagram, org[0], sv.protocolflags);
@@ -1601,7 +1601,7 @@ Larger attenuations will drop off.  (max 4 attenuation)
 */
 void SV_StartSound2 (edict_t *entity, float *origin, int channel, const char *sample, int volume, float attenuation, float speed, int flags, float timeoffset)
 {
-	unsigned int	sound_num, ent;
+	unsigned int	sound_num, ent, msgsize;
 	int			i, field_mask, client_mask;
 	int			p;
 	client_t	*cl;
@@ -1623,7 +1623,7 @@ void SV_StartSound2 (edict_t *entity, float *origin, int channel, const char *sa
 	else if (channel > 7)
 		Con_DPrintf ("SV_StartSound: channel = %i\n", channel);
 
-	if (sv.datagram.cursize > MAX_DATAGRAM-16)
+	if (sv.datagram.cursize > MAX_DATAGRAM-21)
 		return;
 
 // find precache number for sound
@@ -1641,11 +1641,12 @@ void SV_StartSound2 (edict_t *entity, float *origin, int channel, const char *sa
 
 	ent = NUM_FOR_EDICT(entity);
 
+	msgsize = 2+4+2+12;
 	field_mask = 0;
 	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
-		field_mask |= SND_VOLUME;
+		field_mask |= SND_VOLUME, msgsize+=1;
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
-		field_mask |= SND_ATTENUATION;
+		field_mask |= SND_ATTENUATION, msgsize+=1;
 
 	//johnfitz -- PROTOCOL_FITZQUAKE
 	if (ent >= 8192 || channel >= 8)
@@ -1662,9 +1663,10 @@ void SV_StartSound2 (edict_t *entity, float *origin, int channel, const char *sa
 	if (flags & CF_NOREVERB)		field_mask |= SND_FTE_NOREVERB;
 	if (flags & CF_FOLLOW)			field_mask |= SND_FTE_FOLLOW;
 	if (flags & CF_NOREPLACE)		field_mask |= SND_FTE_NOREPLACE;
-	if (flags & CF_SENDVELOCITY)	field_mask |= SND_FTE_VELOCITY;
-	if (speed && speed != 1)		field_mask |= SND_FTE_PITCHADJ;
-	if (timeoffset)					field_mask |= SND_FTE_TIMEOFS;
+	if (flags & CF_SENDVELOCITY)	field_mask |= SND_FTE_VELOCITY, msgsize+=6;
+	if (speed && speed != 1)		field_mask |= SND_DP_PITCH, msgsize+=2;
+	if (timeoffset)					field_mask |= SND_FTE_TIMEOFS, msgsize+=2;
+	if (field_mask > 0xff)			field_mask |= SND_FTE_MOREFLAGS, msgsize += 9;	//too lazy to figure out the actual size.
 	//
 
 	for (p = 0; p < svs.maxclients; p++)
@@ -1689,6 +1691,9 @@ void SV_StartSound2 (edict_t *entity, float *origin, int channel, const char *sa
 		client_mask = field_mask;
 		if (!(cl->protocol_pext2&PEXT2_REPLACEMENTDELTAS))
 			client_mask &= (SND_VOLUME|SND_ATTENUATION|SND_LARGEENTITY|SND_LARGESOUND);
+
+		if (msg->cursize+msgsize > msg->maxsize)
+			continue;	//sacrifice it so as to not crash the client out.
 
 		// directed messages go only to the entity the are targeted on
 		MSG_WriteByte (msg, svc_sound);
@@ -1778,6 +1783,9 @@ void SV_LocalSound (client_t *client, const char *sample)
 			return;
 		field_mask = SND_LARGESOUND;
 	}
+
+	if (msg->cursize+19 > msg->maxsize)
+		return;
 
 	MSG_WriteByte (msg, svc_sound);
 	MSG_WriteByte (msg, field_mask);

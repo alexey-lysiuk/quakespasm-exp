@@ -55,7 +55,7 @@ PKG_CONFIG ?= pkg-config
 CPUFLAGS=
 LDFLAGS =
 DFLAGS ?=
-CFLAGS ?= -Wall -Wno-trigraphs
+CFLAGS ?= -Wall -Wno-trigraphs -MMD
 CFLAGS += $(call check_gcc,-std=gnu11,)
 CFLAGS += $(CPUFLAGS)
 ifneq ($(DEBUG),0)
@@ -65,7 +65,7 @@ do_strip=
 else
 DFLAGS += -DNDEBUG
 CFLAGS += -O2
-#  -fno-asynchronous-unwind-tables
+#CFLAGS += -fno-asynchronous-unwind-tables
 CFLAGS += $(call check_gcc,-fweb,)
 CFLAGS += $(call check_gcc,-frename-registers,)
 cmd_strip=$(STRIP) $(1)
@@ -198,23 +198,8 @@ endif
 LIBS := $(COMMON_LIBS) $(NET_LIBS) $(CODECLIBS)
 
 # ---------------------------
-# targets
-# ---------------------------
-
-.PHONY:	clean debug release
-
-DEFAULT_TARGET := quakespasm
-
-# ---------------------------
-# rules
-# ---------------------------
-
-%.o:	%.c
-	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) -o $@ $<
-
-# ----------------------------------------------------------------------------
 # objects
-# ----------------------------------------------------------------------------
+# ---------------------------
 
 MUSIC_OBJS:= bgmusic.o \
 	snd_codec.o \
@@ -236,7 +221,6 @@ SYSOBJ_GL_VID:= gl_vidsdl.o
 SYSOBJ_NET := net_bsd.o net_udp.o
 SYSOBJ_SYS := pl_linux.o sys_sdl_unix.o
 SYSOBJ_MAIN:= main_sdl.o
-SYSOBJ_RES :=
 
 GLOBJS = \
 	gl_refrag.o \
@@ -303,24 +287,32 @@ OBJS := strlcat.o \
 	sv_user.o \
 	world.o \
 	zone.o \
-	$(SYSOBJ_SYS) $(SYSOBJ_MAIN) $(SYSOBJ_RES)
+	$(SYSOBJ_SYS) $(SYSOBJ_MAIN)
 
-# ------------------------
-# Linux build rules
-# ------------------------
+# ---------------------------
+# targets / rules
+# ---------------------------
+
+.PHONY:	clean debug release
+
+DEFAULT_TARGET := quakespasm
+all: $(DEFAULT_TARGET)
+
+%.o:	%.c
+	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) -o $@ $<
 
 quakespasm:	$(OBJS)
 	$(LINKER) $(OBJS) $(LDFLAGS) $(LIBS) $(SDL_LIBS) -o $@
 	$(call do_strip,$@)
-
-image.o: lodepng.c lodepng.h stb_image_write.h
 
 release:	quakespasm
 debug:
 	$(error Use "make DEBUG=1")
 
 clean:
-	rm -f $(shell find . \( -name '*~' -o -name '#*#' -o -name '*.o' -o -name '*.res' -o -name $(DEFAULT_TARGET) \) -print)
+	$(RM) *.o *.d $(DEFAULT_TARGET)
 
 install:	quakespasm
 	cp quakespasm /usr/local/games/quake
+
+sinclude $(OBJS:.o=.d)
