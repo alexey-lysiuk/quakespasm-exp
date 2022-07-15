@@ -1793,7 +1793,7 @@ void PR_spawnfunc_misc_model(edict_t *self)
 	PF_sv_makestatic();
 }
 
-builtin_t pr_ssqcbuiltins[] =
+const builtin_t pr_ssqcbuiltins[] =
 {
 	PF_Fixme,
 	PF_makevectors,		// void(entity e) makevectors		= #1
@@ -1883,7 +1883,7 @@ builtin_t pr_ssqcbuiltins[] =
 
 	PF_sv_setspawnparms,
 };
-int pr_ssqcnumbuiltins = sizeof(pr_ssqcbuiltins)/sizeof(pr_ssqcbuiltins[0]);
+const int pr_ssqcnumbuiltins = sizeof(pr_ssqcbuiltins)/sizeof(pr_ssqcbuiltins[0]);
 
 
 
@@ -2143,7 +2143,7 @@ static void PF_cl_particle (void)
 
 #define PF_NoCSQC PF_Fixme
 #define PF_CSQCToDo PF_Fixme
-builtin_t pr_csqcbuiltins[] =
+const builtin_t pr_csqcbuiltins[] =
 {
 	PF_Fixme,
 	PF_makevectors,		// void(entity e) makevectors		= #1
@@ -2233,7 +2233,7 @@ builtin_t pr_csqcbuiltins[] =
 
 	PF_NoCSQC,//PF_setspawnparms
 };
-int pr_csqcnumbuiltins = sizeof(pr_csqcbuiltins)/sizeof(pr_csqcbuiltins[0]);
+const int pr_csqcnumbuiltins = sizeof(pr_csqcbuiltins)/sizeof(pr_csqcbuiltins[0]);
 
 ///////////////////////////////////////////////////////////////////
 //menuqc
@@ -2278,7 +2278,7 @@ static void PF_cvar_menuhack (void)
 #define PF_MenuQCToDo PF_Fixme
 #define PF_MenuCQMess PF_Fixme
 #define PF_MenuCQExt PF_Fixme
-builtin_t pr_menubuiltins[] = {
+const builtin_t pr_menubuiltins[] = {
 	PF_Fixme,				//#0
 	PF_MenuCQExt,			//#1 PF_checkextension
 	PF_error,				//#2
@@ -2373,4 +2373,5 @@ builtin_t pr_menubuiltins[] = {
 	PF_MenuCQExt,			//#89 PF_cvar_defstring,
 	//all other builtins will just have to use the extension system
 };
-int pr_menunumbuiltins = sizeof(pr_menubuiltins)/sizeof(pr_menubuiltins[0]);
+const int pr_menunumbuiltins = sizeof(pr_menubuiltins)/sizeof(pr_menubuiltins[0]);
+

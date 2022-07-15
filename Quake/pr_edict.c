@@ -1232,7 +1232,7 @@ static void PR_MergeEngineFieldDefs (void)
 PR_LoadProgs
 ===============
 */
-qboolean PR_LoadProgs (const char *filename, qboolean fatal, unsigned int needcrc, builtin_t *builtins, size_t numbuiltins)
+qboolean PR_LoadProgs (const char *filename, qboolean fatal, unsigned int needcrc, const builtin_t *builtins, size_t numbuiltins)
 {
 	int			i;
 

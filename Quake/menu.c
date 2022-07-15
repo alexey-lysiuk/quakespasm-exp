@@ -2141,6 +2141,8 @@ void M_LanConfig_Draw (void)
 	basex = (320-p->width)/2;
 	M_DrawPic (basex, 4, p);
 
+	basex = 72; /* Arcane Dimensions has an oversized gfx/p_multi.lmp */
+
 	if (StartingGame)
 		startJoin = "New Game";
 	else
@@ -3035,8 +3037,6 @@ static struct
 
 //=============================================================================
 /* MenuQC Subsystem */
-extern builtin_t pr_menubuiltins[];
-extern int pr_menunumbuiltins;
 #define MENUQC_PROGHEADER_CRC 10020
 void MQC_End(void)
 {
