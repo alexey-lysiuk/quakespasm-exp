@@ -828,9 +828,9 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, entity_t *e, lerpdata_t *lerpdata
 		if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
 		{
 			if (e->lerpflags & LERP_FINISH && numposes == 1)
-				lerpdata->blend = CLAMP (0, (cl.time - e->lerp.state.lerpstart) / (e->lerpfinish - e->lerp.state.lerpstart), 1);
+				lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerp.state.lerpstart) / (e->lerpfinish - e->lerp.state.lerpstart), 1.0f);
 			else
-				lerpdata->blend = CLAMP (0, (cl.time - e->lerp.state.lerpstart) / e->lerp.state.lerptime, 1);
+				lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerp.state.lerpstart) / e->lerp.state.lerptime, 1.0f);
 			lerpdata->pose1 = e->lerp.state.previouspose;
 			lerpdata->pose2 = e->lerp.state.currentpose;
 		}
@@ -905,9 +905,9 @@ void R_SetupEntityTransform (entity_t *e, lerpdata_t *lerpdata)
 	if (r_lerpmove.value && e != &cl.viewent && e->lerpflags & LERP_MOVESTEP)
 	{
 		if (e->lerpflags & LERP_FINISH)
-			blend = CLAMP (0, (cl.time - e->movelerpstart) / (e->lerpfinish - e->movelerpstart), 1);
+			blend = CLAMP (0.0f, (float)(cl.time - e->movelerpstart) / (e->lerpfinish - e->movelerpstart), 1.0f);
 		else
-			blend = CLAMP (0, (cl.time - e->movelerpstart) / 0.1, 1);
+			blend = CLAMP (0.0f, (float)(cl.time - e->movelerpstart) / 0.1f, 1.0f);
 
 		//translation
 		VectorSubtract (e->currentorigin, e->previousorigin, d);
@@ -1051,7 +1051,7 @@ void R_DrawAliasModel (entity_t *e)
 {
 	aliasglsl_t *glsl;
 	aliashdr_t	*paliashdr;
-	int			i, anim, skinnum;
+	int		anim, skinnum;
 	gltexture_t	*tx, *fb;
 	lerpdata_t	lerpdata;
 	qboolean	alphatest = !!(e->model->flags & MF_HOLEY);
@@ -1160,9 +1160,8 @@ void R_DrawAliasModel (entity_t *e)
 		} 
 		if (e->netstate.colormap && !gl_nocolors.value)
 		{
-			i = e - cl.entities;
-			if (i >= 1 && i<=cl.maxclients /* && !strcmp (currententity->model->name, "progs/player.mdl") */)
-				tx = playertextures[i - 1];
+			if ((uintptr_t)e >= (uintptr_t)&cl.entities[1] && (uintptr_t)e <= (uintptr_t)&cl.entities[cl.maxclients]) /* && !strcmp (currententity->model->name, "progs/player.mdl") */
+				tx = playertextures[e - cl.entities - 1];
 		}
 		if (!gl_fullbrights.value)
 			fb = NULL;

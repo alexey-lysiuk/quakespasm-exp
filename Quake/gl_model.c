@@ -678,7 +678,7 @@ static texture_t *Mod_LoadMipTex(miptex_t *mt, byte *lumpend, enum srcformat *fm
 		if ((srcdata + *pixelbytes) > lumpend)
 		{
 			Con_DPrintf("Texture %s extends past end of lump\n", mt->name);
-			*pixelbytes = q_max(0, lumpend - srcdata);
+			*pixelbytes = q_max((ptrdiff_t)0, lumpend - srcdata);
 		}
 
 		memcpy ( tx+1, srcdata, *pixelbytes);
