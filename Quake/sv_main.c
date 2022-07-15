@@ -68,6 +68,38 @@ void SV_Protocol_f (void)
 
 /*
 ===============
+SV_Protocol_f
+===============
+*/
+void SV_SaveEntFile_f (void)
+{
+	char entfilename[MAX_QPATH];
+	size_t entlen;
+	
+	if (!sv.active || !sv.worldmodel)
+	{
+		Con_SafePrintf ("Not running a server\n");
+		return;
+	}
+	
+	entlen = strlen(sv.worldmodel->entities);
+	
+	if (Cmd_Argc() < 2)
+	{
+		unsigned int crc = CRC_Block((const byte*)sv.worldmodel->entities, entlen);
+		q_snprintf(entfilename, sizeof entfilename, "%s@%04x.ent", sv.name, crc);
+	}
+	else
+	{
+		strncpy(entfilename, Cmd_Argv(1), sizeof entfilename - 1);
+		entfilename[sizeof entfilename - 1] = '\0';
+	}
+	
+	COM_WriteFile(entfilename, sv.worldmodel->entities, entlen);
+}
+
+/*
+===============
 SV_Init
 ===============
 */
@@ -107,6 +139,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_altnoclip); //johnfitz
 
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz
+	Cmd_AddCommand ("sv_saveentfile", &SV_SaveEntFile_f);
 
 	for (i=0 ; i<MAX_MODELS ; i++)
 		sprintf (localmodels[i], "*%i", i);
