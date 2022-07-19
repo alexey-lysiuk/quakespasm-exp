@@ -3666,8 +3666,8 @@ void SV_SpawnServer (const char *server)
 
 // run two frames to allow everything to settle
 	host_frametime = 0.1;
-	SV_Physics ();
-	SV_Physics ();
+	SV_Physics (host_frametime);
+	SV_Physics (host_frametime);
 
 // create a baseline for more efficient communications
 	SV_CreateBaseline ();

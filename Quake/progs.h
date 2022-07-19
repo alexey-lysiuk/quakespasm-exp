@@ -403,6 +403,7 @@ struct qcvm_s
 	//originally part of the sv_state_t struct
 	//FIXME: put worldmodel in here too.
 	double		time;
+	double		frametime;
 	int			num_edicts;
 	int			reserved_edicts;
 	int			max_edicts;

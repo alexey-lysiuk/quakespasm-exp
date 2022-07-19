@@ -1184,7 +1184,7 @@ void SCR_UpdateScreen (void)
 //		Sbar_SortFrags ();
 
 		pr_global_struct->time = qcvm->time;
-		pr_global_struct->frametime = host_frametime;
+		pr_global_struct->frametime = qcvm->frametime;
 		G_FLOAT(OFS_PARM0) = glwidth/s;
 		G_FLOAT(OFS_PARM1) = glheight/s;
 		G_FLOAT(OFS_PARM2) = true;

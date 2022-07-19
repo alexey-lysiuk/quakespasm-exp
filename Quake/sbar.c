@@ -976,14 +976,14 @@ void Sbar_Draw (void)
 		glDisable (GL_ALPHA_TEST);	//in the finest tradition of glquake, we litter gl state calls all over the place. yay state trackers.
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		PR_SwitchQCVM(&cl.qcvm);
-		pr_global_struct->frametime = host_frametime;
+		pr_global_struct->time = qcvm->time;
+		pr_global_struct->frametime = qcvm->frametime;
 		if (qcvm->extglobals.cltime)
 			*qcvm->extglobals.cltime = realtime;
 		if (qcvm->extglobals.clframetime)
 			*qcvm->extglobals.clframetime = host_frametime;
 		if (qcvm->extglobals.player_localentnum)
 			*qcvm->extglobals.player_localentnum = cl.viewentity;
-		pr_global_struct->time = cl.time;
 		Sbar_SortFrags ();
 		G_VECTORSET(OFS_PARM0, vid.width/s, vid.height/s, 0);
 		G_FLOAT(OFS_PARM1) = sb_showscores;

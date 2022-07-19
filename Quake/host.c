@@ -714,7 +714,7 @@ void Host_ServerFrame (void)
 // move things around and think
 // always pause in single player if in console or menus
 	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
-		SV_Physics ();
+		SV_Physics (host_frametime);
 
 //johnfitz -- devstats
 	if (cls.signon == SIGNONS)
@@ -803,7 +803,7 @@ static void CL_LoadCSProgs(void)
 			//set a few globals, if they exist
 			if (qcvm->extglobals.maxclients)
 				*qcvm->extglobals.maxclients = cl.maxclients;
-			pr_global_struct->time = cl.time;
+			pr_global_struct->time = qcvm->time = cl.time;
 			pr_global_struct->mapname = PR_SetEngineString(cl.mapname);
 			pr_global_struct->total_monsters = cl.statsf[STAT_TOTALMONSTERS];
 			pr_global_struct->total_secrets = cl.statsf[STAT_TOTALSECRETS];
@@ -934,8 +934,8 @@ void _Host_Frame (double time)
 	if (cl.qcvm.progs)
 	{
 		PR_SwitchQCVM(&cl.qcvm);
-		pr_global_struct->frametime = host_frametime;
-		SV_Physics();
+		SV_Physics(cl.time - qcvm->time);
+		pr_global_struct->time = cl.time;
 		PR_SwitchQCVM(NULL);
 	}
 

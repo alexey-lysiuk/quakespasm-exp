@@ -150,7 +150,7 @@ qboolean SV_RunThink (edict_t *ent)
 	int		i; //johnfitz
 
 	thinktime = ent->v.nextthink;
-	if (thinktime <= 0 || thinktime > qcvm->time + host_frametime)
+	if (thinktime <= 0 || thinktime > qcvm->time + qcvm->frametime)
 		return true;
 
 	if (thinktime < qcvm->time)
@@ -417,7 +417,7 @@ void SV_AddGravity (edict_t *ent)
 	else
 		ent_gravity = 1.0;
 
-	ent->v.velocity[2] -= ent_gravity * sv_gravity.value * host_frametime;
+	ent->v.velocity[2] -= ent_gravity * sv_gravity.value * qcvm->frametime;
 }
 
 
@@ -847,14 +847,14 @@ void SV_Physics_Pusher (edict_t *ent)
 	oldltime = ent->v.ltime;
 
 	thinktime = ent->v.nextthink;
-	if (thinktime < ent->v.ltime + host_frametime)
+	if (thinktime < ent->v.ltime + qcvm->frametime)
 	{
 		movetime = thinktime - ent->v.ltime;
 		if (movetime < 0)
 			movetime = 0;
 	}
 	else
-		movetime = host_frametime;
+		movetime = qcvm->frametime;
 
 	if (movetime)
 	{
@@ -1104,7 +1104,7 @@ void SV_WalkMove (edict_t *ent)
 	VectorCopy (ent->v.origin, oldorg);
 	VectorCopy (ent->v.velocity, oldvel);
 
-	clip = SV_FlyMove (ent, host_frametime, &steptrace);
+	clip = SV_FlyMove (ent, qcvm->frametime, &steptrace);
 
 	if ( !(clip & 2) )
 		return;		// move didn't block on a step
@@ -1132,7 +1132,7 @@ void SV_WalkMove (edict_t *ent)
 	VectorCopy (vec3_origin, upmove);
 	VectorCopy (vec3_origin, downmove);
 	upmove[2] = STEPSIZE;
-	downmove[2] = -STEPSIZE + oldvel[2]*host_frametime;
+	downmove[2] = -STEPSIZE + oldvel[2]*qcvm->frametime;
 
 // move up
 	SV_PushEntity (ent, upmove);	// FIXME: don't link?
@@ -1141,7 +1141,7 @@ void SV_WalkMove (edict_t *ent)
 	ent->v.velocity[0] = oldvel[0];
 	ent->v. velocity[1] = oldvel[1];
 	ent->v. velocity[2] = 0;
-	clip = SV_FlyMove (ent, host_frametime, &steptrace);
+	clip = SV_FlyMove (ent, qcvm->frametime, &steptrace);
 
 // check for stuckness, possibly due to the limited precision of floats
 // in the clipping hulls
@@ -1246,13 +1246,13 @@ void SV_Physics_Client (edict_t	*ent, int num)
 	case MOVETYPE_FLY:
 		if (!SV_RunThink (ent))
 			return;
-		SV_FlyMove (ent, host_frametime, NULL);
+		SV_FlyMove (ent, qcvm->frametime, NULL);
 		break;
 
 	case MOVETYPE_NOCLIP:
 		if (!SV_RunThink (ent))
 			return;
-		VectorMA (ent->v.origin, host_frametime, ent->v.velocity, ent->v.origin);
+		VectorMA (ent->v.origin, qcvm->frametime, ent->v.velocity, ent->v.origin);
 		break;
 
 	default:
@@ -1297,8 +1297,8 @@ void SV_Physics_Noclip (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 
-	VectorMA (ent->v.angles, host_frametime, ent->v.avelocity, ent->v.angles);
-	VectorMA (ent->v.origin, host_frametime, ent->v.velocity, ent->v.origin);
+	VectorMA (ent->v.angles, qcvm->frametime, ent->v.avelocity, ent->v.angles);
+	VectorMA (ent->v.origin, qcvm->frametime, ent->v.velocity, ent->v.origin);
 
 	SV_LinkEdict (ent, false);
 }
@@ -1381,10 +1381,10 @@ void SV_Physics_Toss (edict_t *ent)
 		SV_AddGravity (ent);
 
 // move angles
-	VectorMA (ent->v.angles, host_frametime, ent->v.avelocity, ent->v.angles);
+	VectorMA (ent->v.angles, qcvm->frametime, ent->v.avelocity, ent->v.angles);
 
 // move origin
-	VectorScale (ent->v.velocity, host_frametime, move);
+	VectorScale (ent->v.velocity, qcvm->frametime, move);
 	trace = SV_PushEntity (ent, move);
 	if (trace.fraction == 1)
 		return;
@@ -1499,7 +1499,7 @@ void SV_Physics_Step (edict_t *ent)
 
 		SV_AddGravity (ent);
 		SV_CheckVelocity (ent);
-		SV_FlyMove (ent, host_frametime, NULL);
+		SV_FlyMove (ent, qcvm->frametime, NULL);
 		SV_LinkEdict (ent, true);
 
 		if ( (int)ent->v.flags & FL_ONGROUND )	// just hit ground
@@ -1524,7 +1524,7 @@ SV_Physics
 
 ================
 */
-void SV_Physics (void)
+void SV_Physics (double frametime)
 {
 	int	i;
 	int	entity_cap; // For sv_freezenonclients 
@@ -1537,9 +1537,12 @@ void SV_Physics (void)
 	else
 		physics_mode = (qcvm==&cl.qcvm)?0:2;	//csqc doesn't run thinks by default. it was meant to simplify implementations, but we just force fields to match ssqc so its not that large a burden.
 
+	pr_global_struct->time = qcvm->time;
+	pr_global_struct->frametime = qcvm->frametime = frametime;
+
 	if (!physics_mode)
 	{
-		qcvm->time += host_frametime;
+		qcvm->time += frametime;
 		return;
 	}
 	else if (physics_mode==1)
@@ -1550,7 +1553,7 @@ void SV_Physics (void)
 				continue;
 			SV_RunThink(ent);
 		}
-		qcvm->time += host_frametime;
+		qcvm->time += frametime;
 		return;
 	}
 //	else if (physics_mode==2) standard quake physics
@@ -1638,5 +1641,5 @@ void SV_Physics (void)
 	}
 
 	if (!(sv_freezenonclients.value && qcvm == &sv.qcvm))
-	  qcvm->time += host_frametime;
+	  qcvm->time += frametime;
 }
