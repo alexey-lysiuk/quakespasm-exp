@@ -55,9 +55,10 @@ static inline int IS_NAN (float x) {
 #define DotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
 #define DotProduct2(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1])
 #define DoublePrecisionDotProduct(x,y) ((double)(x)[0]*(y)[0]+(double)(x)[1]*(y)[1]+(double)(x)[2]*(y)[2])
-#define VectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
-#define VectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
-#define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
+#define VectorSubtract(a,b,c) do{(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}while(0)
+#define VectorAdd(a,b,c) do{(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}while(0)
+#define VectorMA(a,s,b,c) do{(c)[0]=(a)[0]+(s)*(b)[0];(c)[1]=(a)[1]+(s)*(b)[1];(c)[2]=(a)[2]+(s)*(b)[2];}while(0)
+#define VectorCopy(a,b) do{(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}while(0)
 
 //johnfitz -- courtesy of lordhavoc
 // QuakeSpasm: To avoid strict aliasing violations, use a float/int union instead of type punning.
@@ -75,8 +76,6 @@ static inline int IS_NAN (float x) {
 
 void TurnVector (vec3_t out, const vec3_t forward, const vec3_t side, float angle); //johnfitz
 void VectorAngles (const vec3_t forward, float *up, vec3_t angles); //johnfitz, spike(up is optional)
-
-void VectorMA (const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc);
 
 vec_t _DotProduct (const vec3_t v1, const vec3_t v2);
 void _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out);

@@ -6067,7 +6067,9 @@ static void PR_addentity_internal(edict_t *ed)	//adds a csqc entity into the sce
 			eval_t *lerpfrac = GetEdictFieldValue(ed, qcvm->extfields.lerpfrac);
 			eval_t *frame1time = GetEdictFieldValue(ed, qcvm->extfields.frame1time);
 			eval_t *frame2time = GetEdictFieldValue(ed, qcvm->extfields.frame2time);
+			eval_t *colormod = GetEdictFieldValue(ed, qcvm->extfields.colormod);
 			eval_t *alpha = GetEdictFieldValue(ed, qcvm->extfields.alpha);
+			eval_t *scale = GetEdictFieldValue(ed, qcvm->extfields.scale);
 			eval_t *renderflags = GetEdictFieldValue(ed, qcvm->extfields.renderflags);
 			int rf = renderflags?renderflags->_float:0;
 
@@ -6075,7 +6077,15 @@ static void PR_addentity_internal(edict_t *ed)	//adds a csqc entity into the sce
 			VectorCopy(ed->v.angles, e->angles);
 			e->model = model;
 			e->skinnum = ed->v.skin;
+			if (colormod && (colormod->vector[0]||colormod->vector[1]||colormod->vector[2]))
+			{
+				e->netstate.colormod[0] *= colormod->vector[0];
+				e->netstate.colormod[1] *= colormod->vector[1];
+				e->netstate.colormod[2] *= colormod->vector[2];
+			}
 			e->alpha = alpha?ENTALPHA_ENCODE(alpha->_float):ENTALPHA_DEFAULT;
+			if (scale && scale->_float)
+				e->netstate.scale *= scale->_float;
 
 			//can't exactly use currentpose/previous pose, as we don't know them.
 			e->lerpflags = LERP_EXPLICIT|LERP_RESETANIM|LERP_RESETMOVE;
