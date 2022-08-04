@@ -3010,6 +3010,7 @@ static void COM_Game_f (void)
 		if (!isDedicated)
 			Draw_ReloadTextures(true);
 		ExtraMaps_NewGame ();
+		Host_Resetdemos ();
 		DemoList_Rebuild ();
 
 		Con_Printf("\"game\" changed to \"%s\"\n", COM_GetGameNames(true));

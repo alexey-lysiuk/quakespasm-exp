@@ -2146,8 +2146,6 @@ called when the particle system has changed, and any cached indexes are now prob
 */
 void CL_RegisterParticles(void)
 {
-	extern qmodel_t	mod_known[];
-	extern int		mod_numknown;
 	int i;
 
 	if (cl.protocol == PROTOCOL_VERSION_DP7)	//dpp7 sucks.
@@ -2163,8 +2161,7 @@ void CL_RegisterParticles(void)
 	}
 
 	//and make sure models get the right effects+trails etc too
-	for (i = 0; i < mod_numknown; i++)
-		PScript_UpdateModelEffects(&mod_known[i]);
+	Mod_ForEachModel(PScript_UpdateModelEffects);
 }
 
 /*

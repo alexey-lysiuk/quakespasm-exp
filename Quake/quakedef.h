@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	FITZQUAKE_VERSION	0.85	//johnfitz
 #define	QUAKESPASM_VERSION	0.94
-#define	QUAKESPASM_VER_PATCH	6	// helper to print a string like 0.94.6
+#define	QUAKESPASM_VER_PATCH	7	// helper to print a string like 0.94.7
 #ifndef	QUAKESPASM_VER_SUFFIX
 #define	QUAKESPASM_VER_SUFFIX		// optional version suffix string literal like "-beta1"
 #endif
@@ -345,6 +345,7 @@ void Host_Quit_f (void);
 void Host_ClientCommands (const char *fmt, ...) FUNC_PRINTF(1,2);
 void Host_ShutdownServer (qboolean crash);
 void Host_WriteConfiguration (void);
+void Host_Resetdemos (void);
 
 void Host_AppendDownloadData(client_t *client, sizebuf_t *buf);
 void Host_DownloadAck(client_t *client);

@@ -3421,11 +3421,7 @@ void PScript_ClearSurfaceParticles(qmodel_t *mod)
 }
 static void PScript_ClearAllSurfaceParticles(void)
 {	//make sure we hit all models, even ones from the previous map. maybe this is overkill
-	extern qmodel_t	mod_known[];
-	extern int		mod_numknown;
-	int i;
-	for (i = 0; i < mod_numknown; i++)
-		PScript_ClearSurfaceParticles(&mod_known[i]);
+	Mod_ForEachModel(PScript_ClearSurfaceParticles);
 }
 
 void PScript_Shutdown (void)

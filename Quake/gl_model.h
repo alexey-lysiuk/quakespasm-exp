@@ -20,8 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef __MODEL__
-#define __MODEL__
+#ifndef GL_MODEL_H
+#define GL_MODEL_H
 
 #include "modelgen.h"
 #include "spritegn.h"
@@ -557,6 +557,7 @@ void	Mod_Init (void);
 void	Mod_ClearAll (void);
 void	Mod_ResetAll (void); // for gamedir changes (Host_Game_f)
 qmodel_t *Mod_ForName (const char *name, qboolean crash);
+void	Mod_ForEachModel(void(*callback)(qmodel_t *mod));
 void	*Mod_Extradata (qmodel_t *mod);	// handles caching
 void	Mod_TouchModel (const char *name);
 
@@ -566,4 +567,4 @@ byte	*Mod_NoVisPVS (qmodel_t *model);
 
 void Mod_SetExtraFlags (qmodel_t *mod);
 
-#endif	// __MODEL__
+#endif	/* GL_MODEL_H */

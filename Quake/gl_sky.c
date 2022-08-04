@@ -29,9 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 float Fog_GetDensity(void);
 float *Fog_GetColor(void);
 
-extern	qmodel_t	*loadmodel;
-extern	int	rs_skypolys; //for r_speeds readout
-extern	int rs_skypasses; //for r_speeds readout
+extern	int	rs_skypolys; // for r_speeds readout
+extern	int	rs_skypasses; // for r_speeds readout
+
 float	skyflatcolor[3];
 float	skymins[2][6], skymaxs[2][6];
 
@@ -98,7 +98,7 @@ Sky_LoadTexture
 A sky texture is 256*128, with the left side being a masked overlay
 ==============
 */
-void Sky_LoadTexture (texture_t *mt, enum srcformat fmt, unsigned int srcwidth, unsigned int height)
+void Sky_LoadTexture (qmodel_t *mod, texture_t *mt, enum srcformat fmt, unsigned int srcwidth, unsigned int height)
 {
 	char		texturename[64];
 	int			i, p, r, g, b, count;
@@ -123,8 +123,8 @@ void Sky_LoadTexture (texture_t *mt, enum srcformat fmt, unsigned int srcwidth, 
 	for (i=0 ; i<rows ; i++)
 		memcpy(back_data+bb*i*columns, src+bb*(i*columns*2 + columns), columns*bb);
 
-	q_snprintf(texturename, sizeof(texturename), "%s:%s_back", loadmodel->name, mt->name);
-	solidskytexture = TexMgr_LoadImage (loadmodel, texturename, width, height, fmt, back_data, "", (src_offset_t)back_data, TEXPREF_NONE);
+	q_snprintf(texturename, sizeof(texturename), "%s:%s_back", mod->name, mt->name);
+	solidskytexture = TexMgr_LoadImage (mod, texturename, width, height, fmt, back_data, "", (src_offset_t)back_data, TEXPREF_NONE);
 
 // extract front layer and upload
 	for (i=0 ; i<rows ; i++)
@@ -137,8 +137,8 @@ void Sky_LoadTexture (texture_t *mt, enum srcformat fmt, unsigned int srcwidth, 
 				front_data[i] = 255;
 		}
 	}
-	q_snprintf(texturename, sizeof(texturename), "%s:%s_front", loadmodel->name, mt->name);
-	alphaskytexture = TexMgr_LoadImage (loadmodel, texturename, width, height, fmt, front_data, "", (src_offset_t)front_data, TEXPREF_ALPHA);
+	q_snprintf(texturename, sizeof(texturename), "%s:%s_front", mod->name, mt->name);
+	alphaskytexture = TexMgr_LoadImage (mod, texturename, width, height, fmt, front_data, "", (src_offset_t)front_data, TEXPREF_ALPHA);
 
 // calculate r_fastsky color based on average of all opaque foreground colors, if we can.
 	r = g = b = count = 0;
@@ -157,6 +157,7 @@ void Sky_LoadTexture (texture_t *mt, enum srcformat fmt, unsigned int srcwidth, 
 			}
 		}
 	}
+
 	skyflatcolor[0] = (float)r/(count*255);
 	skyflatcolor[1] = (float)g/(count*255);
 	skyflatcolor[2] = (float)b/(count*255);
@@ -169,7 +170,7 @@ Sky_LoadTextureQ64
 Quake64 sky textures are 32*64
 ==============
 */
-void Sky_LoadTextureQ64 (texture_t *mt)
+void Sky_LoadTextureQ64 (qmodel_t *mod, texture_t *mt)
 {
 	char		texturename[64];
 	unsigned	i, p, r, g, b, count, halfheight, *rgba;
@@ -189,8 +190,8 @@ void Sky_LoadTextureQ64 (texture_t *mt)
 	front_rgba = (byte *) Hunk_AllocName (4*mt->width*halfheight, "q64_skytex");
 
 	// Normal indexed texture for the back layer
-	q_snprintf(texturename, sizeof(texturename), "%s:%s_back", loadmodel->name, mt->name);
-	solidskytexture = TexMgr_LoadImage (loadmodel, texturename, mt->width, halfheight, SRC_INDEXED, back, "", (src_offset_t)back, TEXPREF_NONE);
+	q_snprintf(texturename, sizeof(texturename), "%s:%s_back", mod->name, mt->name);
+	solidskytexture = TexMgr_LoadImage (mod, texturename, mt->width, halfheight, SRC_INDEXED, back, "", (src_offset_t)back, TEXPREF_NONE);
 
 	// front layer, convert to RGBA and upload
 	p = r = g = b = count = 0;
@@ -213,8 +214,8 @@ void Sky_LoadTextureQ64 (texture_t *mt)
 		count++;
 	}
 
-	q_snprintf(texturename, sizeof(texturename), "%s:%s_front", loadmodel->name, mt->name);
-	alphaskytexture = TexMgr_LoadImage (loadmodel, texturename, mt->width, halfheight, SRC_RGBA, front_rgba, "", (src_offset_t)front_rgba, TEXPREF_ALPHA);
+	q_snprintf(texturename, sizeof(texturename), "%s:%s_front", mod->name, mt->name);
+	alphaskytexture = TexMgr_LoadImage (mod, texturename, mt->width, halfheight, SRC_RGBA, front_rgba, "", (src_offset_t)front_rgba, TEXPREF_ALPHA);
 
 	// calculate r_fastsky color based on average of all opaque foreground colors
 	skyflatcolor[0] = (float)r/(count*255);
