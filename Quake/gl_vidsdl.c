@@ -66,13 +66,15 @@ static const char *gl_version;
 static int gl_version_major;
 static int gl_version_minor;
 static const char *gl_extensions;
-static char * gl_extensions_nice;
+
+qboolean gl_texture_s3tc, gl_texture_rgtc, gl_texture_bptc, gl_texture_etc2, gl_texture_astc;
 
 static vmode_t	modelist[MAX_MODE_LIST];
 static int		nummodes;
 
 static qboolean	vid_initialized = false;
 
+static SDL_Cursor	*vid_cursor;
 #if defined(USE_SDL2)
 static SDL_Window	*draw_context;
 static SDL_GLContext	gl_context;
@@ -108,6 +110,7 @@ qboolean gl_glsl_able = false; //ericw
 GLint gl_max_texture_units = 0; //ericw
 qboolean gl_glsl_gamma_able = false; //ericw
 qboolean gl_glsl_alias_able = false; //ericw
+qboolean gl_glsl_water_able = false; //Spoike
 int gl_stencilbits;
 
 PFNGLMULTITEXCOORD2FARBPROC GL_MTexCoord2fFunc = NULL; //johnfitz
@@ -142,6 +145,9 @@ QS_PFNGLUNIFORM1IPROC GL_Uniform1iFunc = NULL; //ericw
 QS_PFNGLUNIFORM1FPROC GL_Uniform1fFunc = NULL; //ericw
 QS_PFNGLUNIFORM3FPROC GL_Uniform3fFunc = NULL; //ericw
 QS_PFNGLUNIFORM4FPROC GL_Uniform4fFunc = NULL; //ericw
+QS_PFNGLUNIFORM4FVPROC GL_Uniform4fvFunc = NULL; //spike (for iqms)
+
+QS_PFNGLCOMPRESSEDTEXIMAGE2DPROC GL_CompressedTexImage2D = NULL;	//spike
 
 //====================================
 
@@ -607,7 +613,7 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, fsaa > 0 ? 1 : 0);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, fsaa);
 
-	q_snprintf(caption, sizeof(caption), "QuakeSpasm " QUAKESPASM_VER_STRING);
+	q_snprintf(caption, sizeof(caption), ENGINE_NAME_AND_VER);
 
 #if defined(USE_SDL2)
 	/* Create the window if needed, hidden */
@@ -617,6 +623,8 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 
 		if (vid_borderless.value)
 			flags |= SDL_WINDOW_BORDERLESS;
+		else if (!fullscreen)
+			flags |= SDL_WINDOW_RESIZABLE;
 
 		draw_context = SDL_CreateWindow (caption, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
 		if (!draw_context) { // scale back fsaa
@@ -823,9 +831,6 @@ static void VID_Restart (void)
 	GL_SetupState ();
 	Fog_SetupState ();
 
-	//warpimages needs to be recalculated
-	TexMgr_RecalcWarpImageSize ();
-
 	//conwidth and conheight need to be recalculated
 	vid.conwidth = (scr_conwidth.value > 0) ? (int)scr_conwidth.value : (scr_conscale.value > 0) ? (int)(vid.width/scr_conscale.value) : vid.width;
 	vid.conwidth = CLAMP (320, vid.conwidth, vid.width);
@@ -838,13 +843,7 @@ static void VID_Restart (void)
 //
 // update mouse grab
 //
-	if (key_dest == key_console || key_dest == key_menu)
-	{
-		if (modestate == MS_WINDOWED)
-			IN_Deactivate(true);
-		else if (modestate == MS_FULLSCREEN)
-			IN_Activate();
-	}
+	IN_UpdateGrabs();
 }
 
 /*
@@ -920,32 +919,15 @@ void VID_Lock (void)
 GL_MakeNiceExtensionsList -- johnfitz
 ===============
 */
-static char *GL_MakeNiceExtensionsList (const char *in)
+static void GL_PrintNiceExtensionsList (const char *in)
 {
-	char *copy, *token, *out;
-	int i, count;
-
-	if (!in) return Z_Strdup("(none)");
-
-	//each space will be replaced by 4 chars, so count the spaces before we malloc
-	for (i = 0, count = 1; i < (int) strlen(in); i++)
-	{
-		if (in[i] == ' ')
-			count++;
-	}
-
-	out = (char *) Z_Malloc (strlen(in) + count*3 + 1); //usually about 1-2k
-	out[0] = 0;
+	char *copy, *token;
+	if (!in) return Con_SafePrintf("(none)");
 
 	copy = (char *) Z_Strdup(in);
 	for (token = strtok(copy, " "); token; token = strtok(NULL, " "))
-	{
-		strcat(out, "\n   ");
-		strcat(out, token);
-	}
-
+		Con_SafePrintf("\n   %s", token);
 	Z_Free (copy);
-	return out;
 }
 
 /*
@@ -958,7 +940,9 @@ static void GL_Info_f (void)
 	Con_SafePrintf ("GL_VENDOR: %s\n", gl_vendor);
 	Con_SafePrintf ("GL_RENDERER: %s\n", gl_renderer);
 	Con_SafePrintf ("GL_VERSION: %s\n", gl_version);
-	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions_nice);
+	Con_SafePrintf ("GL_EXTENSIONS: ");
+	GL_PrintNiceExtensionsList(gl_extensions);
+	Con_SafePrintf ("\n");
 }
 
 /*
@@ -1175,6 +1159,13 @@ static void GL_CheckExtensions (void)
 	{
 		Con_Warning ("texture_non_power_of_two not supported\n");
 	}
+
+	GL_CompressedTexImage2D = (gl_version_major>=2||(gl_version_major==1&&gl_version_minor>=3))?(QS_PFNGLCOMPRESSEDTEXIMAGE2DPROC) SDL_GL_GetProcAddress("glCompressedTexImage2D"):NULL;
+	gl_texture_s3tc = GL_CompressedTexImage2D && (																			  GL_ParseExtensionList(gl_extensions, "GL_EXT_texture_compression_s3tc"));
+	gl_texture_rgtc = GL_CompressedTexImage2D && (gl_version_major >= 3													   || GL_ParseExtensionList(gl_extensions, "GL_ARB_texture_compression_rgtc"));
+	gl_texture_bptc = GL_CompressedTexImage2D && (gl_version_major > 4 || (gl_version_major == 4 && gl_version_minor >= 2) || GL_ParseExtensionList(gl_extensions, "GL_ARB_texture_compression_bptc"));
+	gl_texture_etc2 = GL_CompressedTexImage2D && (gl_version_major > 4 || (gl_version_major == 4 && gl_version_minor >= 3) || GL_ParseExtensionList(gl_extensions, "GL_ARB_ES3_compatibility"));
+	gl_texture_astc = GL_CompressedTexImage2D && (																			  GL_ParseExtensionList(gl_extensions, "GL_ARB_ES3_2_compatibility") || GL_ParseExtensionList(gl_extensions, "GL_KHR_texture_compression_astc_ldr"));
 	
 	// GLSL
 	//
@@ -1205,6 +1196,7 @@ static void GL_CheckExtensions (void)
 		GL_Uniform1fFunc = (QS_PFNGLUNIFORM1FPROC) SDL_GL_GetProcAddress("glUniform1f");
 		GL_Uniform3fFunc = (QS_PFNGLUNIFORM3FPROC) SDL_GL_GetProcAddress("glUniform3f");
 		GL_Uniform4fFunc = (QS_PFNGLUNIFORM4FPROC) SDL_GL_GetProcAddress("glUniform4f");
+		GL_Uniform4fvFunc = (QS_PFNGLUNIFORM4FVPROC) SDL_GL_GetProcAddress("glUniform4fv");
 
 		if (GL_CreateShaderFunc &&
 			GL_DeleteShaderFunc &&
@@ -1228,7 +1220,8 @@ static void GL_CheckExtensions (void)
 			GL_Uniform1iFunc &&
 			GL_Uniform1fFunc &&
 			GL_Uniform3fFunc &&
-			GL_Uniform4fFunc)
+			GL_Uniform4fFunc &&
+			GL_Uniform4fvFunc)
 		{
 			Con_Printf("FOUND: GLSL\n");
 			gl_glsl_able = true;
@@ -1290,10 +1283,11 @@ static void GL_SetupState (void)
 	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); //johnfitz
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//spike -- these are invalid as there is no texture bound to receive this state.
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glDepthRange (0, 1); //johnfitz -- moved here becuase gl_ztrick is gone.
 	glDepthFunc (GL_LEQUAL); //johnfitz -- moved here becuase gl_ztrick is gone.
 }
@@ -1320,10 +1314,6 @@ static void GL_Init (void)
 		gl_version_minor = 0;
 	}
 
-	if (gl_extensions_nice != NULL)
-		Z_Free (gl_extensions_nice);
-	gl_extensions_nice = GL_MakeNiceExtensionsList (gl_extensions);
-
 	GL_CheckExtensions (); //johnfitz
 
 #ifdef __APPLE__
@@ -1340,7 +1330,7 @@ static void GL_Init (void)
 	if (!strcmp(gl_vendor, "Intel"))
 	{
 		Con_Printf ("Intel Display Adapter detected, enabling gl_clear\n");
-		Cbuf_AddText ("gl_clear 1");
+		Cbuf_AddText ("gl_clear 1\n");	//Spike -- don't forget your \ns guys...
 	}
 	//johnfitz
 
@@ -1392,6 +1382,15 @@ void	VID_Shutdown (void)
 #endif
 		PL_VID_Shutdown();
 	}
+}
+
+void	VID_SetWindowCaption(const char *newcaption)
+{
+#if defined(USE_SDL2)
+	SDL_SetWindowTitle(draw_context, newcaption);
+#else
+	SDL_WM_SetCaption(newcaption, newcaption);
+#endif
 }
 
 /*
@@ -1806,14 +1805,7 @@ void	VID_Toggle (void)
 
 		VID_SyncCvars();
 
-		// update mouse grab
-		if (key_dest == key_console || key_dest == key_menu)
-		{
-			if (modestate == MS_WINDOWED)
-				IN_Deactivate(true);
-			else if (modestate == MS_FULLSCREEN)
-				IN_Activate();
-		}
+		IN_UpdateGrabs();
 	}
 	else
 	{
@@ -2235,7 +2227,7 @@ static void VID_MenuKey (int key)
 			Cbuf_AddText ("vid_restart\n");
 			key_dest = key_game;
 			m_state = m_none;
-			IN_Activate();
+			IN_UpdateGrabs();
 			break;
 		default:
 			break;
@@ -2327,10 +2319,10 @@ VID_Menu_f
 */
 static void VID_Menu_f (void)
 {
-	IN_Deactivate(modestate == MS_WINDOWED);
 	key_dest = key_menu;
 	m_state = m_video;
 	m_entersound = true;
+	IN_UpdateGrabs();
 
 	//set all the cvars to match the current mode when entering the menu
 	VID_SyncCvars ();
@@ -2340,3 +2332,70 @@ static void VID_Menu_f (void)
 	VID_Menu_RebuildRateList ();
 }
 
+void VID_UpdateCursor(void)
+{
+	SDL_Cursor *nc;
+
+	qcvm_t *vm;
+	if (key_dest == key_menu)
+		vm = &cls.menu_qcvm;
+	else if (key_dest == key_game)
+		vm = &cl.qcvm;
+	else
+		vm = NULL;
+	nc = vm?vm->cursorhandle:NULL;
+	if (vid_cursor != nc)
+	{
+		vid_cursor = nc;
+		if (nc)	//null is an invalid sdl cursor handle
+			SDL_SetCursor(nc);
+		else
+			SDL_SetCursor(SDL_GetDefaultCursor());	//doesn't need freeing or anything.
+	}
+}
+void VID_SetCursor(qcvm_t *vm, const char *cursorname, float hotspot[2], float cursorscale)
+{
+	SDL_Cursor *oldcursor;
+	int mark = Hunk_LowMark();
+	qboolean malloced = false;
+	char npath[MAX_QPATH];
+	SDL_Surface *surf = NULL;
+	byte *imagedata = NULL;
+	if (cursorname && *cursorname)
+	{
+		enum srcformat fmt;
+		int width, height;
+		COM_StripExtension(cursorname, npath, sizeof(npath));
+		imagedata = Image_LoadImage(npath, &width, &height, &fmt, &malloced);
+		if (imagedata && fmt == SRC_RGBA)
+		{	//simple 32bit RGBA byte-ordered data.
+			surf = SDL_CreateRGBSurfaceFrom(imagedata, width, height, 32, width*4, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			if (cursorscale != 1 && surf)
+			{	//rescale image by cursorscale
+				int nwidth = q_max(1,width*cursorscale);
+				int nheight = q_max(1,height*cursorscale);
+				SDL_Surface *scaled = SDL_CreateRGBSurface(0, nwidth, nheight, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+				SDL_BlitScaled(surf, NULL, scaled, NULL);
+				SDL_FreeSurface(surf);
+				surf = scaled;
+			}
+		}
+	}
+
+	oldcursor = vm->cursorhandle;
+	if (surf)
+	{
+		vm->cursorhandle = SDL_CreateColorCursor(surf, hotspot[0], hotspot[1]);
+		SDL_FreeSurface(surf);
+	}
+	else
+		vm->cursorhandle = NULL;
+
+	Hunk_FreeToLowMark(mark);
+	if (malloced)
+		free(imagedata);
+
+	VID_UpdateCursor();
+	if (oldcursor)
+		SDL_FreeCursor(oldcursor);
+}

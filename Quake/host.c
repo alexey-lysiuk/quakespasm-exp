@@ -56,12 +56,13 @@ client_t	*host_client;			// current client
 jmp_buf 	host_abortserver;
 
 byte		*host_colormap;
-
+float	host_netinterval;
 cvar_t	host_framerate = {"host_framerate","0",CVAR_NONE};	// set for slow motion
 cvar_t	host_speeds = {"host_speeds","0",CVAR_NONE};			// set for running times
 cvar_t	host_maxfps = {"host_maxfps", "72", CVAR_ARCHIVE}; //johnfitz
 cvar_t	host_timescale = {"host_timescale", "0", CVAR_NONE}; //johnfitz
-cvar_t	max_edicts = {"max_edicts", "8192", CVAR_NONE}; //johnfitz //ericw -- changed from 2048 to 8192, removed CVAR_ARCHIVE
+cvar_t	max_edicts = {"max_edicts", "15000", CVAR_NONE}; //johnfitz //ericw -- changed from 2048 to 8192, removed CVAR_ARCHIVE
+cvar_t	cl_nocsqc = {"cl_nocsqc", "0", CVAR_NONE};	//spike -- blocks the loading of any csqc modules
 
 cvar_t	sys_ticrate = {"sys_ticrate","0.05",CVAR_NONE}; // dedicated server
 cvar_t	serverprofile = {"serverprofile","0",CVAR_NONE};
@@ -69,16 +70,17 @@ cvar_t	serverprofile = {"serverprofile","0",CVAR_NONE};
 cvar_t	fraglimit = {"fraglimit","0",CVAR_NOTIFY|CVAR_SERVERINFO};
 cvar_t	timelimit = {"timelimit","0",CVAR_NOTIFY|CVAR_SERVERINFO};
 cvar_t	teamplay = {"teamplay","0",CVAR_NOTIFY|CVAR_SERVERINFO};
-cvar_t	samelevel = {"samelevel","0",CVAR_NONE};
+cvar_t	samelevel = {"samelevel","0",CVAR_SERVERINFO};
 cvar_t	noexit = {"noexit","0",CVAR_NOTIFY|CVAR_SERVERINFO};
-cvar_t	skill = {"skill","1",CVAR_NONE};			// 0 - 3
-cvar_t	deathmatch = {"deathmatch","0",CVAR_NONE};	// 0, 1, or 2
-cvar_t	coop = {"coop","0",CVAR_NONE};			// 0 or 1
+cvar_t	skill = {"skill","1",CVAR_SERVERINFO};			// 0 - 3
+cvar_t	deathmatch = {"deathmatch","0",CVAR_SERVERINFO};	// 0, 1, or 2
+cvar_t	coop = {"coop","0",CVAR_SERVERINFO};			// 0 or 1
 
 cvar_t	pausable = {"pausable","1",CVAR_NONE};
 
 cvar_t	developer = {"developer","0",CVAR_NONE};
 
+static cvar_t	pr_engine = {"pr_engine", ENGINE_NAME_AND_VER, CVAR_NONE};
 cvar_t	temp1 = {"temp1","0",CVAR_NONE};
 
 cvar_t devstats = {"devstats","0",CVAR_NONE}; //johnfitz -- track developer statistics that vary every frame
@@ -108,8 +110,21 @@ Max_Fps_f -- ericw
 */
 static void Max_Fps_f (cvar_t *var)
 {
-	if (var->value > 72)
-		Con_Warning ("host_maxfps above 72 breaks physics.\n");
+	if (var->value > 72 || var->value <= 0)
+	{
+		if (!host_netinterval)
+			Con_Printf ("Using renderer/network isolation.\n");
+		host_netinterval = 1.0/72;
+	}
+	else
+	{
+		if (host_netinterval)
+			Con_Printf ("Disabling renderer/network isolation.\n");
+		host_netinterval = 0;
+
+		if (var->value > 72)
+			Con_Warning ("host_maxfps above 72 breaks physics.\n");
+	}
 }
 
 /*
@@ -126,6 +141,8 @@ void Host_EndGame (const char *message, ...)
 	q_vsnprintf (string, sizeof(string), message, argptr);
 	va_end (argptr);
 	Con_DPrintf ("Host_EndGame: %s\n",string);
+
+	PR_SwitchQCVM(NULL);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -158,12 +175,20 @@ void Host_Error (const char *error, ...)
 		Sys_Error ("Host_Error: recursively entered");
 	inerror = true;
 
+	if (cl.qcvm.progs)
+		glDisable(GL_SCISSOR_TEST);	//equivelent to drawresetcliparea, to reset any damage if we crashed in csqc.
+	if (qcvm == &cls.menu_qcvm)
+		MQC_Shutdown();
+	PR_SwitchQCVM(NULL);
+
 	SCR_EndLoadingPlaque ();		// reenable screen updates
 
 	va_start (argptr,error);
 	q_vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 	Con_Printf ("Host_Error: %s\n",string);
+
+	Con_Redirect(NULL);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -235,7 +260,17 @@ void Host_Version_f (void)
 {
 	Con_Printf ("Quake Version %1.2f\n", VERSION);
 	Con_Printf ("QuakeSpasm Version " QUAKESPASM_VER_STRING "\n");
+#ifdef QSS_VERSION
+	Con_Printf ("QSS Git Description " QS_STRINGIFY(QSS_VERSION) "\n");
+#endif
+#ifdef QSS_REVISION
+	Con_Printf ("QSS Git Revision " QS_STRINGIFY(QSS_REVISION) "\n");
+#endif
+#ifdef QSS_DATE
+	Con_Printf ("QuakeSpasm-Spiked Build " QS_STRINGIFY(QSS_DATE) "\n");
+#else
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
+#endif
 }
 
 /* cvar callback functions : */
@@ -256,12 +291,14 @@ void Host_InitLocal (void)
 
 	Host_InitCommands ();
 
+	Cvar_RegisterVariable (&pr_engine);
 	Cvar_RegisterVariable (&host_framerate);
 	Cvar_RegisterVariable (&host_speeds);
 	Cvar_RegisterVariable (&host_maxfps); //johnfitz
 	Cvar_SetCallback (&host_maxfps, Max_Fps_f);
 	Cvar_RegisterVariable (&host_timescale); //johnfitz
 
+	Cvar_RegisterVariable (&cl_nocsqc);	//spike
 	Cvar_RegisterVariable (&max_edicts); //johnfitz
 	Cvar_SetCallback (&max_edicts, Max_Edicts_f);
 	Cvar_RegisterVariable (&devstats); //johnfitz
@@ -427,10 +464,15 @@ void SV_DropClient (qboolean crash)
 		{
 		// call the prog function for removing a client
 		// this will set the body to a dead frame, among other things
+			qcvm_t *oldvm = qcvm;
+			PR_SwitchQCVM(NULL);
+			PR_SwitchQCVM(&sv.qcvm);
 			saveSelf = pr_global_struct->self;
 			pr_global_struct->self = EDICT_TO_PROG(host_client->edict);
 			PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
 			pr_global_struct->self = saveSelf;
+			PR_SwitchQCVM(NULL);
+			PR_SwitchQCVM(oldvm);
 		}
 
 		Sys_Printf ("Client %s removed\n",host_client->name);
@@ -440,26 +482,40 @@ void SV_DropClient (qboolean crash)
 	NET_Close (host_client->netconnection);
 	host_client->netconnection = NULL;
 
+	SVFTE_DestroyFrames(host_client);	//release any delta state
+
 // free the client (the body stays around)
 	host_client->active = false;
 	host_client->name[0] = 0;
 	host_client->old_frags = -999999;
 	net_activeconnections--;
 
+	if (host_client->download.file)
+		fclose(host_client->download.file);
+	memset(&host_client->download, 0, sizeof(host_client->download));
+
 // send notification to all clients
 	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
 	{
-		if (!client->active)
+		if (!client->knowntoqc)
 			continue;
-		MSG_WriteByte (&client->message, svc_updatename);
-		MSG_WriteByte (&client->message, host_client - svs.clients);
-		MSG_WriteString (&client->message, "");
+		if ((host_client->protocol_pext1 & PEXT1_CSQC) || (host_client->protocol_pext2 & PEXT2_REPLACEMENTDELTAS))
+		{
+			MSG_WriteByte (&client->message, svc_stufftext);
+			MSG_WriteString (&client->message, va("//fui %u \"\"\n", (unsigned)(host_client - svs.clients)));
+		}
+		else
+		{
+			MSG_WriteByte (&client->message, svc_updatename);
+			MSG_WriteByte (&client->message, host_client - svs.clients);
+			MSG_WriteString (&client->message, "");
+			MSG_WriteByte (&client->message, svc_updatecolors);
+			MSG_WriteByte (&client->message, host_client - svs.clients);
+			MSG_WriteByte (&client->message, 0);
+		}
 		MSG_WriteByte (&client->message, svc_updatefrags);
 		MSG_WriteByte (&client->message, host_client - svs.clients);
 		MSG_WriteShort (&client->message, 0);
-		MSG_WriteByte (&client->message, svc_updatecolors);
-		MSG_WriteByte (&client->message, host_client - svs.clients);
-		MSG_WriteByte (&client->message, 0);
 	}
 }
 
@@ -492,20 +548,18 @@ void Host_ShutdownServer(qboolean crash)
 	do
 	{
 		count = 0;
+		NET_GetServerMessage();	//read packets to make sure we're receiving their acks. we're going to drop them all so we don't actually care to read the data, just the acks so we can flush our outgoing properly.
 		for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 		{
-			if (host_client->active && host_client->message.cursize)
+			if (host_client->active && host_client->message.cursize && host_client->netconnection)
 			{
-				if (NET_CanSendMessage (host_client->netconnection))
+				if (NET_CanSendMessage (host_client->netconnection))	//also sends pending data too.
 				{
 					NET_SendMessage(host_client->netconnection, &host_client->message);
 					SZ_Clear (&host_client->message);
 				}
 				else
-				{
-					NET_GetMessage(host_client->netconnection);
 					count++;
-				}
 			}
 		}
 		if ((Sys_DoubleTime() - start) > 3.0)
@@ -522,9 +576,13 @@ void Host_ShutdownServer(qboolean crash)
 	if (count)
 		Con_Printf("Host_ShutdownServer: NET_SendToAll failed for %u clients\n", count);
 
+	PR_SwitchQCVM(&sv.qcvm);
 	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
 		if (host_client->active)
 			SV_DropClient(crash);
+	
+	qcvm->worldmodel = NULL;
+	PR_SwitchQCVM(NULL);
 
 //
 // clear structures
@@ -544,6 +602,14 @@ not reinitialize anything.
 */
 void Host_ClearMemory (void)
 {
+	if (cl.qcvm.extfuncs.CSQC_Shutdown)
+	{
+		PR_SwitchQCVM(&cl.qcvm);
+		PR_ExecuteProgram(qcvm->extfuncs.CSQC_Shutdown);
+		qcvm->extfuncs.CSQC_Shutdown = 0;
+		PR_SwitchQCVM(NULL);
+	}
+
 	Con_DPrintf ("Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
@@ -551,9 +617,12 @@ void Host_ClearMemory (void)
 /* host_hunklevel MUST be set at this point */
 	Hunk_FreeToLowMark (host_hunklevel);
 	cls.signon = 0;
-	free(sv.edicts); // ericw -- sv.edicts switched to use malloc()
+	PR_ClearProgs(&sv.qcvm);
+	free(sv.static_entities);	//spike -- this is dynamic too, now
+	free(sv.ambientsounds);
 	memset (&sv, 0, sizeof(sv));
-	memset (&cl, 0, sizeof(cl));
+
+	CL_FreeState();
 }
 
 
@@ -577,8 +646,8 @@ qboolean Host_FilterTime (float time)
 	realtime += time;
 
 	//johnfitz -- max fps cvar
-	maxfps = CLAMP (10.f, host_maxfps.value, 1000.f);
-	if (!cls.timedemo && realtime - oldrealtime < 1.0/maxfps)
+	maxfps = CLAMP (10.f, host_maxfps.value, 1000.0);
+	if (host_maxfps.value && !cls.timedemo && realtime - oldrealtime < 1.0/maxfps)
 		return false; // framerate is too high
 	//johnfitz
 
@@ -591,8 +660,8 @@ qboolean Host_FilterTime (float time)
 	//johnfitz
 	else if (host_framerate.value > 0)
 		host_frametime = host_framerate.value;
-	else // don't allow really long or short frames
-		host_frametime = CLAMP (0.001, host_frametime, 0.1); //johnfitz -- use CLAMP
+	else if (host_maxfps.value)// don't allow really long or short frames
+		host_frametime = CLAMP (0.0001, host_frametime, 0.1); //johnfitz -- use CLAMP
 
 	return true;
 }
@@ -645,19 +714,19 @@ void Host_ServerFrame (void)
 // move things around and think
 // always pause in single player if in console or menus
 	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
-		SV_Physics ();
+		SV_Physics (host_frametime);
 
 //johnfitz -- devstats
 	if (cls.signon == SIGNONS)
 	{
-		for (i=0, active=0; i<sv.num_edicts; i++)
+		for (i=0, active=0; i<qcvm->num_edicts; i++)
 		{
 			ent = EDICT_NUM(i);
 			if (!ent->free)
 				active++;
 		}
 		if (active > 600 && dev_peakstats.edicts <= 600)
-			Con_DWarning ("%i edicts exceeds standard limit of 600 (max = %d).\n", active, sv.max_edicts);
+			Con_DWarning ("%i edicts exceeds standard limit of 600 (max = %d).\n", active, qcvm->max_edicts);
 		dev_stats.edicts = active;
 		dev_peakstats.edicts = q_max(active, dev_peakstats.edicts);
 	}
@@ -667,6 +736,116 @@ void Host_ServerFrame (void)
 	SV_SendClientMessages ();
 }
 
+//used for cl.qcvm.GetModel (so ssqc+csqc can share builtins)
+qmodel_t *CL_ModelForIndex(int index)
+{
+	if (index < 0 || index >= MAX_MODELS)
+		return NULL;
+	return cl.model_precache[index];
+}
+
+
+static void CL_LoadCSProgs(void)
+{
+	qboolean fullcsqc = false;
+	PR_ClearProgs(&cl.qcvm);
+	if (pr_checkextension.value && !cl_nocsqc.value)
+	{	//only try to use csqc if qc extensions are enabled.
+		char versionedname[MAX_QPATH];
+		unsigned int csqchash;
+		size_t csqcsize;
+		const char *val;
+		PR_SwitchQCVM(&cl.qcvm);
+		val = Info_GetKey(cl.serverinfo, "*csprogs", versionedname, sizeof(versionedname));
+		csqchash = (unsigned int)strtoul(val, NULL, 0);
+		if (*val)
+			snprintf(versionedname, MAX_QPATH, "csprogsvers/%x.dat", csqchash);
+		else
+			*versionedname = 0;
+		csqcsize = strtoul(Info_GetKey(cl.serverinfo, "*csprogssize", versionedname, sizeof(versionedname)), NULL, 0);
+
+		//try csprogs.dat first, then fall back on progs.dat in case someone tried merging the two.
+		//we only care about it if it actually contains a CSQC_DrawHud, otherwise its either just a (misnamed) ssqc progs or a full csqc progs that would just crash us on 3d stuff.
+		if ((*versionedname && PR_LoadProgs(versionedname, false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||cl.qcvm.extfuncs.CSQC_UpdateView))||
+			(PR_LoadProgs("csprogs.dat", false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||qcvm->extfuncs.CSQC_DrawScores||cl.qcvm.extfuncs.CSQC_UpdateView))||
+			(PR_LoadProgs("progs.dat",   false, PROGHEADER_CRC, pr_csqcbuiltins, pr_csqcnumbuiltins) && (qcvm->extfuncs.CSQC_DrawHud||cl.qcvm.extfuncs.CSQC_UpdateView)))
+		{
+			qcvm->max_edicts = CLAMP (MIN_EDICTS,(int)max_edicts.value,MAX_EDICTS);
+			qcvm->edicts = (edict_t *) malloc (qcvm->max_edicts*qcvm->edict_size);
+			qcvm->num_edicts = qcvm->reserved_edicts = 1;
+			memset(qcvm->edicts, 0, qcvm->num_edicts*qcvm->edict_size);
+
+			//in terms of exploit protection this is kinda pointless as someone can just strip out this check and compile themselves. oh well.
+			if ((*versionedname && qcvm->progshash == csqchash && qcvm->progssize == csqcsize) || cls.demoplayback)
+				fullcsqc = true;
+			else
+			{	//okay, it doesn't match. full csqc is disallowed to prevent cheats, but we still allow simplecsqc...
+				if (!qcvm->extfuncs.CSQC_DrawHud)
+				{	//no simplecsqc entry points... abort entirely!
+					PR_ClearProgs(qcvm);
+					PR_SwitchQCVM(NULL);
+					return;
+				}
+				fullcsqc = false;
+				qcvm->nogameaccess = true;
+
+				qcvm->extfuncs.CSQC_Input_Frame = 0;		//prevent reading/writing input frames (no wallhacks please).
+				qcvm->extfuncs.CSQC_UpdateView = 0;		//will probably bug out. block it.
+				qcvm->extfuncs.CSQC_Ent_Update = 0;		//don't let the qc know where ents are... the server should prevent this, but make sure the user didn't cheese a 'cmd enablecsqc'
+				qcvm->extfuncs.CSQC_Ent_Remove = 0;
+				qcvm->extfuncs.CSQC_Parse_StuffCmd = 0;	//don't allow blocking stuffcmds... though we can't prevent cvar queries+sets, so this is probably futile...
+
+				qcvm->extglobals.clientcommandframe = NULL;	//input frames are blocked, so don't bother to connect these either.
+				qcvm->extglobals.servercommandframe = NULL;
+			}
+
+			qcvm->GetModel = PR_CSQC_GetModel;
+			//set a few globals, if they exist
+			if (qcvm->extglobals.maxclients)
+				*qcvm->extglobals.maxclients = cl.maxclients;
+			pr_global_struct->time = qcvm->time = cl.time;
+			pr_global_struct->mapname = PR_SetEngineString(cl.mapname);
+			pr_global_struct->total_monsters = cl.statsf[STAT_TOTALMONSTERS];
+			pr_global_struct->total_secrets = cl.statsf[STAT_TOTALSECRETS];
+			pr_global_struct->deathmatch = cl.gametype;
+			pr_global_struct->coop = (cl.gametype == GAME_COOP) && cl.maxclients != 1;
+			if (qcvm->extglobals.player_localnum)
+				*qcvm->extglobals.player_localnum = cl.viewentity-1;	//this is a guess, but is important for scoreboards.
+
+			//set a few worldspawn fields too
+			qcvm->edicts->v.solid = SOLID_BSP;
+			qcvm->edicts->v.modelindex = 1;
+			qcvm->edicts->v.model = PR_SetEngineString(cl.worldmodel->name);
+			VectorCopy(cl.worldmodel->mins, qcvm->edicts->v.mins);
+			VectorCopy(cl.worldmodel->maxs, qcvm->edicts->v.maxs);
+			qcvm->edicts->v.message = PR_SetEngineString(cl.levelname);
+
+			//and call the init function... if it exists.
+			qcvm->worldmodel = cl.worldmodel;
+			SV_ClearWorld();
+			if (qcvm->extfuncs.CSQC_Init)
+			{
+				int maj = (int)QUAKESPASM_VERSION;
+				int min = (QUAKESPASM_VERSION-maj) * 100;
+				G_FLOAT(OFS_PARM0) = fullcsqc;
+				G_INT(OFS_PARM1) = PR_SetEngineString("QuakeSpasm-Spiked");
+				G_FLOAT(OFS_PARM2) = 10000*maj + 100*(min) + QUAKESPASM_VER_PATCH;
+				PR_ExecuteProgram(qcvm->extfuncs.CSQC_Init);
+			}
+
+			if (fullcsqc)
+			{
+				//let the server know.
+				MSG_WriteByte (&cls.message, clc_stringcmd);
+				MSG_WriteString (&cls.message, "enablecsqc");
+			}
+		}
+		else
+			PR_ClearProgs(qcvm);
+		PR_SwitchQCVM(NULL);
+	}
+}
+
 /*
 ==================
 Host_Frame
@@ -674,8 +853,9 @@ Host_Frame
 Runs all active servers
 ==================
 */
-void _Host_Frame (float time)
+void _Host_Frame (double time)
 {
+	static double	accumtime = 0;
 	static double		time1 = 0;
 	static double		time2 = 0;
 	static double		time3 = 0;
@@ -688,6 +868,7 @@ void _Host_Frame (float time)
 	rand ();
 
 // decide the simulation time
+	accumtime += host_netinterval?CLAMP(0, time, 0.2):0;	//for renderer/server isolation
 	if (!Host_FilterTime (time))
 		return;			// don't run too fast, or packets will flood out
 
@@ -699,37 +880,64 @@ void _Host_Frame (float time)
 // allow mice or other external controllers to add commands
 	IN_Commands ();
 
+//check the stdin for commands (dedicated servers)
+	Host_GetConsoleCommands ();
+
 // process console commands
 	Cbuf_Execute ();
 
 	NET_Poll();
 
-// if running the server locally, make intentions now
-	if (sv.active)
+	if (cl.sendprespawn)
+	{
+		if (CL_CheckDownloads())
+		{
+			CL_LoadCSProgs();
+
+			cl.sendprespawn = false;
+			MSG_WriteByte (&cls.message, clc_stringcmd);
+			MSG_WriteString (&cls.message, "prespawn");
+			vid.recalc_refdef = true;
+		}
+		else if (!cls.message.cursize)
+			MSG_WriteByte (&cls.message, clc_nop);
+	}
+
+	CL_AccumulateCmd ();
+
+	//Run the server+networking (client->server->client), at a different rate from everything else
+	if (accumtime >= host_netinterval)
+	{
+		float realframetime = host_frametime;
+		if (host_netinterval)
+		{
+			host_frametime = q_max(accumtime, host_netinterval);
+			accumtime -= host_frametime;
+			if (host_timescale.value > 0)
+				host_frametime *= host_timescale.value;
+			else if (host_framerate.value)
+				host_frametime = host_framerate.value;
+		}
+		else
+			accumtime -= host_netinterval;
 		CL_SendCmd ();
+		if (sv.active)
+		{
+			PR_SwitchQCVM(&sv.qcvm);
+			Host_ServerFrame ();
+			PR_SwitchQCVM(NULL);
+		}
+		host_frametime = realframetime;
+		Cbuf_Waited();
+	}
 
-//-------------------
-//
-// server operations
-//
-//-------------------
-
-// check for commands typed to the host
-	Host_GetConsoleCommands ();
-
-	if (sv.active)
-		Host_ServerFrame ();
-
-//-------------------
-//
-// client operations
-//
-//-------------------
-
-// if running the server remotely, send intentions now after
-// the incoming messages have been read
-	if (!sv.active)
-		CL_SendCmd ();
+	if (cl.qcvm.progs)
+	{
+		PR_SwitchQCVM(&cl.qcvm);
+		SV_Physics(cl.time - qcvm->time);
+		pr_global_struct->time = cl.time;
+		PR_SwitchQCVM(NULL);
+	}
 
 // fetch results from server
 	if (cls.state == ca_connected)
@@ -748,13 +956,16 @@ void _Host_Frame (float time)
 
 // update audio
 	BGM_Update();	// adds music raw samples and/or advances midi driver
-	if (cls.signon == SIGNONS)
+	if (cl.listener_defined)
 	{
-		S_Update (r_origin, vpn, vright, vup);
-		CL_DecayLights ();
+		cl.listener_defined = false;
+		S_Update (cl.listener_origin, cl.listener_axis[0], cl.listener_axis[1], cl.listener_axis[2]);
 	}
+	else if (cls.signon == SIGNONS)
+		S_Update (r_origin, vpn, vright, vup);
 	else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
+	CL_DecayLights ();
 
 	CDAudio_Update();
 
@@ -772,7 +983,7 @@ void _Host_Frame (float time)
 
 }
 
-void Host_Frame (float time)
+void Host_Frame (double time)
 {
 	double	time1, time2;
 	static double	timetotal;
@@ -847,7 +1058,11 @@ void Host_Init (void)
 	NET_Init ();
 	SV_Init ();
 
+#ifdef QSS_DATE	//avoid non-determinism.
+	Con_Printf ("Exe: " ENGINE_NAME_AND_VER "\n");
+#else
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
+#endif
 	Con_Printf ("%4.1f megabyte heap\n", host_parms->memsize/ (1024*1024.0));
 
 	if (cls.state != ca_dedicated)
@@ -858,7 +1073,6 @@ void Host_Init (void)
 
 		V_Init ();
 		Chase_Init ();
-		M_Init ();
 		ExtraMaps_Init (); //johnfitz
 		Modlist_Init (); //johnfitz
 		DemoList_Init (); //ericw
@@ -883,9 +1097,24 @@ void Host_Init (void)
 	host_initialized = true;
 	Con_Printf ("\n========= Quake Initialized =========\n\n");
 
+	if (setjmp (host_abortserver) )
+		return;			// something bad happened		
+	//okay... now we can do stuff that's allowed to Host_Error
+
+	//spike -- create these aliases, because they're useful.
+	Cbuf_AddText ("alias startmap_sp \"map start\"\n");
+	Cbuf_AddText ("alias startmap_dm \"map start\"\n");
+
+	if (cls.state != ca_dedicated)
+		M_Init ();
+	if (setjmp (host_abortserver) )
+		return;			// don't do the above twice if the following Cbuf_Execute does bad things.
+
 	if (cls.state != ca_dedicated)
 	{
+		Cbuf_AddText ("cl_warncmd 0\n");
 		Cbuf_InsertText ("exec quake.rc\n");
+		Cbuf_AddText ("cl_warncmd 1\n");
 	// johnfitz -- in case the vid mode was locked during vid_init, we can unlock it now.
 		// note: two leading newlines because the command buffer swallows one of them.
 		Cbuf_AddText ("\n\nvid_unlock\n");
@@ -893,11 +1122,15 @@ void Host_Init (void)
 
 	if (cls.state == ca_dedicated)
 	{
+		Cbuf_AddText ("cl_warncmd 0\n");
+		Cbuf_AddText ("exec default.cfg\n");	//spike -- someone decided that quake.rc shouldn't be execed on dedicated servers, but that means you'll get bad defaults
+		Cbuf_AddText ("cl_warncmd 1\n");
+		Cbuf_AddText ("exec server.cfg\n");		//spike -- for people who want things explicit.
 		Cbuf_AddText ("exec autoexec.cfg\n");
-		Cbuf_AddText ("stuffcmds");
+		Cbuf_AddText ("stuffcmds\n");
 		Cbuf_Execute ();
 		if (!sv.active)
-			Cbuf_AddText ("map start\n");
+			Cbuf_AddText ("startmap_dm\n");
 	}
 }
 

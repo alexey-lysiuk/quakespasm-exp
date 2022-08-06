@@ -35,6 +35,12 @@ extern	int	rs_skypasses; // for r_speeds readout
 float	skyflatcolor[3];
 float	skymins[2][6], skymaxs[2][6];
 
+qboolean skyroom_drawing;
+qboolean skyroom_drawn;
+qboolean skyroom_enabled;
+vec4_t skyroom_origin;
+vec4_t skyroom_orientation;
+
 char	skybox_name[1024]; //name of current skybox, or "" if no skybox
 
 gltexture_t	*skybox_textures[6];
@@ -92,41 +98,56 @@ Sky_LoadTexture
 A sky texture is 256*128, with the left side being a masked overlay
 ==============
 */
-void Sky_LoadTexture (qmodel_t *mod, texture_t *mt)
+void Sky_LoadTexture (qmodel_t *mod, texture_t *mt, enum srcformat fmt, unsigned int srcwidth, unsigned int height)
 {
 	char		texturename[64];
-	unsigned	x, y, p, r, g, b, count, halfwidth, *rgba;
-	byte		*src, *front_data, *back_data;
+	int			i, p, r, g, b, count;
+	byte		*src;
+	byte	*front_data;
+	byte	*back_data;
+	unsigned	*rgba;
+	int rows, columns;
+	int bb,bw,bh;
+	int width = srcwidth/2;
 
-	if (mt->width != 256 || mt->height != 128)
-	{
-		Con_Warning ("Sky texture %s is %d x %d, expected 256 x 128\n", mt->name, mt->width, mt->height);
-		if (mt->width < 2 || mt->height < 1)
-			return;
-	}
+	TexMgr_BlockSize(fmt, &bb, &bw, &bh);
+	columns = (width+bw-1) / bw;
+	rows = (height+bh-1) / bh;
 
-	halfwidth = mt->width / 2;
-	back_data = (byte *) Hunk_AllocName (halfwidth*mt->height*2, "skytex");
-	front_data = back_data + halfwidth*mt->height;
-	src = (byte *)(mt + 1);
+	front_data = Hunk_AllocName (bb*columns*rows*2, "skytex");
+	back_data = front_data+bb*columns*rows;
+
+	src = (byte *)(mt+1);
 
 // extract back layer and upload
-	for (y=0 ; y<mt->height ; y++)
-		memcpy (back_data + y*halfwidth, src + halfwidth + y*mt->width, halfwidth);
+	for (i=0 ; i<rows ; i++)
+		memcpy(back_data+bb*i*columns, src+bb*(i*columns*2 + columns), columns*bb);
 
 	q_snprintf(texturename, sizeof(texturename), "%s:%s_back", mod->name, mt->name);
-	solidskytexture = TexMgr_LoadImage (mod, texturename, halfwidth, mt->height, SRC_INDEXED, back_data, "", (src_offset_t)back_data, TEXPREF_NONE);
+	solidskytexture = TexMgr_LoadImage (mod, texturename, width, height, fmt, back_data, "", (src_offset_t)back_data, TEXPREF_NONE);
 
 // extract front layer and upload
-	r = g = b = count = 0;
-	for (y=0 ; y<mt->height ; src+=mt->width, front_data+=halfwidth, y++)
-	{
-		for (x=0 ; x<halfwidth ; x++)
+	for (i=0 ; i<rows ; i++)
+		memcpy(front_data+bb*i*columns, src+bb*(i*columns*2), columns*bb);
+	if (fmt == SRC_INDEXED)
+	{	//the lame texmgr only knows one transparent index...
+		for (i=0 ; i<width*height ; i++)
 		{
-			p = src[x];
-			if (p == 0)
-				p = 255;
-			else
+			if (front_data[i] == 0)
+				front_data[i] = 255;
+		}
+	}
+	q_snprintf(texturename, sizeof(texturename), "%s:%s_front", mod->name, mt->name);
+	alphaskytexture = TexMgr_LoadImage (mod, texturename, width, height, fmt, front_data, "", (src_offset_t)front_data, TEXPREF_ALPHA);
+
+// calculate r_fastsky color based on average of all opaque foreground colors, if we can.
+	r = g = b = count = 0;
+	if (fmt == SRC_INDEXED)
+	{
+		for (i=0 ; i<width*height ; i++)
+		{
+			p = src[i];
+			if (p != 0)
 			{
 				rgba = &d_8to24table[p];
 				r += ((byte *)rgba)[0];
@@ -134,15 +155,9 @@ void Sky_LoadTexture (qmodel_t *mod, texture_t *mt)
 				b += ((byte *)rgba)[2];
 				count++;
 			}
-			front_data[x] = p;
 		}
 	}
 
-	front_data = back_data + halfwidth*mt->height;
-	q_snprintf(texturename, sizeof(texturename), "%s:%s_front", mod->name, mt->name);
-	alphaskytexture = TexMgr_LoadImage (mod, texturename, halfwidth, mt->height, SRC_INDEXED, front_data, "", (src_offset_t)front_data, TEXPREF_ALPHA);
-
-// calculate r_fastsky color based on average of all opaque foreground colors
 	skyflatcolor[0] = (float)r/(count*255);
 	skyflatcolor[1] = (float)g/(count*255);
 	skyflatcolor[2] = (float)b/(count*255);
@@ -220,6 +235,7 @@ void Sky_LoadSkyBox (const char *name)
 	char	filename[MAX_OSPATH];
 	byte	*data;
 	qboolean nonefound = true;
+	qboolean malloced;
 
 	if (strcmp(skybox_name, name) == 0)
 		return; //no change
@@ -242,12 +258,13 @@ void Sky_LoadSkyBox (const char *name)
 	//load textures
 	for (i=0; i<6; i++)
 	{
+		enum srcformat fmt;
 		mark = Hunk_LowMark ();
 		q_snprintf (filename, sizeof(filename), "gfx/env/%s%s", name, suf[i]);
-		data = Image_LoadImage (filename, &width, &height);
+		data = Image_LoadImage (filename, &width, &height, &fmt, &malloced);
 		if (data)
 		{
-			skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filename, width, height, SRC_RGBA, data, filename, 0, TEXPREF_NONE);
+			skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filename, width, height, fmt, data, filename, 0, TEXPREF_NONE);
 			nonefound = false;
 		}
 		else
@@ -255,6 +272,8 @@ void Sky_LoadSkyBox (const char *name)
 			Con_Printf ("Couldn't load %s\n", filename);
 			skybox_textures[i] = notexture;
 		}
+		if (malloced)
+			free(data);
 		Hunk_FreeToLowMark (mark);
 	}
 
@@ -284,6 +303,7 @@ void Sky_ClearAll (void)
 {
 	int i;
 
+	skyroom_enabled = false;
 	skybox_name[0] = 0;
 	for (i=0; i<6; i++)
 		skybox_textures[i] = NULL;
@@ -336,8 +356,29 @@ void Sky_NewMap (void)
 
 		if (!strcmp("sky", key))
 			Sky_LoadSkyBox(value);
+		else if (!strcmp("skyroom", key))
+		{	//"_skyroom" "X Y Z". ideally the gamecode would do this with an entity, but people want to use the vanilla gamecode from 1996 for some reason.
+			const char *t = COM_Parse(value);
+			skyroom_origin[0] = atof(com_token);
+			t = COM_Parse(t);
+			skyroom_origin[1] = atof(com_token);
+			t = COM_Parse(t);
+			skyroom_origin[2] = atof(com_token);
+			t = COM_Parse(t);
+			skyroom_origin[3] = atof(com_token);
+			skyroom_enabled = true;
 
-		if (!strcmp("skyfog", key))
+			t = COM_Parse(t);
+			skyroom_orientation[3] = atof(com_token);
+			t = COM_Parse(t);
+			skyroom_orientation[0] = atof(com_token);
+			t = COM_Parse(t);
+			skyroom_orientation[1] = atof(com_token);
+			t = COM_Parse(t);
+			skyroom_orientation[2] = atof(com_token);
+		}
+
+		else if (!strcmp("skyfog", key))
 			skyfog = atof(value);
 
 #if 1 /* also accept non-standard keys */
@@ -369,6 +410,46 @@ void Sky_SkyCommand_f (void)
 	}
 }
 
+static void Sky_SkyRoomCommand_f (void)
+{
+	switch (Cmd_Argc())
+	{
+	case 1:
+		if (skyroom_enabled)
+			Con_Printf("\"skyroom\" is \"%f %f %f %f %f %f %f %f\"\n", skyroom_origin[0],skyroom_origin[1],skyroom_origin[2],skyroom_origin[3], skyroom_orientation[3],skyroom_orientation[0],skyroom_orientation[1],skyroom_orientation[2]);
+		else
+			Con_Printf("\"skyroom\" is \"\"\n");
+		break;
+	case 4:	//xyz
+	case 5:	//xyz paralax
+	case 6:	//+speed
+	case 7:	//+axis_x
+	case 8:	//+axis_y
+	case 9:	//+axis_z
+		skyroom_enabled = true;
+		skyroom_origin[0] = atof(Cmd_Argv(1));
+		skyroom_origin[1] = atof(Cmd_Argv(2));
+		skyroom_origin[2] = atof(Cmd_Argv(3));
+		skyroom_origin[3] = atof(Cmd_Argv(4));	//paralax
+
+		skyroom_orientation[3] = atof(Cmd_Argv(5));	//speed
+		skyroom_orientation[0] = atof(Cmd_Argv(6));
+		skyroom_orientation[1] = atof(Cmd_Argv(7));
+		skyroom_orientation[2] = atof(Cmd_Argv(8));
+		break;
+	case 2:	//x
+		if (!*Cmd_Argv(1) || !q_strcasecmp(Cmd_Argv(1), "off"))
+		{
+			skyroom_enabled = false;
+			break;
+		}
+		//fallthrough
+	case 3:	//xy
+	default:
+		Con_Printf("usage: skyroom origin_x origin_y origin_z paralax_scale speed axis_x axis_y axis_z\n");
+	}
+}
+
 /*
 ====================
 R_SetSkyfog_f -- ericw
@@ -396,6 +477,7 @@ void Sky_Init (void)
 	Cvar_SetCallback (&r_skyfog, R_SetSkyfog_f);
 
 	Cmd_AddCommand ("sky",Sky_SkyCommand_f);
+	Cmd_AddCommand ("skyroom",Sky_SkyRoomCommand_f);
 
 	skybox_name[0] = 0;
 	for (i=0; i<6; i++)
@@ -1060,6 +1142,35 @@ void Sky_DrawSky (void)
 	//in these special render modes, the sky faces are handled in the normal world/brush renderer
 	if (r_drawflat_cheatsafe || r_lightmap_cheatsafe)
 		return;
+
+	if (skyroom_drawn)
+	{	//Spike: We already drew a skyroom underneath. If we draw an actual sky now then we'll have wasted all that effort.
+		//however, if we fiddle with stuff, we can make sure that other surfaces don't draw over it either.
+
+		int			i;
+		msurface_t	*s;
+		texture_t	*t;
+
+		glColorMask(false,false,false,false);
+		glDisable (GL_TEXTURE_2D);
+		for (i=0 ; i<cl.worldmodel->numtextures ; i++)
+		{
+			t = cl.worldmodel->textures[i];
+
+			if (!t || !t->texturechains[chain_world] || !(t->texturechains[chain_world]->flags & SURF_DRAWSKY))
+				continue;
+
+			for (s = t->texturechains[chain_world]; s; s = s->texturechain)
+			{
+				DrawGLPoly(s->polys);
+				rs_brushpasses++;
+				Sky_ProcessPoly (s->polys);
+			}
+		}
+		glEnable (GL_TEXTURE_2D);
+		glColorMask(true,true,true,true);
+		return;
+	}
 
 	//
 	// reset sky bounds

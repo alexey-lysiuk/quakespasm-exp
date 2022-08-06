@@ -44,37 +44,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct
 {
-	int			width, height;
-	byte		data[4];			// variably sized
+	unsigned int	width, height;
+	byte			data[4];			// variably sized
 } qpic_t;
 
 typedef struct
 {
-	char		identification[4];		// should be WAD2 or 2DAW
-	int			numlumps;
-	int			infotableofs;
+	char			identification[4];		// should be WAD2 or 2DAW
+	unsigned int	numlumps;
+	unsigned int	infotableofs;
 } wadinfo_t;
 
 typedef struct
 {
-	int			filepos;
-	int			disksize;
-	int			size;					// uncompressed
-	char		type;
-	char		compression;
-	char		pad1, pad2;
-	char		name[16];				// must be null terminated
+	unsigned int	filepos;
+	unsigned int	disksize;
+	unsigned int	size;					// uncompressed
+	char			type;
+	char			compression;
+	char			pad1, pad2;
+	char			name[16];				// must be null terminated
 } lumpinfo_t;
 
-extern	int			wad_numlumps;
-extern	lumpinfo_t	*wad_lumps;
-extern	byte		*wad_base;
+extern unsigned int	wad_numlumps;
+extern lumpinfo_t	*wad_lumps;
+extern byte			*wad_base;
 
 void	W_LoadWadFile (void); //johnfitz -- filename is now hard-coded for honesty
-void	W_CleanupName (const char *in, char *out);
-lumpinfo_t	*W_GetLumpinfo (const char *name);
-void	*W_GetLumpName (const char *name);
-void	*W_GetLumpNum (int num);
+void	*W_GetLumpName (const char *name, lumpinfo_t **out_info);
 
 void SwapPic (qpic_t *pic);
 

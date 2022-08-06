@@ -33,10 +33,11 @@ static cvar_t	gl_max_size = {"gl_max_size", "0", CVAR_NONE};
 static cvar_t	gl_picmip = {"gl_picmip", "0", CVAR_NONE};
 static GLint	gl_hardware_maxsize;
 
-#define	MAX_GLTEXTURES	4096
 static int numgltextures;
 static gltexture_t	*active_gltextures, *free_gltextures;
 gltexture_t		*notexture, *nulltexture;
+
+plcolour_t plcolour_none = {0};
 
 unsigned int d_8to24table[256];
 unsigned int d_8to24table_fbright[256];
@@ -46,6 +47,95 @@ unsigned int d_8to24table_nobright_fence[256];
 unsigned int d_8to24table_conchars[256];
 unsigned int d_8to24table_shirt[256];
 unsigned int d_8to24table_pants[256];
+
+static struct
+{
+	const char *formatname;	//full name
+	const char *mipextname;	//four chars
+	int internalformat;		//opengl's internal format (mostly sized formats)
+	int format;				//for non-compressed formats (opengl's transcoding)
+	int type;				//for non-compressed formats (opengl's transcoding)
+	int blockbytes;			//bytes per block
+	int blockwidth;			//width of a block (or 1 for non-block formats)
+	int blockheight;		//height of a block (or 1 for non-block formats)
+	qboolean *supported;	//pointer to some boolean that says whether some opengl extension is actually support or not.
+} compressedformats[] =
+{
+	{NULL},	//SRC_INDEXED
+	{NULL},	//SRC_LIGHTMAP
+	{NULL},	//SRC_RGBA
+	{NULL},	//SRC_EXTERNAL
+
+	{"RGBA8",		"RGBA", GL_RGBA,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8_REV,	 4, 1, 1, NULL},
+	{"RGB8",		"RGB",  GL_RGB,GL_RGB,GL_UNSIGNED_BYTE,					 3, 1, 1, NULL},
+#ifdef GL_RGB565	//gles3
+	{"RGB565",		"565",  GL_RGB565,GL_RGB,GL_UNSIGNED_SHORT_5_6_5,		 2, 1, 1, NULL},
+#else	//gles2-compat
+	{"RGB565",		"565",  GL_RGB,GL_RGB,GL_UNSIGNED_SHORT_5_6_5,		 2, 1, 1, NULL},
+#endif
+	{"RGBA4444",	"4444", GL_RGBA4,GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,		 2, 1, 1, NULL},
+	{"RGBA5551",	"5551", GL_RGB5_A1,GL_RGBA,GL_UNSIGNED_SHORT_5_5_5_1,	 2, 1, 1, NULL},
+	{"L8",			"LUM8", GL_LUMINANCE8,GL_LUMINANCE,GL_UNSIGNED_BYTE,	 1, 1, 1, NULL},
+	{"E5BGR9",		"EXP5", GL_RGB9_E5,GL_RGB,GL_UNSIGNED_INT_5_9_9_9_REV,	 4, 1, 1, &gl_texture_rgtc/*gl3*/},
+#if defined(GL_EXT_texture_compression_s3tc) || defined(GL_EXT_texture_compression_dxt1)
+	{"BC1_RGBA",	"BC1",  GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,0,0,			 8, 4, 4, &gl_texture_s3tc},
+#endif
+#if defined(GL_EXT_texture_compression_s3tc)
+	{"BC2_RGBA",	"BC2",  GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,0,0,			16, 4, 4, &gl_texture_s3tc},
+	{"BC3_RGBA",	"BC3",  GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,0,0,			16, 4, 4, &gl_texture_s3tc},
+#endif
+#ifdef GL_VERSION_3_0
+	{"BC4_R",		"BC4",  GL_COMPRESSED_RED_RGTC1,0,0,					 8, 4, 4, &gl_texture_rgtc},
+	{"BC5_RG",		"BC5",  GL_COMPRESSED_RG_RGTC2,0,0,						16, 4, 4, &gl_texture_rgtc},
+#elif defined(GL_EXT_texture_compression_rgtc)
+	{"BC4_R",		"BC4",  GL_COMPRESSED_RED_RGTC1_EXT,0,0,				 8, 4, 4, &gl_texture_rgtc},
+	{"BC5_RG",		"BC5",  GL_COMPRESSED_RED_GREEN_RGTC2_EXT,0,0,			16, 4, 4, &gl_texture_rgtc},
+#endif
+#ifdef GL_VERSION_4_2
+	{"BC6_RGB_UFLOAT","BC6",GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT,0,0,		16, 4, 4, &gl_texture_bptc},
+	{"BC7_RGBA",	"BC7",  GL_COMPRESSED_RGBA_BPTC_UNORM,0,0,				16, 4, 4, &gl_texture_bptc},
+#elif defined(GL_EXT_texture_compression_bptc)
+	{"BC6_RGB_UFLOAT","BC6",GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT,0,0,	16, 4, 4, &gl_texture_bptc},
+	{"BC7_RGBA",	"BC7",  GL_COMPRESSED_RGBA_BPTC_UNORM_EXT,0,0,			16, 4, 4, &gl_texture_bptc},
+#endif
+#if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_4_3)
+	{"ETC1_RGB8",	"ETC1", GL_COMPRESSED_RGB8_ETC2,0,0,					 8, 4, 4, &gl_texture_etc2},
+	{"ETC2_RGB8",	"ETC2", GL_COMPRESSED_RGB8_ETC2,0,0,					 8, 4, 4, &gl_texture_etc2},
+	{"ETC2_RGB8A1",	"ETCP", GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,0,0, 8, 4, 4, &gl_texture_etc2},
+	{"ETC2_RGB8A8",	"ETCA", GL_COMPRESSED_RGBA8_ETC2_EAC,0,0,				16, 4, 4, &gl_texture_etc2},
+#endif
+#ifdef GL_ES_VERSION_3_2
+	{"ASTC_4X4",	"AST4", GL_COMPRESSED_RGBA_ASTC_4x4,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_5X4",	"AS54", GL_COMPRESSED_RGBA_ASTC_5x4,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_5X5",	"AST5", GL_COMPRESSED_RGBA_ASTC_5x5,0,0,				16, 5, 5, &gl_texture_astc},
+	{"ASTC_6X5",	"AS65", GL_COMPRESSED_RGBA_ASTC_6x5,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_6X6",	"AST6", GL_COMPRESSED_RGBA_ASTC_6x6,0,0,				16, 6, 6, &gl_texture_astc},
+	{"ASTC_8X5",	"AS85", GL_COMPRESSED_RGBA_ASTC_8x5,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_8X6",	"AS86", GL_COMPRESSED_RGBA_ASTC_8x6,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_8X8",	"AST8", GL_COMPRESSED_RGBA_ASTC_8x8,0,0,				16, 8, 8, &gl_texture_astc},
+	{"ASTC_10X5",	"AS05", GL_COMPRESSED_RGBA_ASTC_10x5,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_10X6",	"AS06", GL_COMPRESSED_RGBA_ASTC_10x6,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_10X8",	"AS08", GL_COMPRESSED_RGBA_ASTC_10x8,0,0,				16, 4, 4, &gl_texture_astc},
+	{"ASTC_10X10",	"AST0", GL_COMPRESSED_RGBA_ASTC_10x10,0,0,				16, 8, 8, &gl_texture_astc},
+	{"ASTC_12X10",	"AST0", GL_COMPRESSED_RGBA_ASTC_12x10,0,0,				16, 8, 8, &gl_texture_astc},
+	{"ASTC_12X12",	"AST2", GL_COMPRESSED_RGBA_ASTC_12x12,0,0,				16, 8, 8, &gl_texture_astc},
+#elif defined(GL_KHR_texture_compression_astc_ldr)
+	{"ASTC_4X4",	"AST4", GL_COMPRESSED_RGBA_ASTC_4x4_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_5X4",	"AS54", GL_COMPRESSED_RGBA_ASTC_5x4_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_5X5",	"AST5", GL_COMPRESSED_RGBA_ASTC_5x5_KHR,0,0,			16, 5, 5, &gl_texture_astc},
+	{"ASTC_6X5",	"AS65", GL_COMPRESSED_RGBA_ASTC_6x5_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_6X6",	"AST6", GL_COMPRESSED_RGBA_ASTC_6x6_KHR,0,0,			16, 6, 6, &gl_texture_astc},
+	{"ASTC_8X5",	"AS85", GL_COMPRESSED_RGBA_ASTC_8x5_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_8X6",	"AS86", GL_COMPRESSED_RGBA_ASTC_8x6_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_8X8",	"AST8", GL_COMPRESSED_RGBA_ASTC_8x8_KHR,0,0,			16, 8, 8, &gl_texture_astc},
+	{"ASTC_10X5",	"AS05", GL_COMPRESSED_RGBA_ASTC_10x5_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_10X6",	"AS06", GL_COMPRESSED_RGBA_ASTC_10x6_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_10X8",	"AS08", GL_COMPRESSED_RGBA_ASTC_10x8_KHR,0,0,			16, 4, 4, &gl_texture_astc},
+	{"ASTC_10X10",	"AST0", GL_COMPRESSED_RGBA_ASTC_10x10_KHR,0,0,			16, 8, 8, &gl_texture_astc},
+	{"ASTC_12X10",	"AST0", GL_COMPRESSED_RGBA_ASTC_12x10_KHR,0,0,			16, 8, 8, &gl_texture_astc},
+	{"ASTC_12X12",	"AST2", GL_COMPRESSED_RGBA_ASTC_12x12_KHR,0,0,			16, 8, 8, &gl_texture_astc},
+#endif
+};
 
 /*
 ================================================================================
@@ -59,18 +149,33 @@ typedef struct
 {
 	int	magfilter;
 	int	minfilter;
-	const char  *name;
+	const char  *name2, *name1;
 } glmode_t;
 static glmode_t glmodes[] = {
-	{GL_NEAREST, GL_NEAREST,		"GL_NEAREST"},
-	{GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST,	"GL_NEAREST_MIPMAP_NEAREST"},
-	{GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR,	"GL_NEAREST_MIPMAP_LINEAR"},
-	{GL_LINEAR,  GL_LINEAR,			"GL_LINEAR"},
-	{GL_LINEAR,  GL_LINEAR_MIPMAP_NEAREST,	"GL_LINEAR_MIPMAP_NEAREST"},
-	{GL_LINEAR,  GL_LINEAR_MIPMAP_LINEAR,	"GL_LINEAR_MIPMAP_LINEAR"},
+	{GL_NEAREST, GL_NEAREST,				"n.n", "GL_NEAREST"},
+	{GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST,	"nnn", "GL_NEAREST_MIPMAP_NEAREST"},
+	{GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR,	"nln", "GL_NEAREST_MIPMAP_LINEAR"},
+	{GL_LINEAR,  GL_LINEAR,					"l.l", "GL_LINEAR"},
+	{GL_LINEAR,  GL_LINEAR_MIPMAP_NEAREST,	"lnl", "GL_LINEAR_MIPMAP_NEAREST"},
+	{GL_LINEAR,  GL_LINEAR_MIPMAP_LINEAR,	"lll", "GL_LINEAR_MIPMAP_LINEAR"},
+
+	{GL_NEAREST, GL_LINEAR,					"n.l", NULL},
+	{GL_NEAREST,  GL_LINEAR_MIPMAP_NEAREST,	"nnl", NULL},
+	{GL_NEAREST,  GL_LINEAR_MIPMAP_LINEAR,	"nll", NULL},
+	{GL_LINEAR,  GL_NEAREST,				"l.n", NULL},
+	{GL_LINEAR,  GL_NEAREST_MIPMAP_NEAREST,	"lnn", NULL},
+	{GL_LINEAR,  GL_NEAREST_MIPMAP_LINEAR,	"lln", NULL},
 };
 #define NUM_GLMODES (int)(sizeof(glmodes)/sizeof(glmodes[0]))
-static int glmode_idx = NUM_GLMODES - 1; /* trilinear */
+static int glmode_idx = 5; /* trilinear */
+
+int TexMgr_GetTextureMode(void)
+{
+	if (glmodes[glmode_idx].magfilter == GL_NEAREST)
+		return 0;
+	else
+		return q_max(1, gl_texture_anisotropy.value);
+}
 
 /*
 ===============
@@ -82,7 +187,7 @@ static void TexMgr_DescribeTextureModes_f (void)
 	int i;
 
 	for (i = 0; i < NUM_GLMODES; i++)
-		Con_SafePrintf ("   %2i: %s\n", i + 1, glmodes[i].name);
+		Con_SafePrintf ("   %2i: %s\n", i + 1, glmodes[i].name1?glmodes[i].name1:glmodes[i].name2);
 
 	Con_Printf ("%i modes\n", i);
 }
@@ -131,7 +236,8 @@ static void TexMgr_TextureMode_f (cvar_t *var)
 
 	for (i = 0; i < NUM_GLMODES; i++)
 	{
-		if (!Q_strcmp (glmodes[i].name, gl_texturemode.string))
+		if ((glmodes[i].name1&&!Q_strcmp (glmodes[i].name1, gl_texturemode.string)) ||
+			(glmodes[i].name2&&!Q_strcmp (glmodes[i].name2, gl_texturemode.string)))
 		{
 			if (glmode_idx != i)
 			{
@@ -147,9 +253,10 @@ static void TexMgr_TextureMode_f (cvar_t *var)
 
 	for (i = 0; i < NUM_GLMODES; i++)
 	{
-		if (!q_strcasecmp (glmodes[i].name, gl_texturemode.string))
+		if ((glmodes[i].name1&&!q_strcasecmp (glmodes[i].name1, gl_texturemode.string)) ||
+			(glmodes[i].name2&&!q_strcasecmp (glmodes[i].name2, gl_texturemode.string)))
 		{
-			Cvar_SetQuick (&gl_texturemode, glmodes[i].name);
+			Cvar_SetQuick (&gl_texturemode, glmodes[i].name1?glmodes[i].name1:glmodes[i].name2);
 			return;
 		}
 	}
@@ -157,12 +264,12 @@ static void TexMgr_TextureMode_f (cvar_t *var)
 	i = atoi(gl_texturemode.string);
 	if (i >= 1 && i <= NUM_GLMODES)
 	{
-		Cvar_SetQuick (&gl_texturemode, glmodes[i-1].name);
+		Cvar_SetQuick (&gl_texturemode, glmodes[i-1].name1);
 		return;
 	}
 
 	Con_Printf ("\"%s\" is not a valid texturemode\n", gl_texturemode.string);
-	Cvar_SetQuick (&gl_texturemode, glmodes[glmode_idx].name);
+	Cvar_SetQuick (&gl_texturemode, glmodes[glmode_idx].name1?glmodes[glmode_idx].name1:glmodes[glmode_idx].name2);
 }
 
 /*
@@ -330,8 +437,14 @@ gltexture_t *TexMgr_NewTexture (void)
 {
 	gltexture_t *glt;
 
-	if (numgltextures == MAX_GLTEXTURES)
-		Sys_Error("numgltextures == MAX_GLTEXTURES\n");
+	if (!free_gltextures)
+	{
+		int i, newtexturecount = 64;
+		free_gltextures = (gltexture_t *) malloc (newtexturecount * sizeof(gltexture_t));
+		for (i = 0; i < newtexturecount - 1; i++)
+			free_gltextures[i].next = &free_gltextures[i+1];
+		free_gltextures[i].next = NULL;
+	}
 
 	glt = free_gltextures;
 	free_gltextures = glt->next;
@@ -546,54 +659,6 @@ void TexMgr_NewGame (void)
 }
 
 /*
-=============
-TexMgr_RecalcWarpImageSize -- called during init, and after a vid_restart
-
-choose safe warpimage size and resize existing warpimage textures
-=============
-*/
-void TexMgr_RecalcWarpImageSize (void)
-{
-//	int	oldsize = gl_warpimagesize;
-	int	mark;
-	gltexture_t *glt;
-	byte *dummy;
-
-	//
-	// find the new correct size
-	//
-	gl_warpimagesize = TexMgr_SafeTextureSize (512);
-
-	while (gl_warpimagesize > vid.width)
-		gl_warpimagesize >>= 1;
-	while (gl_warpimagesize > vid.height)
-		gl_warpimagesize >>= 1;
-
-	// ericw -- removed early exit if (gl_warpimagesize == oldsize).
-	// after vid_restart TexMgr_ReloadImage reloads textures
-	// to tx->source_width/source_height, which might not match oldsize.
-	// fixes: https://sourceforge.net/p/quakespasm/bugs/13/
-	
-	//
-	// resize the textures in opengl
-	//
-	mark = Hunk_LowMark();
-	dummy = (byte *) Hunk_Alloc (gl_warpimagesize*gl_warpimagesize*4);
-
-	for (glt = active_gltextures; glt; glt = glt->next)
-	{
-		if (glt->flags & TEXPREF_WARPIMAGE)
-		{
-			GL_Bind (glt);
-			glTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, gl_warpimagesize, gl_warpimagesize, 0, GL_RGBA, GL_UNSIGNED_BYTE, dummy);
-			glt->width = glt->height = gl_warpimagesize;
-		}
-	}
-
-	Hunk_FreeToLowMark (mark);
-}
-
-/*
 ================
 TexMgr_Init
 
@@ -607,9 +672,10 @@ void TexMgr_Init (void)
 	static byte nulltexture_data[16] = {127,191,255,255,0,0,0,255,0,0,0,255,127,191,255,255}; //black and blue checker
 
 	// init texture list
-	free_gltextures = (gltexture_t *) Hunk_AllocName (MAX_GLTEXTURES * sizeof(gltexture_t), "gltextures");
+	int initialtexturecount = 256;
+	free_gltextures = (gltexture_t *) Hunk_AllocName (initialtexturecount * sizeof(gltexture_t), "gltextures");
 	active_gltextures = NULL;
-	for (i = 0; i < MAX_GLTEXTURES - 1; i++)
+	for (i = 0; i < initialtexturecount - 1; i++)
 		free_gltextures[i].next = &free_gltextures[i+1];
 	free_gltextures[i].next = NULL;
 	numgltextures = 0;
@@ -621,7 +687,7 @@ void TexMgr_Init (void)
 	Cvar_RegisterVariable (&gl_picmip);
 	Cvar_RegisterVariable (&gl_texture_anisotropy);
 	Cvar_SetCallback (&gl_texture_anisotropy, &TexMgr_Anisotropy_f);
-	gl_texturemode.string = glmodes[glmode_idx].name;
+	gl_texturemode.string = glmodes[glmode_idx].name1?glmodes[glmode_idx].name1:glmodes[glmode_idx].name2;
 	Cvar_RegisterVariable (&gl_texturemode);
 	Cvar_SetCallback (&gl_texturemode, &TexMgr_TextureMode_f);
 	Cmd_AddCommand ("gl_describetexturemodes", &TexMgr_DescribeTextureModes_f);
@@ -637,10 +703,6 @@ void TexMgr_Init (void)
 
 	//have to assign these here becuase Mod_Init is called before TexMgr_Init
 	r_notexture_mip->gltexture = r_notexture_mip2->gltexture = notexture;
-
-	//set safe size for warpimages
-	gl_warpimagesize = 0;
-	TexMgr_RecalcWarpImageSize ();
 }
 
 /*
@@ -813,6 +875,8 @@ TexMgr_AlphaEdgeFix
 
 eliminate pink edges on sprites, etc.
 operates in place on 32bit data
+
+spike -- small note that would be better to use premultiplied alpha to completely eliminate these skirts without the possibility of misbehaving.
 ===============
 */
 static void TexMgr_AlphaEdgeFix (byte *data, int width, int height)
@@ -1009,6 +1073,23 @@ static byte *TexMgr_PadImageH (byte *in, int width, int height, byte padbyte)
 	return data;
 }
 
+static byte *TexMgr_PreMultiply32(byte *in, size_t width, size_t height)
+{
+	size_t pixels = width * height;
+	byte *out = (byte *) Hunk_Alloc(pixels*4);
+	byte *result = out;
+	while (pixels --> 0)
+	{
+		out[0] = (in[0]*in[3])>>8;
+		out[1] = (in[1]*in[3])>>8;
+		out[2] = (in[2]*in[3])>>8;
+		out[3] = in[3];
+		in += 4;
+		out += 4;
+	}
+	return result;
+}
+
 /*
 ================
 TexMgr_LoadImage32 -- handles 32bit source data
@@ -1017,6 +1098,10 @@ TexMgr_LoadImage32 -- handles 32bit source data
 static void TexMgr_LoadImage32 (gltexture_t *glt, unsigned *data)
 {
 	int	internalformat,	miplevel, mipwidth, mipheight, picmip;
+
+	//do this before any rescaling
+	if (glt->flags & TEXPREF_PREMULTIPLY)
+		data = (unsigned*)TexMgr_PreMultiply32((byte*)data, glt->width, glt->height);
 
 	if (!gl_texture_NPOT)
 	{
@@ -1076,6 +1161,146 @@ static void TexMgr_LoadImage32 (gltexture_t *glt, unsigned *data)
 	TexMgr_SetFilterModes (glt);
 }
 
+void TexMgr_BlockSize (enum srcformat format, int *bytes, int *width, int *height)
+{
+	*width = 1;
+	*height = 1;
+	switch(format)
+	{
+	case SRC_RGBA:
+		*bytes = 4;
+		break;
+	case SRC_LIGHTMAP:
+		*bytes = lightmap_bytes;
+		break;
+	case SRC_INDEXED:
+		*bytes = 1;
+		break;
+	case SRC_EXTERNAL:
+		*bytes = 0;
+		break;
+	default:
+		*bytes  = compressedformats[format].blockbytes;
+		*width  = compressedformats[format].blockwidth;
+		*height	= compressedformats[format].blockheight;
+		break;
+	}
+}
+size_t TexMgr_ImageSize (int width, int height, enum srcformat format)
+{
+	int	miplevel, mipwidth, mipheight;
+	size_t mipbytes = 0, blockbytes;
+	unsigned int blockwidth, blockheight;
+	switch(format)
+	{
+	case SRC_RGBA:
+		return width*height*4;
+	case SRC_LIGHTMAP:
+		return width*height*lightmap_bytes;
+	case SRC_INDEXED:
+		return width*height;
+	case SRC_EXTERNAL:	//panic
+		Con_Printf("TexMgr_ImageCompressedSize called for SRC_EXTERNAL\n");
+		return 0;
+	default:
+		//a compressed format with multiple mip levels in it
+		blockbytes     = compressedformats[format].blockbytes;
+		blockwidth     = compressedformats[format].blockwidth;
+		blockheight    = compressedformats[format].blockheight;
+		for (miplevel = 0; ; miplevel++)
+		{
+			mipwidth = width >> miplevel;
+			mipheight = height >> miplevel;
+			if (!mipwidth && !mipheight)
+				break;
+			mipwidth = q_max(1,mipwidth);	//include the 1*1 mip with non-square textures.
+			mipheight = q_max(1,mipheight);
+			mipbytes += blockbytes*((mipwidth+blockwidth-1)/blockwidth)*((mipheight+blockheight-1)/blockheight);
+		}
+		return mipbytes;
+	}
+}
+enum srcformat TexMgr_FormatForName (const char *code)
+{
+	size_t i;
+	for (i = 0; i < sizeof(compressedformats)/sizeof(compressedformats[0]); i++)
+	{
+		if (!compressedformats[i].formatname)
+			continue;
+		if (!q_strcasecmp(code, compressedformats[i].formatname))
+			return i;
+	}
+	return SRC_EXTERNAL;
+}
+enum srcformat TexMgr_FormatForCode (const char *code)
+{
+	size_t i;
+	for (i = 0; i < sizeof(compressedformats)/sizeof(compressedformats[0]); i++)
+	{
+		if (!compressedformats[i].mipextname)
+			continue;
+		if (!q_strncasecmp(code, compressedformats[i].mipextname, 4))
+			return i;
+	}
+	return SRC_EXTERNAL;
+}
+static void TexMgr_LoadImageCompressed (gltexture_t *glt, byte *data)
+{
+	int	internalformat,	format, type, miplevel, mipwidth, mipheight, picmip;
+	size_t mipbytes, blockbytes;
+	unsigned int blockwidth, blockheight;
+
+	internalformat = compressedformats[glt->source_format].internalformat;
+	format         = compressedformats[glt->source_format].format;
+	type           = compressedformats[glt->source_format].type;
+	blockbytes     = compressedformats[glt->source_format].blockbytes;
+	blockwidth     = compressedformats[glt->source_format].blockwidth;
+	blockheight    = compressedformats[glt->source_format].blockheight;
+
+	//no premultiply support.
+	//no npot fallback support
+
+	// mipmap down
+	picmip = ((glt->flags & TEXPREF_NOPICMIP) || !(glt->flags & TEXPREF_MIPMAP)) ? 0 : q_max((int)gl_picmip.value, 0);
+
+	//make sure the picmip level is not bigger than the number of mips that we have available...
+	while (picmip && (!(glt->width>>picmip) || !(glt->height>>picmip)))
+		picmip--;
+
+	if (type && blockbytes < 4)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);	//makes stuff work more reliably, if slower.
+
+	//upload each mip level in turn.
+	GL_Bind (glt);
+	for (miplevel = 0; ; miplevel++)
+	{
+		mipwidth = glt->width >> miplevel;
+		mipheight = glt->height >> miplevel;
+		if (!mipwidth && !mipheight)
+			break;
+		mipwidth = q_max(1,mipwidth);	//include the 1*1 mip with non-square textures.
+		mipheight = q_max(1,mipheight);
+		mipbytes = blockbytes*((mipwidth+blockwidth-1)/blockwidth)*((mipheight+blockheight-1)/blockheight);
+		if (miplevel-picmip >= 0)
+		{
+			if (type)
+				glTexImage2D(GL_TEXTURE_2D, miplevel-picmip, internalformat, mipwidth, mipheight, 0, format, type, data);
+			else
+				GL_CompressedTexImage2D(GL_TEXTURE_2D, miplevel-picmip, internalformat, mipwidth, mipheight, 0, mipbytes, data);
+		}
+		data += mipbytes;
+
+		if (!(glt->flags & TEXPREF_MIPMAP))
+			break;
+	}
+
+	if (type && blockbytes < 4)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);	//back to opengl's default.
+
+	// set filter modes
+	TexMgr_SetFilterModes (glt);
+}
+
 /*
 ================
 TexMgr_LoadImage8 -- handles 8bit source data, then passes it to LoadImage32
@@ -1086,7 +1311,7 @@ static void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 	extern cvar_t gl_fullbrights;
 	qboolean padw = false, padh = false;
 	byte padbyte;
-	unsigned int *usepal;
+	unsigned int *usepal, translation[256];
 	int i;
 
 	// HACK HACK HACK -- taken from tomazquake
@@ -1138,6 +1363,68 @@ static void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 		padbyte = 255;
 	}
 
+	if (glt->shirt.type || glt->pants.type)
+	{
+		int shirt, pants, m;
+		//create new translation table
+		for (i = 0; i < 256; i++)
+			translation[i] = usepal[i];
+
+		if (glt->shirt.type == 2)
+		{
+			for (i = 0; i < 16; i++)
+			{
+				m = i|(i<<4);
+				((byte *) &translation[TOP_RANGE+i])[0] = (m * glt->shirt.rgb[0])>>8;
+				((byte *) &translation[TOP_RANGE+i])[1] = (m * glt->shirt.rgb[1])>>8;
+				((byte *) &translation[TOP_RANGE+i])[2] = (m * glt->shirt.rgb[2])>>8;
+				((byte *) &translation[TOP_RANGE+i])[3] = 255;
+			}
+		}
+		else if (glt->shirt.type == 1)
+		{
+			shirt = glt->shirt.basic * 16;
+			if (shirt < 128)
+			{
+				for (i = 0; i < 16; i++)
+					translation[TOP_RANGE+i] = usepal[shirt + i];
+			}
+			else
+			{
+				for (i = 0; i < 16; i++)
+					translation[TOP_RANGE+i] = usepal[shirt+15-i];
+			}
+		}
+
+		if (glt->pants.type == 2)
+		{
+			for (i = 0; i < 16; i++)
+			{
+				m = i|(i<<4);
+				((byte *) &translation[BOTTOM_RANGE+i])[0] = (m * glt->pants.rgb[0])>>8;
+				((byte *) &translation[BOTTOM_RANGE+i])[1] = (m * glt->pants.rgb[1])>>8;
+				((byte *) &translation[BOTTOM_RANGE+i])[2] = (m * glt->pants.rgb[2])>>8;
+				((byte *) &translation[BOTTOM_RANGE+i])[3] = 255;
+			}
+		}
+		else if (glt->pants.type == 1)
+		{
+			pants = glt->pants.rgb[0] * 16;
+			if (pants < 128)
+			{
+				for (i = 0; i < 16; i++)
+					translation[BOTTOM_RANGE+i] = usepal[pants + i];
+			}
+			else
+			{
+				for (i = 0; i < 16; i++)
+					translation[BOTTOM_RANGE+i] = usepal[pants+15-i];
+			}
+		}
+
+		usepal = translation;
+	}
+
 	// pad each dimention, but only if it's not going to be downsampled later
 	if (glt->flags & TEXPREF_PAD)
 	{
@@ -1159,7 +1446,7 @@ static void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 	data = (byte *)TexMgr_8to32(data, glt->width * glt->height, usepal);
 
 	// fix edges
-	if (glt->flags & TEXPREF_ALPHA)
+	if ((glt->flags & TEXPREF_ALPHA) && !(glt->flags & TEXPREF_PREMULTIPLY))
 		TexMgr_AlphaEdgeFix (data, glt->width, glt->height);
 	else
 	{
@@ -1197,33 +1484,33 @@ gltexture_t *TexMgr_LoadImage (qmodel_t *owner, const char *name, int width, int
 			       byte *data, const char *source_file, src_offset_t source_offset, unsigned flags)
 {
 	unsigned short crc;
-	gltexture_t *glt;
+	gltexture_t *glt = NULL;
 	int mark;
+	qboolean malloced = false;
+	enum srcformat fmt = format;
 
 	if (isDedicated)
 		return NULL;
 
 	// cache check
-	switch (format)
-	{
-	case SRC_INDEXED:
-		crc = CRC_Block(data, width * height);
-		break;
-	case SRC_LIGHTMAP:
-		crc = CRC_Block(data, width * height * lightmap_bytes);
-		break;
-	case SRC_RGBA:
-		crc = CRC_Block(data, width * height * 4);
-		break;
-	default: /* not reachable but avoids compiler warnings */
+	if (format == SRC_EXTERNAL)
 		crc = 0;
-	}
+	else
+		crc = CRC_Block(data, TexMgr_ImageSize(width, height, format));
 	if ((flags & TEXPREF_OVERWRITE) && (glt = TexMgr_FindTexture (owner, name)))
 	{
 		if (glt->source_crc == crc)
 			return glt;
 	}
-	else
+
+	if (format == SRC_EXTERNAL)
+	{
+		data = Image_LoadImage (source_file, &width, &height, &fmt, &malloced); //simple file
+		if (!data && (flags & TEXPREF_ALLOWMISSING))
+			return NULL;	//don't allocate anything.
+	}
+
+	if (!glt)
 		glt = TexMgr_NewTexture ();
 
 	// copy data
@@ -1232,8 +1519,8 @@ gltexture_t *TexMgr_LoadImage (qmodel_t *owner, const char *name, int width, int
 	glt->width = width;
 	glt->height = height;
 	glt->flags = flags;
-	glt->shirt = -1;
-	glt->pants = -1;
+	glt->shirt.type = 0;
+	glt->pants.type = 0;
 	q_strlcpy (glt->source_file, source_file, sizeof(glt->source_file));
 	glt->source_offset = source_offset;
 	glt->source_format = format;
@@ -1252,8 +1539,37 @@ gltexture_t *TexMgr_LoadImage (qmodel_t *owner, const char *name, int width, int
 	case SRC_LIGHTMAP:
 		TexMgr_LoadLightmap (glt, data);
 		break;
+	case SRC_EXTERNAL:
+		if (!data)
+		{
+			glt->source_width = glt->source_height = 1;
+			glt->width = glt->source_width;
+			glt->height = glt->source_height;
+			TexMgr_LoadImage8 (glt, (byte*)"\x07");
+
+			glt->source_width = glt->source_height = 0;
+			glt->width = glt->source_width;
+			glt->height = glt->source_height;
+		}
+		else
+		{
+			glt->width = glt->source_width;
+			glt->height = glt->source_height;
+			if (fmt == SRC_RGBA)
+				TexMgr_LoadImage32 (glt, (unsigned *)data);
+			else if (fmt == SRC_INDEXED)
+				TexMgr_LoadImage8 (glt, data);
+			else
+				TexMgr_LoadImageCompressed (glt, data);
+			if (malloced)
+				free(data);
+		}
+		break;
 	case SRC_RGBA:
 		TexMgr_LoadImage32 (glt, (unsigned *)data);
+		break;
+	default:
+		TexMgr_LoadImageCompressed (glt, data);
 		break;
 	}
 
@@ -1275,38 +1591,35 @@ gltexture_t *TexMgr_LoadImage (qmodel_t *owner, const char *name, int width, int
 TexMgr_ReloadImage -- reloads a texture, and colormaps it if needed
 ================
 */
-void TexMgr_ReloadImage (gltexture_t *glt, int shirt, int pants)
+void TexMgr_ReloadImage (gltexture_t *glt, plcolour_t shirt, plcolour_t pants)
 {
-	byte	translation[256];
-	byte	*src, *dst, *data = NULL, *translated;
-	int	mark, size, i;
+	byte	*data = NULL;
+	int	mark, size;
+	qboolean malloced = false;
+	enum srcformat fmt = glt->source_format;
 //
 // get source data
 //
 	mark = Hunk_LowMark ();
 
-	if (glt->source_file[0] && glt->source_offset) {
-		//lump inside file
+	if (glt->source_file[0] && glt->source_offset)
+	{	//lump inside file
 		FILE *f;
 		COM_FOpenFile(glt->source_file, &f, NULL);
 		if (!f) goto invalid;
 		fseek (f, glt->source_offset, SEEK_CUR);
-		size = glt->source_width * glt->source_height;
-		/* should be SRC_INDEXED, but no harm being paranoid:  */
-		if (glt->source_format == SRC_RGBA) {
-			size *= 4;
-		}
-		else if (glt->source_format == SRC_LIGHTMAP) {
-			size *= lightmap_bytes;
-		}
+
+		size = TexMgr_ImageSize(glt->source_width, glt->source_height, glt->source_format);
 		data = (byte *) Hunk_Alloc (size);
 		fread (data, 1, size, f);
 		fclose (f);
 	}
-	else if (glt->source_file[0] && !glt->source_offset) {
-		data = Image_LoadImage (glt->source_file, (int *)&glt->source_width, (int *)&glt->source_height); //simple file
+	else if (glt->source_file[0] && !glt->source_offset)
+	{
+		data = Image_LoadImage (glt->source_file, (int *)&glt->source_width, (int *)&glt->source_height, &fmt, &malloced); //simple file
 	}
-	else if (!glt->source_file[0] && glt->source_offset) {
+	else if (!glt->source_file[0] && glt->source_offset)
+	{
 		data = (byte *) glt->source_offset; //image in memory
 	}
 	if (!data) {
@@ -1322,9 +1635,9 @@ invalid:	Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
 //
 // if shirt and pants are -1,-1, use existing shirt and pants colors
 // if existing shirt and pants colors are -1,-1, don't bother colormapping
-	if (shirt > -1 && pants > -1)
+	if (shirt.type || pants.type)
 	{
-		if (glt->source_format == SRC_INDEXED)
+		if (fmt == SRC_INDEXED)
 		{
 			glt->shirt = shirt;
 			glt->pants = pants;
@@ -1332,50 +1645,11 @@ invalid:	Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
 		else
 			Con_Printf ("TexMgr_ReloadImage: can't colormap a non SRC_INDEXED texture: %s\n", glt->name);
 	}
-	if (glt->shirt > -1 && glt->pants > -1)
-	{
-		//create new translation table
-		for (i = 0; i < 256; i++)
-			translation[i] = i;
 
-		shirt = glt->shirt * 16;
-		if (shirt < 128)
-		{
-			for (i = 0; i < 16; i++)
-				translation[TOP_RANGE+i] = shirt + i;
-		}
-		else
-		{
-			for (i = 0; i < 16; i++)
-				translation[TOP_RANGE+i] = shirt+15-i;
-		}
-
-		pants = glt->pants * 16;
-		if (pants < 128)
-		{
-			for (i = 0; i < 16; i++)
-				translation[BOTTOM_RANGE+i] = pants + i;
-		}
-		else
-		{
-			for (i = 0; i < 16; i++)
-				translation[BOTTOM_RANGE+i] = pants+15-i;
-		}
-
-		//translate texture
-		size = glt->width * glt->height;
-		dst = translated = (byte *) Hunk_Alloc (size);
-		src = data;
-
-		for (i = 0; i < size; i++)
-			*dst++ = translation[*src++];
-
-		data = translated;
-	}
 //
 // upload it
 //
-	switch (glt->source_format)
+	switch (fmt)
 	{
 	case SRC_INDEXED:
 		TexMgr_LoadImage8 (glt, data);
@@ -1383,11 +1657,17 @@ invalid:	Con_Printf ("TexMgr_ReloadImage: invalid source for %s\n", glt->name);
 	case SRC_LIGHTMAP:
 		TexMgr_LoadLightmap (glt, data);
 		break;
+	case SRC_EXTERNAL:
 	case SRC_RGBA:
 		TexMgr_LoadImage32 (glt, (unsigned *)data);
 		break;
+	default:
+		TexMgr_LoadImageCompressed (glt, data);
+		break;
 	}
 
+	if (malloced)
+		free(data);
 	Hunk_FreeToLowMark(mark);
 }
 
@@ -1413,7 +1693,7 @@ void TexMgr_ReloadImages (void)
 	for (glt = active_gltextures; glt; glt = glt->next)
 	{
 		glGenTextures(1, &glt->texnum);
-		TexMgr_ReloadImage (glt, -1, -1);
+		TexMgr_ReloadImage (glt, plcolour_none, plcolour_none);
 	}
 
 	in_reload_images = false;
@@ -1430,7 +1710,7 @@ void TexMgr_ReloadNobrightImages (void)
 
 	for (glt = active_gltextures; glt; glt = glt->next)
 		if (glt->flags & TEXPREF_NOBRIGHT)
-			TexMgr_ReloadImage(glt, -1, -1);
+			TexMgr_ReloadImage(glt, plcolour_none, plcolour_none);
 }
 
 /*

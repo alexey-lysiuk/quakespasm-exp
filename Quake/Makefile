@@ -8,14 +8,17 @@
 DO_USERDIRS=0
 
 ### Enable/Disable SDL2
-USE_SDL2=0
+USE_SDL2=1
+
+### Enable the use of zlib, for compressed pk3s.
+USE_ZLIB=1
 
 ### Enable/Disable codecs for streaming music support
 USE_CODEC_WAVE=1
 USE_CODEC_FLAC=0
 USE_CODEC_MP3=1
 USE_CODEC_VORBIS=1
-USE_CODEC_OPUS=0
+USE_CODEC_OPUS=1
 # either xmp or mikmod (or modplug)
 USE_CODEC_MIKMOD=0
 USE_CODEC_XMP=0
@@ -71,6 +74,8 @@ define do_strip
 endef
 endif
 
+CFLAGS += $(QSS_CFLAGS)
+LDFLAGS += $(QSS_LDFLAGS)
 ifeq ($(DO_USERDIRS),1)
 CFLAGS += -DDO_USERDIRS=1
 endif
@@ -98,6 +103,8 @@ endif
 ifeq ($(USE_SDL2),1)
 CFLAGS += -DUSE_SDL2
 endif
+#make use of LFS on 32bit even on systems.
+CFLAGS += -D_FILE_OFFSET_BITS=64
 
 ifeq ($(USE_SDL2),1)
 SDL_CONFIG ?= sdl2-config
@@ -155,6 +162,7 @@ ifeq ($(USE_CODEC_OPUS),1)
 CFLAGS+= -DUSE_CODEC_OPUS
 CFLAGS+= $(shell $(PKG_CONFIG) --cflags opusfile)
 CODECLIBS+= $(shell $(PKG_CONFIG) --libs   opusfile)
+CODECLIBS+= $(shell $(PKG_CONFIG) --libs   opus)
 endif
 ifeq ($(USE_CODEC_VORBIS),1)
 CFLAGS+= -DUSE_CODEC_VORBIS $(cpp_vorbisdec)
@@ -180,7 +188,12 @@ ifeq ($(USE_CODEC_UMX),1)
 CFLAGS+= -DUSE_CODEC_UMX
 endif
 
-COMMON_LIBS:= -lm -lGL
+COMMON_LIBS:= -ldl -lm -lGL
+
+ifeq ($(USE_ZLIB),1)
+CFLAGS+= -DUSE_ZLIB
+COMMON_LIBS+= -lz
+endif
 
 LIBS := $(COMMON_LIBS) $(NET_LIBS) $(CODECLIBS)
 
@@ -200,7 +213,7 @@ MUSIC_OBJS:= bgmusic.o \
 	snd_modplug.o \
 	snd_xmp.o \
 	snd_umx.o
-COMOBJ_SND := snd_dma.o snd_mix.o snd_mem.o $(MUSIC_OBJS)
+COMOBJ_SND := snd_voip.o snd_dma.o snd_mix.o snd_mem.o $(MUSIC_OBJS)
 SYSOBJ_SND := snd_sdl.o
 SYSOBJ_CDA := cd_sdl.o
 SYSOBJ_INPUT := in_sdl.o
@@ -216,6 +229,7 @@ GLOBJS = \
 	gl_fog.o \
 	gl_rmisc.o \
 	r_part.o \
+	r_part_fte.o \
 	r_world.o \
 	gl_screen.o \
 	gl_sky.o \
@@ -255,14 +269,16 @@ OBJS := strlcat.o \
 	wad.o \
 	cmd.o \
 	common.o \
-	miniz.o \
+	fs_zip.o \
 	crc.o \
 	cvar.o \
 	cfgfile.o \
 	host.o \
 	host_cmd.o \
 	mathlib.o \
+	mdfour.o \
 	pr_cmds.o \
+	pr_ext.o \
 	pr_edict.o \
 	pr_exec.o \
 	sv_main.o \

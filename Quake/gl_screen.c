@@ -135,6 +135,10 @@ float		scr_centertime_off;
 int			scr_center_lines;
 int			scr_erase_lines;
 int			scr_erase_center;
+#define CPRINT_TYPEWRITER	(1u<<0)
+#define CPRINT_PERSIST		(1u<<1)
+#define CPRINT_TALIGN		(1u<<2)
+unsigned int scr_centerprint_flags;
 
 /*
 ==============
@@ -146,9 +150,86 @@ for a few moments
 */
 void SCR_CenterPrint (const char *str) //update centerprint data
 {
+	unsigned int flags = 0;
+
+	if (*str != '/' && cl.intermission)
+		flags |= CPRINT_TYPEWRITER | CPRINT_PERSIST | CPRINT_TALIGN;
+
+	//check for centerprint prefixes/flags
+	while (*str == '/')
+	{
+		if (str[1] == '.')
+		{	//no more
+			str+=2;
+			break;
+		}
+		else if (str[1] == 'P')
+			flags |= CPRINT_PERSIST;
+		else if (str[1] == 'W')	//typewriter
+			flags ^= CPRINT_TYPEWRITER;
+		else if (str[1] == 'S')	//typewriter
+			flags ^= CPRINT_PERSIST;
+		else if (str[1] == 'M')	//masked background
+			;
+		else if (str[1] == 'O')	//obituary print (lower half)
+			;
+		else if (str[1] == 'B')	//bottom-align
+			;
+		else if (str[1] == 'B')	//top-align
+			;
+		else if (str[1] == 'L')	//left-align
+			;
+		else if (str[1] == 'R')	//right-align
+			;
+		else if (str[1] == 'F')	//alternative 'finale' control
+		{
+			str+=2;
+			if (!cl.intermission)
+				cl.completed_time = cl.time;
+			switch(*str++)
+			{
+			case 0:
+				str--;
+				break;
+			case 'R':	//remove intermission (no other method to do this)
+				cl.intermission = 0;
+				break;
+			case 'I':	//regular intermission
+			case 'S':	//show scoreboard
+				cl.intermission = 1;
+				break;
+			case 'F':	//like svc_finale
+				cl.intermission = 2;
+				break;
+			default:
+				break;	//any other flag you want
+			}
+			vid.recalc_refdef = true;
+			continue;
+		}
+		else if (str[1] == 'I')	//title image
+		{
+			const char *e;
+			str+=2;
+			e = strchr(str, ':');
+			if (!e)
+				e = strchr(str, ' ');	//probably an error
+			if (!e)
+				e = str+strlen(str)-1;	//error
+			str = e+1;
+			continue;
+		}
+		else
+			break;
+		str+=2;
+	}
+
 	strncpy (scr_centerstring, str, sizeof(scr_centerstring)-1);
-	scr_centertime_off = scr_centertime.value;
+	scr_centertime_off = (flags&CPRINT_PERSIST)?999999:scr_centertime.value;
 	scr_centertime_start = cl.time;
+
+	if (*scr_centerstring && !(flags&CPRINT_PERSIST))
+		Con_LogCenterPrint (scr_centerstring);
 
 // count the number of lines for centering
 	scr_center_lines = 1;
@@ -242,8 +323,12 @@ float AdaptFovx (float fov_x, float width, float height)
 {
 	float	a, x;
 
-	if (fov_x < 1 || fov_x > 179)
-		Sys_Error ("Bad fov: %f", fov_x);
+	if (cl.statsf[STAT_VIEWZOOM])
+		fov_x *= cl.statsf[STAT_VIEWZOOM]/255.0;
+	if (fov_x < 1)
+		fov_x = 1;
+	if (fov_x > 179)
+		fov_x = 179;
 
 	if (!scr_fov_adapt.value)
 		return fov_x;
@@ -307,7 +392,7 @@ static void SCR_CalcRefdef (void)
 	size = scr_viewsize.value;
 	scale = CLAMP (1.0f, scr_sbarscale.value, (float)glwidth / 320.0f);
 
-	if (size >= 120 || cl.intermission || scr_sbaralpha.value < 1) //johnfitz -- scr_sbaralpha.value
+	if (size >= 120 || cl.intermission || (scr_sbaralpha.value < 1 || cl.qcvm.extfuncs.CSQC_DrawHud || cl.qcvm.extfuncs.CSQC_UpdateView)) //johnfitz -- scr_sbaralpha.value. Spike -- simple csqc assumes fullscreen video the same way.
 		sb_lines = 0;
 	else if (size >= 110)
 		sb_lines = 24 * scale;
@@ -1050,37 +1135,81 @@ void SCR_UpdateScreen (void)
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 
-	//
-	// determine size of refresh window
-	//
-	if (vid.recalc_refdef)
-		SCR_CalcRefdef ();
+	if (cl.worldmodel && cl.qcvm.worldmodel && cl.qcvm.extfuncs.CSQC_UpdateView)
+	{
+		float s = CLAMP (1.0, scr_sbarscale.value, (float)glwidth / 320.0);
+		SCR_SetUpToDrawConsole ();
+		GL_SetCanvas (CANVAS_CSQC);
+
+		PR_SwitchQCVM(&cl.qcvm);
+
+		if (qcvm->extglobals.cltime)
+			*qcvm->extglobals.cltime = realtime;
+		if (qcvm->extglobals.clframetime)
+			*qcvm->extglobals.clframetime = host_frametime;
+		if (qcvm->extglobals.player_localentnum)
+			*qcvm->extglobals.player_localentnum = cl.viewentity;
+		if (qcvm->extglobals.intermission)
+			*qcvm->extglobals.intermission = cl.intermission;
+		if (qcvm->extglobals.intermission_time)
+			*qcvm->extglobals.intermission_time = cl.completed_time;
+		if (qcvm->extglobals.view_angles)
+			VectorCopy(cl.viewangles, qcvm->extglobals.view_angles);
+		if (qcvm->extglobals.clientcommandframe)
+			*qcvm->extglobals.clientcommandframe = cl.movemessages;
+		if (qcvm->extglobals.servercommandframe)
+			*qcvm->extglobals.servercommandframe = cl.ackedmovemessages;
+//		Sbar_SortFrags ();
+
+		pr_global_struct->time = qcvm->time;
+		pr_global_struct->frametime = qcvm->frametime;
+		G_FLOAT(OFS_PARM0) = glwidth/s;
+		G_FLOAT(OFS_PARM1) = glheight/s;
+		G_FLOAT(OFS_PARM2) = true;
+		PR_ExecuteProgram(cl.qcvm.extfuncs.CSQC_UpdateView);
+		PR_SwitchQCVM(NULL);
+
+		GL_Set2D ();
+	}
+	else
+	{
+		//
+		// determine size of refresh window
+		//
+		r_refdef.drawworld = true;
+		if (vid.recalc_refdef)
+			SCR_CalcRefdef ();
 
 //
 // do 3D refresh drawing, and then update the screen
 //
-	SCR_SetUpToDrawConsole ();
+		SCR_SetUpToDrawConsole ();
 
-	V_RenderView ();
+		V_RenderView ();
 
-	GL_Set2D ();
+		GL_Set2D ();
 
-	//FIXME: only call this when needed
-	SCR_TileClear ();
+		//FIXME: only call this when needed
+		SCR_TileClear ();
+
+		if (!cl.intermission)
+		{
+			Sbar_Draw ();
+			if (!scr_drawloading && !con_forcedup)
+				SCR_DrawCrosshair (); //johnfitz
+		}
+	}
 
 	if (scr_drawdialog) //new game confirm
 	{
 		if (con_forcedup)
 			Draw_ConsoleBackground ();
-		else
-			Sbar_Draw ();
 		Draw_FadeScreen ();
 		SCR_DrawNotifyString ();
 	}
 	else if (scr_drawloading) //loading
 	{
 		SCR_DrawLoading ();
-		Sbar_Draw ();
 	}
 	else if (cl.intermission == 1 && key_dest == key_game) //end of level
 	{
@@ -1093,12 +1222,10 @@ void SCR_UpdateScreen (void)
 	}
 	else
 	{
-		SCR_DrawCrosshair (); //johnfitz
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
 		SCR_CheckDrawCenterString ();
-		Sbar_Draw ();
 		SCR_DrawDevStats (); //johnfitz
 		SCR_DrawFPS (); //johnfitz
 		SCR_DrawClock (); //johnfitz

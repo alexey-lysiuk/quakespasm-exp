@@ -22,8 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // r_main.c
 
 #include "quakedef.h"
+#include "glquake.h"
 
 vec3_t		modelorg, r_entorigin;
+
+static entity_t r_worldentity;	//so we can make sure currententity is valid
 entity_t	*currententity;
 
 int			r_visframecount;	// bumped when going to a new PVS
@@ -52,7 +55,7 @@ refdef_t	r_refdef;
 
 mleaf_t		*r_viewleaf, *r_oldviewleaf;
 
-int		d_lightstylevalue[256];	// 8.8 fraction of base light value
+int		d_lightstylevalue[MAX_LIGHTSTYLES];	// 8.8 fraction of base light value
 
 
 cvar_t	r_norefresh = {"r_norefresh","0",CVAR_NONE};
@@ -91,8 +94,8 @@ cvar_t	r_oldskyleaf = {"r_oldskyleaf", "0", CVAR_NONE};
 cvar_t	r_drawworld = {"r_drawworld", "1", CVAR_NONE};
 cvar_t	r_showtris = {"r_showtris", "0", CVAR_NONE};
 cvar_t	r_showbboxes = {"r_showbboxes", "0", CVAR_NONE};
-cvar_t	r_lerpmodels = {"r_lerpmodels", "1", CVAR_NONE};
-cvar_t	r_lerpmove = {"r_lerpmove", "1", CVAR_NONE};
+cvar_t	r_lerpmodels = {"r_lerpmodels", "1", CVAR_ARCHIVE};
+cvar_t	r_lerpmove = {"r_lerpmove", "1", CVAR_ARCHIVE};
 cvar_t	r_nolerp_list = {"r_nolerp_list", "progs/flame.mdl,progs/flame2.mdl,progs/braztall.mdl,progs/brazshrt.mdl,progs/longtrch.mdl,progs/flame_pyre.mdl,progs/v_saw.mdl,progs/v_xfist.mdl,progs/h2stuff/newfire.mdl", CVAR_NONE};
 cvar_t	r_noshadow_list = {"r_noshadow_list", "progs/flame2.mdl,progs/flame.mdl,progs/bolt1.mdl,progs/bolt2.mdl,progs/bolt3.mdl,progs/laser.mdl", CVAR_NONE};
 
@@ -106,6 +109,7 @@ cvar_t	r_telealpha = {"r_telealpha","0",CVAR_NONE};
 cvar_t	r_slimealpha = {"r_slimealpha","0",CVAR_NONE};
 
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
+float	map_fallbackalpha;
 
 qboolean r_drawflat_cheatsafe, r_fullbright_cheatsafe, r_lightmap_cheatsafe, r_drawworld_cheatsafe; //johnfitz
 
@@ -184,6 +188,7 @@ GLSLGamma_GammaCorrect
 */
 void GLSLGamma_GammaCorrect (void)
 {
+	int tw=glwidth,th=glheight;
 	float smax, tmax;
 
 	if (!gl_glsl_gamma_able)
@@ -196,17 +201,21 @@ void GLSLGamma_GammaCorrect (void)
 	if (!r_gamma_texture)
 	{
 		glGenTextures (1, &r_gamma_texture);
-		glBindTexture (GL_TEXTURE_2D, r_gamma_texture);
+		r_gamma_texture_width = 0;
+		r_gamma_texture_height = 0;
+	}
+	GL_DisableMultitexture();
+	glBindTexture (GL_TEXTURE_2D, r_gamma_texture);
 
-		r_gamma_texture_width = glwidth;
-		r_gamma_texture_height = glheight;
-
-		if (!gl_texture_NPOT)
-		{
-			r_gamma_texture_width = TexMgr_Pad(r_gamma_texture_width);
-			r_gamma_texture_height = TexMgr_Pad(r_gamma_texture_height);
-		}
-
+	if (!gl_texture_NPOT)
+	{
+		tw = TexMgr_Pad(tw);
+		th = TexMgr_Pad(th);
+	}
+	if (r_gamma_texture_width != tw || r_gamma_texture_height != th)
+	{
+		r_gamma_texture_width = tw;
+		r_gamma_texture_height = th;
 		glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, r_gamma_texture_width, r_gamma_texture_height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
 		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -223,8 +232,6 @@ void GLSLGamma_GammaCorrect (void)
 	}
 
 // copy the framebuffer to the texture
-	GL_DisableMultitexture();
-	glBindTexture (GL_TEXTURE_2D, r_gamma_texture);
 	glCopyTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, glx, gly, glwidth, glheight);
 
 // draw the texture back to the framebuffer with a fragment shader
@@ -293,21 +300,22 @@ R_CullModelForEntity -- johnfitz -- uses correct bounds based on rotation
 qboolean R_CullModelForEntity (entity_t *e)
 {
 	vec3_t mins, maxs;
+	float scale = e->netstate.scale/16.0;
 
 	if (e->angles[0] || e->angles[2]) //pitch or roll
 	{
-		VectorAdd (e->origin, e->model->rmins, mins);
-		VectorAdd (e->origin, e->model->rmaxs, maxs);
+		VectorMA (e->origin, scale, e->model->rmins, mins);
+		VectorMA (e->origin, scale, e->model->rmaxs, maxs);
 	}
 	else if (e->angles[1]) //yaw
 	{
-		VectorAdd (e->origin, e->model->ymins, mins);
-		VectorAdd (e->origin, e->model->ymaxs, maxs);
+		VectorMA (e->origin, scale, e->model->ymins, mins);
+		VectorMA (e->origin, scale, e->model->ymaxs, maxs);
 	}
 	else //no rotation
 	{
-		VectorAdd (e->origin, e->model->mins, mins);
-		VectorAdd (e->origin, e->model->maxs, maxs);
+		VectorMA (e->origin, scale, e->model->mins, mins);
+		VectorMA (e->origin, scale, e->model->maxs, maxs);
 	}
 
 	return R_CullBox (mins, maxs);
@@ -318,12 +326,15 @@ qboolean R_CullModelForEntity (entity_t *e)
 R_RotateForEntity -- johnfitz -- modified to take origin and angles instead of pointer to entity
 ===============
 */
-void R_RotateForEntity (vec3_t origin, vec3_t angles)
+void R_RotateForEntity (vec3_t origin, vec3_t angles, unsigned char scale)
 {
 	glTranslatef (origin[0],  origin[1],  origin[2]);
 	glRotatef (angles[1],  0, 0, 1);
 	glRotatef (-angles[0],  0, 1, 0);
 	glRotatef (angles[2],  1, 0, 0);
+
+	if (scale != 16)
+		glScalef (scale/16.0, scale/16.0, scale/16.0);
 }
 
 /*
@@ -429,13 +440,13 @@ GL_SetFrustum -- johnfitz -- written to replace MYgluPerspective
 */
 #define NEARCLIP 4
 float frustum_skew = 0.0; //used by r_stereo
-void GL_SetFrustum(float fovx, float fovy)
+/*void GL_SetFrustum(float fovx, float fovy)
 {
 	float xmax, ymax;
 	xmax = NEARCLIP * tan( fovx * M_PI / 360.0 );
 	ymax = NEARCLIP * tan( fovy * M_PI / 360.0 );
 	glFrustum(-xmax + frustum_skew, xmax + frustum_skew, -ymax, ymax, NEARCLIP, gl_farclip.value);
-}
+}*/
 
 /*
 =============
@@ -447,28 +458,44 @@ void R_SetupGL (void)
 	int scale;
 
 	//johnfitz -- rewrote this section
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity ();
-	scale =  CLAMP(1, (int)r_scale.value, 4); // ericw -- see R_ScaleView
+	if (!r_refdef.drawworld)
+		scale = 1;	//don't rescale. we can't handle rescaling transparent parts.
+	else
+		scale =  CLAMP(1, (int)r_scale.value, 4); // ericw -- see R_ScaleView
 	glViewport (glx + r_refdef.vrect.x,
 				gly + glheight - r_refdef.vrect.y - r_refdef.vrect.height,
 				r_refdef.vrect.width / scale,
 				r_refdef.vrect.height / scale);
 	//johnfitz
 
+	#if 1	//Spike: these should be equivelent. gpus tend not to use doubles in favour of speed, so no loss there.
+	{
+		mat4_t mat;
+		Matrix4_ProjectionMatrix(r_fovx, r_fovy, NEARCLIP, gl_farclip.value, false, frustum_skew, 0, mat);
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(mat);
+
+		Matrix4_ViewMatrix(r_refdef.viewangles, r_refdef.vieworg, mat);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(mat);
+    }
+	#else
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity ();
 	GL_SetFrustum (r_fovx, r_fovy); //johnfitz -- use r_fov* vars
 
 //	glCullFace(GL_BACK); //johnfitz -- glquake used CCW with backwards culling -- let's do it right
 
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity ();
+    glLoadIdentity ();
 
-	glRotatef (-90,  1, 0, 0);	    // put Z going up
-	glRotatef (90,  0, 0, 1);	    // put Z going up
-	glRotatef (-r_refdef.viewangles[2],  1, 0, 0);
-	glRotatef (-r_refdef.viewangles[0],  0, 1, 0);
-	glRotatef (-r_refdef.viewangles[1],  0, 0, 1);
-	glTranslatef (-r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
+    glRotatef (-90,  1, 0, 0);	    // put Z going up
+    glRotatef (90,  0, 0, 1);	    // put Z going up
+    glRotatef (-r_refdef.viewangles[2],  1, 0, 0);
+    glRotatef (-r_refdef.viewangles[0],  0, 1, 0);
+    glRotatef (-r_refdef.viewangles[1],  0, 0, 1);
+    glTranslatef (-r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
+    #endif
 
 	//
 	// set drawing parms
@@ -496,7 +523,7 @@ void R_Clear (void)
 	// from mh -- if we get a stencil buffer, we should clear it, even though we don't use it
 	if (gl_stencilbits)
 		clearbits |= GL_STENCIL_BUFFER_BIT;
-	if (gl_clear.value)
+	if (gl_clear.value && !skyroom_drawn && r_refdef.drawworld)
 		clearbits |= GL_COLOR_BUFFER_BIT;
 	glClear (clearbits);
 }
@@ -518,6 +545,9 @@ R_SetupView -- johnfitz -- this is the stuff that needs to be done once per fram
 */
 void R_SetupView (void)
 {
+	int viewcontents;	//spike -- rewrote this a little
+	int i;
+
 	// Need to do those early because we now update dynamic light maps during R_MarkSurfaces
 	R_PushDlights ();
 	R_AnimateLight ();
@@ -529,11 +559,42 @@ void R_SetupView (void)
 	VectorCopy (r_refdef.vieworg, r_origin);
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
 
+	if (r_refdef.drawworld)
+	{
 // current viewleaf
-	r_oldviewleaf = r_viewleaf;
-	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
+		r_oldviewleaf = r_viewleaf;
+		r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
+		viewcontents = r_viewleaf->contents;
 
-	V_SetContentsColor (r_viewleaf->contents);
+		//spike -- FTE_ENT_SKIN_CONTENTS -- added this loop for moving water volumes, to avoid v_cshift etc hacks.
+		for (i = 0; i < cl.num_entities && viewcontents == CONTENTS_EMPTY; i++)
+		{
+			mleaf_t *subleaf;
+			vec3_t relpos;
+			if (cl.entities[i].model && cl.entities[i].model->type==mod_brush)
+			{
+				VectorSubtract(r_origin, cl.entities[i].origin, relpos);
+				if (cl.entities[i].angles[0] || cl.entities[i].angles[1] || cl.entities[i].angles[2])
+				{	//rotate the point, just in case.
+					vec3_t axis[3], t;
+					AngleVectors(cl.entities[i].angles, axis[0], axis[1], axis[2]);
+					VectorCopy(relpos, t);
+					relpos[0] = DotProduct(t, axis[0]);
+					relpos[0] = -DotProduct(t, axis[1]);
+					relpos[0] = DotProduct(t, axis[2]);
+				}
+				subleaf = Mod_PointInLeaf (relpos, cl.entities[i].model);
+				if ((char)cl.entities[i].skinnum < 0)
+					viewcontents = ((subleaf->contents == CONTENTS_SOLID)?(char)cl.entities[i].skinnum:CONTENTS_EMPTY);
+				else
+					viewcontents = subleaf->contents;
+			}
+		}
+	}
+	else
+		viewcontents = CONTENTS_EMPTY;
+
+	V_SetContentsColor (viewcontents);
 	V_CalcBlend ();
 
 	//johnfitz -- calculate r_fovx and r_fovy here
@@ -541,8 +602,7 @@ void R_SetupView (void)
 	r_fovy = r_refdef.fov_y;
 	if (r_waterwarp.value)
 	{
-		int contents = Mod_PointInLeaf (r_origin, cl.worldmodel)->contents;
-		if (contents == CONTENTS_WATER || contents == CONTENTS_SLIME || contents == CONTENTS_LAVA)
+		if (viewcontents == CONTENTS_WATER || viewcontents == CONTENTS_SLIME || viewcontents == CONTENTS_LAVA)
 		{
 			//variance is a percentage of width, where width = 2 * tan(fov / 2) otherwise the effect is too dramatic at high FOV and too subtle at low FOV.  what a mess!
 			r_fovx = atan(tan(DEG2RAD(r_refdef.fov_x) / 2) * (0.97 + sin(cl.time * 1.5) * 0.03)) * 2 / M_PI_DIV_180;
@@ -553,16 +613,19 @@ void R_SetupView (void)
 
 	R_SetFrustum (r_fovx, r_fovy); //johnfitz -- use r_fov* vars
 
-	R_MarkSurfaces (); //johnfitz -- create texture chains from PVS
-
-	R_UpdateWarpTextures (); //johnfitz -- do this before R_Clear
+	if (r_refdef.drawworld)
+	{
+		currententity = &r_worldentity;
+		R_MarkSurfaces (); //johnfitz -- create texture chains from PVS
+		currententity = NULL;
+	}
 
 	R_Clear ();
 
 	//johnfitz -- cheat-protect some draw modes
 	r_drawflat_cheatsafe = r_fullbright_cheatsafe = r_lightmap_cheatsafe = false;
-	r_drawworld_cheatsafe = true;
-	if (cl.maxclients == 1)
+	r_drawworld_cheatsafe = r_refdef.drawworld;
+	if (cl.maxclients == 1 && r_refdef.drawworld)
 	{
 		if (!r_drawworld.value) r_drawworld_cheatsafe = false;
 
@@ -603,9 +666,13 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 			continue;
 
 		//johnfitz -- chasecam
-		if (currententity == &cl_entities[cl.viewentity])
+		if (currententity == &cl.entities[cl.viewentity])
 			currententity->angles[0] *= 0.3;
 		//johnfitz
+
+		//spike -- this would be more efficient elsewhere, but its more correct here.
+		if (currententity->eflags & EFLAGS_EXTERIORMODEL)
+			continue;
 
 		switch (currententity->model->type)
 		{
@@ -618,6 +685,9 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 			case mod_sprite:
 				R_DrawSpriteModel (currententity);
 				break;
+			case mod_ext_invalid:
+				//nothing. could draw a blob instead.
+				break;
 		}
 	}
 }
@@ -629,7 +699,7 @@ R_DrawViewModel -- johnfitz -- gutted
 */
 void R_DrawViewModel (void)
 {
-	if (!r_drawviewmodel.value || !r_drawentities.value || chase_active.value)
+	if (!r_drawviewmodel.value || !r_drawentities.value || chase_active.value || skyroom_drawing/*silly depthrange*/)
 		return;
 
 	if (cl.items & IT_INVISIBILITY || cl.stats[STAT_HEALTH] <= 0)
@@ -703,6 +773,7 @@ void R_ShowBoundingBoxes (void)
 	vec3_t		mins,maxs;
 	edict_t		*ed;
 	int			i;
+	qcvm_t 		*oldvm;	//in case we ever draw a scene from within csqc.
 
 	if (!r_showbboxes.value || cl.maxclients > 1 || !r_drawentities.value || !sv.active)
 		return;
@@ -714,7 +785,10 @@ void R_ShowBoundingBoxes (void)
 	glDisable (GL_CULL_FACE);
 	glColor3f (1,1,1);
 
-	for (i=0, ed=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed=NEXT_EDICT(ed))
+	oldvm = qcvm;
+	PR_SwitchQCVM(NULL);
+	PR_SwitchQCVM(&sv.qcvm);
+	for (i=0, ed=NEXT_EDICT(qcvm->edicts) ; i<qcvm->num_edicts ; i++, ed=NEXT_EDICT(ed))
 	{
 		if (ed == sv_player)
 			continue; //don't draw player's own bbox
@@ -731,11 +805,18 @@ void R_ShowBoundingBoxes (void)
 		else
 		{
 			//box entity
-			VectorAdd (ed->v.mins, ed->v.origin, mins);
-			VectorAdd (ed->v.maxs, ed->v.origin, maxs);
-			R_EmitWireBox (mins, maxs);
+			if ((ed->v.solid == SOLID_BSP || ed->v.solid == SOLID_EXT_BSPTRIGGER) && (ed->v.angles[0]||ed->v.angles[1]||ed->v.angles[2]) && pr_checkextension.value)
+				R_EmitWireBox (ed->v.absmin, ed->v.absmax);
+			else
+			{
+				VectorAdd (ed->v.mins, ed->v.origin, mins);
+				VectorAdd (ed->v.maxs, ed->v.origin, maxs);
+				R_EmitWireBox (mins, maxs);
+			}
 		}
 	}
+	PR_SwitchQCVM(NULL);
+	PR_SwitchQCVM(oldvm);
 
 	glColor3f (1,1,1);
 	glEnable (GL_TEXTURE_2D);
@@ -780,7 +861,7 @@ void R_ShowTris (void)
 		{
 			currententity = cl_visedicts[i];
 
-			if (currententity == &cl_entities[cl.viewentity]) // chasecam
+			if (currententity == &cl.entities[cl.viewentity]) // chasecam
 				currententity->angles[0] *= 0.3;
 
 			switch (currententity->model->type)
@@ -878,6 +959,7 @@ R_RenderScene
 */
 void R_RenderScene (void)
 {
+	currententity = &r_worldentity;
 	R_SetupScene (); //johnfitz -- this does everything that should be done once per call to RenderScene
 
 	Fog_EnableGFog (); //johnfitz
@@ -885,10 +967,12 @@ void R_RenderScene (void)
 	Sky_DrawSky (); //johnfitz
 
 	R_DrawWorld ();
+	currententity = NULL;
 
 	S_ExtraUpdate (); // don't let sound get messed up if going slow
 
-	R_DrawShadows (); //johnfitz -- render entity shadows
+	if (r_refdef.drawworld)
+		R_DrawShadows (); //johnfitz -- render entity shadows
 
 	R_DrawEntitiesOnList (false); //johnfitz -- false means this is the pass for nonalpha entities
 
@@ -898,7 +982,13 @@ void R_RenderScene (void)
 
 	R_RenderDlights (); //triangle fan dlights -- johnfitz -- moved after water
 
-	R_DrawParticles ();
+	if (r_refdef.drawworld)
+	{
+		R_DrawParticles ();
+#ifdef PSET_SCRIPT
+		PScript_DrawParticles();
+#endif
+	}
 
 	Fog_DisableGFog (); //johnfitz
 
@@ -946,7 +1036,7 @@ void R_ScaleView (void)
 	srcw = r_refdef.vrect.width / scale;
 	srch = r_refdef.vrect.height / scale;
 
-	if (scale == 1)
+	if (scale == 1 || !r_refdef.drawworld)
 		return;
 
 	// make sure texture unit 0 is selected
@@ -1016,6 +1106,23 @@ void R_ScaleView (void)
 	GL_ClearBindings ();
 }
 
+static qboolean R_SkyroomWasVisible(void)
+{
+	qmodel_t *model = cl.worldmodel;
+	texture_t *t;
+	size_t i;
+	extern cvar_t r_fastsky;
+	if (!skyroom_enabled || r_fastsky.value)
+		return false;
+	for (i=0 ; i<model->numtextures ; i++)
+	{
+		t = model->textures[i];
+		if (t && t->texturechains[chain_world] && t->texturechains[chain_world]->flags & SURF_DRAWSKY)
+			return true;
+	}
+	return false;
+}
+
 /*
 ================
 R_RenderView
@@ -1023,12 +1130,13 @@ R_RenderView
 */
 void R_RenderView (void)
 {
+	static qboolean skyroom_visible;
 	double	time1, time2;
 
 	if (r_norefresh.value)
 		return;
 
-	if (!cl.worldmodel)
+	if (r_refdef.drawworld && !cl.worldmodel)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
 	time1 = 0; /* avoid compiler warning */
@@ -1043,6 +1151,54 @@ void R_RenderView (void)
 	}
 	else if (gl_finish.value)
 		glFinish ();
+
+	if (lightmaps_latecached)
+	{
+		GL_BuildLightmaps ();
+		GL_BuildBModelVertexBuffer ();
+		lightmaps_latecached=false;
+	}
+
+
+	//Spike -- quickly draw the world from the skyroom camera's point of view.
+	skyroom_drawn = false;
+	if (r_refdef.drawworld && skyroom_enabled && skyroom_visible)
+	{
+		vec3_t vieworg;
+		vec3_t viewang;
+		VectorCopy(r_refdef.vieworg, vieworg);
+		VectorCopy(r_refdef.viewangles, viewang);
+		VectorMA(skyroom_origin, skyroom_origin[3],vieworg, r_refdef.vieworg); //allow a little paralax
+
+		if (skyroom_orientation[3])
+		{
+			vec3_t axis[3];
+			float ang = skyroom_orientation[3] * cl.time;
+			if (!skyroom_orientation[0]&&!skyroom_orientation[1]&&!skyroom_orientation[2])
+			{
+				skyroom_orientation[0] = 0;
+				skyroom_orientation[1] = 0;
+				skyroom_orientation[2] = 1;
+			}
+			VectorNormalize(skyroom_orientation);
+			RotatePointAroundVector(axis[0], skyroom_orientation, vpn, ang);
+			RotatePointAroundVector(axis[1], skyroom_orientation, vright, ang);
+			RotatePointAroundVector(axis[2], skyroom_orientation, vup, ang);
+			VectorAngles(axis[0], axis[2], r_refdef.viewangles);
+		}
+
+		skyroom_drawing = true;
+		R_SetupView ();
+		//note: sky boxes are generally considered an 'infinite' distance away such that you'd not see paralax.
+		//that's my excuse for not handling r_stereo here, and I'm sticking to it.
+		R_RenderScene ();
+
+		VectorCopy(vieworg, r_refdef.vieworg);
+		VectorCopy(viewang, r_refdef.viewangles);
+		skyroom_drawn = true;	//disable glClear(GL_COLOR_BUFFER_BIT)
+	}
+	skyroom_drawing = false;
+	//skyroom end
 
 	R_SetupView (); //johnfitz -- this does everything that should be done once per frame
 
@@ -1082,15 +1238,26 @@ void R_RenderView (void)
 	}
 	//johnfitz
 
+	//Spike: flag whether the skyroom was actually visible, so we don't needlessly draw it when its not (1 frame's lag, hopefully not too noticable)
+	if (r_refdef.drawworld)
+	{
+		if (r_viewleaf->contents == CONTENTS_SOLID || r_drawflat_cheatsafe || r_lightmap_cheatsafe)
+			skyroom_visible = false;	//don't do skyrooms when the view is in the void, for framerate reasons while debugging.
+		else
+			skyroom_visible = R_SkyroomWasVisible();
+		skyroom_drawn = false;
+	}
+	//skyroom end
+
 	R_ScaleView ();
 
 	//johnfitz -- modified r_speeds output
 	time2 = Sys_DoubleTime ();
 	if (r_pos.value)
 		Con_Printf ("x %i y %i z %i (pitch %i yaw %i roll %i)\n",
-					(int)cl_entities[cl.viewentity].origin[0],
-					(int)cl_entities[cl.viewentity].origin[1],
-					(int)cl_entities[cl.viewentity].origin[2],
+					(int)cl.entities[cl.viewentity].origin[0],
+					(int)cl.entities[cl.viewentity].origin[1],
+					(int)cl.entities[cl.viewentity].origin[2],
 					(int)cl.viewangles[PITCH],
 					(int)cl.viewangles[YAW],
 					(int)cl.viewangles[ROLL]);

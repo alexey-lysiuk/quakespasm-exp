@@ -32,6 +32,7 @@ set(COMMON_SOURCES
 	Quake/cvar.h
 	Quake/draw.h
 	Quake/filenames.h
+	Quake/fs_zip.c
 	Quake/gl_draw.c
 	Quake/gl_fog.c
 	Quake/gl_mesh.c
@@ -61,6 +62,7 @@ set(COMMON_SOURCES
 	Quake/main_sdl.c
 	Quake/mathlib.c
 	Quake/mathlib.h
+	Quake/mdfour.c
 	Quake/menu.c
 	Quake/menu.h
 	Quake/modelgen.h
@@ -77,6 +79,7 @@ set(COMMON_SOURCES
 	Quake/pr_comp.h
 	Quake/pr_edict.c
 	Quake/pr_exec.c
+	Quake/pr_ext.c
 	Quake/progdefs.h
 	Quake/progs.h
 	Quake/protocol.h
@@ -88,6 +91,7 @@ set(COMMON_SOURCES
 	Quake/r_alias.c
 	Quake/r_brush.c
 	Quake/r_part.c
+	Quake/r_part_fte.c
 	Quake/r_sprite.c
 	Quake/r_world.c
 	Quake/render.h
@@ -113,6 +117,8 @@ set(COMMON_SOURCES
 	Quake/snd_sdl.c
 	Quake/snd_umx.c
 	Quake/snd_umx.h
+	Quake/snd_voip.c
+	Quake/snd_voip.h
 	Quake/snd_vorbis.c
 	Quake/snd_vorbis.h
 	Quake/snd_wave.c
@@ -438,6 +444,15 @@ find_codec(NAME XMP
 	LIBRARIES xmp
 	DEFINE USE_CODEC_XMP
 )
+
+find_package(ZLIB)
+if(ZLIB_FOUND)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE USE_ZLIB)
+	target_include_directories(${PROJECT_NAME} PRIVATE "${ZLIB_INCLUDE_DIR}")
+	target_link_libraries(${PROJECT_NAME} PRIVATE "${ZLIB_LIBRARY}")
+endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
 
 set(ENGINE_PAK_FILE quakespasm.pak)
 

@@ -111,6 +111,8 @@ GENERIC_TYPES (IMPL_GENERIC_FUNCS, NO_COMMA)
 	 (x) > (_maxval) ? (_maxval) : (x))
 #endif
 
+#define countof(x) (sizeof(x)/sizeof((x)[0]))
+
 typedef struct sizebuf_s
 {
 	qboolean	allowoverflow;	// if false, do a Sys_Error
@@ -162,11 +164,17 @@ void MSG_WriteChar (sizebuf_t *sb, int c);
 void MSG_WriteByte (sizebuf_t *sb, int c);
 void MSG_WriteShort (sizebuf_t *sb, int c);
 void MSG_WriteLong (sizebuf_t *sb, int c);
+void MSG_WriteUInt64 (sizebuf_t *sb, unsigned long long c);
+void MSG_WriteInt64 (sizebuf_t *sb, long long c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
+void MSG_WriteStringUnterminated (sizebuf_t *sb, const char *s);
 void MSG_WriteString (sizebuf_t *sb, const char *s);
 void MSG_WriteCoord (sizebuf_t *sb, float f, unsigned int flags);
 void MSG_WriteAngle (sizebuf_t *sb, float f, unsigned int flags);
 void MSG_WriteAngle16 (sizebuf_t *sb, float f, unsigned int flags); //johnfitz
+void MSG_WriteEntity(sizebuf_t *sb, unsigned int index, unsigned int pext2); //spike
+struct entity_state_s;
+void MSG_WriteStaticOrBaseLine(sizebuf_t *buf, int idx, struct entity_state_s *state, unsigned int protocol_pext2, unsigned int protocol, unsigned int protocolflags); //spike
 
 extern	int			msg_readcount;
 extern	qboolean	msg_badread;		// set if a read goes beyond end of message
@@ -176,12 +184,18 @@ int MSG_ReadChar (void);
 int MSG_ReadByte (void);
 int MSG_ReadShort (void);
 int MSG_ReadLong (void);
+unsigned long long MSG_ReadUInt64 (void);
+long long MSG_ReadInt64 (void);
 float MSG_ReadFloat (void);
 const char *MSG_ReadString (void);
 
 float MSG_ReadCoord (unsigned int flags);
 float MSG_ReadAngle (unsigned int flags);
 float MSG_ReadAngle16 (unsigned int flags); //johnfitz
+byte *MSG_ReadData (unsigned int length); // spike
+unsigned int MSG_ReadEntity(unsigned int pext2); //spike
+
+void COM_Effectinfo_Enumerate(int (*cb)(const char *pname));	//spike -- for dp compat
 
 //============================================================================
 
@@ -197,6 +211,13 @@ int Q_strcmp (const char *s1, const char *s2);
 int Q_strncmp (const char *s1, const char *s2, int count);
 int	Q_atoi (const char *str);
 float Q_atof (const char *str);
+void Q_ftoa(char *str, float in);
+int wildcmp(const char *wild, const char *string);
+void Info_RemoveKey(char *info, const char *key);
+void Info_SetKey(char *info, size_t infosize, const char *key, const char *val);
+const char *Info_GetKey(const char *info, const char *key, char *out, size_t outsize);
+void Info_Print(const char *info);
+void Info_Enumerate(const char *info, void(*cb)(void *ctx, const char *key, const char *value), void *cbctx);
 
 
 #include "strl_fn.h"
@@ -215,6 +236,11 @@ extern char *q_strupr (char *str);
 /* snprintf, vsnprintf : always use our versions. */
 extern int q_snprintf (char *str, size_t size, const char *format, ...) FUNC_PRINTF(3,4);
 extern int q_vsnprintf(char *str, size_t size, const char *format, va_list args) FUNC_PRINTF(3,0);
+
+#define strcasecmp brokeninmsvc
+#define stricmp brokenportability
+#define strncasecmp brokeninmsvc
+#define strnicmp brokenportability
 
 //============================================================================
 
@@ -235,6 +261,7 @@ extern	int		safemode;
  */
 
 int COM_CheckParm (const char *parm);
+int COM_CheckParmNext (int last, const char *parm);
 
 void COM_Init (void);
 void COM_InitArgv (int argc, char **argv);
@@ -244,6 +271,7 @@ const char *COM_SkipPath (const char *pathname);
 void COM_StripExtension (const char *in, char *out, size_t outsize);
 void COM_FileBase (const char *in, char *out, size_t outsize);
 void COM_AddExtension (char *path, const char *extension, size_t len);
+qboolean COM_DownloadNameOkay(const char *filename);
 #if 0 /* COM_DefaultExtension can be dangerous */
 void COM_DefaultExtension (char *path, const char *extension, size_t len);
 #endif
@@ -267,10 +295,24 @@ size_t LOC_Format (const char *format, const char* (*getarg_fn)(int idx, void* u
 //============================================================================
 
 // QUAKEFS
+#ifdef _WIN32
+	#define qofs_t __int64	//LLP64 sucks and needs clumsy workarounds.
+	#define fseek _fseeki64
+	#define ftell _ftelli64
+#elif _POSIX_C_SOURCE >= 200112L
+	#define qofs_t off_t	//posix has its own LFS support for 32bit systems.
+	#define fseek fseeko
+	#define ftell ftello
+#else
+	#define qofs_t long		//LP64 just makes more sense. everything just works.
+#endif
+#define qofs_Make(low,high) ((unsigned int)(low) | ((qofs_t)(high)<<32))
+
 typedef struct
 {
 	char	name[MAX_QPATH];
-	int		filepos, filelen;
+	qofs_t	filepos, filelen;
+	qofs_t	deflatedsize;
 } packfile_t;
 
 typedef struct pack_s
@@ -278,6 +320,7 @@ typedef struct pack_s
 	char	filename[MAX_OSPATH];
 	int		handle;
 	int		numfiles;
+	time_t	mtime;
 	packfile_t	*files;
 } pack_t;
 
@@ -287,6 +330,7 @@ typedef struct searchpath_s
 					// Note that <install_dir>/game1 and
 					// <userdir>/game1 have the same id.
 	char	filename[MAX_OSPATH];
+	char	purename[MAX_OSPATH];	// 'gamedir[/foo.pak]'
 	pack_t	*pack;			// only one of filename / pack will be used
 	struct searchpath_s	*next;
 } searchpath_t;
@@ -294,12 +338,19 @@ typedef struct searchpath_s
 extern searchpath_t *com_searchpaths;
 extern searchpath_t *com_base_searchpaths;
 
-extern int com_filesize;
+extern qofs_t com_filesize;
 struct cache_user_s;
 
 extern	char	com_basedir[MAX_OSPATH];
 extern	char	com_gamedir[MAX_OSPATH];
 extern	int	file_from_pak;	// global indicating that file came from a pak
+
+void COM_ListAllFiles(void *ctx, const char *pattern, qboolean (*cb)(void *ctx, const char *fname, time_t mtime, size_t fsize, searchpath_t *spath), unsigned int flags, const char *pkgfilter);
+const char *COM_GetGameNames(qboolean full);
+qboolean COM_GameDirMatches(const char *tdirs);
+
+pack_t *FSZIP_LoadArchive (const char *packfile);
+FILE *FSZIP_Deflate(FILE *src, qofs_t srcsize, qofs_t outsize);
 
 void COM_WriteFile (const char *filename, const void *data, int len);
 int COM_OpenFile (const char *filename, int *handle, unsigned int *path_id);

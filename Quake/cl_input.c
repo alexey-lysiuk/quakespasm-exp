@@ -54,11 +54,13 @@ state bit 2 is edge triggered on the down to up transition
 kbutton_t	in_mlook, in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
+kbutton_t	in_strafe, in_speed, in_jump, in_attack, in_button3, in_button4, in_button5, in_button6, in_button7, in_button8;
 kbutton_t	in_up, in_down;
 
 int			in_impulse;
 
+// JPG 1.05 - translate +jump to +moveup under water
+//extern cvar_t	pq_moveup;
 
 void KeyDown (kbutton_t *b)
 {
@@ -70,6 +72,10 @@ void KeyDown (kbutton_t *b)
 		k = atoi(c);
 	else
 		k = -1;		// typed manually at the console for continuous down
+
+	// JPG 1.05 - if jump is pressed underwater, translate it to a moveup
+	if (b == &in_jump /*&& pq_moveup.value*/ && cl.stats[STAT_HEALTH] > 0 && cl.inwater)
+		b = &in_up;
 
 	if (k == b->down[0] || k == b->down[1])
 		return;		// repeating key
@@ -102,6 +108,19 @@ void KeyUp (kbutton_t *b)
 		b->down[0] = b->down[1] = 0;
 		b->state = 4;	// impulse up
 		return;
+	}
+
+	// JPG 1.05 - check to see if we need to translate -jump to -moveup
+	if (b == &in_jump/* && pq_moveup.value*/)
+	{
+		if (k == in_up.down[0] || k == in_up.down[1])
+			b = &in_up;
+		else
+		{
+			// in case a -moveup got lost somewhere
+			in_up.down[0] = in_up.down[1] = 0;
+			in_up.state = 4;
+		}
 	}
 
 	if (b->down[0] == k)
@@ -156,10 +175,23 @@ void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
 
-void IN_UseDown (void) {KeyDown(&in_use);}
-void IN_UseUp (void) {KeyUp(&in_use);}
+void IN_UseDown (void) {KeyDown(&in_button3);}
+void IN_UseUp (void) {KeyUp(&in_button3);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
+
+void IN_Button3Down(void) {KeyDown(&in_button3);}
+void IN_Button3Up(void) {KeyUp(&in_button3);}
+void IN_Button4Down(void) {KeyDown(&in_button4);}
+void IN_Button4Up(void) {KeyUp(&in_button4);}
+void IN_Button5Down(void) {KeyDown(&in_button5);}
+void IN_Button5Up(void) {KeyUp(&in_button5);}
+void IN_Button6Down(void) {KeyDown(&in_button6);}
+void IN_Button6Up(void) {KeyUp(&in_button6);}
+void IN_Button7Down(void) {KeyDown(&in_button7);}
+void IN_Button7Up(void) {KeyUp(&in_button7);}
+void IN_Button8Down(void) {KeyDown(&in_button8);}
+void IN_Button8Up(void) {KeyUp(&in_button8);}
 
 // Tonik ...
 void IN_Impulse(void)
@@ -355,12 +387,12 @@ Send the intended movement message to the server
 */
 void CL_BaseMove (usercmd_t *cmd)
 {
+	Q_memset (cmd, 0, sizeof(*cmd));
+
+	VectorCopy(cl.viewangles, cmd->viewangles);
+
 	if (cls.signon != SIGNONS)
 		return;
-
-	CL_AdjustAngles ();
-
-	Q_memset (cmd, 0, sizeof(*cmd));
 
 	if (in_strafe.state & 1)
 	{
@@ -391,47 +423,12 @@ void CL_BaseMove (usercmd_t *cmd)
 	}
 }
 
-
-/*
-==============
-CL_SendMove
-==============
-*/
-void CL_SendMove (const usercmd_t *cmd)
+void CL_FinishMove(usercmd_t *cmd)
 {
-	int		i;
-	int		bits;
-	sizebuf_t	buf;
-	byte	data[128];
-
-	buf.maxsize = 128;
-	buf.cursize = 0;
-	buf.data = data;
-
-	cl.cmd = *cmd;
-
-//
-// send the movement message
-//
-	MSG_WriteByte (&buf, clc_move);
-
-	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
-
-	for (i=0 ; i<3 ; i++)
-		//johnfitz -- 16-bit angles for PROTOCOL_FITZQUAKE
-		if (cl.protocol == PROTOCOL_NETQUAKE)
-			MSG_WriteAngle (&buf, cl.viewangles[i], cl.protocolflags);
-		else
-			MSG_WriteAngle16 (&buf, cl.viewangles[i], cl.protocolflags);
-		//johnfitz
-
-	MSG_WriteShort (&buf, cmd->forwardmove);
-	MSG_WriteShort (&buf, cmd->sidemove);
-	MSG_WriteShort (&buf, cmd->upmove);
-
-//
-// send button bits
-//
+	unsigned int bits;
+	//
+	// send button bits
+	//
 	bits = 0;
 
 	if ( in_attack.state & 3 )
@@ -442,22 +439,159 @@ void CL_SendMove (const usercmd_t *cmd)
 		bits |= 2;
 	in_jump.state &= ~2;
 
-	MSG_WriteByte (&buf, bits);
+	if (in_button3.state & 3)
+		bits |= 4;
+	in_button3.state &= ~2;
 
-	MSG_WriteByte (&buf, in_impulse);
+	if (in_button4.state & 3)
+		bits |= 8;
+	in_button4.state &= ~2;
+
+	if (in_button5.state & 3)
+		bits |= 16;
+	in_button5.state &= ~2;
+
+	if (in_button6.state & 3)
+		bits |= 32;
+	in_button6.state &= ~2;
+
+	if (in_button7.state & 3)
+		bits |= 64;
+	in_button7.state &= ~2;
+
+	if (in_button8.state & 3)
+		bits |= 128;
+	in_button8.state &= ~2;
+
+	cmd->buttons = bits;
+	cmd->impulse = in_impulse;
+
 	in_impulse = 0;
+}
 
-//
-// deliver the message
-//
-	if (cls.demoplayback)
-		return;
+/*
+==============
+CL_SendMove
+==============
+*/
+void CL_SendMove (const usercmd_t *cmd)
+{
+	unsigned int	i;
+	sizebuf_t		buf;
+	byte			data[1024];
 
-//
-// allways dump the first two message, because it may contain leftover inputs
-// from the last level
-//
-	if (++cl.movemessages <= 2)
+	buf.maxsize = sizeof(data);
+	buf.cursize = 0;
+	buf.data = data;
+
+	for (i = 0; i < cl.ackframes_count; i++)
+	{
+		MSG_WriteByte(&buf, clcdp_ackframe);
+		MSG_WriteLong(&buf, cl.ackframes[i]);
+	}
+	cl.ackframes_count = 0;
+
+	if (cmd)
+	{
+		int dump = buf.cursize;
+		unsigned int bits = cmd->buttons;
+
+	//
+	// send the movement message
+	//
+		MSG_WriteByte (&buf, clc_move);
+
+		if (cl.protocol == PROTOCOL_VERSION_DP7)
+		{
+			if (0)
+			{
+				MSG_WriteLong(&buf, 0);
+				MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
+			}
+			else
+			{
+				MSG_WriteLong(&buf, cl.movemessages);
+				MSG_WriteFloat (&buf, cmd->servertime);	// for input timing
+			}
+		}
+		else if (cl.protocol_pext2 & PEXT2_PREDINFO)
+		{
+			MSG_WriteShort(&buf, cl.movemessages&0xffff);	//server will ack this once it has been applied to the player's entity state
+			MSG_WriteFloat (&buf, cmd->servertime);	// so server can get cmd timing (pings will be calculated by entframe acks).
+		}
+		else
+			MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
+
+		for (i=0 ; i<3 ; i++)
+			//johnfitz -- 16-bit angles for PROTOCOL_FITZQUAKE
+			//spike -- nq+bjp3 use 8bit angles. all other supported protocols use 16bit ones.
+			//spike -- proquake servers bump client->server angles up to at least 16bit. this is safe because it only happens when both client+server advertise it, and because it never actually gets recorded into demos anyway.
+			//spike -- predinfo also always means 16bit angles, even if for some reason the server doesn't advertise proquake (like dp).
+			if ((cl.protocol == PROTOCOL_NETQUAKE || cl.protocol == PROTOCOL_VERSION_BJP3) && !NET_QSocketGetProQuakeAngleHack(cls.netcon) && !(cl.protocol_pext2 & PEXT2_PREDINFO))
+				MSG_WriteAngle (&buf, cl.viewangles[i], cl.protocolflags);
+			else
+				MSG_WriteAngle16 (&buf, cl.viewangles[i], cl.protocolflags);
+			//johnfitz
+
+		MSG_WriteShort (&buf, cmd->forwardmove);
+		MSG_WriteShort (&buf, cmd->sidemove);
+		MSG_WriteShort (&buf, cmd->upmove);
+
+		if (cl.protocol_pext2 & PEXT2_PRYDONCURSOR)
+		{
+			if (cmd->weapon)
+				bits |= (1u<<30);
+			if (cmd->cursor_screen[0] || cmd->cursor_screen[1] ||
+				cmd->cursor_start[0] || cmd->cursor_start[1] || cmd->cursor_start[2] ||
+				cmd->cursor_impact[0] || cmd->cursor_impact[1] || cmd->cursor_impact[2] ||
+				cmd->cursor_entitynumber)
+				bits |= (1u<<31);
+			MSG_WriteLong (&buf, bits);
+		}
+		else if (cl.protocol == PROTOCOL_VERSION_DP7)
+		{
+			MSG_WriteLong (&buf, bits);
+			bits |= (1u<<31);
+		}
+		else
+			MSG_WriteByte (&buf, bits);
+		MSG_WriteByte (&buf, cmd->impulse);
+		if (bits & (1u<<30))
+			MSG_WriteLong (&buf, cmd->weapon);
+		if (bits & (1u<<31))
+		{
+			MSG_WriteShort(&buf, cmd->cursor_screen[0] * 32767);
+			MSG_WriteShort(&buf, cmd->cursor_screen[1] * 32767);
+			MSG_WriteFloat(&buf, cmd->cursor_start[0]);	//start (view pos)
+			MSG_WriteFloat(&buf, cmd->cursor_start[1]);
+			MSG_WriteFloat(&buf, cmd->cursor_start[2]);
+			MSG_WriteFloat(&buf, cmd->cursor_impact[0]);	//impact
+			MSG_WriteFloat(&buf, cmd->cursor_impact[1]);
+			MSG_WriteFloat(&buf, cmd->cursor_impact[2]);
+			MSG_WriteEntity(&buf, cmd->cursor_entitynumber, cl.protocol_pext2);
+		}
+		in_impulse = 0;
+
+		cl.movecmds[cl.movemessages&MOVECMDS_MASK] = *cmd;
+
+	//
+	// allways dump the first two message, because it may contain leftover inputs
+	// from the last level
+	//
+		if (++cl.movemessages <= 2)
+			buf.cursize = dump;
+		else
+			S_Voip_Transmit(clcfte_voicechat, &buf);/*Spike: Add voice data*/
+	}
+	else
+		S_Voip_Transmit(clcfte_voicechat, NULL);/*Spike: Add voice data (with cl_voip_test anyway)*/
+
+	//fixme: nops if we're still connecting, or something.
+
+	//
+	// deliver the message
+	//
+	if (cls.demoplayback || !buf.cursize)
 		return;
 
 	if (NET_SendUnreliableMessage (cls.netcon, &buf) == -1)
@@ -474,6 +608,8 @@ CL_InitInput
 */
 void CL_InitInput (void)
 {
+#undef Cmd_AddCommand
+#define Cmd_AddCommand(cmd,fnc) Cmd_AddCommand2(cmd,fnc,src_command,true)
 	Cmd_AddCommand ("+moveup",IN_UpDown);
 	Cmd_AddCommand ("-moveup",IN_UpUp);
 	Cmd_AddCommand ("+movedown",IN_DownDown);
@@ -502,6 +638,18 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-attack", IN_AttackUp);
 	Cmd_AddCommand ("+use", IN_UseDown);
 	Cmd_AddCommand ("-use", IN_UseUp);
+	Cmd_AddCommand ("+button3", IN_Button3Down);
+	Cmd_AddCommand ("-button3", IN_Button3Up);
+	Cmd_AddCommand ("+button4", IN_Button4Down);
+	Cmd_AddCommand ("-button4", IN_Button4Up);
+	Cmd_AddCommand ("+button5", IN_Button5Down);
+	Cmd_AddCommand ("-button5", IN_Button5Up);
+	Cmd_AddCommand ("+button6", IN_Button6Down);
+	Cmd_AddCommand ("-button6", IN_Button6Up);
+	Cmd_AddCommand ("+button7", IN_Button7Down);
+	Cmd_AddCommand ("-button7", IN_Button7Up);
+	Cmd_AddCommand ("+button8", IN_Button8Down);
+	Cmd_AddCommand ("-button8", IN_Button8Up);
 	Cmd_AddCommand ("+jump", IN_JumpDown);
 	Cmd_AddCommand ("-jump", IN_JumpUp);
 	Cmd_AddCommand ("impulse", IN_Impulse);

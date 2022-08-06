@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+extern	qboolean premul_hud;
 int		sb_updates;		// if >= vid.numpages, no update needed
 
 #define STAT_MINUS		10	// num frame for '-' stats digit
@@ -63,9 +64,28 @@ int		hipweapons[4] = {HIT_LASER_CANNON_BIT,HIT_MJOLNIR_BIT,4,HIT_PROXIMITY_GUN_B
 //MED 01/04/97 added hipnotic items array
 qpic_t		*hsb_items[2];
 
+//spike -- fix -game hipnotic by autodetecting hud types. the fte protocols will deal with the networking issue, other than demos, anyway
+static int hudtype;
+#define hipnotic (hudtype==1)
+#define rogue (hudtype==2)
+
 void Sbar_MiniDeathmatchOverlay (void);
 void Sbar_DeathmatchOverlay (void);
 void M_DrawPic (int x, int y, qpic_t *pic);
+
+qboolean Sbar_CSQCCommand(void)
+{
+	qboolean ret = false;
+	if (cl.qcvm.extfuncs.CSQC_ConsoleCommand)
+	{
+		PR_SwitchQCVM(&cl.qcvm);
+		G_INT(OFS_PARM0) = PR_MakeTempString(Cmd_Argv(0));
+		PR_ExecuteProgram(cl.qcvm.extfuncs.CSQC_ConsoleCommand);
+		ret = G_FLOAT(OFS_RETURN);
+		PR_SwitchQCVM(NULL);
+	}
+	return ret;
+}
 
 /*
 ===============
@@ -76,6 +96,7 @@ Tab key down
 */
 void Sbar_ShowScores (void)
 {
+	Sbar_CSQCCommand();
 	if (sb_showscores)
 		return;
 	sb_showscores = true;
@@ -91,6 +112,7 @@ Tab key up
 */
 void Sbar_DontShowScores (void)
 {
+	Sbar_CSQCCommand();
 	sb_showscores = false;
 	sb_updates = 0;
 }
@@ -105,6 +127,22 @@ void Sbar_Changed (void)
 	sb_updates = 0;	// update next frame
 }
 
+
+qpic_t *Sbar_CheckPicFromWad (const char *name)
+{
+	extern qpic_t *pic_nul;
+	qpic_t *r;
+	lumpinfo_t *info;
+	if (!hudtype)
+		return pic_nul;	//one already failed, don't waste cpu
+	if (!W_GetLumpName(name, &info))
+		r = pic_nul;
+	else
+		r = Draw_PicFromWad(name);
+	if (r == pic_nul)
+		hudtype = 0;
+	return r;
+}
 /*
 ===============
 Sbar_LoadPics -- johnfitz -- load all the sbar pics
@@ -190,59 +228,63 @@ void Sbar_LoadPics (void)
 	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
 	sb_face_quad = Draw_PicFromWad ("face_quad");
 
-	sb_sbar = Draw_PicFromWad ("sbar");
-	sb_ibar = Draw_PicFromWad ("ibar");
+	sb_sbar = Draw_PicFromWad2 ("sbar", TEXPREF_PAD|TEXPREF_NOPICMIP);
+	sb_ibar = Draw_PicFromWad2 ("ibar", TEXPREF_PAD|TEXPREF_NOPICMIP);
 	sb_scorebar = Draw_PicFromWad ("scorebar");
 
-//MED 01/04/97 added new hipnotic weapons
-	if (hipnotic)
-	{
-		hsb_weapons[0][0] = Draw_PicFromWad ("inv_laser");
-		hsb_weapons[0][1] = Draw_PicFromWad ("inv_mjolnir");
-		hsb_weapons[0][2] = Draw_PicFromWad ("inv_gren_prox");
-		hsb_weapons[0][3] = Draw_PicFromWad ("inv_prox_gren");
-		hsb_weapons[0][4] = Draw_PicFromWad ("inv_prox");
+	hudtype = 0;
 
-		hsb_weapons[1][0] = Draw_PicFromWad ("inv2_laser");
-		hsb_weapons[1][1] = Draw_PicFromWad ("inv2_mjolnir");
-		hsb_weapons[1][2] = Draw_PicFromWad ("inv2_gren_prox");
-		hsb_weapons[1][3] = Draw_PicFromWad ("inv2_prox_gren");
-		hsb_weapons[1][4] = Draw_PicFromWad ("inv2_prox");
+//MED 01/04/97 added new hipnotic weapons
+	if (!hudtype)
+	{
+		hudtype = 1;
+		hsb_weapons[0][0] = Sbar_CheckPicFromWad ("inv_laser");
+		hsb_weapons[0][1] = Sbar_CheckPicFromWad ("inv_mjolnir");
+		hsb_weapons[0][2] = Sbar_CheckPicFromWad ("inv_gren_prox");
+		hsb_weapons[0][3] = Sbar_CheckPicFromWad ("inv_prox_gren");
+		hsb_weapons[0][4] = Sbar_CheckPicFromWad ("inv_prox");
+
+		hsb_weapons[1][0] = Sbar_CheckPicFromWad ("inv2_laser");
+		hsb_weapons[1][1] = Sbar_CheckPicFromWad ("inv2_mjolnir");
+		hsb_weapons[1][2] = Sbar_CheckPicFromWad ("inv2_gren_prox");
+		hsb_weapons[1][3] = Sbar_CheckPicFromWad ("inv2_prox_gren");
+		hsb_weapons[1][4] = Sbar_CheckPicFromWad ("inv2_prox");
 
 		for (i = 0; i < 5; i++)
 		{
-			hsb_weapons[2+i][0] = Draw_PicFromWad (va("inva%i_laser",i+1));
-			hsb_weapons[2+i][1] = Draw_PicFromWad (va("inva%i_mjolnir",i+1));
-			hsb_weapons[2+i][2] = Draw_PicFromWad (va("inva%i_gren_prox",i+1));
-			hsb_weapons[2+i][3] = Draw_PicFromWad (va("inva%i_prox_gren",i+1));
-			hsb_weapons[2+i][4] = Draw_PicFromWad (va("inva%i_prox",i+1));
+			hsb_weapons[2+i][0] = Sbar_CheckPicFromWad (va("inva%i_laser",i+1));
+			hsb_weapons[2+i][1] = Sbar_CheckPicFromWad (va("inva%i_mjolnir",i+1));
+			hsb_weapons[2+i][2] = Sbar_CheckPicFromWad (va("inva%i_gren_prox",i+1));
+			hsb_weapons[2+i][3] = Sbar_CheckPicFromWad (va("inva%i_prox_gren",i+1));
+			hsb_weapons[2+i][4] = Sbar_CheckPicFromWad (va("inva%i_prox",i+1));
 		}
 
-		hsb_items[0] = Draw_PicFromWad ("sb_wsuit");
-		hsb_items[1] = Draw_PicFromWad ("sb_eshld");
+		hsb_items[0] = Sbar_CheckPicFromWad ("sb_wsuit");
+		hsb_items[1] = Sbar_CheckPicFromWad ("sb_eshld");
 	}
 
-	if (rogue)
+	if (!hudtype)
 	{
-		rsb_invbar[0] = Draw_PicFromWad ("r_invbar1");
-		rsb_invbar[1] = Draw_PicFromWad ("r_invbar2");
+		hudtype = 2;
+		rsb_invbar[0] = Sbar_CheckPicFromWad ("r_invbar1");
+		rsb_invbar[1] = Sbar_CheckPicFromWad ("r_invbar2");
 
-		rsb_weapons[0] = Draw_PicFromWad ("r_lava");
-		rsb_weapons[1] = Draw_PicFromWad ("r_superlava");
-		rsb_weapons[2] = Draw_PicFromWad ("r_gren");
-		rsb_weapons[3] = Draw_PicFromWad ("r_multirock");
-		rsb_weapons[4] = Draw_PicFromWad ("r_plasma");
+		rsb_weapons[0] = Sbar_CheckPicFromWad ("r_lava");
+		rsb_weapons[1] = Sbar_CheckPicFromWad ("r_superlava");
+		rsb_weapons[2] = Sbar_CheckPicFromWad ("r_gren");
+		rsb_weapons[3] = Sbar_CheckPicFromWad ("r_multirock");
+		rsb_weapons[4] = Sbar_CheckPicFromWad ("r_plasma");
 
-		rsb_items[0] = Draw_PicFromWad ("r_shield1");
-		rsb_items[1] = Draw_PicFromWad ("r_agrav1");
+		rsb_items[0] = Sbar_CheckPicFromWad ("r_shield1");
+		rsb_items[1] = Sbar_CheckPicFromWad ("r_agrav1");
 
 // PGM 01/19/97 - team color border
-		rsb_teambord = Draw_PicFromWad ("r_teambord");
+		rsb_teambord = Sbar_CheckPicFromWad ("r_teambord");
 // PGM 01/19/97 - team color border
 
-		rsb_ammo[0] = Draw_PicFromWad ("r_ammolava");
-		rsb_ammo[1] = Draw_PicFromWad ("r_ammomulti");
-		rsb_ammo[2] = Draw_PicFromWad ("r_ammoplasma");
+		rsb_ammo[0] = Sbar_CheckPicFromWad ("r_ammolava");
+		rsb_ammo[1] = Sbar_CheckPicFromWad ("r_ammomulti");
+		rsb_ammo[2] = Sbar_CheckPicFromWad ("r_ammoplasma");
 	}
 }
 
@@ -281,13 +323,22 @@ Sbar_DrawPicAlpha -- johnfitz
 */
 void Sbar_DrawPicAlpha (int x, int y, qpic_t *pic, float alpha)
 {
-	glDisable (GL_ALPHA_TEST);
-	glEnable (GL_BLEND);
-	glColor4f(1,1,1,alpha);
-	Draw_Pic (x, y + 24, pic);
-	glColor4f(1,1,1,1); // ericw -- changed from glColor3f to work around intel 855 bug with "r_oldwater 0" and "scr_sbaralpha 0"
-	glDisable (GL_BLEND);
-	glEnable (GL_ALPHA_TEST);
+	if (premul_hud)
+	{
+		glColor4f(alpha,alpha,alpha,alpha);
+		Draw_Pic (x, y + 24, pic);
+		glColor4f(1,1,1,1);
+	}
+	else
+	{
+		glDisable (GL_ALPHA_TEST);
+		glEnable (GL_BLEND);
+		glColor4f(1,1,1,alpha);
+		Draw_Pic (x, y + 24, pic);
+		glColor4f(1,1,1,1); // ericw -- changed from glColor3f to work around intel 855 bug with "r_oldwater 0" and "scr_sbaralpha 0"
+		glDisable (GL_BLEND);
+		glEnable (GL_ALPHA_TEST);
+	}
 }
 
 /*
@@ -413,11 +464,6 @@ void Sbar_DrawNum (int x, int y, int num, int digits, int color)
 //=============================================================================
 
 int		fragsort[MAX_SCOREBOARD];
-
-char		scoreboardtext[MAX_SCOREBOARD][20];
-int		scoreboardtop[MAX_SCOREBOARD];
-int		scoreboardbottom[MAX_SCOREBOARD];
-int		scoreboardcount[MAX_SCOREBOARD];
 int		scoreboardlines;
 
 /*
@@ -457,35 +503,6 @@ void Sbar_SortFrags (void)
 int	Sbar_ColorForMap (int m)
 {
 	return m < 128 ? m + 8 : m + 8;
-}
-
-/*
-===============
-Sbar_UpdateScoreboard
-===============
-*/
-void Sbar_UpdateScoreboard (void)
-{
-	int		i, k;
-	int		top, bottom;
-	scoreboard_t	*s;
-
-	Sbar_SortFrags ();
-
-// draw the text
-	memset (scoreboardtext, 0, sizeof(scoreboardtext));
-
-	for (i = 0; i < scoreboardlines; i++)
-	{
-		k = fragsort[i];
-		s = &cl.scores[k];
-		sprintf (&scoreboardtext[i][1], "%3i %s", s->frags, s->name);
-
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15) <<4;
-		scoreboardtop[i] = Sbar_ColorForMap (top);
-		scoreboardbottom[i] = Sbar_ColorForMap (bottom);
-	}
 }
 
 /*
@@ -778,7 +795,7 @@ Sbar_DrawFrags -- johnfitz -- heavy revision
 */
 void Sbar_DrawFrags (void)
 {
-	int	numscores, i, x, color;
+	int	numscores, i, x;
 	char	num[12];
 	scoreboard_t	*s;
 
@@ -794,14 +811,10 @@ void Sbar_DrawFrags (void)
 			continue;
 
 	// top color
-		color = s->colors & 0xf0;
-		color = Sbar_ColorForMap (color);
-		Draw_Fill (x + 10, 1, 28, 4, color, 1);
+		Draw_FillPlayer (x + 10, 1, 28, 4, s->shirt, 1);
 
 	// bottom color
-		color = (s->colors & 15)<<4;
-		color = Sbar_ColorForMap (color);
-		Draw_Fill (x + 10, 5, 28, 3, color, 1);
+		Draw_FillPlayer (x + 10, 5, 28, 3, s->pants, 1);
 
 	// number
 		sprintf (num, "%3i", s->frags);
@@ -834,32 +847,26 @@ void Sbar_DrawFace (void)
 // PGM 03/02/97 - fixed so color swatch only appears in CTF modes
 	if (rogue && (cl.maxclients != 1) && (teamplay.value>3) && (teamplay.value<7))
 	{
-		int	top, bottom;
 		int	xofs;
 		char	num[12];
 		scoreboard_t	*s;
 
 		s = &cl.scores[cl.viewentity - 1];
 		// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
 		if (cl.gametype == GAME_DEATHMATCH)
 			xofs = 113;
 		else
 			xofs = ((vid.width - 320)>>1) + 113;
 
 		Sbar_DrawPic (112, 0, rsb_teambord);
-		Draw_Fill (xofs, /*vid.height-*/24+3, 22, 9, top, 1); //johnfitz -- sbar coords are now relative
-		Draw_Fill (xofs, /*vid.height-*/24+12, 22, 9, bottom, 1); //johnfitz -- sbar coords are now relative
+		Draw_FillPlayer (xofs, /*vid.height-*/24+3, 22, 9, s->shirt, 1); //johnfitz -- sbar coords are now relative
+		Draw_FillPlayer (xofs, /*vid.height-*/24+12, 22, 9, s->pants, 1); //johnfitz -- sbar coords are now relative
 
 		// draw number
 		f = s->frags;
 		sprintf (num, "%3i",f);
 
-		if (top == 8)
+		if (s->shirt.type == 1 && s->shirt.basic == 0) //white team. FIXME: vanilla says top, but I suspect it should be the lower colour, as that's the actual team nq sees.
 		{
 			if (num[0] != ' ')
 				Sbar_DrawCharacter(113, 3, 18 + num[0] - '0');
@@ -918,6 +925,35 @@ void Sbar_DrawFace (void)
 	Sbar_DrawPic (112, 0, sb_faces[f][anim]);
 }
 
+static void Sbar_Voice(int y)
+{
+	cvar_t snd_voip_showmeter;
+	int loudness;
+	snd_voip_showmeter.value = 1;
+	if (!snd_voip_showmeter.value)
+		return;
+	loudness = S_Voip_Loudness(snd_voip_showmeter.value>=2);
+	if (loudness >= 0)
+	{
+		int cw = 8;
+		int w;
+		int x=160;
+		int s, i;
+		float range = loudness/100.0f;
+		w = (5+16+1)*cw;
+		x -= w/2;
+		Draw_Character (x, y, 'M');		x+=cw;
+		Draw_Character (x, y, 'i');		x+=cw;
+		Draw_Character (x, y, 'c');		x+=cw;
+										x+=cw;
+		Draw_Character (x, y, 0xe080);	x+=cw;
+		for (s=x,i=0 ; i<16 ; i++, x+=cw)
+			Draw_Character(x, y, 0xe081);
+		Draw_Character (x, y, 0xe082);
+		Draw_Character (s + (x-s) * range - cw/2, y, 0xe083);
+	}
+}
+
 /*
 ===============
 Sbar_Draw
@@ -930,6 +966,52 @@ void Sbar_Draw (void)
 	if (scr_con_current == vid.height)
 		return;		// console is full screen
 
+	if (cl.qcvm.extfuncs.CSQC_DrawHud && !qcvm)
+	{
+		qboolean deathmatchoverlay = false;
+		float s = CLAMP (1.0, scr_sbarscale.value, (float)glwidth / 320.0);
+		sb_updates++;
+		GL_SetCanvas (CANVAS_CSQC); //johnfitz
+		glEnable (GL_BLEND);	//in the finest tradition of glquake, we litter gl state calls all over the place. yay state trackers.
+		glDisable (GL_ALPHA_TEST);	//in the finest tradition of glquake, we litter gl state calls all over the place. yay state trackers.
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		PR_SwitchQCVM(&cl.qcvm);
+		pr_global_struct->time = qcvm->time;
+		pr_global_struct->frametime = qcvm->frametime;
+		if (qcvm->extglobals.cltime)
+			*qcvm->extglobals.cltime = realtime;
+		if (qcvm->extglobals.clframetime)
+			*qcvm->extglobals.clframetime = host_frametime;
+		if (qcvm->extglobals.player_localentnum)
+			*qcvm->extglobals.player_localentnum = cl.viewentity;
+		Sbar_SortFrags ();
+		G_VECTORSET(OFS_PARM0, vid.width/s, vid.height/s, 0);
+		G_FLOAT(OFS_PARM1) = sb_showscores;
+		PR_ExecuteProgram(cl.qcvm.extfuncs.CSQC_DrawHud);
+		if (cl.qcvm.extfuncs.CSQC_DrawScores)
+		{
+			G_VECTORSET(OFS_PARM0, vid.width/s, vid.height/s, 0);
+			G_FLOAT(OFS_PARM1) = sb_showscores;
+			if (key_dest != key_menu)
+				PR_ExecuteProgram(cl.qcvm.extfuncs.CSQC_DrawScores);
+		}
+		else
+			deathmatchoverlay = (sb_showscores || cl.stats[STAT_HEALTH] <= 0);
+		PR_SwitchQCVM(NULL);
+		glDisable (GL_BLEND);
+		glEnable (GL_ALPHA_TEST);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);	//back to ignoring vertex colours.
+		glDisable(GL_SCISSOR_TEST);
+		glColor3f (1,1,1);
+
+		if (deathmatchoverlay && cl.gametype == GAME_DEATHMATCH)
+		{
+			GL_SetCanvas (CANVAS_SBAR);
+			Sbar_DeathmatchOverlay ();
+		}
+		return;
+	}
+
 	if (cl.intermission)
 		return; //johnfitz -- never draw sbar during intermission
 
@@ -940,6 +1022,13 @@ void Sbar_Draw (void)
 	sb_updates++;
 
 	GL_SetCanvas (CANVAS_DEFAULT); //johnfitz
+
+	if (sb_lines > 24)
+		Sbar_Voice(-32);
+	else if (sb_lines > 0)
+		Sbar_Voice(-8);
+	else
+		Sbar_Voice(16);
 
 	//johnfitz -- don't waste fillrate by clearing the area behind the sbar
 	w = CLAMP (320.0f, scr_sbarscale.value * 320.0f, (float)glwidth);
@@ -1107,7 +1196,6 @@ void Sbar_DeathmatchOverlay (void)
 {
 	qpic_t	*pic;
 	int	i, k, l;
-	int	top, bottom;
 	int	x, y, f;
 	char	num[12];
 	scoreboard_t	*s;
@@ -1133,13 +1221,11 @@ void Sbar_DeathmatchOverlay (void)
 			continue;
 
 	// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
+		if (S_Voip_Speaking(k))	//spike -- display an underlay for people who are speaking
+			Draw_Fill ( x, y, 320-x*2, 8, ((k+1)==cl.viewentity)?75:73, 1);
 
-		Draw_Fill ( x, y, 40, 4, top, 1); //johnfitz -- stretched overlays
-		Draw_Fill ( x, y+4, 40, 4, bottom, 1); //johnfitz -- stretched overlays
+		Draw_FillPlayer ( x, y, 40, 4, s->shirt, 1); //johnfitz -- stretched overlays
+		Draw_FillPlayer ( x, y+4, 40, 4, s->pants, 1); //johnfitz -- stretched overlays
 
 	// draw number
 		f = s->frags;
@@ -1170,6 +1256,9 @@ void Sbar_DeathmatchOverlay (void)
 }
 #endif
 
+		sprintf (num, "%4i", s->ping);
+		M_PrintWhite (x-8*5, y, num); //johnfitz -- was Draw_String, changed for stretched overlays
+
 	// draw name
 		M_Print (x+64, y, s->name); //johnfitz -- was Draw_String, changed for stretched overlays
 
@@ -1177,6 +1266,13 @@ void Sbar_DeathmatchOverlay (void)
 	}
 
 	GL_SetCanvas (CANVAS_SBAR); //johnfitz
+
+	if (!cls.message.cursize && cl.expectingpingtimes < realtime)
+	{
+		cl.expectingpingtimes = realtime + 5;
+		MSG_WriteByte (&cls.message, clc_stringcmd);
+		MSG_WriteString(&cls.message, "ping");
+	}
 }
 
 /*
@@ -1186,7 +1282,7 @@ Sbar_MiniDeathmatchOverlay
 */
 void Sbar_MiniDeathmatchOverlay (void)
 {
-	int	i, k, top, bottom, x, y, f, numlines;
+	int	i, k, x, y, f, numlines;
 	char	num[12];
 	float	scale; //johnfitz
 	scoreboard_t	*s;
@@ -1226,13 +1322,8 @@ void Sbar_MiniDeathmatchOverlay (void)
 			continue;
 
 	// colors
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
-		Draw_Fill (x, y+1, 40, 4, top, 1);
-		Draw_Fill (x, y+5, 40, 3, bottom, 1);
+		Draw_FillPlayer (x, y+1, 40, 4, s->shirt, 1);
+		Draw_FillPlayer (x, y+5, 40, 3, s->pants, 1);
 
 	// number
 		f = s->frags;
@@ -1263,6 +1354,39 @@ void Sbar_IntermissionOverlay (void)
 	qpic_t	*pic;
 	int	dig;
 	int	num;
+
+	if (cl.qcvm.extfuncs.CSQC_DrawScores && !qcvm)
+	{
+		float s = CLAMP (1.0, scr_sbarscale.value, (float)glwidth / 320.0);
+		GL_SetCanvas (CANVAS_CSQC);
+		glEnable (GL_BLEND);
+		glDisable (GL_ALPHA_TEST);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		PR_SwitchQCVM(&cl.qcvm);
+		if (qcvm->extglobals.cltime)
+			*qcvm->extglobals.cltime = realtime;
+		if (qcvm->extglobals.clframetime)
+			*qcvm->extglobals.clframetime = host_frametime;
+		if (qcvm->extglobals.player_localentnum)
+			*qcvm->extglobals.player_localentnum = cl.viewentity;
+		if (qcvm->extglobals.intermission)
+			*qcvm->extglobals.intermission = cl.intermission;
+		if (qcvm->extglobals.intermission_time)
+			*qcvm->extglobals.intermission_time = cl.completed_time;
+		pr_global_struct->time = cl.time;
+		pr_global_struct->frametime = host_frametime;
+		Sbar_SortFrags ();
+		G_VECTORSET(OFS_PARM0, vid.width/s, vid.height/s, 0);
+		G_FLOAT(OFS_PARM1) = sb_showscores;
+		PR_ExecuteProgram(cl.qcvm.extfuncs.CSQC_DrawScores);
+		PR_SwitchQCVM(NULL);
+		glDisable (GL_BLEND);
+		glEnable (GL_ALPHA_TEST);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glDisable(GL_SCISSOR_TEST);
+		glColor3f (1,1,1);
+		return;
+	}
 
 	if (cl.gametype == GAME_DEATHMATCH)
 	{

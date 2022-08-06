@@ -44,6 +44,7 @@ typedef struct efrag_s
 #define LERP_RESETANIM2	(1<<2) //set this and previous flag to disable anim lerping for two anim frames
 #define LERP_RESETMOVE	(1<<3) //disable movement lerping until next origin/angles change
 #define LERP_FINISH		(1<<4) //use lerpfinish time from server update instead of assuming interval of 0.1
+#define LERP_EXPLICIT	(1<<5) //for csqc, using explicit frame1/2+frac+times
 //johnfitz
 
 typedef struct entity_s
@@ -53,6 +54,7 @@ typedef struct entity_s
 	int						update_type;
 
 	entity_state_t			baseline;		// to fill in defaults in updates
+	entity_state_t			netstate;		// the latest network state
 
 	double					msgtime;		// time of last update
 	vec3_t					msg_origins[2];	// last two updates (0 is newest)
@@ -63,7 +65,6 @@ typedef struct entity_s
 	struct efrag_s			*efrag;			// linked list of efrags
 	int						frame;
 	float					syncbase;		// for client-side animations
-	byte					*colormap;
 	int						effects;		// light, particles, etc
 	int						skinnum;		// for Alias models
 	int						visframe;		// last frame this entity was
@@ -78,19 +79,36 @@ typedef struct entity_s
 											//  that splits bmodel, or NULL if
 											//  not split
 
+	byte					eflags;			//spike -- mostly a mirror of netstate, but handles tag inheritance (eww!)
 	byte					alpha;			//johnfitz -- alpha
 	byte					lerpflags;		//johnfitz -- lerping
-	float					lerpstart;		//johnfitz -- animation lerping
-	float					lerptime;		//johnfitz -- animation lerping
+
+	union
+	{
+		struct
+		{	//read-only lerp data for csqc...
+			int frame2;
+			float lerpfrac;
+			float time[2];
+		} snap;
+		struct
+		{	//updated by the model rendering code.
+			float					lerpstart;		//johnfitz -- animation lerping
+			float					lerptime;		//johnfitz -- animation lerping
+			short					previouspose;	//johnfitz -- animation lerping
+			short					currentpose;	//johnfitz -- animation lerping
+		} state;
+	} lerp;
 	float					lerpfinish;		//johnfitz -- lerping -- server sent us a more accurate interval, use it instead of 0.1
-	short					previouspose;	//johnfitz -- animation lerping
-	short					currentpose;	//johnfitz -- animation lerping
 //	short					futurepose;		//johnfitz -- animation lerping
 	float					movelerpstart;	//johnfitz -- transform lerping
 	vec3_t					previousorigin;	//johnfitz -- transform lerping
 	vec3_t					currentorigin;	//johnfitz -- transform lerping
 	vec3_t					previousangles;	//johnfitz -- transform lerping
 	vec3_t					currentangles;	//johnfitz -- transform lerping
+
+	struct trailstate_s		*trailstate;	//spike -- managed by the particle system, so we don't loose our position and spawn the wrong number of particles, and we can track beams etc
+	struct trailstate_s		*emitstate;		//spike -- for effects which are not so static.
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
@@ -122,6 +140,7 @@ typedef struct
 	float		fov_x, fov_y;
 
 	int			ambientlight;
+	qboolean	drawworld;
 } refdef_t;
 
 

@@ -64,28 +64,46 @@ typedef struct {
 	float blend;
 	vec3_t origin;
 	vec3_t angles;
+	bonepose_t *bonestate;
 } lerpdata_t;
 //johnfitz
 
-static GLuint r_alias_program;
+enum
+{
+	ALIAS_GLSL_BASIC,
+	ALIAS_GLSL_SKELETAL,
+	ALIAS_GLSL_MODES
+};
+typedef struct
+{
+	int maxbones;
 
-// uniforms used in vert shader
-static GLuint blendLoc;
-static GLuint shadevectorLoc;
-static GLuint lightColorLoc;
+	GLuint program;
 
-// uniforms used in frag shader
-static GLuint texLoc;
-static GLuint fullbrightTexLoc;
-static GLuint useFullbrightTexLoc;
-static GLuint useOverbrightLoc;
-static GLuint useAlphaTestLoc;
+	// uniforms used in vert shader
+	GLuint bonesLoc;
+	GLuint blendLoc;
+	GLuint shadevectorLoc;
+	GLuint lightColorLoc;
+
+	// uniforms used in frag shader
+	GLuint texLoc;
+	GLuint fullbrightTexLoc;
+	GLuint useFullbrightTexLoc;
+	GLuint useOverbrightLoc;
+	GLuint useAlphaTestLoc;
+} aliasglsl_t;
+static aliasglsl_t r_alias_glsl[ALIAS_GLSL_MODES];
 
 #define pose1VertexAttrIndex 0
 #define pose1NormalAttrIndex 1
 #define pose2VertexAttrIndex 2
 #define pose2NormalAttrIndex 3
 #define texCoordsAttrIndex 4
+#define vertColoursAttrIndex 5
+
+#define boneWeightAttrIndex pose2VertexAttrIndex
+#define boneIndexAttrIndex pose2NormalAttrIndex
 
 /*
 =============
@@ -95,10 +113,20 @@ Returns the offset of the first vertex's meshxyz_t.xyz in the vbo for the given
 model and pose.
 =============
 */
-static void *GLARB_GetXYZOffset (aliashdr_t *hdr, int pose)
+static void *GLARB_GetXYZOffset_MDL (aliashdr_t *hdr, int pose)
 {
-	const int xyzoffs = offsetof (meshxyz_t, xyz);
-	return (void *) (currententity->model->vboxyzofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_t)) + xyzoffs);
+	const size_t xyzoffs = offsetof (meshxyz_mdl_t, xyz);
+	return currententity->model->meshvboptr+(hdr->vbovertofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_mdl_t)) + xyzoffs);
+}
+static void *GLARB_GetXYZOffset_MDLQF (aliashdr_t *hdr, int pose)
+{
+	const size_t xyzoffs = offsetof (meshxyz_mdl16_t, xyz);
+	return currententity->model->meshvboptr+(hdr->vbovertofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_mdl16_t)) + xyzoffs);
+}
+static void *GLARB_GetXYZOffset_MD3 (aliashdr_t *hdr, int pose)
+{
+	const size_t xyzoffs = offsetof (meshxyz_md3_t, xyz);
+	return currententity->model->meshvboptr+(hdr->vbovertofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_md3_t)) + xyzoffs);
 }
 
 /*
@@ -109,10 +137,20 @@ Returns the offset of the first vertex's meshxyz_t.normal in the vbo for the
 given model and pose.
 =============
 */
-static void *GLARB_GetNormalOffset (aliashdr_t *hdr, int pose)
+static void *GLARB_GetNormalOffset_MDL (aliashdr_t *hdr, int pose)
 {
-	const int normaloffs = offsetof (meshxyz_t, normal);
-	return (void *)(currententity->model->vboxyzofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_t)) + normaloffs);
+	const size_t normaloffs = offsetof (meshxyz_mdl_t, normal);
+	return currententity->model->meshvboptr+(hdr->vbovertofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_mdl_t)) + normaloffs);
+}
+static void *GLARB_GetNormalOffset_MDLQF (aliashdr_t *hdr, int pose)
+{
+	const size_t normaloffs = offsetof (meshxyz_mdl16_t, normal);
+	return currententity->model->meshvboptr+(hdr->vbovertofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_mdl16_t)) + normaloffs);
+}
+static void *GLARB_GetNormalOffset_MD3 (aliashdr_t *hdr, int pose)
+{
+	const size_t normaloffs = offsetof (meshxyz_md3_t, normal);
+	return currententity->model->meshvboptr+(hdr->vbovertofs + (hdr->numverts_vbo * pose * sizeof (meshxyz_md3_t)) + normaloffs);
 }
 
 /*
@@ -122,25 +160,39 @@ GLAlias_CreateShaders
 */
 void GLAlias_CreateShaders (void)
 {
+	int i;
+	aliasglsl_t *glsl;
+	char processedVertSource[8192], *defines;
 	const glsl_attrib_binding_t bindings[] = {
 		{ "TexCoords", texCoordsAttrIndex },
 		{ "Pose1Vert", pose1VertexAttrIndex },
 		{ "Pose1Normal", pose1NormalAttrIndex },
 		{ "Pose2Vert", pose2VertexAttrIndex },
-		{ "Pose2Normal", pose2NormalAttrIndex }
+		{ "Pose2Normal", pose2NormalAttrIndex },
+		{ "VertColours", vertColoursAttrIndex }
 	};
 
 	const GLchar *vertSource = \
 		"#version 110\n"
+		"%s"
 		"\n"
-		"uniform float Blend;\n"
 		"uniform vec3 ShadeVector;\n"
 		"uniform vec4 LightColor;\n"
 		"attribute vec4 TexCoords; // only xy are used \n"
 		"attribute vec4 Pose1Vert;\n"
 		"attribute vec3 Pose1Normal;\n"
+		"#ifdef SKELETAL\n"
+		"#define BoneWeight Pose2Vert\n"
+		"#define BoneIndex Pose2Normal\n"
+		"attribute vec4 BoneWeight;\n"
+		"attribute vec4 BoneIndex;\n"
+		"attribute vec4 VertColours;\n"
+		"uniform vec4 BoneTable[MAXBONES*3];\n" //fixme: should probably try to use a UBO or SSBO.
+		"#else\n"
+		"uniform float Blend;\n"
 		"attribute vec4 Pose2Vert;\n"
 		"attribute vec3 Pose2Normal;\n"
+		"#endif\n"
 		"\n"
 		"varying float FogFragCoord;\n"
 		"\n"
@@ -156,12 +208,33 @@ void GLAlias_CreateShaders (void)
 		"void main()\n"
 		"{\n"
 		"	gl_TexCoord[0] = TexCoords;\n"
+		"#ifdef SKELETAL\n"
+		"	mat4 wmat;"
+		"	wmat[0]  = BoneTable[0+3*int(BoneIndex.x)] * BoneWeight.x;"
+		"	wmat[0] += BoneTable[0+3*int(BoneIndex.y)] * BoneWeight.y;"
+		"	wmat[0] += BoneTable[0+3*int(BoneIndex.z)] * BoneWeight.z;"
+		"	wmat[0] += BoneTable[0+3*int(BoneIndex.w)] * BoneWeight.w;"
+		"	wmat[1]  = BoneTable[1+3*int(BoneIndex.x)] * BoneWeight.x;"
+		"	wmat[1] += BoneTable[1+3*int(BoneIndex.y)] * BoneWeight.y;"
+		"	wmat[1] += BoneTable[1+3*int(BoneIndex.z)] * BoneWeight.z;"
+		"	wmat[1] += BoneTable[1+3*int(BoneIndex.w)] * BoneWeight.w;"
+		"	wmat[2]  = BoneTable[2+3*int(BoneIndex.x)] * BoneWeight.x;"
+		"	wmat[2] += BoneTable[2+3*int(BoneIndex.y)] * BoneWeight.y;"
+		"	wmat[2] += BoneTable[2+3*int(BoneIndex.z)] * BoneWeight.z;"
+		"	wmat[2] += BoneTable[2+3*int(BoneIndex.w)] * BoneWeight.w;"
+		"	wmat[3] = vec4(0.0,0.0,0.0,1.0);\n"
+		"	vec4 lerpedVert = (vec4(Pose1Vert.xyz, 1.0) * wmat);\n"
+		"	float dot1 = r_avertexnormal_dot(normalize((vec4(Pose1Normal.xyz, 0.0) * wmat).xyz));\n"
+		"#else\n"
 		"	vec4 lerpedVert = mix(vec4(Pose1Vert.xyz, 1.0), vec4(Pose2Vert.xyz, 1.0), Blend);\n"
+		"	float dot1 = mix(r_avertexnormal_dot(Pose1Normal), r_avertexnormal_dot(Pose2Normal), Blend);\n"
+		"#endif\n"
 		"	gl_Position = gl_ModelViewProjectionMatrix * lerpedVert;\n"
 		"	FogFragCoord = gl_Position.w;\n"
-		"	float dot1 = r_avertexnormal_dot(Pose1Normal);\n"
-		"	float dot2 = r_avertexnormal_dot(Pose2Normal);\n"
-		"	gl_FrontColor = LightColor * vec4(vec3(mix(dot1, dot2, Blend)), 1.0);\n"
+		"	gl_FrontColor = LightColor * vec4(vec3(dot1), 1.0);\n"
+		"#ifdef SKELETAL\n"
+		"	gl_FrontColor *= VertColours;\n"	//this is basically only useful for vertex alphas.
+		"#endif\n"
 		"}\n";
 
 	const GLchar *fragSource = \
@@ -187,28 +260,54 @@ void GLAlias_CreateShaders (void)
 		"		result += texture2D(FullbrightTex, gl_TexCoord[0].xy);\n"
 		"	result = clamp(result, 0.0, 1.0);\n"
 		"	float fog = exp(-gl_Fog.density * gl_Fog.density * FogFragCoord * FogFragCoord);\n"
-		"	fog = clamp(fog, 0.0, 1.0);\n"
-		"	result = mix(gl_Fog.color, result, fog);\n"
-		"	result.a = gl_Color.a;\n" // FIXME: This will make almost transparent things cut holes though heavy fog
+		"	fog = clamp(fog, 0.0, 1.0) * gl_Fog.color.a;\n"
+		"	result.rgb = mix(gl_Fog.color.rgb, result.rgb, fog);\n"
+		"	result.a *= gl_Color.a;\n" // FIXME: This will make almost transparent things cut holes though heavy fog
 		"	gl_FragColor = result;\n"
 		"}\n";
 
 	if (!gl_glsl_alias_able)
 		return;
 
-	r_alias_program = GL_CreateProgram (vertSource, fragSource, sizeof(bindings)/sizeof(bindings[0]), bindings);
-
-	if (r_alias_program != 0)
+	for (i = 0; i < ALIAS_GLSL_MODES; i++)
 	{
-	// get uniform locations
-		blendLoc = GL_GetUniformLocation (&r_alias_program, "Blend");
-		shadevectorLoc = GL_GetUniformLocation (&r_alias_program, "ShadeVector");
-		lightColorLoc = GL_GetUniformLocation (&r_alias_program, "LightColor");
-		texLoc = GL_GetUniformLocation (&r_alias_program, "Tex");
-		fullbrightTexLoc = GL_GetUniformLocation (&r_alias_program, "FullbrightTex");
-		useFullbrightTexLoc = GL_GetUniformLocation (&r_alias_program, "UseFullbrightTex");
-		useOverbrightLoc = GL_GetUniformLocation (&r_alias_program, "UseOverbright");
-		useAlphaTestLoc = GL_GetUniformLocation (&r_alias_program, "UseAlphaTest");
+		glsl = &r_alias_glsl[i];
+
+		if (i == ALIAS_GLSL_SKELETAL)
+		{
+			defines = "#define SKELETAL\n#define MAXBONES 64\n";
+			glsl->maxbones = 64;
+		}
+		else
+		{
+			defines = "";
+			glsl->maxbones = 0;
+		}
+		q_snprintf(processedVertSource, sizeof(processedVertSource), vertSource, defines);
+
+		glsl->program = GL_CreateProgram (processedVertSource, fragSource, sizeof(bindings)/sizeof(bindings[0]), bindings);
+
+		if (glsl->program != 0)
+		{
+		// get uniform locations
+			if (i == ALIAS_GLSL_SKELETAL)
+			{
+				glsl->bonesLoc = GL_GetUniformLocation (&glsl->program, "BoneTable");
+				glsl->blendLoc = -1;
+			}
+			else
+			{
+				glsl->bonesLoc = -1;
+				glsl->blendLoc = GL_GetUniformLocation (&glsl->program, "Blend");
+			}
+			glsl->shadevectorLoc = GL_GetUniformLocation (&glsl->program, "ShadeVector");
+			glsl->lightColorLoc = GL_GetUniformLocation (&glsl->program, "LightColor");
+			glsl->texLoc = GL_GetUniformLocation (&glsl->program, "Tex");
+			glsl->fullbrightTexLoc = GL_GetUniformLocation (&glsl->program, "FullbrightTex");
+			glsl->useFullbrightTexLoc = GL_GetUniformLocation (&glsl->program, "UseFullbrightTex");
+			glsl->useOverbrightLoc = GL_GetUniformLocation (&glsl->program, "UseOverbright");
+			glsl->useAlphaTestLoc = GL_GetUniformLocation (&glsl->program, "UseAlphaTest");
+		}
 	}
 }
 
@@ -226,7 +325,7 @@ Supports optional overbright, optional fullbright pixels.
 Based on code by MH from RMQEngine
 =============
 */
-void GL_DrawAliasFrame_GLSL (aliashdr_t *paliashdr, lerpdata_t lerpdata, gltexture_t *tx, gltexture_t *fb)
+void GL_DrawAliasFrame_GLSL (aliasglsl_t *glsl, aliashdr_t *paliashdr, lerpdata_t lerpdata, gltexture_t *tx, gltexture_t *fb)
 {
 	float	blend;
 
@@ -239,7 +338,7 @@ void GL_DrawAliasFrame_GLSL (aliashdr_t *paliashdr, lerpdata_t lerpdata, gltextu
 		blend = 0;
 	}
 
-	GL_UseProgramFunc (r_alias_program);
+	GL_UseProgramFunc (glsl->program);
 
 	GL_BindBuffer (GL_ARRAY_BUFFER, currententity->model->meshvbo);
 	GL_BindBuffer (GL_ELEMENT_ARRAY_BUFFER, currententity->model->meshindexesvbo);
@@ -250,22 +349,63 @@ void GL_DrawAliasFrame_GLSL (aliashdr_t *paliashdr, lerpdata_t lerpdata, gltextu
 	GL_EnableVertexAttribArrayFunc (pose1NormalAttrIndex);
 	GL_EnableVertexAttribArrayFunc (pose2NormalAttrIndex);
 
-	GL_VertexAttribPointerFunc (texCoordsAttrIndex, 2, GL_FLOAT, GL_FALSE, 0, (void *)(intptr_t)currententity->model->vbostofs);
-	GL_VertexAttribPointerFunc (pose1VertexAttrIndex, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof (meshxyz_t), GLARB_GetXYZOffset (paliashdr, lerpdata.pose1));
-	GL_VertexAttribPointerFunc (pose2VertexAttrIndex, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof (meshxyz_t), GLARB_GetXYZOffset (paliashdr, lerpdata.pose2));
-// GL_TRUE to normalize the signed bytes to [-1 .. 1]
-	GL_VertexAttribPointerFunc (pose1NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_t), GLARB_GetNormalOffset (paliashdr, lerpdata.pose1));
-	GL_VertexAttribPointerFunc (pose2NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_t), GLARB_GetNormalOffset (paliashdr, lerpdata.pose2));
+	switch(paliashdr->poseverttype)
+	{
+	case PV_QUAKE1:
+		GL_VertexAttribPointerFunc (texCoordsAttrIndex, 2, GL_FLOAT, GL_FALSE, 0, currententity->model->meshvboptr+paliashdr->vbostofs);
+
+		GL_VertexAttribPointerFunc (pose1VertexAttrIndex, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof (meshxyz_mdl_t), GLARB_GetXYZOffset_MDL (paliashdr, lerpdata.pose1));
+		GL_VertexAttribPointerFunc (pose2VertexAttrIndex, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof (meshxyz_mdl_t), GLARB_GetXYZOffset_MDL (paliashdr, lerpdata.pose2));
+		// GL_TRUE to normalize the signed bytes to [-1 .. 1]
+		GL_VertexAttribPointerFunc (pose1NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_mdl_t), GLARB_GetNormalOffset_MDL (paliashdr, lerpdata.pose1));
+		GL_VertexAttribPointerFunc (pose2NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_mdl_t), GLARB_GetNormalOffset_MDL (paliashdr, lerpdata.pose2));
+		break;
+	case PV_QUAKEFORGE:
+		GL_VertexAttribPointerFunc (texCoordsAttrIndex, 2, GL_FLOAT, GL_FALSE, 0, currententity->model->meshvboptr+paliashdr->vbostofs);
+
+		GL_VertexAttribPointerFunc (pose1VertexAttrIndex, 4, GL_UNSIGNED_SHORT, GL_FALSE, sizeof (meshxyz_mdl16_t), GLARB_GetXYZOffset_MDLQF (paliashdr, lerpdata.pose1));
+		GL_VertexAttribPointerFunc (pose2VertexAttrIndex, 4, GL_UNSIGNED_SHORT, GL_FALSE, sizeof (meshxyz_mdl16_t), GLARB_GetXYZOffset_MDLQF (paliashdr, lerpdata.pose2));
+		// GL_TRUE to normalize the signed bytes to [-1 .. 1]
+		GL_VertexAttribPointerFunc (pose1NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_mdl16_t), GLARB_GetNormalOffset_MDLQF (paliashdr, lerpdata.pose1));
+		GL_VertexAttribPointerFunc (pose2NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_mdl16_t), GLARB_GetNormalOffset_MDLQF (paliashdr, lerpdata.pose2));
+		break;
+	case PV_QUAKE3:
+		GL_VertexAttribPointerFunc (texCoordsAttrIndex, 2, GL_FLOAT, GL_FALSE, 0, currententity->model->meshvboptr+paliashdr->vbostofs);
+
+		GL_VertexAttribPointerFunc (pose1VertexAttrIndex, 4, GL_SHORT, GL_FALSE, sizeof (meshxyz_md3_t), GLARB_GetXYZOffset_MD3 (paliashdr, lerpdata.pose1));
+		GL_VertexAttribPointerFunc (pose2VertexAttrIndex, 4, GL_SHORT, GL_FALSE, sizeof (meshxyz_md3_t), GLARB_GetXYZOffset_MD3 (paliashdr, lerpdata.pose2));
+		// GL_TRUE to normalize the signed bytes to [-1 .. 1]
+		GL_VertexAttribPointerFunc (pose1NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_md3_t), GLARB_GetNormalOffset_MD3 (paliashdr, lerpdata.pose1));
+		GL_VertexAttribPointerFunc (pose2NormalAttrIndex, 4, GL_BYTE, GL_TRUE, sizeof (meshxyz_md3_t), GLARB_GetNormalOffset_MD3 (paliashdr, lerpdata.pose2));
+		break;
+	case PV_IQM:
+		{
+			const iqmvert_t *pose = (const iqmvert_t*)(currententity->model->meshvboptr+paliashdr->vbovertofs + (paliashdr->numverts_vbo * 0 * sizeof (iqmvert_t)));
+
+			GL_VertexAttribPointerFunc (pose1VertexAttrIndex, 3, GL_FLOAT, GL_FALSE, sizeof (iqmvert_t), pose->xyz);
+			GL_VertexAttribPointerFunc (pose1NormalAttrIndex, 3, GL_FLOAT, GL_FALSE, sizeof (iqmvert_t), pose->norm);
+			GL_VertexAttribPointerFunc (boneWeightAttrIndex, 4, GL_FLOAT, GL_FALSE, sizeof (iqmvert_t), pose->weight);
+			GL_VertexAttribPointerFunc (boneIndexAttrIndex, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof (iqmvert_t), pose->idx);
+			GL_VertexAttribPointerFunc (texCoordsAttrIndex, 2, GL_FLOAT, GL_FALSE, sizeof (iqmvert_t), pose->st);
+
+			GL_EnableVertexAttribArrayFunc (vertColoursAttrIndex);
+			GL_VertexAttribPointerFunc (vertColoursAttrIndex, 4, GL_FLOAT, GL_FALSE, sizeof (iqmvert_t), pose->rgba);
+		}
+		break;
+	}
 
 // set uniforms
-	GL_Uniform1fFunc (blendLoc, blend);
-	GL_Uniform3fFunc (shadevectorLoc, shadevector[0], shadevector[1], shadevector[2]);
-	GL_Uniform4fFunc (lightColorLoc, lightcolor[0], lightcolor[1], lightcolor[2], entalpha);
-	GL_Uniform1iFunc (texLoc, 0);
-	GL_Uniform1iFunc (fullbrightTexLoc, 1);
-	GL_Uniform1iFunc (useFullbrightTexLoc, (fb != NULL) ? 1 : 0);
-	GL_Uniform1fFunc (useOverbrightLoc, overbright ? 1 : 0);
-	GL_Uniform1iFunc (useAlphaTestLoc, (currententity->model->flags & MF_HOLEY) ? 1 : 0);
+	if (glsl->blendLoc != -1)
+		GL_Uniform1fFunc (glsl->blendLoc, blend);
+	if (glsl->bonesLoc != -1)
+		GL_Uniform4fvFunc (glsl->bonesLoc, paliashdr->numbones*3, lerpdata.bonestate->mat);
+	GL_Uniform3fFunc (glsl->shadevectorLoc, shadevector[0], shadevector[1], shadevector[2]);
+	GL_Uniform4fFunc (glsl->lightColorLoc, lightcolor[0], lightcolor[1], lightcolor[2], entalpha);
+	GL_Uniform1iFunc (glsl->texLoc, 0);
+	GL_Uniform1iFunc (glsl->fullbrightTexLoc, 1);
+	GL_Uniform1iFunc (glsl->useFullbrightTexLoc, (fb != NULL) ? 1 : 0);
+	GL_Uniform1fFunc (glsl->useOverbrightLoc, overbright ? 1 : 0);
+	GL_Uniform1iFunc (glsl->useAlphaTestLoc, (currententity->model->flags & MF_HOLEY) ? 1 : 0);
 
 // set textures
 	GL_SelectTexture (GL_TEXTURE0);
@@ -278,7 +418,7 @@ void GL_DrawAliasFrame_GLSL (aliashdr_t *paliashdr, lerpdata_t lerpdata, gltextu
 	}
 
 // draw
-	glDrawElements (GL_TRIANGLES, paliashdr->numindexes, GL_UNSIGNED_SHORT, (void *)(intptr_t)currententity->model->vboindexofs);
+	glDrawElements (GL_TRIANGLES, paliashdr->numindexes, GL_UNSIGNED_SHORT, currententity->model->meshindexesvboptr+paliashdr->eboofs);
 
 // clean up
 	GL_DisableVertexAttribArrayFunc (texCoordsAttrIndex);
@@ -286,6 +426,7 @@ void GL_DrawAliasFrame_GLSL (aliashdr_t *paliashdr, lerpdata_t lerpdata, gltextu
 	GL_DisableVertexAttribArrayFunc (pose2VertexAttrIndex);
 	GL_DisableVertexAttribArrayFunc (pose1NormalAttrIndex);
 	GL_DisableVertexAttribArrayFunc (pose2NormalAttrIndex);
+	GL_DisableVertexAttribArrayFunc (vertColoursAttrIndex);
 
 	GL_UseProgramFunc (0);
 	GL_SelectTexture (GL_TEXTURE0);
@@ -295,111 +436,292 @@ void GL_DrawAliasFrame_GLSL (aliashdr_t *paliashdr, lerpdata_t lerpdata, gltextu
 
 /*
 =============
-GL_DrawAliasFrame -- johnfitz -- rewritten to support colored light, lerping, entalpha, multitexture, and r_drawflat
+GL_DrawAliasFrame
+-- johnfitz -- rewritten to support colored light, lerping, entalpha, multitexture, and r_drawflat
+-- spike -- rewritten to use vertex arrays, which should be slightly faster thanks to less branches+gl calls (note that this requires gl1.1, which we depend on anyway for texture objects, and is pretty much universal.
 =============
 */
 void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 {
-	float	vertcolor[4];
-	trivertx_t *verts1, *verts2;
-	int		*commands;
-	int		count;
-	float	u,v;
+	static	vec3_t vpos[65536];
+	static	vec4_t vc[65536];
+	int i;
 	float	blend, iblend;
-	qboolean lerping;
+	const float *texcoords = (const float *)(currententity->model->meshvboptr+paliashdr->vbostofs);
+	int texcoordstride = 0;
 
 	if (lerpdata.pose1 != lerpdata.pose2)
 	{
-		lerping = true;
-		verts1  = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-		verts2  = verts1;
-		verts1 += lerpdata.pose1 * paliashdr->poseverts;
-		verts2 += lerpdata.pose2 * paliashdr->poseverts;
 		blend = lerpdata.blend;
-		iblend = 1.0f - blend;
+		iblend = 1.0-blend;
 	}
 	else // poses the same means either 1. the entity has paused its animation, or 2. r_lerpmodels is disabled
 	{
-		lerping = false;
-		verts1  = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-		verts2  = verts1; // avoid bogus compiler warning
-		verts1 += lerpdata.pose1 * paliashdr->poseverts;
-		blend = iblend = 0; // avoid bogus compiler warning
+		blend = 1;
+		iblend = 0;
 	}
 
-	commands = (int *)((byte *)paliashdr + paliashdr->commands);
+	//pose1*iblend + pose2*blend
 
-	vertcolor[3] = entalpha; //never changes, so there's no need to put this inside the loop
-
-	while (1)
+	if (shading && r_drawflat_cheatsafe)
 	{
-		// get the vertex count and primitive type
-		count = *commands++;
-		if (!count)
-			break;		// done
+		shading = false;
+		glColor4f (rand()%256/255.0, rand()%256/255.0, rand()%256/255.0, entalpha);
+	}
 
-		if (count < 0)
+	glEnableClientState(GL_VERTEX_ARRAY);
+	switch(paliashdr->poseverttype)
+	{
+	case PV_QUAKE1:
+	case PV_QUAKEFORGE:	//just going to ignore the extra data here.
 		{
-			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
-		}
-		else
-			glBegin (GL_TRIANGLE_STRIP);
+			trivertx_t *verts1 = (trivertx_t*)((byte *)paliashdr + paliashdr->vertexes) + lerpdata.pose1 * paliashdr->numverts_vbo*(paliashdr->poseverttype==PV_QUAKEFORGE?2:1);
+			trivertx_t *verts2 = (trivertx_t*)((byte *)paliashdr + paliashdr->vertexes) + lerpdata.pose2 * paliashdr->numverts_vbo*(paliashdr->poseverttype==PV_QUAKEFORGE?2:1);
 
-		do
-		{
-			u = ((float *)commands)[0];
-			v = ((float *)commands)[1];
-			if (mtexenabled)
+			if (iblend)
 			{
-				GL_MTexCoord2fFunc (GL_TEXTURE0_ARB, u, v);
-				GL_MTexCoord2fFunc (GL_TEXTURE1_ARB, u, v);
+				for (i = 0; i < paliashdr->numverts_vbo; i++)
+				{
+					vpos[i][0] = verts1[i].v[0] * iblend + blend * verts2[i].v[0];
+					vpos[i][1] = verts1[i].v[1] * iblend + blend * verts2[i].v[1];
+					vpos[i][2] = verts1[i].v[2] * iblend + blend * verts2[i].v[2];
+				}
+				GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+				glVertexPointer(3, GL_FLOAT, sizeof (vpos[0]), vpos);
+
+				if (shading)
+				{
+					for (i = 0; i < paliashdr->numverts_vbo; i++)
+					{
+						vc[i][0] = (shadedots[verts1->lightnormalindex]*iblend + shadedots[verts2->lightnormalindex]*blend) * lightcolor[0];
+						vc[i][1] = (shadedots[verts1->lightnormalindex]*iblend + shadedots[verts2->lightnormalindex]*blend) * lightcolor[1];
+						vc[i][2] = (shadedots[verts1->lightnormalindex]*iblend + shadedots[verts2->lightnormalindex]*blend) * lightcolor[2];
+						vc[i][3] = entalpha;
+					}
+					glEnableClientState(GL_COLOR_ARRAY);
+					glColorPointer(4, GL_FLOAT, sizeof(*vc), vc);
+				}
 			}
 			else
-				glTexCoord2f (u, v);
+			{
+				if (shading)
+				{
+					for (i = 0; i < paliashdr->numverts_vbo; i++)
+					{
+						vc[i][0] = shadedots[verts2->lightnormalindex] * lightcolor[0];
+						vc[i][1] = shadedots[verts2->lightnormalindex] * lightcolor[1];
+						vc[i][2] = shadedots[verts2->lightnormalindex] * lightcolor[2];
+						vc[i][3] = entalpha;
+					}
+					glEnableClientState(GL_COLOR_ARRAY);
+					GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+					glColorPointer(4, GL_FLOAT, 0, vc);
+				}
 
-			commands += 2;
+				//glVertexPointer may not take GL_UNSIGNED_BYTE, which means we can't use our vbos. attribute 0 MAY be vertex coords, but I don't want to depend on that.
+				for (i = 0; i < paliashdr->numverts_vbo; i++)
+				{
+					vpos[i][0] = verts2[i].v[0];
+					vpos[i][1] = verts2[i].v[1];
+					vpos[i][2] = verts2[i].v[2];
+				}
+				GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+				glVertexPointer(3, GL_FLOAT, sizeof (vpos[0]), vpos);
+			}
+		}
+		break;
+	case PV_QUAKE3:
+		{
+			md3XyzNormal_t *verts1 = (md3XyzNormal_t*)((byte *)paliashdr + paliashdr->vertexes) + lerpdata.pose1 * paliashdr->numverts_vbo;
+			md3XyzNormal_t *verts2 = (md3XyzNormal_t*)((byte *)paliashdr + paliashdr->vertexes) + lerpdata.pose2 * paliashdr->numverts_vbo;
+
+			if (iblend)
+			{
+				for (i = 0; i < paliashdr->numverts_vbo; i++)
+				{
+					vpos[i][0] = verts1[i].xyz[0] * iblend + blend * verts2[i].xyz[0];
+					vpos[i][1] = verts1[i].xyz[1] * iblend + blend * verts2[i].xyz[1];
+					vpos[i][2] = verts1[i].xyz[2] * iblend + blend * verts2[i].xyz[2];
+				}
+				GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+				glVertexPointer(3, GL_FLOAT, sizeof (vpos[0]), vpos);
+
+				if (shading)
+				{
+					for (i = 0; i < paliashdr->numverts_vbo; i++)
+					{
+						vec3_t n;
+						float dot;
+						// map the normal coordinates in [-1..1] to [-127..127] and store in an unsigned char.
+						// this introduces some error (less than 0.004), but the normals were very coarse
+						// to begin with
+						//this should be a table.
+						float lat = (float)verts2[i].latlong[0] * (2 * M_PI)*(1.0 / 255.0);
+						float lng = (float)verts2[i].latlong[1] * (2 * M_PI)*(1.0 / 255.0);
+						n[0] = blend * cos ( lng ) * sin ( lat );
+						n[1] = blend * sin ( lng ) * sin ( lat );
+						n[2] = blend * cos ( lat );
+						lat = (float)verts1[i].latlong[0] * (2 * M_PI)*(1.0 / 255.0);
+						lng = (float)verts1[i].latlong[1] * (2 * M_PI)*(1.0 / 255.0);
+						n[0] += iblend * cos ( lng ) * sin ( lat );
+						n[1] += iblend * sin ( lng ) * sin ( lat );
+						n[2] += iblend * cos ( lat );
+						dot = DotProduct(n, shadevector);
+						if (dot < 0.0)	//bizzare maths guessed by mh
+							dot = 1.0 + dot * (13.0 / 44.0);
+						else
+							dot = 1.0 + dot;
+						vc[i][0] = dot * lightcolor[0];
+						vc[i][1] = dot * lightcolor[1];
+						vc[i][2] = dot * lightcolor[2];
+						vc[i][3] = entalpha;
+					}
+					glEnableClientState(GL_COLOR_ARRAY);
+					glColorPointer(4, GL_FLOAT, 0, vc);
+				}
+			}
+			else
+			{
+				if (shading)
+				{
+					for (i = 0; i < paliashdr->numverts_vbo; i++)
+					{
+						vec3_t n;
+						float dot;
+						// map the normal coordinates in [-1..1] to [-127..127] and store in an unsigned char.
+						// this introduces some error (less than 0.004), but the normals were very coarse
+						// to begin with
+						//this should be a table.
+						float lat = (float)verts2[i].latlong[0] * (2 * M_PI)*(1.0 / 255.0);
+						float lng = (float)verts2[i].latlong[1] * (2 * M_PI)*(1.0 / 255.0);
+						n[0] = cos ( lng ) * sin ( lat );
+						n[1] = sin ( lng ) * sin ( lat );
+						n[2] = cos ( lat );
+						dot = DotProduct(n, shadevector);
+						if (dot < 0.0)	//bizzare maths guessed by mh
+							dot = 1.0 + dot * (13.0 / 44.0);
+						else
+							dot = 1.0 + dot;
+						vc[i][0] = dot * lightcolor[0];
+						vc[i][1] = dot * lightcolor[1];
+						vc[i][2] = dot * lightcolor[2];
+						vc[i][3] = entalpha;
+					}
+					glEnableClientState(GL_COLOR_ARRAY);
+					GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+					glColorPointer(4, GL_FLOAT, 0, vc);
+				}
+				GL_BindBuffer (GL_ARRAY_BUFFER, currententity->model->meshvbo);
+				glVertexPointer(3, GL_SHORT, sizeof (meshxyz_md3_t), GLARB_GetXYZOffset_MD3 (paliashdr, lerpdata.pose2));
+			}
+		}
+		break;
+
+	case PV_IQM:
+		{	//iqm does its blending using bones instead of verts, so we only have to care about one pose here
+			int morphpose = 0;
+			const iqmvert_t *verts2 = (const iqmvert_t*)((byte *)paliashdr + paliashdr->vertexes) + morphpose * paliashdr->numverts_vbo;
+			const iqmvert_t *vboverts2 = (const iqmvert_t*)(currententity->model->meshvboptr+paliashdr->vbovertofs) + (paliashdr->numverts_vbo * morphpose);
 
 			if (shading)
 			{
-				if (r_drawflat_cheatsafe)
+				for (i = 0; i < paliashdr->numverts_vbo; i++)
 				{
-					srand(count * (unsigned int)(src_offset_t)commands);
-					glColor3f (rand()%256/255.0, rand()%256/255.0, rand()%256/255.0);
+					float dot;
+					dot = DotProduct(verts2[i].norm, shadevector);	//NOTE: ignores animated normals
+					if (dot < 0.0)	//bizzare maths guessed by mh
+						dot = 1.0 + dot * (13.0 / 44.0);
+					else
+						dot = 1.0 + dot;
+					vc[i][0] = dot * lightcolor[0] * verts2[i].rgba[0];
+					vc[i][1] = dot * lightcolor[1] * verts2[i].rgba[1];
+					vc[i][2] = dot * lightcolor[2] * verts2[i].rgba[2];
+					vc[i][3] = entalpha * verts2[i].rgba[3];
 				}
-				else if (lerping)
-				{
-					vertcolor[0] = (shadedots[verts1->lightnormalindex]*iblend + shadedots[verts2->lightnormalindex]*blend) * lightcolor[0];
-					vertcolor[1] = (shadedots[verts1->lightnormalindex]*iblend + shadedots[verts2->lightnormalindex]*blend) * lightcolor[1];
-					vertcolor[2] = (shadedots[verts1->lightnormalindex]*iblend + shadedots[verts2->lightnormalindex]*blend) * lightcolor[2];
-					glColor4fv (vertcolor);
-				}
-				else
-				{
-					vertcolor[0] = shadedots[verts1->lightnormalindex] * lightcolor[0];
-					vertcolor[1] = shadedots[verts1->lightnormalindex] * lightcolor[1];
-					vertcolor[2] = shadedots[verts1->lightnormalindex] * lightcolor[2];
-					glColor4fv (vertcolor);
-				}
+				glEnableClientState(GL_COLOR_ARRAY);
+				GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+				glColorPointer(4, GL_FLOAT, 0, vc);
 			}
 
-			if (lerping)
-			{
-				glVertex3f (verts1->v[0]*iblend + verts2->v[0]*blend,
-							verts1->v[1]*iblend + verts2->v[1]*blend,
-							verts1->v[2]*iblend + verts2->v[2]*blend);
-				verts1++;
-				verts2++;
+			if (lerpdata.bonestate)
+			{	//oh dear. its animated. and we don't have any glsl to animate it for us.
+				bonepose_t pose;
+				const bonepose_t *in;
+				const float *xyz;
+				float w;
+				int j, k;
+				for (i = 0; i < paliashdr->numverts_vbo; i++)
+				{
+					//lerp the matrix... this is less of a nightmare in glsl...
+					in = lerpdata.bonestate + verts2[i].idx[0];
+					w = verts2[i].weight[0];
+					for (j = 0; j < 12; j++)
+						pose.mat[j] = in->mat[j] * w;
+					for (k = 1; k < 3; k++)
+					{
+						w = verts2[i].weight[k];
+						if (!w)
+							continue;
+						in = lerpdata.bonestate + verts2[i].idx[k];
+						for (j = 0; j < 12; j++)
+							pose.mat[j] += in->mat[j] * w;
+					}
+
+					xyz = verts2[i].xyz;
+					vpos[i][0] = xyz[0]*pose.mat[0] + xyz[1]*pose.mat[1] + xyz[2]*pose.mat[2] + pose.mat[3];
+					vpos[i][1] = xyz[0]*pose.mat[4] + xyz[1]*pose.mat[5] + xyz[2]*pose.mat[6] + pose.mat[7];
+					vpos[i][2] = xyz[0]*pose.mat[8] + xyz[1]*pose.mat[9] + xyz[2]*pose.mat[10] + pose.mat[11];
+				}
+
+				GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+				glVertexPointer(3, GL_FLOAT, 0, vpos);
 			}
 			else
 			{
-				glVertex3f (verts1->v[0], verts1->v[1], verts1->v[2]);
-				verts1++;
+				GL_BindBuffer (GL_ARRAY_BUFFER, currententity->model->meshvbo);
+				glVertexPointer(3, GL_FLOAT, sizeof (iqmvert_t), vboverts2->xyz);
 			}
-		} while (--count);
-
-		glEnd ();
+			texcoordstride = sizeof(iqmvert_t);
+			texcoords = vboverts2->st;
+		}
+		break;
 	}
+
+// set textures
+	GL_BindBuffer (GL_ARRAY_BUFFER, currententity->model->meshvbo);
+	if (mtexenabled)
+	{
+		GL_ClientActiveTextureFunc (GL_TEXTURE0);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, texcoordstride, texcoords);
+
+		GL_ClientActiveTextureFunc (GL_TEXTURE1);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, texcoordstride, texcoords);
+	}
+	else
+	{
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, texcoordstride, texcoords);
+	}
+
+// draw
+	GL_BindBuffer (GL_ELEMENT_ARRAY_BUFFER, currententity->model->meshindexesvbo);
+	glDrawElements (GL_TRIANGLES, paliashdr->numindexes, GL_UNSIGNED_SHORT, currententity->model->meshindexesvboptr + paliashdr->eboofs);
+	GL_BindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	GL_BindBuffer (GL_ARRAY_BUFFER, 0);
+
+// clean up
+	if (mtexenabled)
+	{
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		GL_ClientActiveTextureFunc (GL_TEXTURE0);
+	}
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+
 
 	rs_aliaspasses += paliashdr->numtris;
 }
@@ -409,9 +731,9 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 R_SetupAliasFrame -- johnfitz -- rewritten to support lerping
 =================
 */
-void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
+void R_SetupAliasFrame (aliashdr_t *paliashdr, entity_t *e, lerpdata_t *lerpdata)
 {
-	entity_t		*e = currententity;
+	int frame = e->frame;
 	int				posenum, numposes;
 
 	if ((frame >= paliashdr->numframes) || (frame < 0))
@@ -420,57 +742,133 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 		frame = 0;
 	}
 
-	posenum = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
-
-	if (numposes > 1)
+	if (e->lerpflags & LERP_EXPLICIT)
 	{
-		e->lerptime = paliashdr->frames[frame].interval;
-		posenum += (int)(cl.time / e->lerptime) % numposes;
+		int frame2 = e->lerp.snap.frame2;
+		float frac = e->lerp.snap.lerpfrac;
+		float time = cl.time;
+
+		if ((frame2 >= paliashdr->numframes) || (frame2 < 0))
+			frame2 = 0;
+
+		if (paliashdr->frames[(frac > 0.5)?frame2:frame].numposes > 1)
+		{	//our stronger sequence is a framegroup, but we can only do two-way blends.
+			if (frac > 0.5)
+			{
+				frame = frame2;
+				time = e->lerp.snap.time[1];
+			}
+			else
+				time = e->lerp.snap.time[0];
+
+			if (time < 0)
+				time = 0;	//just in case...
+			frac = (time / paliashdr->frames[frame].interval);
+			posenum = (int)frac;
+			lerpdata->blend = (frac - posenum);
+
+			posenum += paliashdr->frames[frame].firstpose;
+			numposes = paliashdr->frames[frame].numposes;
+
+			lerpdata->pose1 = (posenum)%numposes;
+			lerpdata->pose2 = (posenum+1)%numposes;
+		}
+		else
+		{
+			lerpdata->blend = frac;
+
+			lerpdata->pose1 = paliashdr->frames[frame].firstpose;
+			lerpdata->pose1 += (unsigned int)(e->lerp.snap.time[0]/paliashdr->frames[frame].interval) % paliashdr->frames[frame].numposes;
+
+			lerpdata->pose2 = paliashdr->frames[frame2].firstpose;
+			lerpdata->pose2 += (unsigned int)(e->lerp.snap.time[1]/paliashdr->frames[frame2].interval) % paliashdr->frames[frame].numposes;
+		}
 	}
 	else
-		e->lerptime = 0.1;
+	{
+		posenum = paliashdr->frames[frame].firstpose;
+		numposes = paliashdr->frames[frame].numposes;
 
-	if (e->lerpflags & LERP_RESETANIM) //kill any lerp in progress
-	{
-		e->lerpstart = 0;
-		e->previouspose = posenum;
-		e->currentpose = posenum;
-		e->lerpflags -= LERP_RESETANIM;
-	}
-	else if (e->currentpose != posenum) // pose changed, start new lerp
-	{
-		if (e->lerpflags & LERP_RESETANIM2) //defer lerping one more time
+		if (numposes > 1)
 		{
-			e->lerpstart = 0;
-			e->previouspose = posenum;
-			e->currentpose = posenum;
-			e->lerpflags -= LERP_RESETANIM2;
+			float time = cl.time + e->syncbase;	//Spike: Readded syncbase
+			if (time < 0)
+				time = 0;	//just in case...
+			e->lerp.state.lerptime = paliashdr->frames[frame].interval;	//FIXME: no per-frame intervals
+			posenum += (int)(time / e->lerp.state.lerptime) % numposes;
 		}
 		else
+			e->lerp.state.lerptime = 0.1;
+
+		if (e->lerpflags & LERP_RESETANIM) //kill any lerp in progress
 		{
-			e->lerpstart = cl.time;
-			e->previouspose = e->currentpose;
-			e->currentpose = posenum;
+			e->lerp.state.lerpstart = 0;
+			e->lerp.state.previouspose = posenum;
+			e->lerp.state.currentpose = posenum;
+			e->lerpflags -= LERP_RESETANIM;
+		}
+		else if (e->lerp.state.currentpose != posenum) // pose changed, start new lerp
+		{
+			if (e->lerpflags & LERP_RESETANIM2) //defer lerping one more time
+			{
+				e->lerp.state.lerpstart = 0;
+				e->lerp.state.previouspose = posenum;
+				e->lerp.state.currentpose = posenum;
+				e->lerpflags -= LERP_RESETANIM2;
+			}
+			else
+			{
+				e->lerp.state.lerpstart = cl.time;
+				e->lerp.state.previouspose = e->lerp.state.currentpose;
+				e->lerp.state.currentpose = posenum;
+			}
+		}
+
+		//set up values
+		if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
+		{
+			if (e->lerpflags & LERP_FINISH && numposes == 1)
+				lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerp.state.lerpstart) / (e->lerpfinish - e->lerp.state.lerpstart), 1.0f);
+			else
+				lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerp.state.lerpstart) / e->lerp.state.lerptime, 1.0f);
+			lerpdata->pose1 = e->lerp.state.previouspose;
+			lerpdata->pose2 = e->lerp.state.currentpose;
+		}
+		else //don't lerp
+		{
+			lerpdata->blend = 1;
+			lerpdata->pose1 = posenum;
+			lerpdata->pose2 = posenum;
 		}
 	}
 
-	//set up values
-	if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
+	if (paliashdr->numboneposes)
 	{
-		if (e->lerpflags & LERP_FINISH && numposes == 1)
-			lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerpstart) / (e->lerpfinish - e->lerpstart), 1.0f);
-		else
-			lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerpstart) / e->lerptime, 1.0f);
-		lerpdata->pose1 = e->previouspose;
-		lerpdata->pose2 = e->currentpose;
+		static bonepose_t inverted[256];
+		bonepose_t lerpbones[256], l;
+		int b, j;
+		const boneinfo_t *bi = (const boneinfo_t *)((byte*)paliashdr + paliashdr->boneinfo);
+		const bonepose_t *p1 = (const bonepose_t *)((byte*)paliashdr + paliashdr->boneposedata) + lerpdata->pose1*paliashdr->numbones;
+		const bonepose_t *p2 = (const bonepose_t *)((byte*)paliashdr + paliashdr->boneposedata) + lerpdata->pose2*paliashdr->numbones;
+		float w2 = lerpdata->blend;
+		float w1 = 1-w2;
+		for (b = 0; b < paliashdr->numbones; b++, p1++, p2++)
+		{
+			//interpolate it
+			for (j = 0; j < 12; j++)
+				l.mat[j] = p1->mat[j]*w1 + p2->mat[j]*w2;
+			//concat it onto the parent (relative->abs)
+			if (bi[b].parent < 0)
+				memcpy(lerpbones[b].mat, l.mat, sizeof(l.mat));
+			else
+				R_ConcatTransforms((void*)lerpbones[bi[b].parent].mat, (void*)l.mat, (void*)lerpbones[b].mat);
+			//and finally invert it
+			R_ConcatTransforms((void*)lerpbones[b].mat, (void*)bi[b].inverse.mat, (void*)inverted[b].mat);
+		}
+		lerpdata->bonestate = inverted;	//and now we can use it.
 	}
-	else //don't lerp
-	{
-		lerpdata->blend = 1;
-		lerpdata->pose1 = posenum;
-		lerpdata->pose2 = posenum;
-	}
+	else
+		lerpdata->bonestate = NULL;
 }
 
 /*
@@ -547,48 +945,64 @@ void R_SetupAliasLighting (entity_t	*e)
 	int			i;
 	int		quantizedangle;
 	float		radiansangle;
-	vec3_t		lpos;
+	float		*origin;
 
-	VectorCopy (e->origin, lpos);
-	// start the light trace from slightly above the origin
-	// this helps with models whose origin is below ground level, but are otherwise visible
-	// (e.g. some of the candles in the DOTM start map, which would otherwise appear black)
-	lpos[2] += e->model->maxs[2] * 0.5f;
-	R_LightPoint (lpos);
-
-	//add dlights
-	for (i=0 ; i<MAX_DLIGHTS ; i++)
+	if (!r_refdef.drawworld)
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
+	else
 	{
-		if (cl_dlights[i].die >= cl.time)
+		if (e->eflags & EFLAGS_VIEWMODEL)
 		{
-			VectorSubtract (currententity->origin, cl_dlights[i].origin, dist);
-			add = cl_dlights[i].radius - VectorLength(dist);
-			if (add > 0)
-				VectorMA (lightcolor, add, cl_dlights[i].color, lightcolor);
+			origin = r_refdef.vieworg;
+			R_LightPoint (origin);
 		}
-	}
-
-	// minimum light value on gun (24)
-	if (e == &cl.viewent)
-	{
-		add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-		if (add > 0.0f)
+		else
 		{
-			lightcolor[0] += add / 3.0f;
-			lightcolor[1] += add / 3.0f;
-			lightcolor[2] += add / 3.0f;
+			vec3_t		lpos;
+			origin = e->origin;
+			VectorCopy (origin, lpos);
+			// start the light trace from slightly above the origin
+			// this helps with models whose origin is below ground level, but are otherwise visible
+			// (e.g. some of the candles in the DOTM start map, which would otherwise appear black)
+			if (e->model->maxs[2] > 0)
+				lpos[2] += e->model->maxs[2] * 0.5f;
+			R_LightPoint (lpos);
 		}
-	}
 
-	// minimum light value on players (8)
-	if (currententity > cl_entities && currententity <= cl_entities + cl.maxclients)
-	{
-		add = 24.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-		if (add > 0.0f)
+		//add dlights
+		for (i=0 ; i<MAX_DLIGHTS ; i++)
 		{
-			lightcolor[0] += add / 3.0f;
-			lightcolor[1] += add / 3.0f;
-			lightcolor[2] += add / 3.0f;
+			if (cl_dlights[i].die >= cl.time)
+			{
+				VectorSubtract (origin, cl_dlights[i].origin, dist);
+				add = cl_dlights[i].radius - VectorLength(dist);
+				if (add > 0)
+					VectorMA (lightcolor, add, cl_dlights[i].color, lightcolor);
+			}
+		}
+
+		// minimum light value on gun (24)
+		if (e == &cl.viewent)
+		{
+			add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+			if (add > 0.0f)
+			{
+				lightcolor[0] += add / 3.0f;
+				lightcolor[1] += add / 3.0f;
+				lightcolor[2] += add / 3.0f;
+			}
+		}
+
+		// minimum light value on players (8)
+		if (e > cl.entities && e <= cl.entities + cl.maxclients)
+		{
+			add = 24.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+			if (add > 0.0f)
+			{
+				lightcolor[0] += add / 3.0f;
+				lightcolor[1] += add / 3.0f;
+				lightcolor[2] += add / 3.0f;
+			}
 		}
 	}
 
@@ -622,6 +1036,10 @@ void R_SetupAliasLighting (entity_t	*e)
 
 	shadedots = r_avertexnormal_dots[quantizedangle];
 	VectorScale (lightcolor, 1.0f / 200.0f, lightcolor);
+
+	lightcolor[0] *= e->netstate.colormod[0] / 32.0;
+	lightcolor[1] *= e->netstate.colormod[1] / 32.0;
+	lightcolor[2] *= e->netstate.colormod[2] / 32.0;
 }
 
 /*
@@ -631,34 +1049,53 @@ R_DrawAliasModel -- johnfitz -- almost completely rewritten
 */
 void R_DrawAliasModel (entity_t *e)
 {
+	aliasglsl_t *glsl;
 	aliashdr_t	*paliashdr;
 	int		anim, skinnum;
 	gltexture_t	*tx, *fb;
 	lerpdata_t	lerpdata;
 	qboolean	alphatest = !!(e->model->flags & MF_HOLEY);
+	int surf;
 	float		fovscale = 1.0f;
 
 	//
 	// setup pose/lerp data -- do it first so we don't miss updates due to culling
 	//
 	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
-	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
+	R_SetupAliasFrame (paliashdr, e, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 
-	//
-	// cull it
-	//
-	if (R_CullModelForEntity(e))
-		return;
+	glsl = &r_alias_glsl[(paliashdr->poseverttype==PV_IQM&&lerpdata.bonestate)?ALIAS_GLSL_SKELETAL:ALIAS_GLSL_BASIC];
 
-	//
-	// transform it
-	//
+	if (e->eflags & EFLAGS_VIEWMODEL)
+	{
+		//transform it relative to the view, by rebuilding the modelview matrix without the view position.
+		glPushMatrix ();
+		glLoadIdentity();
+		glRotatef (-90,  1, 0, 0);	    // put Z going up
+		glRotatef (90,  0, 0, 1);	    // put Z going up
+
+		glDepthRange (0, 0.3);
+	}
+	else
+	{
+		//
+		// cull it
+		//
+		if (R_CullModelForEntity(e))
+			return;
+
+		//
+		// transform it
+		//
+		glPushMatrix ();
+	}
+
+	//FIXME: this needs to go. combine with depthrange and explicit viewmodel-only fov into a different projection matrix..
 	if (e == &cl.viewent && scr_fov.value > 90.f && cl_gun_fovscale.value)
 		fovscale = tan(scr_fov.value * (0.5f * M_PI / 180.f));
 
-	glPushMatrix ();
-	R_RotateForEntity (lerpdata.origin, lerpdata.angles);
+	R_RotateForEntity (lerpdata.origin, lerpdata.angles, e->netstate.scale);
 	glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
 	glScalef (paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
 
@@ -693,109 +1130,58 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// set up lighting
 	//
-	rs_aliaspolys += paliashdr->numtris;
 	R_SetupAliasLighting (e);
 
-	//
-	// set up textures
-	//
-	GL_DisableMultitexture();
-	anim = (int)(cl.time*10) & 3;
-	skinnum = e->skinnum;
-	if ((skinnum >= paliashdr->numskins) || (skinnum < 0))
+	for(surf=0;;surf++)
 	{
-		Con_DPrintf ("R_DrawAliasModel: no such skin # %d for '%s'\n", skinnum, e->model->name);
-		// ericw -- display skin 0 for winquake compatibility
-		skinnum = 0;
-	}
-	tx = paliashdr->gltextures[skinnum][anim];
-	fb = paliashdr->fbtextures[skinnum][anim];
-	if (e->colormap != vid.colormap && !gl_nocolors.value)
-	{
-		if ((uintptr_t)e >= (uintptr_t)&cl_entities[1] && (uintptr_t)e <= (uintptr_t)&cl_entities[cl.maxclients]) /* && !strcmp (currententity->model->name, "progs/player.mdl") */
-			tx = playertextures[e - cl_entities - 1];
-	}
-	if (!gl_fullbrights.value)
-		fb = NULL;
+		rs_aliaspolys += paliashdr->numtris;
 
-	//
-	// draw it
-	//
-	if (r_drawflat_cheatsafe)
-	{
-		glDisable (GL_TEXTURE_2D);
-		GL_DrawAliasFrame (paliashdr, lerpdata);
-		glEnable (GL_TEXTURE_2D);
-		srand((int) (cl.time * 1000)); //restore randomness
-	}
-	else if (r_fullbright_cheatsafe)
-	{
-		GL_Bind (tx);
-		shading = false;
-		glColor4f(1,1,1,entalpha);
-		GL_DrawAliasFrame (paliashdr, lerpdata);
-		if (fb)
+		//
+		// set up textures
+		//
+		GL_DisableMultitexture();
+		anim = (int)(cl.time*10) & 3;
+		skinnum = e->skinnum;
+		if ((skinnum >= paliashdr->numskins) || (skinnum < 0))
 		{
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-			GL_Bind(fb);
-			glEnable(GL_BLEND);
-			glBlendFunc (GL_ONE, GL_ONE);
-			glDepthMask(GL_FALSE);
-			glColor3f(entalpha,entalpha,entalpha);
-			Fog_StartAdditive ();
-			GL_DrawAliasFrame (paliashdr, lerpdata);
-			Fog_StopAdditive ();
-			glDepthMask(GL_TRUE);
-			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDisable(GL_BLEND);
+			Con_DPrintf ("R_DrawAliasModel: no such skin # %d for '%s'\n", skinnum, e->model->name);
+			// ericw -- display skin 0 for winquake compatibility
+			skinnum = 0;
 		}
-	}
-	else if (r_lightmap_cheatsafe)
-	{
-		glDisable (GL_TEXTURE_2D);
-		shading = false;
-		glColor3f(1,1,1);
-		GL_DrawAliasFrame (paliashdr, lerpdata);
-		glEnable (GL_TEXTURE_2D);
-	}
-// call fast path if possible. if the shader compliation failed for some reason,
-// r_alias_program will be 0.
-	else if (r_alias_program != 0)
-	{
-		GL_DrawAliasFrame_GLSL (paliashdr, lerpdata, tx, fb);
-	}
-	else if (overbright)
-	{
-		if  (gl_texture_env_combine && gl_mtexable && gl_texture_env_add && fb) //case 1: everything in one pass
+		if (paliashdr->numskins <= 0)
+		{
+			tx = NULL; // NULL will give the checkerboard texture
+			fb = NULL;
+		}
+		else
+		{
+			tx = paliashdr->gltextures[skinnum][anim];
+			fb = paliashdr->fbtextures[skinnum][anim];
+		} 
+		if (e->netstate.colormap && !gl_nocolors.value)
+		{
+			if ((uintptr_t)e >= (uintptr_t)&cl.entities[1] && (uintptr_t)e <= (uintptr_t)&cl.entities[cl.maxclients]) /* && !strcmp (currententity->model->name, "progs/player.mdl") */
+				tx = playertextures[e - cl.entities - 1];
+		}
+		if (!gl_fullbrights.value)
+			fb = NULL;
+
+		//
+		// draw it
+		//
+		if (r_drawflat_cheatsafe)
+		{
+			glDisable (GL_TEXTURE_2D);
+			GL_DrawAliasFrame (paliashdr, lerpdata);
+			glEnable (GL_TEXTURE_2D);
+			srand((int) (cl.time * 1000)); //restore randomness
+		}
+		else if (r_fullbright_cheatsafe)
 		{
 			GL_Bind (tx);
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_EXT);
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_EXT, GL_MODULATE);
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_EXT, GL_TEXTURE);
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_EXT, GL_PRIMARY_COLOR_EXT);
-			glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 2.0f);
-			GL_EnableMultitexture(); // selects TEXTURE1
-			GL_Bind (fb);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
-			glEnable(GL_BLEND);
+			shading = false;
+			glColor4f(1,1,1,entalpha);
 			GL_DrawAliasFrame (paliashdr, lerpdata);
-			glDisable(GL_BLEND);
-			GL_DisableMultitexture();
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-		}
-		else if (gl_texture_env_combine) //case 2: overbright in one pass, then fullbright pass
-		{
-		// first pass
-			GL_Bind(tx);
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_EXT);
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_EXT, GL_MODULATE);
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_EXT, GL_TEXTURE);
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_EXT, GL_PRIMARY_COLOR_EXT);
-			glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 2.0f);
-			GL_DrawAliasFrame (paliashdr, lerpdata);
-			glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 1.0f);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-		// second pass
 			if (fb)
 			{
 				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -803,7 +1189,6 @@ void R_DrawAliasModel (entity_t *e)
 				glEnable(GL_BLEND);
 				glBlendFunc (GL_ONE, GL_ONE);
 				glDepthMask(GL_FALSE);
-				shading = false;
 				glColor3f(entalpha,entalpha,entalpha);
 				Fog_StartAdditive ();
 				GL_DrawAliasFrame (paliashdr, lerpdata);
@@ -811,85 +1196,152 @@ void R_DrawAliasModel (entity_t *e)
 				glDepthMask(GL_TRUE);
 				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 				glDisable(GL_BLEND);
-				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 			}
 		}
-		else //case 3: overbright in two passes, then fullbright pass
+		else if (r_lightmap_cheatsafe)
 		{
-		// first pass
-			GL_Bind(tx);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			glDisable (GL_TEXTURE_2D);
+			shading = false;
+			glColor3f(1,1,1);
 			GL_DrawAliasFrame (paliashdr, lerpdata);
-		// second pass -- additive with black fog, to double the object colors but not the fog color
-			glEnable(GL_BLEND);
-			glBlendFunc (GL_ONE, GL_ONE);
-			glDepthMask(GL_FALSE);
-			Fog_StartAdditive ();
-			GL_DrawAliasFrame (paliashdr, lerpdata);
-			Fog_StopAdditive ();
-			glDepthMask(GL_TRUE);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDisable(GL_BLEND);
-		// third pass
-			if (fb)
+			glEnable (GL_TEXTURE_2D);
+		}
+	// call fast path if possible. if the shader compliation failed for some reason,
+	// r_alias_program will be 0.
+		else if (glsl->program != 0 && (paliashdr->numbones <= glsl->maxbones||!lerpdata.bonestate))
+		{
+			GL_DrawAliasFrame_GLSL (glsl, paliashdr, lerpdata, tx, fb);
+		}
+		else if (overbright)
+		{
+			if  (gl_texture_env_combine && gl_mtexable && gl_texture_env_add && fb) //case 1: everything in one pass
 			{
+				GL_Bind (tx);
+				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_EXT);
+				glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_EXT, GL_MODULATE);
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_EXT, GL_TEXTURE);
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_EXT, GL_PRIMARY_COLOR_EXT);
+				glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 2.0f);
+				GL_EnableMultitexture(); // selects TEXTURE1
+				GL_Bind (fb);
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
+//				glEnable(GL_BLEND);
+				GL_DrawAliasFrame (paliashdr, lerpdata);
+//				glDisable(GL_BLEND);
+				GL_DisableMultitexture();
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+			}
+			else if (gl_texture_env_combine) //case 2: overbright in one pass, then fullbright pass
+			{
+			// first pass
+				GL_Bind(tx);
+				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_EXT);
+				glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_EXT, GL_MODULATE);
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_EXT, GL_TEXTURE);
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_EXT, GL_PRIMARY_COLOR_EXT);
+				glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 2.0f);
+				GL_DrawAliasFrame (paliashdr, lerpdata);
+				glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 1.0f);
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+			// second pass
+				if (fb)
+				{
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+					GL_Bind(fb);
+					glEnable(GL_BLEND);
+					glBlendFunc (GL_ONE, GL_ONE);
+					glDepthMask(GL_FALSE);
+					shading = false;
+					glColor3f(entalpha,entalpha,entalpha);
+					Fog_StartAdditive ();
+					GL_DrawAliasFrame (paliashdr, lerpdata);
+					Fog_StopAdditive ();
+					glDepthMask(GL_TRUE);
+					glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					glDisable(GL_BLEND);
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+				}
+			}
+			else //case 3: overbright in two passes, then fullbright pass
+			{
+			// first pass
+				GL_Bind(tx);
 				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-				GL_Bind(fb);
+				GL_DrawAliasFrame (paliashdr, lerpdata);
+			// second pass -- additive with black fog, to double the object colors but not the fog color
 				glEnable(GL_BLEND);
 				glBlendFunc (GL_ONE, GL_ONE);
 				glDepthMask(GL_FALSE);
-				shading = false;
-				glColor3f(entalpha,entalpha,entalpha);
 				Fog_StartAdditive ();
 				GL_DrawAliasFrame (paliashdr, lerpdata);
 				Fog_StopAdditive ();
 				glDepthMask(GL_TRUE);
-				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 				glDisable(GL_BLEND);
+			// third pass
+				if (fb)
+				{
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+					GL_Bind(fb);
+					glEnable(GL_BLEND);
+					glBlendFunc (GL_ONE, GL_ONE);
+					glDepthMask(GL_FALSE);
+					shading = false;
+					glColor3f(entalpha,entalpha,entalpha);
+					Fog_StartAdditive ();
+					GL_DrawAliasFrame (paliashdr, lerpdata);
+					Fog_StopAdditive ();
+					glDepthMask(GL_TRUE);
+					glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					glDisable(GL_BLEND);
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+				}
+			}
+		}
+		else
+		{
+			if (gl_mtexable && gl_texture_env_add && fb) //case 4: fullbright mask using multitexture
+			{
+				GL_DisableMultitexture(); // selects TEXTURE0
+				GL_Bind (tx);
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+				GL_EnableMultitexture(); // selects TEXTURE1
+				GL_Bind (fb);
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
+				glEnable(GL_BLEND);
+				GL_DrawAliasFrame (paliashdr, lerpdata);
+				glDisable(GL_BLEND);
+				GL_DisableMultitexture();
 				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 			}
-		}
-	}
-	else
-	{
-		if (gl_mtexable && gl_texture_env_add && fb) //case 4: fullbright mask using multitexture
-		{
-			GL_DisableMultitexture(); // selects TEXTURE0
-			GL_Bind (tx);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-			GL_EnableMultitexture(); // selects TEXTURE1
-			GL_Bind (fb);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
-			glEnable(GL_BLEND);
-			GL_DrawAliasFrame (paliashdr, lerpdata);
-			glDisable(GL_BLEND);
-			GL_DisableMultitexture();
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-		}
-		else //case 5: fullbright mask without multitexture
-		{
-		// first pass
-			GL_Bind(tx);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-			GL_DrawAliasFrame (paliashdr, lerpdata);
-		// second pass
-			if (fb)
+			else //case 5: fullbright mask without multitexture
 			{
-				GL_Bind(fb);
-				glEnable(GL_BLEND);
-				glBlendFunc (GL_ONE, GL_ONE);
-				glDepthMask(GL_FALSE);
-				shading = false;
-				glColor3f(entalpha,entalpha,entalpha);
-				Fog_StartAdditive ();
+			// first pass
+				GL_Bind(tx);
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 				GL_DrawAliasFrame (paliashdr, lerpdata);
-				Fog_StopAdditive ();
-				glDepthMask(GL_TRUE);
-				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				glDisable(GL_BLEND);
+			// second pass
+				if (fb)
+				{
+					GL_Bind(fb);
+					glEnable(GL_BLEND);
+					glBlendFunc (GL_ONE, GL_ONE);
+					glDepthMask(GL_FALSE);
+					shading = false;
+					glColor3f(entalpha,entalpha,entalpha);
+					Fog_StartAdditive ();
+					GL_DrawAliasFrame (paliashdr, lerpdata);
+					Fog_StopAdditive ();
+					glDepthMask(GL_TRUE);
+					glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					glDisable(GL_BLEND);
+				}
 			}
 		}
+		if (!paliashdr->nextsurface)
+			break;
+		paliashdr = (aliashdr_t*)((byte*)paliashdr + paliashdr->nextsurface);
 	}
 
 cleanup:
@@ -901,6 +1353,8 @@ cleanup:
 	if (alphatest)
 		glDisable (GL_ALPHA_TEST);
 	glColor3f(1,1,1);
+	if (e->eflags & EFLAGS_VIEWMODEL)
+		glDepthRange (0, 1);
 	glPopMatrix ();
 }
 
@@ -931,14 +1385,14 @@ void GL_DrawAliasShadow (entity_t *e)
 	if (R_CullModelForEntity(e))
 		return;
 
-	if (e == &cl.viewent || e->model->flags & MOD_NOSHADOW)
+	if (e == &cl.viewent || e->effects & EF_NOSHADOW || e->model->flags & MOD_NOSHADOW)
 		return;
 
 	entalpha = ENTALPHA_DECODE(e->alpha);
 	if (entalpha == 0) return;
 
 	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
-	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
+	R_SetupAliasFrame (paliashdr, e, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 	R_LightPoint (e->origin);
 	lheight = currententity->origin[2] - lightspot[2];
@@ -985,11 +1439,11 @@ void R_DrawAliasModel_ShowTris (entity_t *e)
 		return;
 
 	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
-	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
+	R_SetupAliasFrame (paliashdr, e, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 
 	glPushMatrix ();
-	R_RotateForEntity (lerpdata.origin,lerpdata.angles);
+	R_RotateForEntity (lerpdata.origin,lerpdata.angles, e->netstate.scale);
 	glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 

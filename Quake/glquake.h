@@ -99,6 +99,35 @@ typedef struct particle_s
 	ptype_t		type;
 } particle_t;
 
+#define P_INVALID -1
+#ifdef PSET_SCRIPT
+	void PScript_InitParticles (void);
+	void PScript_Shutdown (void);
+	void PScript_DrawParticles (void);
+	struct trailstate_s;
+	int PScript_ParticleTrail (vec3_t startpos, vec3_t end, int type, float timeinterval, int dlkey, vec3_t axis[3], struct trailstate_s **tsk);
+	int PScript_RunParticleEffectState (vec3_t org, vec3_t dir, float count, int typenum, struct trailstate_s **tsk);
+	void PScript_RunParticleWeather(vec3_t minb, vec3_t maxb, vec3_t dir, float count, int colour, const char *efname);
+	void PScript_EmitSkyEffectTris(qmodel_t *mod, msurface_t 	*fa, int ptype);
+	int PScript_FindParticleType(const char *fullname);
+	int PScript_RunParticleEffectTypeString (vec3_t org, vec3_t dir, float count, const char *name);
+	int PScript_EntParticleTrail(vec3_t oldorg, entity_t *ent, const char *name);
+	int PScript_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
+	void PScript_DelinkTrailstate(struct trailstate_s **tsk);
+	void PScript_ClearParticles (void);
+	void PScript_UpdateModelEffects(qmodel_t *mod);
+	void PScript_ClearSurfaceParticles(qmodel_t *mod);	//model is being unloaded.
+#else
+	#define PScript_RunParticleEffectState(o,d,c,t,s) true
+	#define PScript_RunParticleEffectTypeString(o,d,c,n) true	//just unconditionally returns an error
+	#define PScript_EntParticleTrail(o,e,n) true
+	#define PScript_ParticleTrail(o,e,t,d,a,s) true
+	#define PScript_EntParticleTrail(o,e,n) true
+	#define PScript_RunParticleEffect(o,d,p,c) true
+	#define PScript_RunParticleWeather(min,max,d,c,p,n) true
+	#define PScript_ClearSurfaceParticles(m)
+	#define PScript_DelinkTrailstate(tsp)
+#endif
 
 //====================================================
 
@@ -123,7 +152,7 @@ extern	vec3_t	r_origin;
 //
 extern	refdef_t	r_refdef;
 extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
-extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
+extern	int		d_lightstylevalue[MAX_LIGHTSTYLES];	// 8.8 fraction of base light value
 
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
@@ -207,6 +236,7 @@ typedef void (APIENTRYP QS_PFNGLUNIFORM1IPROC) (GLint location, GLint v0);
 typedef void (APIENTRYP QS_PFNGLUNIFORM1FPROC) (GLint location, GLfloat v0);
 typedef void (APIENTRYP QS_PFNGLUNIFORM3FPROC) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
 typedef void (APIENTRYP QS_PFNGLUNIFORM4FPROC) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+typedef void (APIENTRYP QS_PFNGLUNIFORM4FVPROC) (GLint location, GLsizei count, const GLfloat *value);
 
 extern QS_PFNGLCREATESHADERPROC GL_CreateShaderFunc;
 extern QS_PFNGLDELETESHADERPROC GL_DeleteShaderFunc;
@@ -231,13 +261,19 @@ extern QS_PFNGLUNIFORM1IPROC GL_Uniform1iFunc;
 extern QS_PFNGLUNIFORM1FPROC GL_Uniform1fFunc;
 extern QS_PFNGLUNIFORM3FPROC GL_Uniform3fFunc;
 extern QS_PFNGLUNIFORM4FPROC GL_Uniform4fFunc;
+extern QS_PFNGLUNIFORM4FVPROC GL_Uniform4fvFunc;
 extern	qboolean	gl_glsl_able;
 extern	qboolean	gl_glsl_gamma_able;
 extern	qboolean	gl_glsl_alias_able;
+extern	qboolean	gl_glsl_water_able;
 // ericw --
 
 //ericw -- NPOT texture support
 extern	qboolean	gl_texture_NPOT;
+
+//spike -- precompressed texture support
+typedef void (APIENTRYP QS_PFNGLCOMPRESSEDTEXIMAGE2DPROC) (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data);
+extern QS_PFNGLCOMPRESSEDTEXIMAGE2DPROC GL_CompressedTexImage2D;
 
 //johnfitz -- polygon offset
 #define OFFSET_BMODEL 1
@@ -283,7 +319,6 @@ extern devstats_t dev_stats, dev_peakstats;
 //ohnfitz -- reduce overflow warning spam
 typedef struct {
 	double	packetsize;
-	double	efrags;
 	double	beams;
 	double	varstring;
 } overflowtimes_t;
@@ -292,6 +327,7 @@ extern overflowtimes_t dev_overflows; //this stores the last time overflow messa
 
 //johnfitz -- moved here from r_brush.c
 extern int gl_lightmap_format, lightmap_bytes;
+extern qboolean lightmaps_latecached;	//we need to rebuild lightmaps and model vbos before rendering.
 
 #define LMBLOCK_WIDTH	256	//FIXME: make dynamic. if we have a decent card there's no real reason not to use 4k or 16k (assuming there's no lightstyles/dynamics that need uploading...)
 #define LMBLOCK_HEIGHT	256 //Alternatively, use texture arrays, which would avoid the need to switch textures as often.
@@ -313,8 +349,6 @@ struct lightmap_s
 extern struct lightmap_s *lightmaps;
 extern int lightmap_count;	//allocated lightmaps
 
-extern int gl_warpimagesize; //johnfitz -- for water warp
-
 extern qboolean r_drawflat_cheatsafe, r_fullbright_cheatsafe, r_lightmap_cheatsafe, r_drawworld_cheatsafe; //johnfitz
 
 typedef struct glsl_attrib_binding_s {
@@ -323,6 +357,7 @@ typedef struct glsl_attrib_binding_s {
 } glsl_attrib_binding_t;
 
 extern float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha; //ericw
+extern float	map_fallbackalpha; //spike -- because we might want r_wateralpha to apply to teleporters while water itself wasn't watervised
 
 //johnfitz -- fog functions called from outside gl_fog.c
 void Fog_ParseServerMessage (void);
@@ -336,16 +371,18 @@ void Fog_SetupFrame (void);
 void Fog_NewMap (void);
 void Fog_Init (void);
 void Fog_SetupState (void);
+const char *Fog_GetFogCommand(void);	//for demo recording
 
 void R_NewGame (void);
 
+void CL_UpdateLightstyle(unsigned int idx, const char *stylestring);
 void R_AnimateLight (void);
 void R_MarkSurfaces (void);
 qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
 void R_StoreEfrags (efrag_t **ppefrag);
 qboolean R_CullModelForEntity (entity_t *e);
-void R_RotateForEntity (vec3_t origin, vec3_t angles);
-void R_MarkLights (dlight_t *light, int num, mnode_t *node);
+void R_RotateForEntity (vec3_t origin, vec3_t angles, unsigned char scale);
+void R_MarkLights (dlight_t *light, vec3_t lightorg, int num, mnode_t *node);
 
 void R_InitParticles (void);
 void R_DrawParticles (void);
@@ -364,18 +401,20 @@ void R_DrawSpriteModel (entity_t *e);
 void R_DrawTextureChains_Water (qmodel_t *model, entity_t *ent, texchain_t chain);
 
 void R_RenderDlights (void);
+void GL_BuildModel (qmodel_t *m);
 void GL_BuildLightmaps (void);
 void GL_DeleteBModelVertexBuffer (void);
 void GL_BuildBModelVertexBuffer (void);
 void GLMesh_LoadVertexBuffers (void);
 void GLMesh_DeleteVertexBuffers (void);
+void GLMesh_LoadVertexBuffer (qmodel_t *m, aliashdr_t *hdr);
 void R_RebuildAllLightmaps (void);
 
 int R_LightPoint (vec3_t p);
 
 void GL_SubdivideSurface (msurface_t *fa);
-void R_BuildLightMap (msurface_t *surf, byte *dest, int stride);
-void R_RenderDynamicLightmaps (msurface_t *fa);
+void R_BuildLightMap (qmodel_t *model, msurface_t *surf, byte *dest, int stride);
+void R_RenderDynamicLightmaps (qmodel_t *model, msurface_t *fa);
 void R_UploadLightmaps (void);
 
 void R_DrawWorld_ShowTris (void);
@@ -399,9 +438,13 @@ void Sky_Init (void);
 void Sky_ClearAll (void);
 void Sky_DrawSky (void);
 void Sky_NewMap (void);
-void Sky_LoadTexture (qmodel_t *m, texture_t *mt);
-void Sky_LoadTextureQ64 (qmodel_t *m, texture_t *mt);
+void Sky_LoadTexture (qmodel_t *mod, texture_t *mt, enum srcformat fmt, unsigned int width, unsigned int height);
+void Sky_LoadTextureQ64 (qmodel_t *mod, texture_t *mt);
 void Sky_LoadSkyBox (const char *name);
+extern qboolean skyroom_drawn, skyroom_drawing;		//we draw a skyroom this frame
+extern qboolean skyroom_enabled;	//we know where the skyroom is ...
+extern vec4_t skyroom_origin;		//... and it is here. [3] is paralax scale
+extern vec4_t skyroom_orientation;
 
 void TexMgr_RecalcWarpImageSize (void);
 

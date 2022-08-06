@@ -51,24 +51,27 @@ cvar_t		sys_throttle = {"sys_throttle", "0.02", CVAR_ARCHIVE};
 
 static HANDLE		hinput, houtput;
 
-#define	MAX_HANDLES		32	/* johnfitz -- was 10 */
-static FILE		*sys_handles[MAX_HANDLES];
-
-
+static size_t	sys_handles_max;	/* spike -- removed limit, was 32 (johnfitz -- was 10) */
+static FILE		**sys_handles;
 static int findhandle (void)
 {
-	int i;
+	size_t i, n;
 
-	for (i = 1; i < MAX_HANDLES; i++)
+	for (i = 1; i < sys_handles_max; i++)
 	{
 		if (!sys_handles[i])
 			return i;
 	}
-	Sys_Error ("out of handles");
-	return -1;
+	n = sys_handles_max+10;
+	sys_handles = realloc(sys_handles, sizeof(*sys_handles)*n);
+	if (!sys_handles)
+		Sys_Error ("out of handles");
+	while (sys_handles_max < n)
+		sys_handles[sys_handles_max++] = NULL;
+	return i;
 }
 
-long Sys_filelength (FILE *f)
+qofs_t Sys_filelength (FILE *f)
 {
 	long		pos, end;
 
@@ -80,10 +83,11 @@ long Sys_filelength (FILE *f)
 	return end;
 }
 
-int Sys_FileOpenRead (const char *path, int *hndl)
+qofs_t Sys_FileOpenRead (const char *path, int *hndl)
 {
 	FILE	*f;
-	int	i, retval;
+	int	i;
+	qofs_t retval;
 
 	i = findhandle ();
 	f = fopen(path, "rb");
@@ -118,13 +122,21 @@ int Sys_FileOpenWrite (const char *path)
 	return i;
 }
 
+int Sys_FileOpenStdio (FILE *file)
+{
+	int		i;
+	i = findhandle ();
+	sys_handles[i] = file;
+	return i;
+}
+
 void Sys_FileClose (int handle)
 {
 	fclose (sys_handles[handle]);
 	sys_handles[handle] = NULL;
 }
 
-void Sys_FileSeek (int handle, int position)
+void Sys_FileSeek (int handle, qofs_t position)
 {
 	fseek (sys_handles[handle], position, SEEK_SET);
 }
@@ -304,6 +316,10 @@ void Sys_Error (const char *error, ...)
 	q_vsnprintf (text, sizeof(text), error, argptr);
 	va_end (argptr);
 
+	PR_SwitchQCVM(NULL);
+
+	Con_Redirect(NULL);
+
 	if (isDedicated)
 		WriteFile (houtput, errortxt1, strlen(errortxt1), &dummy, NULL);
 	/* SDL will put these into its own stderr log,
@@ -338,7 +354,14 @@ void Sys_Printf (const char *fmt, ...)
 
 	if (isDedicated)
 	{
-		WriteFile(houtput, text, strlen(text), &dummy, NULL);
+		if (*text == 1 || *text == 2)
+		{	//mostly for Con_[D]Warning
+			SetConsoleTextAttribute(houtput, FOREGROUND_RED);
+			WriteFile(houtput, text+1, strlen(text+1), &dummy, NULL);
+			SetConsoleTextAttribute(houtput, FOREGROUND_BLUE|FOREGROUND_GREEN|FOREGROUND_RED);
+		}
+		else
+			WriteFile(houtput, text, strlen(text), &dummy, NULL);
 	}
 	else
 	{
@@ -360,7 +383,11 @@ void Sys_Quit (void)
 
 double Sys_DoubleTime (void)
 {
+#if 1
+	return SDL_GetPerformanceCounter() / (long double)SDL_GetPerformanceFrequency();
+#else
 	return SDL_GetTicks() / 1000.0;
+#endif
 }
 
 const char *Sys_ConsoleInput (void)

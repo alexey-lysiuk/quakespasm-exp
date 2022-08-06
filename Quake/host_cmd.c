@@ -37,7 +37,7 @@ Host_Quit_f
 */
 void Host_Quit_f (void)
 {
-	if (key_dest != key_console && cls.state != ca_dedicated)
+	if (key_dest != key_console && cls.state != ca_dedicated && !cls.menu_qcvm.progs)
 	{
 		M_Menu_Quit_f ();
 		return;
@@ -133,7 +133,7 @@ void ExtraMaps_Init (void)
 
 	for (search = com_searchpaths; search; search = search->next)
 	{
-		if (*search->filename) //directory
+		if (!search->pack) //directory
 		{
 #ifdef _WIN32
 			q_snprintf (filestring, sizeof(filestring), "%s/maps/*.bsp", search->filename);
@@ -320,7 +320,7 @@ void DemoList_Init (void)
 	
 	for (search = com_searchpaths; search; search = search->next)
 	{
-		if (*search->filename) //directory
+		if (!search->pack) //directory
 		{
 #ifdef _WIN32
 			q_snprintf (filestring, sizeof(filestring), "%s/*.dem", search->filename);
@@ -423,9 +423,12 @@ static void Host_Status_f (void)
 	int			seconds;
 	int			minutes;
 	int			hours = 0;
-	int			j;
+	int			j, i;
 
-	if (cmd_source == src_command)
+	qhostaddr_t addresses[32];
+	int numaddresses;
+
+	if (cmd_source != src_client)
 	{
 		if (!sv.active)
 		{
@@ -437,19 +440,55 @@ static void Host_Status_f (void)
 	else
 		print_fn = SV_ClientPrintf;
 
-	print_fn ("host:    %s\n", Cvar_VariableString ("hostname"));
-	print_fn ("version: %4.2f\n", VERSION);
-	if (tcpipAvailable)
-		print_fn ("tcp/ip:  %s\n", my_tcpip_address);
+	print_fn (    "host:    %s\n", Cvar_VariableString ("hostname"));
+	print_fn (    "version: "ENGINE_NAME_AND_VER"\n");
+
+#if 1
+	numaddresses = NET_ListAddresses(addresses, sizeof(addresses)/sizeof(addresses[0]));
+	for (i = 0; i < numaddresses; i++)
+	{
+		if (*addresses[i] == '[')
+			print_fn ("ipv6:    %s\n", addresses[i]);	//Spike -- FIXME: we should really have ports displayed here or something
+		else
+			print_fn ("tcp/ip:  %s\n", addresses[i]);	//Spike -- FIXME: we should really have ports displayed here or something
+	}
+#else
+	if (ipv4Available)
+		print_fn ("tcp/ip:  %s\n", my_ipv4_address);	//Spike -- FIXME: we should really have ports displayed here or something
+	if (ipv6Available)
+		print_fn ("ipv6:    %s\n", my_ipv6_address);
 	if (ipxAvailable)
 		print_fn ("ipx:     %s\n", my_ipx_address);
-	print_fn ("map:     %s\n", sv.name);
-	print_fn ("players: %i active (%i max)\n\n", net_activeconnections, svs.maxclients);
+#endif
+	print_fn (    "map:     %s\n", sv.name);
+
+	for (i = 1,j=0; i < MAX_MODELS; i++)
+		if (sv.model_precache[i])
+			j++;
+	print_fn (    "models:  %i/%i\n", j, MAX_MODELS-1);
+	for (i = 1,j=0; i < MAX_SOUNDS; i++)
+		if (sv.sound_precache[i])
+			j++;
+	print_fn (    "sounds:  %i/%i\n", j, MAX_SOUNDS-1);
+	for (i = 0,j=0; i < MAX_PARTICLETYPES; i++)
+		if (sv.particle_precache[i])
+			j++;
+	if (j)
+		print_fn (    "effects: %i/%i\n", j, MAX_PARTICLETYPES-1);
+	for (i = 1,j=1; i < sv.qcvm.num_edicts; i++)
+		if (!sv.qcvm.edicts[i].free)
+			j++;
+	print_fn (    "entities:%i/%i\n", j, sv.qcvm.max_edicts);
+
+	print_fn (    "players: %i active (%i max)\n\n", net_activeconnections, svs.maxclients);
 	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
 	{
 		if (!client->active)
 			continue;
-		seconds = (int)(net_time - NET_QSocketGetTime(client->netconnection));
+		if (client->netconnection)
+			seconds = (int)(net_time - NET_QSocketGetTime(client->netconnection));
+		else
+			seconds = 0;
 		minutes = seconds / 60;
 		if (minutes)
 		{
@@ -461,7 +500,10 @@ static void Host_Status_f (void)
 		else
 			hours = 0;
 		print_fn ("#%-2u %-16.16s  %3i  %2i:%02i:%02i\n", j+1, client->name, (int)client->edict->v.frags, hours, minutes, seconds);
-		print_fn ("   %s\n", NET_QSocketGetAddressString(client->netconnection));
+		if (cmd_source != src_client)
+			print_fn ("   %s\n", client->netconnection?NET_QSocketGetTrueAddressString(client->netconnection):"botclient");
+		else
+			print_fn ("   %s\n", client->netconnection?NET_QSocketGetMaskedAddressString(client->netconnection):"botclient");
 	}
 }
 
@@ -474,7 +516,7 @@ Sets client to godmode
 */
 static void Host_God_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -519,7 +561,7 @@ Host_Notarget_f
 */
 static void Host_Notarget_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -566,7 +608,7 @@ Host_Noclip_f
 */
 static void Host_Noclip_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -622,7 +664,7 @@ adapted from fteqw, originally by Alex Shadowalker
 */
 static void Host_SetPos_f(void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -683,7 +725,7 @@ Sets client to flymode
 */
 static void Host_Fly_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -738,7 +780,7 @@ static void Host_Ping_f (void)
 	float		total;
 	client_t	*client;
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -747,7 +789,7 @@ static void Host_Ping_f (void)
 	SV_ClientPrintf ("Client ping times:\n");
 	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
 	{
-		if (!client->active)
+		if (!client->spawned || !client->netconnection)
 			continue;
 		total = 0;
 		for (j = 0; j < NUM_PING_TIMES; j++)
@@ -807,9 +849,9 @@ static void Host_Map_f (void)
 	CL_Disconnect ();
 	Host_ShutdownServer(false);
 
-	if (cls.state != ca_dedicated)
-		IN_Activate();
 	key_dest = key_game;			// remove console or menu
+	if (cls.state != ca_dedicated)
+		IN_UpdateGrabs();
 	SCR_BeginLoadingPlaque ();
 
 	svs.serverflags = 0;			// haven't completed an episode yet
@@ -818,7 +860,9 @@ static void Host_Map_f (void)
 	p = strstr(name, ".bsp");
 	if (p && p[4] == '\0')
 		*p = '\0';
+	PR_SwitchQCVM(&sv.qcvm);
 	SV_SpawnServer (name);
+	PR_SwitchQCVM(NULL);
 	if (!sv.active)
 		return;
 
@@ -900,12 +944,15 @@ static void Host_Changelevel_f (void)
 		Host_Error ("cannot find map %s", level);
 	//johnfitz
 
-	if (cls.state != ca_dedicated)
-		IN_Activate();	// -- S.A.
 	key_dest = key_game;	// remove console or menu
+	if (cls.state != ca_dedicated)
+		IN_UpdateGrabs();	// -- S.A.
+
+	PR_SwitchQCVM(&sv.qcvm);
 	SV_SaveSpawnparms ();
 	q_strlcpy (level, Cmd_Argv(1), sizeof(level));
 	SV_SpawnServer (level);
+	PR_SwitchQCVM(NULL);
 	// also issue an error if spawn failed -- O.S.
 	if (!sv.active)
 		Host_Error ("cannot run map %s", level);
@@ -922,13 +969,20 @@ static void Host_Restart_f (void)
 {
 	char	mapname[MAX_QPATH];
 
-	if (cls.demoplayback || !sv.active)
+	if (cls.demoplayback)
 		return;
-
 	if (cmd_source != src_command)
 		return;
+	if (!sv.active)
+	{
+		if (*sv.name)
+			Cmd_ExecuteString(va("map \"%s\"\n", sv.name), src_command);
+		return;
+	}
 	q_strlcpy (mapname, sv.name, sizeof(mapname));	// mapname gets cleared in spawnserver
+	PR_SwitchQCVM(&sv.qcvm);
 	SV_SpawnServer (mapname);
+	PR_SwitchQCVM(NULL);
 	if (!sv.active)
 		Host_Error ("cannot restart map %s", mapname);
 }
@@ -939,15 +993,34 @@ Host_Reconnect_f
 
 This command causes the client to wait for the signon messages again.
 This is sent just before a server changes levels
+
+for compatibility with quakeworld et al, we also allow this as a user-command to reconnect to the last server we tried, but we can only reliably do that when we're not already connected
 ==================
 */
-static void Host_Reconnect_f (void)
+static void Host_Reconnect_Con_f (void)
+{
+	CL_Disconnect_f();
+	cls.demonum = -1;		// stop demo loop in case this fails
+	if (cls.demoplayback)
+	{
+		CL_StopPlayback ();
+		CL_Disconnect ();
+	}
+	CL_EstablishConnection (NULL);
+}
+static void Host_Reconnect_Sv_f (void)
 {
 	if (cls.demoplayback)	// cross-map demo playback fix from Baker
 		return;
 
 	SCR_BeginLoadingPlaque ();
+	cl.protocol_dpdownload = false;
 	cls.signon = 0;		// need new connection messages
+}
+
+static void Host_Lightstyle_f (void)
+{
+	CL_UpdateLightstyle(atoi(Cmd_Argv(1)), Cmd_Argv(2));
 }
 
 /*
@@ -969,7 +1042,7 @@ static void Host_Connect_f (void)
 	}
 	q_strlcpy (name, Cmd_Argv(1), sizeof(name));
 	CL_EstablishConnection (name);
-	Host_Reconnect_f ();
+	Host_Reconnect_Sv_f ();
 }
 
 
@@ -1087,17 +1160,19 @@ static void Host_Savegame_f (void)
 		return;
 	}
 
+	PR_SwitchQCVM(&sv.qcvm);
+
 	fprintf (f, "%i\n", SAVEGAME_VERSION);
 	Host_SavegameComment (comment);
 	fprintf (f, "%s\n", comment);
-	for (i = 0; i < NUM_SPAWN_PARMS; i++)
+	for (i = 0; i < NUM_BASIC_SPAWN_PARMS; i++)
 		fprintf (f, "%f\n", svs.clients->spawn_parms[i]);
 	fprintf (f, "%d\n", current_skill);
 	fprintf (f, "%s\n", sv.name);
-	fprintf (f, "%f\n",sv.time);
+	fprintf (f, "%f\n", qcvm->time);
 
 // write the light styles
-	for (i = 0; i < MAX_LIGHTSTYLES; i++)
+	for (i = 0; i < MAX_LIGHTSTYLES_VANILLA; i++)
 	{
 		if (sv.lightstyles[i])
 			fprintf (f, "%s\n", sv.lightstyles[i]);
@@ -1106,13 +1181,51 @@ static void Host_Savegame_f (void)
 	}
 
 	ED_WriteGlobals (f);
-	for (i = 0; i < sv.num_edicts; i++)
+	for (i = 0; i < qcvm->num_edicts; i++)
 	{
 		ED_Write (f, EDICT_NUM(i));
 		fflush (f);
 	}
+
+	//add extra info (lightstyles, precaches, etc) in a way that's supposed to be compatible with DP.
+	//sidenote - this provides extended lightstyles and support for late precaches
+	//it does NOT protect against spawnfunc precache changes - we would need to include makestatics here too (and optionally baselines, or just recalculate those).
+	fprintf(f, "/*\n");
+	fprintf(f, "// QuakeSpasm extended savegame\n");
+	for (i = MAX_LIGHTSTYLES_VANILLA; i < MAX_LIGHTSTYLES; i++)
+	{
+		if (sv.lightstyles[i])
+			fprintf (f, "sv.lightstyles %i \"%s\"\n", i, sv.lightstyles[i]);
+	}
+	for (i = 1; i < MAX_MODELS; i++)
+	{
+		if (sv.model_precache[i])
+			fprintf (f, "sv.model_precache %i \"%s\"\n", i, sv.model_precache[i]);
+	}
+	for (i = 1; i < MAX_SOUNDS; i++)
+	{
+		if (sv.sound_precache[i])
+			fprintf (f, "sv.sound_precache %i \"%s\"\n", i, sv.sound_precache[i]);
+	}
+	for (i = 1; i < MAX_PARTICLETYPES; i++)
+	{
+		if (sv.particle_precache[i])
+			fprintf (f, "sv.particle_precache %i \"%s\"\n", i, sv.particle_precache[i]);
+	}
+
+	fprintf (f, "sv.serverflags %i\n", svs.serverflags);
+	for (i = NUM_BASIC_SPAWN_PARMS ; i < NUM_TOTAL_SPAWN_PARMS ; i++)
+	{
+		if (svs.clients->spawn_parms[i])
+			fprintf (f, "spawnparm %i \"%f\"\n", i+1, svs.clients->spawn_parms[i]);
+	}
+
+	fprintf(f, "*/\n");
+
+
 	fclose (f);
 	Con_Printf ("done.\n");
+	PR_SwitchQCVM(NULL);
 }
 
 /*
@@ -1132,7 +1245,7 @@ static void Host_Loadgame_f (void)
 	edict_t	*ent;
 	int	entnum;
 	int	version;
-	float	spawn_parms[NUM_SPAWN_PARMS];
+	float	spawn_parms[NUM_TOTAL_SPAWN_PARMS];
 
 	if (cmd_source != src_command)
 		return;
@@ -1142,7 +1255,7 @@ static void Host_Loadgame_f (void)
 		Con_Printf ("load <savename> : load a game\n");
 		return;
 	}
-	
+
 	if (strstr(Cmd_Argv(1), ".."))
 	{
 		Con_Printf ("Relative pathnames are not allowed.\n");
@@ -1181,8 +1294,10 @@ static void Host_Loadgame_f (void)
 		return;
 	}
 	data = COM_ParseStringNewline (data);
-	for (i = 0; i < NUM_SPAWN_PARMS; i++)
+	for (i = 0; i < NUM_BASIC_SPAWN_PARMS; i++)
 		data = COM_ParseFloatNewline (data, &spawn_parms[i]);
+	for (; i < NUM_TOTAL_SPAWN_PARMS; i++)
+		spawn_parms[i] = 0;
 // this silliness is so we can load 1.06 save files, which have float skill values
 	data = COM_ParseFloatNewline(data, &tfloat);
 	current_skill = (int)(tfloat + 0.1);
@@ -1194,10 +1309,12 @@ static void Host_Loadgame_f (void)
 
 	CL_Disconnect_f ();
 
+	PR_SwitchQCVM(&sv.qcvm);
 	SV_SpawnServer (mapname);
 
 	if (!sv.active)
 	{
+		PR_SwitchQCVM(NULL);
 		free (start);
 		start = NULL;
 		SCR_EndLoadingPlaque ();
@@ -1208,17 +1325,97 @@ static void Host_Loadgame_f (void)
 	sv.loadgame = true;
 
 // load the light styles
-	for (i = 0; i < MAX_LIGHTSTYLES; i++)
+	for (i = 0; i < MAX_LIGHTSTYLES_VANILLA; i++)
 	{
 		data = COM_ParseStringNewline (data);
 		sv.lightstyles[i] = (const char *)Hunk_Strdup (com_token, "lightstyles");
 	}
+	for (; i < MAX_LIGHTSTYLES; i++)
+		sv.lightstyles[i] = NULL;
 
 // load the edicts out of the savegame file
 	entnum = -1;		// -1 is the globals
 	while (*data)
 	{
-		data = COM_Parse (data);
+		while (*data == ' ' || *data == '\r' || *data == '\n')
+			data++;
+		if (data[0] == '/' && data[1] == '*' && (data[2] == '\r' || data[2] == '\n'))
+		{	//looks like an extended saved game
+			char *end;
+			const char *ext;
+			ext = data+2;
+			while ((end = strchr(ext, '\n')))
+			{
+				*end = 0;
+				ext = COM_Parse(ext);
+				if (!strcmp(com_token, "sv.lightstyles"))
+				{
+					int idx;
+					ext = COM_Parse(ext);
+					idx = atoi(com_token);
+					ext = COM_Parse(ext);
+					if (idx >= 0 && idx < MAX_LIGHTSTYLES)
+					{
+						if (*com_token)
+							sv.lightstyles[idx] = (const char *)Hunk_Strdup (com_token, "lightstyles");
+						else
+							sv.lightstyles[idx] = NULL;
+					}
+				}
+				else if (!strcmp(com_token, "sv.model_precache"))
+				{
+					int idx;
+					ext = COM_Parse(ext);
+					idx = atoi(com_token);
+					ext = COM_Parse(ext);
+					if (idx >= 1 && idx < MAX_MODELS)
+					{
+						sv.model_precache[idx] = (const char *)Hunk_Strdup (com_token, "model_precache");
+						sv.models[idx] = Mod_ForName (sv.model_precache[idx], idx==1);
+						//if (idx == 1)
+						//	sv.worldmodel = sv.models[idx];
+					}
+				}
+				else if (!strcmp(com_token, "sv.sound_precache"))
+				{
+					int idx;
+					ext = COM_Parse(ext);
+					idx = atoi(com_token);
+					ext = COM_Parse(ext);
+					if (idx >= 1 && idx < MAX_MODELS)
+						sv.sound_precache[idx] = (const char *)Hunk_Strdup (com_token, "sound_precache");
+				}
+				else if (!strcmp(com_token, "sv.particle_precache"))
+				{
+					int idx;
+					ext = COM_Parse(ext);
+					idx = atoi(com_token);
+					ext = COM_Parse(ext);
+					if (idx >= 1 && idx < MAX_PARTICLETYPES)
+						sv.particle_precache[idx] = (const char *)Hunk_Strdup (com_token, "particle_precache");
+				}
+				else if (!strcmp(com_token, "sv.serverflags") || !strcmp(com_token, "svs.serverflags"))
+				{
+					int fl;
+					ext = COM_Parse(ext);
+					fl = atoi(com_token);
+					svs.serverflags = fl;
+				}
+				else if (!strcmp(com_token, "spawnparm"))
+				{
+					int idx;
+					ext = COM_Parse(ext);
+					idx = atoi(com_token);
+					ext = COM_Parse(ext);
+					if (idx >= 1 && idx <= NUM_TOTAL_SPAWN_PARMS)
+						spawn_parms[idx-1] = atof(com_token);
+				}
+				*end = '\n';
+				ext = end+1;
+			}
+		}
+
+		data = COM_Parse(data);
 		if (!com_token[0])
 			break;		// end of file
 		if (strcmp(com_token,"{"))
@@ -1233,12 +1430,12 @@ static void Host_Loadgame_f (void)
 		else
 		{	// parse an edict
 			ent = EDICT_NUM(entnum);
-			if (entnum < sv.num_edicts) {
+			if (entnum < qcvm->num_edicts) {
 				ent->free = false;
-				memset (&ent->v, 0, progs->entityfields * 4);
+				memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 			}
 			else {
-				memset (ent, 0, pr_edict_size);
+				memset (ent, 0, qcvm->edict_size);
 			}
 			data = ED_ParseEdict (data, ent);
 
@@ -1250,19 +1447,21 @@ static void Host_Loadgame_f (void)
 		entnum++;
 	}
 
-	sv.num_edicts = entnum;
-	sv.time = time;
+	qcvm->num_edicts = entnum;
+	qcvm->time = time;
 
 	free (start);
 	start = NULL;
 
-	for (i = 0; i < NUM_SPAWN_PARMS; i++)
+	for (i = 0; i < NUM_TOTAL_SPAWN_PARMS; i++)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
+
+	PR_SwitchQCVM(NULL);
 
 	if (cls.state != ca_dedicated)
 	{
 		CL_EstablishConnection ("local");
-		Host_Reconnect_f ();
+		Host_Reconnect_Sv_f ();
 	}
 }
 
@@ -1288,28 +1487,14 @@ static void Host_Name_f (void)
 		q_strlcpy(newName, Cmd_Args(), sizeof(newName));
 	newName[15] = 0;	// client_t structure actually says name[32].
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		if (Q_strcmp(cl_name.string, newName) == 0)
 			return;
-		Cvar_Set ("_cl_name", newName);
-		if (cls.state == ca_connected)
-			Cmd_ForwardToServer ();
-		return;
+		Cvar_Set ("name", newName);
 	}
-
-	if (host_client->name[0] && strcmp(host_client->name, "unconnected") )
-	{
-		if (Q_strcmp(host_client->name, newName) != 0)
-			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
-	}
-	Q_strcpy (host_client->name, newName);
-	host_client->edict->v.netname = PR_SetEngineString(host_client->name);
-
-// send notification to all clients
-	MSG_WriteByte (&sv.reliable_datagram, svc_updatename);
-	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-	MSG_WriteString (&sv.reliable_datagram, host_client->name);
+	else
+		SV_UpdateInfo((host_client-svs.clients)+1, "name", newName);
 }
 
 static void Host_Say(qboolean teamonly)
@@ -1408,7 +1593,7 @@ static void Host_Tell_f(void)
 	char		text[MAXCMDLINE], *p2;
 	qboolean	quoted;
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -1470,48 +1655,34 @@ Host_Color_f
 */
 static void Host_Color_f(void)
 {
-	int		top, bottom;
-	int		playercolor;
+	const char *top, *bottom;
 
 	if (Cmd_Argc() == 1)
 	{
-		Con_Printf ("\"color\" is \"%i %i\"\n", ((int)cl_color.value) >> 4, ((int)cl_color.value) & 0x0f);
+		Con_Printf ("\"%s\" is \"%s %s\"\n", Cmd_Argv(0), CL_PLColours_ToString(CL_PLColours_Parse(cl_topcolor.string)), CL_PLColours_ToString(CL_PLColours_Parse(cl_bottomcolor.string)));
 		Con_Printf ("color <0-13> [0-13]\n");
 		return;
 	}
 
 	if (Cmd_Argc() == 2)
-		top = bottom = atoi(Cmd_Argv(1));
+		top = bottom = Cmd_Argv(1);
 	else
 	{
-		top = atoi(Cmd_Argv(1));
-		bottom = atoi(Cmd_Argv(2));
+		top = Cmd_Argv(1);
+		bottom = Cmd_Argv(2);
 	}
 
-	top &= 15;
-	if (top > 13)
-		top = 13;
-	bottom &= 15;
-	if (bottom > 13)
-		bottom = 13;
-
-	playercolor = top*16 + bottom;
-
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
-		Cvar_SetValue ("_cl_color", playercolor);
+		Cvar_Set ("topcolor", top);
+		Cvar_Set ("bottomcolor", bottom);
 		if (cls.state == ca_connected)
 			Cmd_ForwardToServer ();
 		return;
 	}
 
-	host_client->colors = playercolor;
-	host_client->edict->v.team = bottom + 1;
-
-// send notification to all clients
-	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
-	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-	MSG_WriteByte (&sv.reliable_datagram, host_client->colors);
+	SV_UpdateInfo((host_client - svs.clients)+1, "topcolor", top);
+	SV_UpdateInfo((host_client - svs.clients)+1, "bottomcolor", bottom);
 }
 
 /*
@@ -1521,7 +1692,7 @@ Host_Kill_f
 */
 static void Host_Kill_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -1533,7 +1704,7 @@ static void Host_Kill_f (void)
 		return;
 	}
 
-	pr_global_struct->time = sv.time;
+	pr_global_struct->time = qcvm->time;
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
 	PR_ExecuteProgram (pr_global_struct->ClientKill);
 }
@@ -1553,7 +1724,7 @@ static void Host_Pause_f (void)
 		return;
 	}
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -1588,7 +1759,7 @@ Host_PreSpawn_f
 */
 static void Host_PreSpawn_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Con_Printf ("prespawn is not valid from the console\n");
 		return;
@@ -1600,10 +1771,9 @@ static void Host_PreSpawn_f (void)
 		return;
 	}
 
-	SZ_Write (&host_client->message, sv.signon.data, sv.signon.cursize);
-	MSG_WriteByte (&host_client->message, svc_signonnum);
-	MSG_WriteByte (&host_client->message, 2);
-	host_client->sendsignon = true;
+	//will start splurging out prespawn data
+	host_client->sendsignon = 2;
+	host_client->signonidx = 0;
 }
 
 /*
@@ -1617,7 +1787,7 @@ static void Host_Spawn_f (void)
 	client_t	*client;
 	edict_t	*ent;
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Con_Printf ("spawn is not valid from the console\n");
 		return;
@@ -1629,6 +1799,8 @@ static void Host_Spawn_f (void)
 		return;
 	}
 
+	host_client->knowntoqc = true;
+	host_client->lastmovetime = qcvm->time;
 // run the entrance script
 	if (sv.loadgame)
 	{	// loaded games are fully inited already
@@ -1640,20 +1812,29 @@ static void Host_Spawn_f (void)
 		// set up the edict
 		ent = host_client->edict;
 
-		memset (&ent->v, 0, progs->entityfields * 4);
+		memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 		ent->v.colormap = NUM_FOR_EDICT(ent);
 		ent->v.team = (host_client->colors & 15) + 1;
 		ent->v.netname = PR_SetEngineString(host_client->name);
 
 		// copy spawn parms out of the client_t
-		for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
+		for (i=0 ; i< NUM_BASIC_SPAWN_PARMS ; i++)
 			(&pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
+		if (pr_checkextension.value)
+		{	//extended spawn parms
+			for ( ; i< NUM_TOTAL_SPAWN_PARMS ; i++)
+			{
+				ddef_t *g = ED_FindGlobal(va("parm%i", i+1));
+				if (g)
+					qcvm->globals[g->ofs] = host_client->spawn_parms[i];
+			}
+		}
 		// call the spawn function
-		pr_global_struct->time = sv.time;
+		pr_global_struct->time = qcvm->time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 		PR_ExecuteProgram (pr_global_struct->ClientConnect);
 
-		if ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= sv.time)
+		if ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= qcvm->time)
 			Sys_Printf ("%s entered the game\n", host_client->name);
 
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
@@ -1664,27 +1845,52 @@ static void Host_Spawn_f (void)
 
 // send time of update
 	MSG_WriteByte (&host_client->message, svc_time);
-	MSG_WriteFloat (&host_client->message, sv.time);
+	MSG_WriteFloat (&host_client->message, qcvm->time);
+	if (host_client->protocol_pext2 & PEXT2_PREDINFO)
+		MSG_WriteShort(&host_client->message, (host_client->lastmovemessage&0xffff));
 
 	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
 	{
-		MSG_WriteByte (&host_client->message, svc_updatename);
-		MSG_WriteByte (&host_client->message, i);
-		MSG_WriteString (&host_client->message, client->name);
+		if (!client->knowntoqc)
+			continue;
+		if (host_client->protocol_pext2 & PEXT2_PREDINFO)
+		{
+			MSG_WriteByte (&host_client->message, svc_stufftext);
+			MSG_WriteString (&host_client->message, va("//fui %i \"%s\"\n", i, client->userinfo));
+		}
+		else
+		{
+			MSG_WriteByte (&host_client->message, svc_updatename);
+			MSG_WriteByte (&host_client->message, i);
+			MSG_WriteString (&host_client->message, client->name);
+			MSG_WriteByte (&host_client->message, svc_updatecolors);
+			MSG_WriteByte (&host_client->message, i);
+			MSG_WriteByte (&host_client->message, client->colors);
+		}
+
 		MSG_WriteByte (&host_client->message, svc_updatefrags);
 		MSG_WriteByte (&host_client->message, i);
 		MSG_WriteShort (&host_client->message, client->old_frags);
-		MSG_WriteByte (&host_client->message, svc_updatecolors);
-		MSG_WriteByte (&host_client->message, i);
-		MSG_WriteByte (&host_client->message, client->colors);
 	}
 
 // send all current light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++)
 	{
-		MSG_WriteByte (&host_client->message, svc_lightstyle);
-		MSG_WriteByte (&host_client->message, (char)i);
-		MSG_WriteString (&host_client->message, sv.lightstyles[i]);
+		//CL_ClearState should have cleared all lightstyles, so don't send irrelevant ones
+		if (sv.lightstyles[i])
+		{
+			if (i > 0xff)
+			{
+				MSG_WriteByte (&host_client->message, svc_stufftext);
+				MSG_WriteString (&host_client->message, va("//ls %i \"%s\"\n", i, sv.lightstyles[i]));
+			}
+			else
+			{
+				MSG_WriteByte (&host_client->message, svc_lightstyle);
+				MSG_WriteByte (&host_client->message, i);
+				MSG_WriteString (&host_client->message, sv.lightstyles[i]);
+			}
+		}
 	}
 
 //
@@ -1718,7 +1924,8 @@ static void Host_Spawn_f (void)
 		MSG_WriteAngle (&host_client->message, ent->v.angles[i], sv.protocolflags );
 	MSG_WriteAngle (&host_client->message, 0, sv.protocolflags );
 
-	SV_WriteClientdataToMessage (sv_player, &host_client->message);
+	if (!(host_client->protocol_pext2 & PEXT2_REPLACEMENTDELTAS))
+		SV_WriteClientdataToMessage (host_client, &host_client->message);
 
 	MSG_WriteByte (&host_client->message, svc_signonnum);
 	MSG_WriteByte (&host_client->message, 3);
@@ -1732,7 +1939,7 @@ Host_Begin_f
 */
 static void Host_Begin_f (void)
 {
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Con_Printf ("begin is not valid from the console\n");
 		return;
@@ -1758,7 +1965,7 @@ static void Host_Kick_f (void)
 	int		i;
 	qboolean	byNumber = false;
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		if (!sv.active)
 		{
@@ -1794,7 +2001,7 @@ static void Host_Kick_f (void)
 
 	if (i < svs.maxclients)
 	{
-		if (cmd_source == src_command)
+		if (cmd_source != src_client)
 			if (cls.state == ca_dedicated)
 				who = "Console";
 			else
@@ -1848,7 +2055,7 @@ static void Host_Give_f (void)
 	int	v;
 	eval_t	*val;
 
-	if (cmd_source == src_command)
+	if (cmd_source != src_client)
 	{
 		Cmd_ForwardToServer ();
 		return;
@@ -1875,33 +2082,33 @@ static void Host_Give_f (void)
 		// MED 01/04/97 added hipnotic give stuff
 		if (hipnotic)
 		{
-		    if (t[0] == '6')
-		    {
-			if (t[1] == 'a')
-			    sv_player->v.items = (int)sv_player->v.items | HIT_PROXIMITY_GUN;
-			else
-			    sv_player->v.items = (int)sv_player->v.items | IT_GRENADE_LAUNCHER;
-		    }
-		    else if (t[0] == '9')
-			sv_player->v.items = (int)sv_player->v.items | HIT_LASER_CANNON;
-		    else if (t[0] == '0')
-			sv_player->v.items = (int)sv_player->v.items | HIT_MJOLNIR;
-		    else if (t[0] >= '2')
-			sv_player->v.items = (int)sv_player->v.items | (IT_SHOTGUN << (t[0] - '2'));
+			if (t[0] == '6')
+			{
+				if (t[1] == 'a')
+					sv_player->v.items = (int)sv_player->v.items | HIT_PROXIMITY_GUN;
+				else
+					sv_player->v.items = (int)sv_player->v.items | IT_GRENADE_LAUNCHER;
+			}
+			else if (t[0] == '9')
+				sv_player->v.items = (int)sv_player->v.items | HIT_LASER_CANNON;
+			else if (t[0] == '0')
+				sv_player->v.items = (int)sv_player->v.items | HIT_MJOLNIR;
+			else if (t[0] >= '2')
+				sv_player->v.items = (int)sv_player->v.items | (IT_SHOTGUN << (t[0] - '2'));
 		}
 		else
 		{
-		    if (t[0] >= '2')
-			sv_player->v.items = (int)sv_player->v.items | (IT_SHOTGUN << (t[0] - '2'));
+			if (t[0] >= '2')
+				sv_player->v.items = (int)sv_player->v.items | (IT_SHOTGUN << (t[0] - '2'));
 		}
 		break;
 
 	case 's':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_shells1");
-		    if (val)
-			val->_float = v;
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_shells1"));
+			if (val)
+				val->_float = v;
 		}
 		sv_player->v.ammo_shells = v;
 		break;
@@ -1909,60 +2116,60 @@ static void Host_Give_f (void)
 	case 'n':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_nails1");
-		    if (val)
-		    {
-			val->_float = v;
-			if (sv_player->v.weapon <= IT_LIGHTNING)
-			    sv_player->v.ammo_nails = v;
-		    }
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_nails1"));
+			if (val)
+			{
+				val->_float = v;
+				if (sv_player->v.weapon <= IT_LIGHTNING)
+					sv_player->v.ammo_nails = v;
+			}
 		}
 		else
 		{
-		    sv_player->v.ammo_nails = v;
+			sv_player->v.ammo_nails = v;
 		}
 		break;
 
 	case 'l':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_lava_nails");
-		    if (val)
-		    {
-			val->_float = v;
-			if (sv_player->v.weapon > IT_LIGHTNING)
-			    sv_player->v.ammo_nails = v;
-		    }
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_lava_nails"));
+			if (val)
+			{
+				val->_float = v;
+				if (sv_player->v.weapon > IT_LIGHTNING)
+					sv_player->v.ammo_nails = v;
+			}
 		}
 		break;
 
 	case 'r':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_rockets1");
-		    if (val)
-		    {
-			val->_float = v;
-			if (sv_player->v.weapon <= IT_LIGHTNING)
-			    sv_player->v.ammo_rockets = v;
-		    }
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_rockets1"));
+			if (val)
+			{
+				val->_float = v;
+				if (sv_player->v.weapon <= IT_LIGHTNING)
+					sv_player->v.ammo_rockets = v;
+			}
 		}
 		else
 		{
-		    sv_player->v.ammo_rockets = v;
+			sv_player->v.ammo_rockets = v;
 		}
 		break;
 
 	case 'm':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_multi_rockets");
-		    if (val)
-		    {
-			val->_float = v;
-			if (sv_player->v.weapon > IT_LIGHTNING)
-			    sv_player->v.ammo_rockets = v;
-		    }
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_multi_rockets"));
+			if (val)
+			{
+				val->_float = v;
+				if (sv_player->v.weapon > IT_LIGHTNING)
+					sv_player->v.ammo_rockets = v;
+			}
 		}
 		break;
 
@@ -1973,30 +2180,30 @@ static void Host_Give_f (void)
 	case 'c':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_cells1");
-		    if (val)
-		    {
-			val->_float = v;
-			if (sv_player->v.weapon <= IT_LIGHTNING)
-			    sv_player->v.ammo_cells = v;
-		    }
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_cells1"));
+			if (val)
+			{
+				val->_float = v;
+				if (sv_player->v.weapon <= IT_LIGHTNING)
+					sv_player->v.ammo_cells = v;
+			}
 		}
 		else
 		{
-		    sv_player->v.ammo_cells = v;
+			sv_player->v.ammo_cells = v;
 		}
 		break;
 
 	case 'p':
 		if (rogue)
 		{
-		    val = GetEdictFieldValue(sv_player, "ammo_plasma");
-		    if (val)
-		    {
-			val->_float = v;
-			if (sv_player->v.weapon > IT_LIGHTNING)
-			    sv_player->v.ammo_cells = v;
-		    }
+			val = GetEdictFieldValue(sv_player, ED_FindFieldOffset("ammo_plasma"));
+			if (val)
+			{
+				val->_float = v;
+				if (sv_player->v.weapon > IT_LIGHTNING)
+					sv_player->v.ammo_cells = v;
+			}
 		}
 		break;
 
@@ -2004,25 +2211,25 @@ static void Host_Give_f (void)
 	case 'a':
 		if (v > 150)
 		{
-		    sv_player->v.armortype = 0.8;
-		    sv_player->v.armorvalue = v;
-		    sv_player->v.items = sv_player->v.items -
+			sv_player->v.armortype = 0.8;
+			sv_player->v.armorvalue = v;
+			sv_player->v.items = sv_player->v.items -
 					((int)(sv_player->v.items) & (int)(IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3)) +
 					IT_ARMOR3;
 		}
 		else if (v > 100)
 		{
-		    sv_player->v.armortype = 0.6;
-		    sv_player->v.armorvalue = v;
-		    sv_player->v.items = sv_player->v.items -
+			sv_player->v.armortype = 0.6;
+			sv_player->v.armorvalue = v;
+			sv_player->v.items = sv_player->v.items -
 					((int)(sv_player->v.items) & (int)(IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3)) +
 					IT_ARMOR2;
 		}
 		else if (v >= 0)
 		{
-		    sv_player->v.armortype = 0.3;
-		    sv_player->v.armorvalue = v;
-		    sv_player->v.items = sv_player->v.items -
+			sv_player->v.armortype = 0.3;
+			sv_player->v.armorvalue = v;
+			sv_player->v.items = sv_player->v.items -
 					((int)(sv_player->v.items) & (int)(IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3)) +
 					IT_ARMOR1;
 		}
@@ -2070,16 +2277,39 @@ static void Host_Give_f (void)
 static edict_t	*FindViewthing (void)
 {
 	int		i;
-	edict_t	*e;
+	edict_t	*e = NULL;
 
-	for (i=0 ; i<sv.num_edicts ; i++)
+	PR_SwitchQCVM(&sv.qcvm);
+	i = qcvm->num_edicts;
+
+	if (i == qcvm->num_edicts)
 	{
-		e = EDICT_NUM(i);
-		if ( !strcmp (PR_GetString(e->v.classname), "viewthing") )
-			return e;
+		for (i=0 ; i<qcvm->num_edicts ; i++)
+		{
+			e = EDICT_NUM(i);
+			if ( !strcmp (PR_GetString(e->v.classname), "viewthing") )
+				break;
+		}
 	}
-	Con_Printf ("No viewthing on map\n");
-	return NULL;
+
+	if (i == qcvm->num_edicts)
+	{
+		for (i=0 ; i<qcvm->num_edicts ; i++)
+		{
+			e = EDICT_NUM(i);
+			if ( !strcmp (PR_GetString(e->v.classname), "info_player_start") )
+				break;
+		}
+	}
+
+	if (i == qcvm->num_edicts)
+	{
+		e = NULL;
+		Con_Printf ("No viewthing on map\n");
+	}
+
+	PR_SwitchQCVM(NULL);
+	return e;
 }
 
 /*
@@ -2096,15 +2326,23 @@ static void Host_Viewmodel_f (void)
 	if (!e)
 		return;
 
-	m = Mod_ForName (Cmd_Argv(1), false);
-	if (!m)
+	if (!*Cmd_Argv(1))
+		m = NULL;
+	else
 	{
-		Con_Printf ("Can't load %s\n", Cmd_Argv(1));
-		return;
+		m = Mod_ForName (Cmd_Argv(1), false);
+		if (!m)
+		{
+			Con_Printf ("Can't load %s\n", Cmd_Argv(1));
+			return;
+		}
 	}
 
+	PR_SwitchQCVM(&sv.qcvm);
+	e->v.modelindex = m?SV_Precache_Model(m->name):0;
+	e->v.model = PR_SetEngineString(sv.model_precache[(int)e->v.modelindex]);
 	e->v.frame = 0;
-	cl.model_precache[(int)e->v.modelindex] = m;
+	PR_SwitchQCVM(NULL);
 }
 
 /*
@@ -2122,12 +2360,14 @@ static void Host_Viewframe_f (void)
 	if (!e)
 		return;
 	m = cl.model_precache[(int)e->v.modelindex];
+	if (m)
+	{
+		f = atoi(Cmd_Argv(1));
+		if (f >= m->numframes)
+			f = m->numframes - 1;
 
-	f = atoi(Cmd_Argv(1));
-	if (f >= m->numframes)
-		f = m->numframes - 1;
-
-	e->v.frame = f;
+		e->v.frame = f;
+	}
 }
 
 static void PrintFrameName (qmodel_t *m, int frame)
@@ -2136,7 +2376,7 @@ static void PrintFrameName (qmodel_t *m, int frame)
 	maliasframedesc_t	*pframedesc;
 
 	hdr = (aliashdr_t *)Mod_Extradata (m);
-	if (!hdr)
+	if (!hdr || m->type != mod_alias)
 		return;
 	pframedesc = &hdr->frames[frame];
 
@@ -2157,12 +2397,14 @@ static void Host_Viewnext_f (void)
 	if (!e)
 		return;
 	m = cl.model_precache[(int)e->v.modelindex];
+	if (m)
+	{
+		e->v.frame = e->v.frame + 1;
+		if (e->v.frame >= m->numframes)
+			e->v.frame = m->numframes - 1;
 
-	e->v.frame = e->v.frame + 1;
-	if (e->v.frame >= m->numframes)
-		e->v.frame = m->numframes - 1;
-
-	PrintFrameName (m, e->v.frame);
+		PrintFrameName (m, e->v.frame);
+	}
 }
 
 /*
@@ -2180,12 +2422,14 @@ static void Host_Viewprev_f (void)
 		return;
 
 	m = cl.model_precache[(int)e->v.modelindex];
+	if (m)
+	{
+		e->v.frame = e->v.frame - 1;
+		if (e->v.frame < 0)
+			e->v.frame = 0;
 
-	e->v.frame = e->v.frame - 1;
-	if (e->v.frame < 0)
-		e->v.frame = 0;
-
-	PrintFrameName (m, e->v.frame);
+		PrintFrameName (m, e->v.frame);
+	}
 }
 
 /*
@@ -2222,11 +2466,11 @@ static void Host_Startdemos_f (void)
 	if (!sv.active && cls.demonum != -1 && !cls.demoplayback)
 	{
 		cls.demonum = 0;
-		if (!fitzmode && !cl_startdemos.value)
+		if (!cl_demoreel.value)
 		{  /* QuakeSpasm customization: */
 			/* go straight to menu, no CL_NextDemo */
 			cls.demonum = -1;
-			Cbuf_InsertText("menu_main\n");
+			Cbuf_InsertText("togglemenu 1\n");
 			return;
 		}
 		CL_NextDemo ();
@@ -2285,6 +2529,302 @@ void Host_Resetdemos (void)
 }
 
 //=============================================================================
+//download stuff
+
+static void Host_Download_f(void)
+{
+	const char *fname = Cmd_Argv(1);
+	int fsize;
+	if (cmd_source == src_command)
+	{
+		//FIXME: add some sort of queuing thing
+//		if (cls.state == ca_connected)
+//			Cmd_ForwardToServer ();
+		return;
+	}
+	else if (cmd_source == src_client)
+	{
+		if (host_client->download.file)
+		{	//abort the current download if the previous didn't terminate properly.
+			SV_ClientPrintf("cancelling previous download\n");
+			MSG_WriteByte (&host_client->message, svc_stufftext);
+			MSG_WriteString (&host_client->message, "\nstopdownload\n");
+			fclose(host_client->download.file);
+			host_client->download.file = NULL;
+		}
+
+		host_client->download.size = 0;
+		host_client->download.started = false;
+		host_client->download.sendpos = 0;
+		host_client->download.ackpos = 0;
+		
+		fsize = -1;
+		if (!COM_DownloadNameOkay(fname))
+			SV_ClientPrintf("refusing download of %s - restricted filename\n", fname);
+		else
+		{
+			fsize = COM_FOpenFile(fname, &host_client->download.file, NULL);
+			if (!host_client->download.file)
+				SV_ClientPrintf("server does not have file %s\n", fname);
+			else if (file_from_pak)
+			{
+				SV_ClientPrintf("refusing download of %s from inside pak\n", fname);
+				fclose(host_client->download.file);
+				host_client->download.file = NULL;
+			}
+			else if (fsize < 0 || fsize > 50*1024*1024)
+			{
+				SV_ClientPrintf("refusing download of large file %s\n", fname);
+				fclose(host_client->download.file);
+				host_client->download.file = NULL;
+			}
+		}
+
+		host_client->download.size = (unsigned int)fsize;
+		if (host_client->download.file)
+		{
+			host_client->download.startpos = ftell(host_client->download.file);
+			Con_Printf("downloading %s to %s\n", fname, host_client->name);
+			MSG_WriteByte (&host_client->message, svc_stufftext);
+			MSG_WriteString (&host_client->message, va("\ncl_downloadbegin %u \"%s\"\n", host_client->download.size, fname));
+			q_strlcpy(host_client->download.name, fname, sizeof(host_client->download.name));
+		}
+		else
+		{
+			Con_Printf("refusing download of %s to %s\n", fname, host_client->name);
+			MSG_WriteByte (&host_client->message, svc_stufftext);
+			MSG_WriteString (&host_client->message, "\nstopdownload\n");
+		}
+		host_client->sendsignon = true;	//override any keepalive issues.
+	}
+}
+
+static void Host_EnableCSQC_f(void)
+{
+	size_t e;
+	if (cmd_source != src_client)
+		return;
+	host_client->csqcactive = true;
+
+	//re-flag any ents as needing a resend.
+	for (e = 1; e < host_client->numpendingcsqcentities; e++)
+		if (host_client->pendingcsqcentities_bits[e] & SENDFLAG_PRESENT)
+			host_client->pendingcsqcentities_bits[e] |= SENDFLAG_USABLE;
+}
+static void Host_DisableCSQC_f(void)
+{
+	if (cmd_source != src_client)
+		return;
+	host_client->csqcactive = false;
+}
+
+static void Host_StartDownload_f(void)
+{
+	if (cmd_source != src_client)
+		return;
+	if (host_client->download.file)
+		host_client->download.started = true;
+	else
+		SV_ClientPrintf("no download started\n");
+}
+//just writes download data onto the end of the outgoing unreliable buffer
+void Host_AppendDownloadData(client_t *client, sizebuf_t *buf)
+{
+	if (buf->cursize+7 > buf->maxsize)
+		return;	//no space for anything
+	if (client->download.file && client->download.started)
+	{
+		byte tbuf[1400];	//don't be too aggressive, ethernet mtu is about 1450
+		unsigned int size = client->download.size - client->download.sendpos;
+		//size might be 0 at eof, and that's needed to avoid failure if we drop the last few packets
+		if (size > sizeof(tbuf))
+			size = sizeof(tbuf);
+		if ((int)size > buf->maxsize-(buf->cursize+7))
+			size = (int)(buf->maxsize-(buf->cursize+7));	//don't overflow
+
+		if (size && fread(tbuf, 1, size, host_client->download.file) < size)
+			client->download.ackpos = client->download.sendpos = client->download.size;	//some kind of error...
+		else
+		{
+			MSG_WriteByte(buf, svcdp_downloaddata);
+			MSG_WriteLong(buf, client->download.sendpos);
+			MSG_WriteShort(buf, size);
+			SZ_Write(buf, tbuf, size);
+			client->download.sendpos += size;
+		}
+	}
+}
+//parses incoming acks from the client, so we know which parts of the file the client actually received.
+void Host_DownloadAck(client_t *client)
+{
+	unsigned int start = MSG_ReadLong();
+	unsigned int size = (unsigned short)MSG_ReadShort();
+
+	if (!client->download.started || !client->download.file)
+		return;
+
+	if (client->download.ackpos < start)
+	{
+		client->download.sendpos = client->download.ackpos;//there was a gap, rewind to the known gap
+		fseek(client->download.file, host_client->download.startpos+client->download.sendpos, SEEK_SET);
+	}
+	else if (client->download.ackpos < start+size)
+		client->download.ackpos = start+size;	//no loss yet.
+	//else FIXME: build a log of parts known to be acked to avoid resending them later, skip past them in acks
+
+	if (client->download.ackpos == client->download.size)
+	{
+		unsigned int hash = 0;
+		byte *data;
+		client->download.started = false;
+
+		data = malloc(client->download.size);
+		if (data)
+		{
+			fseek(client->download.file, host_client->download.startpos, SEEK_SET);
+			fread(data, 1, host_client->download.size, client->download.file);
+			hash = CRC_Block(data, host_client->download.size);
+			free(data);
+		}
+		fclose(client->download.file);
+		client->download.file = NULL;
+
+		MSG_WriteByte (&host_client->message, svc_stufftext);
+		MSG_WriteString (&host_client->message, va("cl_downloadfinished %u %u \"%s\"\n", client->download.size, hash, client->download.name));
+		*client->download.name = 0;
+		host_client->sendsignon = true;	//override any keepalive issues.
+	}
+}
+
+static void Info_ClientPrint_Callback(void *ctx, const char *key, const char *val)
+{
+	SV_ClientPrintf("%20s: %s\n", key, val);
+}
+void Host_Serverinfo_f(void)
+{	//serverinfo command
+	if (cmd_source == src_client)
+	{
+		Info_Enumerate(svs.serverinfo, Info_ClientPrint_Callback, NULL);
+		return;
+	}
+	if (Cmd_Argc() != 3)
+	{
+		Con_Printf("Serverinfo:\n");
+		if (cls.state >= ca_connected && cmd_source != src_client)
+			Info_Print(cl.serverinfo);
+		else
+			Info_Print(svs.serverinfo);
+	}
+	else if (cmd_source == src_command)
+	{
+		const char *key = Cmd_Argv(1);
+		const char *val = Cmd_Argv(2);
+		if (*key == '*')
+		{
+			Con_Printf("Refusing to set key \"%s\"\n", key);
+			return;
+		}
+		SV_UpdateInfo(0, key, val);
+	}
+	else
+		Con_Printf("Serverinfo may not be changed here\n");
+}
+
+void Host_Setinfo_f(void)
+{
+	const char *key = Cmd_Argv(1);
+	const char *val = Cmd_Argv(2);
+
+	if (cmd_source == src_client)
+	{	//clc_stringcmd version
+		if (Cmd_Argc() != 3)
+		{
+			SV_ClientPrintf("Your Serverside User Info:\n");
+			Info_Enumerate(host_client->userinfo, Info_ClientPrint_Callback, NULL);
+		}
+		else
+		{
+			if (*key == '*')
+				return;	//users may not change * keys (beyond initial connection anyway).
+			SV_UpdateInfo((host_client - svs.clients)+1, key, val);
+		}
+	}
+	else
+	{	//console version
+		if (Cmd_Argc() != 3)
+		{
+			Con_Printf("User Info:\n");
+			Info_Print(cls.userinfo);
+		}
+		else
+		{
+			cvar_t *var = Cvar_FindVar(key);
+			if (var && var->flags & CVAR_USERINFO)
+				Cvar_Set(key, val);
+			else
+			{
+				Info_SetKey(cls.userinfo, sizeof(cls.userinfo), key, val);
+				if (cls.state == ca_connected)
+					Cmd_ForwardToServer();
+			}
+		}
+	}
+}
+void Host_User_f(void)
+{
+	/*if (sv.active)
+	{
+		int i;
+		if (Cmd_Argc() == 2)
+		{
+			i = atoi(Cmd_Argv(1));
+
+			if (i >= cl.maxclients)
+				return;	//not a valid slot.
+
+			Con_Printf("User %i (%s):\n", i, svs.clients[i].name);
+			Info_Print(svs.clients[i].userinfo);
+		}
+		else
+		{
+			for (i = 0; i < svs.maxclients; i++)
+			{
+				if (*svs.clients[i].name)
+				{
+					Con_Printf("User %i (%s):\n", i, svs.clients[i].name);
+					Info_Print(svs.clients[i].userinfo);
+				}
+			}
+		}
+	}
+	else*/ if (cls.state == ca_connected)
+	{
+		int i;
+		if (Cmd_Argc() == 2)
+		{
+			i = atoi(Cmd_Argv(1));
+
+			if (i >= cl.maxclients)
+				return;	//not a valid slot.
+
+			Con_Printf("User %i (%s):\n", i, cl.scores[i].name);
+			Info_Print(cl.scores[i].userinfo);
+		}
+		else
+		{
+			for (i = 0; i < cl.maxclients; i++)
+			{
+				if (*cl.scores[i].name)
+				{
+					Con_Printf("User %i (%s):\n", i, cl.scores[i].name);
+					Info_Print(cl.scores[i].userinfo);
+				}
+			}
+		}
+	}
+}
+
+//=============================================================================
 
 /*
 ==================
@@ -2293,40 +2833,52 @@ Host_InitCommands
 */
 void Host_InitCommands (void)
 {
+#define Cmd_AddCommand_ClientCommandQC(cmd,fnc) Cmd_AddCommand2(cmd,fnc,src_client,true)
+
 	Cmd_AddCommand ("maps", Host_Maps_f); //johnfitz
 	Cmd_AddCommand ("mods", Host_Mods_f); //johnfitz
 	Cmd_AddCommand ("games", Host_Mods_f); // as an alias to "mods" -- S.A. / QuakeSpasm
 	Cmd_AddCommand ("mapname", Host_Mapname_f); //johnfitz
 	Cmd_AddCommand ("randmap", Host_Randmap_f); //ericw
 
-	Cmd_AddCommand ("status", Host_Status_f);
+	Cmd_AddCommand_ClientCommand ("serverinfo", Host_Serverinfo_f); //spike
+	Cmd_AddCommand_ClientCommand ("setinfo", Host_Setinfo_f); //spike
+	Cmd_AddCommand ("user", Host_User_f); //spike
+
+	Cmd_AddCommand_ClientCommand ("status", Host_Status_f);
 	Cmd_AddCommand ("quit", Host_Quit_f);
-	Cmd_AddCommand ("god", Host_God_f);
-	Cmd_AddCommand ("notarget", Host_Notarget_f);
-	Cmd_AddCommand ("fly", Host_Fly_f);
+	Cmd_AddCommand_ClientCommandQC ("god", Host_God_f);
+	Cmd_AddCommand_ClientCommandQC ("notarget", Host_Notarget_f);
+	Cmd_AddCommand_ClientCommandQC ("fly", Host_Fly_f);
 	Cmd_AddCommand ("map", Host_Map_f);
 	Cmd_AddCommand ("restart", Host_Restart_f);
 	Cmd_AddCommand ("changelevel", Host_Changelevel_f);
 	Cmd_AddCommand ("connect", Host_Connect_f);
-	Cmd_AddCommand ("reconnect", Host_Reconnect_f);
-	Cmd_AddCommand ("name", Host_Name_f);
-	Cmd_AddCommand ("noclip", Host_Noclip_f);
-	Cmd_AddCommand ("setpos", Host_SetPos_f); //QuakeSpasm
+	Cmd_AddCommand_Console ("reconnect", Host_Reconnect_Con_f);
+	Cmd_AddCommand_ServerCommand ("reconnect", Host_Reconnect_Sv_f);
+	Cmd_AddCommand_ServerCommand ("ls", Host_Lightstyle_f);
+	Cmd_AddCommand_ClientCommand ("name", Host_Name_f);
+	Cmd_AddCommand_ClientCommandQC ("noclip", Host_Noclip_f);
+	Cmd_AddCommand_ClientCommandQC ("setpos", Host_SetPos_f); //QuakeSpasm
 
-	Cmd_AddCommand ("say", Host_Say_f);
-	Cmd_AddCommand ("say_team", Host_Say_Team_f);
-	Cmd_AddCommand ("tell", Host_Tell_f);
-	Cmd_AddCommand ("color", Host_Color_f);
-	Cmd_AddCommand ("kill", Host_Kill_f);
-	Cmd_AddCommand ("pause", Host_Pause_f);
-	Cmd_AddCommand ("spawn", Host_Spawn_f);
-	Cmd_AddCommand ("begin", Host_Begin_f);
-	Cmd_AddCommand ("prespawn", Host_PreSpawn_f);
-	Cmd_AddCommand ("kick", Host_Kick_f);
-	Cmd_AddCommand ("ping", Host_Ping_f);
+	Cmd_AddCommand_ClientCommandQC ("say", Host_Say_f);
+	Cmd_AddCommand_ClientCommandQC ("say_team", Host_Say_Team_f);
+	Cmd_AddCommand_ClientCommandQC ("tell", Host_Tell_f);
+	Cmd_AddCommand_ClientCommandQC ("color", Host_Color_f);
+	Cmd_AddCommand_ClientCommandQC ("kill", Host_Kill_f);
+	Cmd_AddCommand_ClientCommandQC ("pause", Host_Pause_f);
+	Cmd_AddCommand_ClientCommand ("spawn", Host_Spawn_f);
+	Cmd_AddCommand_ClientCommand ("begin", Host_Begin_f);
+	Cmd_AddCommand_ClientCommand ("prespawn", Host_PreSpawn_f);
+	Cmd_AddCommand_ClientCommandQC ("kick", Host_Kick_f);
+	Cmd_AddCommand_ClientCommand ("ping", Host_Ping_f);
 	Cmd_AddCommand ("load", Host_Loadgame_f);
 	Cmd_AddCommand ("save", Host_Savegame_f);
-	Cmd_AddCommand ("give", Host_Give_f);
+	Cmd_AddCommand_ClientCommandQC ("give", Host_Give_f);
+	Cmd_AddCommand_ClientCommand ("download", Host_Download_f);
+	Cmd_AddCommand_ClientCommand ("sv_startdownload", Host_StartDownload_f);
+	Cmd_AddCommand_ClientCommand ("enablecsqc", Host_EnableCSQC_f);
+	Cmd_AddCommand_ClientCommand ("disablecsqc", Host_DisableCSQC_f);
 
 	Cmd_AddCommand ("startdemos", Host_Startdemos_f);
 	Cmd_AddCommand ("demos", Host_Demos_f);

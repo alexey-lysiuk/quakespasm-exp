@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake;$(VC_IncludePath);$(WindowsSDK_IncludePath)"
 				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;USE_SDL2;USE_CODEC_MP3;USE_CODEC_VORBIS;USE_CODEC_WAVE;USE_CODEC_FLAC;USE_CODEC_OPUS;USE_CODEC_XMP;USE_CODEC_UMX"
 				MinimalRebuild="true"
@@ -61,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libvorbisfile.lib libvorbis.lib libopusfile.lib libopus.lib libFLAC.lib libogg.lib libmad.lib libxmp.lib wsock32.lib opengl32.lib winmm.lib SDL2.lib SDL2main.lib"
+				AdditionalDependencies="libvorbisfile.lib libvorbis.lib libopusfile.lib libopus.lib libFLAC.lib libogg.lib libmad.lib libxmp.lib ws2_32.lib opengl32.lib winmm.lib SDL2.lib SDL2main.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\codecs\x86;..\SDL2\lib"
+				AdditionalLibraryDirectories="..\codecs\x86;..\SDL2\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)"
 				IgnoreDefaultLibraryNames="msvcrt.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -116,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake"
+				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake;$(VC_IncludePath);$(WindowsSDK_IncludePath)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;USE_SDL2;USE_CODEC_MP3;USE_CODEC_VORBIS;USE_CODEC_WAVE;USE_CODEC_FLAC;USE_CODEC_OPUS;USE_CODEC_XMP;USE_CODEC_UMX"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -136,9 +137,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libvorbisfile.lib libvorbis.lib libopusfile.lib libopus.lib libFLAC.lib libogg.lib libmad.lib libxmp.lib wsock32.lib opengl32.lib winmm.lib SDL2.lib SDL2main.lib"
+				AdditionalDependencies="libvorbisfile.lib libvorbis.lib libopusfile.lib libopus.lib libFLAC.lib libogg.lib libmad.lib libxmp.lib ws2_32.lib opengl32.lib winmm.lib SDL2.lib SDL2main.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\codecs\x86;..\SDL2\lib"
+				AdditionalLibraryDirectories="..\codecs\x86;..\SDL2\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -191,7 +192,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake"
+				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake;$(VC_IncludePath);$(WindowsSDK_IncludePath)"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USE_WINSOCK2;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;USE_SDL2;USE_CODEC_MP3;USE_CODEC_VORBIS;USE_CODEC_WAVE;USE_CODEC_FLAC;USE_CODEC_OPUS;USE_CODEC_XMP;USE_CODEC_UMX"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -214,7 +215,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="libvorbisfile.lib libvorbis.lib libopusfile.lib libopus.lib libFLAC.lib libogg.lib libmad.lib libxmp.lib ws2_32.lib opengl32.lib winmm.lib SDL2.lib SDL2main.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\codecs\x64;..\SDL2\lib64"
+				AdditionalLibraryDirectories="..\codecs\x64;..\SDL2\lib64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)"
 				IgnoreDefaultLibraryNames="msvcrt.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -268,7 +269,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake"
+				AdditionalIncludeDirectories="..\SDL2\include;..\codecs\include;..\misc\include;..\..\Quake;$(VC_IncludePath);$(WindowsSDK_IncludePath)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USE_WINSOCK2;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;USE_SDL2;USE_CODEC_MP3;USE_CODEC_VORBIS;USE_CODEC_WAVE;USE_CODEC_FLAC;USE_CODEC_OPUS;USE_CODEC_XMP;USE_CODEC_UMX"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -290,7 +291,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="libvorbisfile.lib libvorbis.lib libopusfile.lib libopus.lib libFLAC.lib libogg.lib libmad.lib libxmp.lib ws2_32.lib opengl32.lib winmm.lib SDL2.lib SDL2main.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\codecs\x64;..\SDL2\lib64"
+				AdditionalLibraryDirectories="..\codecs\x64;..\SDL2\lib64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -371,6 +372,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Quake\common.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Quake\fs_zip.c"
 				>
 			</File>
 			<File
@@ -466,11 +471,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Quake\menu.c"
+				RelativePath="..\..\Quake\mdfour.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Quake\miniz.c"
+				RelativePath="..\..\Quake\menu.c"
 				>
 			</File>
 			<File
@@ -506,6 +511,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Quake\pr_ext.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Quake\pr_edict.c"
 				>
 			</File>
@@ -526,6 +535,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Quake\r_part_fte.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Quake\r_sprite.c"
 				>
 			</File>
@@ -539,6 +552,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Quake\snd_codec.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Quake\snd_voip.c"
 				>
 			</File>
 			<File
@@ -773,10 +790,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Quake\menu.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Quake\miniz.h"
 				>
 			</File>
 			<File

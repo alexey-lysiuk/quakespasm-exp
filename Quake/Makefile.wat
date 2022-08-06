@@ -22,6 +22,8 @@ MP3LIB=mad
 VORBISLIB=vorbis
 
 WINSOCK2= 0
+#FIXME: set this to 1
+USE_ZLIB=0
 
 # ---------------------------
 # build variables
@@ -114,6 +116,10 @@ CFLAGS+= -DUSE_CODEC_UMX
 CFLAGS+= $(CODEC_INC)
 
 COMMON_LIBS= opengl32.lib winmm.lib
+!ifeq USE_ZLIB 1
+CFLAGS+= -DUSE_ZLIB
+COMMON_LIBS+= -lz
+!endif
 
 LIBS = $(CODECLIBS) $(SDL_LIBS) $(COMMON_LIBS) $(NET_LIBS)
 
@@ -154,7 +160,7 @@ MUSIC_OBJS= bgmusic.obj &
 	snd_modplug.obj &
 	snd_xmp.obj &
 	snd_umx.obj
-COMOBJ_SND = snd_dma.obj snd_mix.obj snd_mem.obj $(MUSIC_OBJS)
+COMOBJ_SND = snd_voip.obj snd_dma.obj snd_mix.obj snd_mem.obj $(MUSIC_OBJS)
 SYSOBJ_SND = snd_sdl.obj
 SYSOBJ_CDA = cd_sdl.obj
 SYSOBJ_INPUT = in_sdl.obj
@@ -176,6 +182,7 @@ GLOBJS = &
 	gl_fog.obj &
 	gl_rmisc.obj &
 	r_part.obj &
+	r_part_fte.obj &
 	r_world.obj &
 	gl_screen.obj &
 	gl_sky.obj &
@@ -215,7 +222,8 @@ OBJS = strlcat.obj &
 	wad.obj &
 	cmd.obj &
 	common.obj &
-	miniz.obj &
+	mdfour.obj &
+	fs_zip.obj &
 	crc.obj &
 	cvar.obj &
 	cfgfile.obj &
@@ -223,6 +231,7 @@ OBJS = strlcat.obj &
 	host_cmd.obj &
 	mathlib.obj &
 	pr_cmds.obj &
+	pr_ext.obj &
 	pr_edict.obj &
 	pr_exec.obj &
 	sv_main.obj &

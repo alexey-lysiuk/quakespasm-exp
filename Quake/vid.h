@@ -64,6 +64,7 @@ typedef struct
 	int		maxwarpwidth;
 	int		maxwarpheight;
 	pixel_t		*direct;	// direct drawing to framebuffer, if not NULL
+	float cursorpos[2];
 } viddef_t;
 
 extern	viddef_t	vid;				// global video state
@@ -88,6 +89,10 @@ void *VID_GetWindow (void);
 qboolean VID_HasMouseOrInputFocus (void);
 qboolean VID_IsMinimized (void);
 void	VID_Lock (void);
+void	VID_SetWindowCaption(const char *newcaption);
+
+void VID_UpdateCursor(void);
+void VID_SetCursor(qcvm_t *vm, const char *cursorname, float hotspot[2], float cursorscale);
 
 #endif	/* __VID_DEFS_H */
 
