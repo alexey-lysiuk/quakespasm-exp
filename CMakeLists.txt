@@ -439,10 +439,8 @@ find_codec(NAME XMP
 	DEFINE USE_CODEC_XMP
 )
 
-set(ENGINE_PAK_FILE quakespasm.pak)
-
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND
 	${CMAKE_COMMAND} -E copy_if_different
-	"${CMAKE_SOURCE_DIR}/Quake/${ENGINE_PAK_FILE}"
-	"$<TARGET_PROPERTY:${PROJECT_NAME},BINARY_DIR>/$<CONFIG>/${ENGINE_PAK_FILE}"
+	"${CMAKE_SOURCE_DIR}/Quake/quakespasm.pak"
+	"$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
