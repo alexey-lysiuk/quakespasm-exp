@@ -705,7 +705,7 @@ void ED_FindMonsters(void)
 		if (ed->free)
 			continue;
 
-		if ((ed->v.solid != SOLID_NOT) && ((int)ed->v.flags & FL_MONSTER))
+		if (((int)ed->v.flags & FL_MONSTER) && (ed->v.health > 0.0f))
 		{
 			if (dest <= 0)
 			{
