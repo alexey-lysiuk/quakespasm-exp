@@ -715,7 +715,7 @@ void ED_FindMonsters(void)
 			}
 			else if (dest == c)
 			{
-				Cbuf_AddText(va("setpos %.0f %.0f %.0f %.0f %.0f %.0f",
+				Cbuf_AddText(va("god 1; notarget 1; setpos %.0f %.0f %.0f %.0f %.0f %.0f",
 					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2],
 					ed->v.angles[0], ed->v.angles[1], ed->v.angles[2]));
 				break;
