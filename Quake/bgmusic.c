@@ -285,6 +285,8 @@ void BGM_Play (const char *filename)
 	Con_Printf("Couldn't handle music file %s\n", filename);
 }
 
+static byte current_track;
+
 void BGM_PlayCDtrack (byte track, qboolean looping)
 {
 /* instead of searching by the order of music_handlers, do so by
@@ -299,7 +301,14 @@ void BGM_PlayCDtrack (byte track, qboolean looping)
 	unsigned int path_id, prev_id, type;
 	music_handler_t *handler;
 
-	BGM_Stop();
+	if (current_track == track)
+	{
+		BGM_Resume();
+		return;
+	}
+	else
+		BGM_Stop();
+
 	if (CDAudio_Play(track, looping) == 0)
 		return;			/* success */
 
@@ -333,12 +342,16 @@ void BGM_PlayCDtrack (byte track, qboolean looping)
 		handler = handler->next;
 	}
 	if (ext == NULL)
+	{
 		Con_Printf("Couldn't find a cdrip for track %d\n", (int)track);
+		current_track = 0;
+	}
 	else
 	{
 		q_snprintf(tmp, sizeof(tmp), "%s/track%02d.%s",
 				MUSIC_DIRNAME, (int)track, ext);
 		bgmstream = S_CodecOpenStreamType(tmp, type, bgmloop);
+		current_track = track;
 		if (! bgmstream)
 			Con_Printf("Couldn't handle music file %s\n", tmp);
 	}
@@ -351,6 +364,7 @@ void BGM_Stop (void)
 		bgmstream->status = STREAM_NONE;
 		S_CodecCloseStream(bgmstream);
 		bgmstream = NULL;
+		current_track = 0;
 		s_rawend = 0;
 	}
 }
