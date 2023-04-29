@@ -12,25 +12,25 @@ jobs:
         config:
         - {
             name: "Linux Clang",
-            os: ubuntu-20.04,
+            os: ubuntu-22.04,
             extra_options: "-DCMAKE_C_COMPILER=clang"
           }
         - {
             name: "Linux GCC",
-            os: ubuntu-20.04
+            os: ubuntu-22.04
           }
         - {
             name: "macOS",
-            os: macos-11
+            os: macos-12
           }
         - {
             name: "MSVC 32-bit",
-            os: windows-2019,
+            os: windows-2022,
             extra_options: "-A Win32"
           }
         - {
             name: "MSVC 64-bit",
-            os: windows-2019,
+            os: windows-2022,
             extra_options: "-A x64"
           }
 
