@@ -726,6 +726,64 @@ void ED_FindMonsters(void)
 	}
 }
 
+static void ED_FindTeleportDestination(void)
+{
+	if (!sv.active)
+		return;
+
+	int dest = Q_atoi(Cmd_Argv(1));
+	int c = 1;
+
+	for (int e = 0; e < sv.num_edicts; ++e)
+	{
+		edict_t *ed = EDICT_NUM(e);
+
+		if (ed->free)
+			continue;
+
+		const char *classname = PR_GetString(ed->v.classname);
+
+		if (strcmp(classname, "info_teleport_destination") == 0)
+		{
+			if (dest <= 0)
+			{
+				Con_SafePrintf("%i: at %.0f %.0f %.0f\n", c,
+					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
+			}
+			else if (dest == c)
+			{
+				float mangles[3] = { 0.f, 0.f, 0.f };
+
+				for (int f = 1; f < progs->numfielddefs; ++f)
+				{
+					ddef_t *field = &pr_fielddefs[f];
+					const char *fieldname = PR_GetString(field->s_name);
+
+					if (strcmp(fieldname, "mangle") == 0)
+					{
+						int type = field->type & ~DEF_SAVEGLOBAL;
+
+						if (type == ev_vector)
+						{
+							eval_t *value = (eval_t *)((char *)&ed->v + field->ofs * 4);
+							memcpy(mangles, value->vector, sizeof mangles);
+						}
+
+						break;
+					}
+				}
+
+				Cbuf_AddText(va("setpos %.0f %.0f %.0f %.0f %.0f %.0f",
+					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2],
+					mangles[0], mangles[1], mangles[2]));
+				break;
+			}
+
+			c++;
+		}
+	}
+}
+
 
 /*
 ==============================================================================
@@ -1332,6 +1390,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("profile", PR_Profile_f);
 	Cmd_AddCommand ("secrets", ED_FindSecrets);
 	Cmd_AddCommand ("monsters", ED_FindMonsters);
+	Cmd_AddCommand ("teledests", ED_FindTeleportDestination);
 	Cvar_RegisterVariable (&nomonsters);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);
