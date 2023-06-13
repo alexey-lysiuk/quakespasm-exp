@@ -726,7 +726,7 @@ void ED_FindMonsters(void)
 	}
 }
 
-static void ED_FindTeleportDestination(void)
+static void ED_FindTeleports(void)
 {
 	if (!sv.active)
 		return;
@@ -743,39 +743,51 @@ static void ED_FindTeleportDestination(void)
 
 		const char *classname = PR_GetString(ed->v.classname);
 
-		if (strcmp(classname, "info_teleport_destination") == 0)
+		if (strcmp(classname, "trigger_teleport") == 0)
 		{
+			vec3_t min, max;
+			memcpy(min, ed->v.absmin, sizeof min);
+			memcpy(max, ed->v.absmax, sizeof max);
+
+			vec3_t pos =
+			{
+				min[0] + (max[0] - min[0]) / 2.f,
+				min[1] + (max[1] - min[1]) / 2.f,
+				min[2] + (max[2] - min[2]) / 2.f
+			};
+
 			if (dest <= 0)
 			{
-				Con_SafePrintf("%i: at %.0f %.0f %.0f\n", c,
-					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
-			}
-			else if (dest == c)
-			{
-				float mangles[3] = { 0.f, 0.f, 0.f };
+				const char *target = PR_GetString(ed->v.target);
+				vec3_t targetpos = { 0.f, 0.f, 0.f };
 
-				for (int f = 1; f < progs->numfielddefs; ++f)
+				for (int t = 0; t < sv.num_edicts; ++t)
 				{
-					ddef_t *field = &pr_fielddefs[f];
-					const char *fieldname = PR_GetString(field->s_name);
+					edict_t *ted = EDICT_NUM(t);
 
-					if (strcmp(fieldname, "mangle") == 0)
+					if (ted->free)
+						continue;
+
+					const char *tclassname = PR_GetString(ted->v.classname);
+
+					if (strcmp(tclassname, "info_teleport_destination") == 0)
 					{
-						int type = field->type & ~DEF_SAVEGLOBAL;
+						const char *targetname = PR_GetString(ted->v.targetname);
 
-						if (type == ev_vector)
+						if (strcmp(target, targetname) == 0)
 						{
-							eval_t *value = (eval_t *)((char *)&ed->v + field->ofs * 4);
-							memcpy(mangles, value->vector, sizeof mangles);
+							memcpy(targetpos, ted->v.origin, sizeof targetpos);
+							break;
 						}
-
-						break;
 					}
 				}
 
-				Cbuf_AddText(va("setpos %.0f %.0f %.0f %.0f %.0f %.0f",
-					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2],
-					mangles[0], mangles[1], mangles[2]));
+				Con_SafePrintf("%i: %.0f %.0f %.0f -> %s at %.0f %.0f %.0f\n", c, pos[0], pos[1], pos[2],
+					target, targetpos[0], targetpos[1], targetpos[2]);
+			}
+			else if (dest == c)
+			{
+				Cbuf_AddText(va("setpos %f %f %f", pos[0], pos[1], pos[2]));
 				break;
 			}
 
@@ -1390,7 +1402,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("profile", PR_Profile_f);
 	Cmd_AddCommand ("secrets", ED_FindSecrets);
 	Cmd_AddCommand ("monsters", ED_FindMonsters);
-	Cmd_AddCommand ("teledests", ED_FindTeleportDestination);
+	Cmd_AddCommand ("teleports", ED_FindTeleports);
 	Cvar_RegisterVariable (&nomonsters);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);
