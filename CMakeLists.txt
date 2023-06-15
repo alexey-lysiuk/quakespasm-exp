@@ -246,6 +246,10 @@ if(APPLE)
 		"-framework IOKit"
 	)
 
+	if(${CMAKE_GENERATOR} STREQUAL Xcode)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-shorten-64-to-32")
+	endif()
+
 	set(PLATFORM_SOURCE
 		${MACOS_SOURCES}
 		${POSIX_SOURCES}
