@@ -649,151 +649,152 @@ static void ED_Count (void)
 }
 
 
-void ED_FindSecrets(void)
+static void ED_ForEachEdict(qboolean(*func)(int *, int, edict_t *))
 {
 	if (!sv.active)
 		return;
 
 	int dest = Q_atoi(Cmd_Argv(1));
-	int c = 1;
 
-	for (int e = 0; e < sv.num_edicts; ++e)
+	for (int e = 0, c = 1; e < sv.num_edicts; ++e)
 	{
 		edict_t *ed = EDICT_NUM(e);
 
 		if (ed->free)
 			continue;
 
-		const char *classname = PR_GetString(ed->v.classname);
-
-		if (strcmp(classname, "trigger_secret") == 0)
-		{
-			vec_t minx = ed->v.absmin[0];
-			vec_t miny = ed->v.absmin[1];
-			vec_t minz = ed->v.absmin[2];
-			vec_t maxx = ed->v.absmax[0];
-			vec_t maxy = ed->v.absmax[1];
-			vec_t maxz = ed->v.absmax[2];
-
-			if (dest <= 0)
-			{
-				Con_SafePrintf("%i: %.0f %.0f %.0f\n", c, minx + (maxx - minx) / 2.f, miny + (maxy - miny) / 2.f, minz + (maxz - minz) / 2.0);
-			}
-			else if (dest == c)
-			{
-				Cbuf_AddText(va("setpos %.0f %.0f %.0f", minx + (maxx - minx) / 2.f, miny + (maxy - miny) / 2.f, minz + (maxz - minz) / 2.0));
-				break;
-			}
-
-			c++;
-		}
+		if (!func(&c, dest, ed))
+			break;
 	}
 }
 
-void ED_FindMonsters(void)
+static inline void ED_MidPoint(edict_t *ed, vec3_t pos)
 {
-	if (!sv.active)
-		return;
+	vec_t* min = ed->v.absmin;
+	vec_t* max = ed->v.absmax;
 
-	int dest = Q_atoi(Cmd_Argv(1));
-	int c = 1;
+	for (int i = 0; i < 3; ++i)
+		pos[i] = min[i] + (max[i] - min[i]) * 0.5f;
+}
 
-	for (int e = 0; e < sv.num_edicts; ++e)
+static qboolean ED_ProcessSecret(int *c, int dest, edict_t *ed)
+{
+	const char *classname = PR_GetString(ed->v.classname);
+	
+	if (strcmp(classname, "trigger_secret") != 0)
+		return true;
+	
+	vec3_t pos;
+	ED_MidPoint(ed, pos);
+	
+	if (dest <= 0)
 	{
-		edict_t *ed = EDICT_NUM(e);
-
-		if (ed->free)
-			continue;
-
-		if (((int)ed->v.flags & FL_MONSTER) && (ed->v.health > 0.0f))
-		{
-			if (dest <= 0)
-			{
-				const char *classname = PR_GetString(ed->v.classname);
-				Con_SafePrintf("%i: %s at %.0f %.0f %.0f\n", c, classname,
-					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
-			}
-			else if (dest == c)
-			{
-				Cbuf_AddText(va("god 1; notarget 1; setpos %.0f %.0f %.0f %.0f %.0f %.0f",
-					ed->v.origin[0], ed->v.origin[1], ed->v.origin[2],
-					ed->v.angles[0], ed->v.angles[1], ed->v.angles[2]));
-				break;
-			}
-
-			c++;
-		}
+		Con_SafePrintf("%i: %.0f %.0f %.0f\n", *c, pos[0], pos[1], pos[2]);
 	}
+	else if (dest == *c)
+	{
+		Cbuf_AddText(va("setpos %.0f %.0f %.0f", pos[0], pos[1], pos[2]));
+		return false;
+	}
+	
+	++(*c);
+
+	return true;
+}
+
+static void ED_FindSecrets(void)
+{
+	ED_ForEachEdict(ED_ProcessSecret);
+}
+
+static qboolean ED_ProcessMonster(int *c, int dest, edict_t *ed)
+{
+	qboolean ismonster = (int)ed->v.flags & FL_MONSTER;
+	qboolean isalive = ed->v.health > 0.0f;
+
+	if (!ismonster || !isalive)
+		return true;
+
+	vec_t* origin = ed->v.origin;
+	vec_t* angles = ed->v.angles;
+
+	if (dest <= 0)
+	{
+		const char *classname = PR_GetString(ed->v.classname);
+		Con_SafePrintf("%i: %s at %.0f %.0f %.0f\n", *c, classname, origin[0], origin[1], origin[2]);
+	}
+	else if (dest == *c)
+	{
+		Cbuf_AddText(va("god 1; notarget 1; setpos %.0f %.0f %.0f %.0f %.0f %.0f",
+			origin[0], origin[1], origin[2], angles[0], angles[1], angles[2]));
+		return false;
+	}
+
+	++(*c);
+
+	return true;
+}
+
+static void ED_FindMonsters(void)
+{
+	ED_ForEachEdict(ED_ProcessMonster);
+}
+
+static qboolean ED_ProcessTeleport(int *c, int dest, edict_t *ed)
+{
+	const char *classname = PR_GetString(ed->v.classname);
+
+	if (strcmp(classname, "trigger_teleport") != 0)
+		return true;
+
+	vec3_t pos;
+	ED_MidPoint(ed, pos);
+
+	if (dest <= 0)
+	{
+		const char *target = PR_GetString(ed->v.target);
+		vec_t *targetpos = NULL;
+
+		for (int t = 0; t < sv.num_edicts; ++t)
+		{
+			edict_t *ted = EDICT_NUM(t);
+
+			if (ted->free)
+				continue;
+
+			const char *tclassname = PR_GetString(ted->v.classname);
+
+			if (strcmp(tclassname, "info_teleport_destination") == 0)
+			{
+				const char *targetname = PR_GetString(ted->v.targetname);
+
+				if (strcmp(target, targetname) == 0)
+				{
+					targetpos = ted->v.origin;
+					break;
+				}
+			}
+		}
+
+		const char *strtargetpos = targetpos
+			? va("at %.0f %.0f %.0f", targetpos[0], targetpos[1], targetpos[2])
+			: "(target not found)";
+		Con_SafePrintf("%i: %.0f %.0f %.0f -> %s %s\n", *c, pos[0], pos[1], pos[2], target, strtargetpos);
+	}
+	else if (dest == *c)
+	{
+		Cbuf_AddText(va("setpos %f %f %f", pos[0], pos[1], pos[2]));
+		return false;
+	}
+
+	++(*c);
+
+	return true;
 }
 
 static void ED_FindTeleports(void)
 {
-	if (!sv.active)
-		return;
-
-	int dest = Q_atoi(Cmd_Argv(1));
-	int c = 1;
-
-	for (int e = 0; e < sv.num_edicts; ++e)
-	{
-		edict_t *ed = EDICT_NUM(e);
-
-		if (ed->free)
-			continue;
-
-		const char *classname = PR_GetString(ed->v.classname);
-
-		if (strcmp(classname, "trigger_teleport") == 0)
-		{
-			vec3_t min, max;
-			memcpy(min, ed->v.absmin, sizeof min);
-			memcpy(max, ed->v.absmax, sizeof max);
-
-			vec3_t pos =
-			{
-				min[0] + (max[0] - min[0]) / 2.f,
-				min[1] + (max[1] - min[1]) / 2.f,
-				min[2] + (max[2] - min[2]) / 2.f
-			};
-
-			if (dest <= 0)
-			{
-				const char *target = PR_GetString(ed->v.target);
-				vec3_t targetpos = { 0.f, 0.f, 0.f };
-
-				for (int t = 0; t < sv.num_edicts; ++t)
-				{
-					edict_t *ted = EDICT_NUM(t);
-
-					if (ted->free)
-						continue;
-
-					const char *tclassname = PR_GetString(ted->v.classname);
-
-					if (strcmp(tclassname, "info_teleport_destination") == 0)
-					{
-						const char *targetname = PR_GetString(ted->v.targetname);
-
-						if (strcmp(target, targetname) == 0)
-						{
-							memcpy(targetpos, ted->v.origin, sizeof targetpos);
-							break;
-						}
-					}
-				}
-
-				Con_SafePrintf("%i: %.0f %.0f %.0f -> %s at %.0f %.0f %.0f\n", c, pos[0], pos[1], pos[2],
-					target, targetpos[0], targetpos[1], targetpos[2]);
-			}
-			else if (dest == c)
-			{
-				Cbuf_AddText(va("setpos %f %f %f", pos[0], pos[1], pos[2]));
-				break;
-			}
-
-			c++;
-		}
-	}
+	ED_ForEachEdict(ED_ProcessTeleport);
 }
 
 
