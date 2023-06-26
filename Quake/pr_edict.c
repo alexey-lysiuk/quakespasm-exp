@@ -762,17 +762,16 @@ static qboolean ED_ProcessTeleport(int *c, int dest, edict_t *ed)
 			if (ted->free)
 				continue;
 
-			const char *tclassname = PR_GetString(ted->v.classname);
+			const char *targetname = PR_GetString(ted->v.targetname);
 
-			if (strcmp(tclassname, "info_teleport_destination") == 0)
+			if (strcmp(target, targetname) == 0)
 			{
-				const char *targetname = PR_GetString(ted->v.targetname);
-
-				if (strcmp(target, targetname) == 0)
-				{
-					targetpos = ted->v.origin;
-					break;
-				}
+				// Special case for Arcane Dimensions, ad_tears map in particular
+				// It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
+				// Some teleport destinations were missing despite their valid setup
+				// Actual destination coordinates are stored in oldorigin member
+				targetpos = VectorCompare(ted->v.origin, vec3_origin) ? ted->v.oldorigin : ted->v.origin;
+				break;
 			}
 		}
 
