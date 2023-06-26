@@ -683,10 +683,49 @@ static qboolean ED_ProcessSecret(int *c, int dest, edict_t *ed)
 	
 	if (strcmp(classname, "trigger_secret") != 0)
 		return true;
-	
+
+	// Try to handle Arcane Dimensions secret
+	vec_t* min = ed->v.absmin;
+	vec_t* max = ed->v.absmax;
+	int count = INT_MAX;
+
+	if (min[0] == -1.0f && min[1] == -1.0f && min[1] == -1.0f
+		&& max[0] == 1.0f && max[1] == 1.0f && max[1] == 1.0f)
+	{
+		for (int f = 1; f < progs->numfielddefs; ++f)
+		{
+			ddef_t *field = &pr_fielddefs[f];
+			const char *fieldname = PR_GetString(field->s_name);
+
+			if (strcmp(fieldname, "count") == 0)
+			{
+				eval_t *value = (eval_t *)((char *)&ed->v + field->ofs * 4);
+				count = value->_int;
+				break;
+			}
+		}
+	}
+
 	vec3_t pos;
-	ED_MidPoint(ed, pos);
-	
+
+	switch (count)
+	{
+	case INT_MAX:
+		// Regular or Arcane Dimensions secret that was not revealed yet
+		ED_MidPoint(ed, pos);
+		break;
+
+	case 0:
+		// Revealed Arcane Dimensions secret, skip it
+		return true;
+
+	default:
+		// Disabled or switched off Arcane Dimensions secret
+		// Actual coodinates are stored in oldorigin member
+		VectorCopy(ed->v.oldorigin, pos);
+		break;
+	}
+
 	if (dest <= 0)
 	{
 		Con_SafePrintf("%i: %.0f %.0f %.0f\n", *c, pos[0], pos[1], pos[2]);
