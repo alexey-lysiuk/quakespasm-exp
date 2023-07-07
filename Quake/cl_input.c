@@ -178,8 +178,6 @@ void IN_Impulse(void)
 	for (i = Cmd_Argc() - 1; i > 0; i--)
 	{
 		imp = Q_atoi(Cmd_Argv(i));
-		if (imp < 1 || imp > 8)
-			continue;
 		switch (imp)
 		{
 		case 1:
@@ -213,6 +211,16 @@ void IN_Impulse(void)
 		case 8:
 			if (cl.items & IT_LIGHTNING && cl.stats[STAT_CELLS] > 0)
 				best = 8;
+			break;
+		case 225:
+		case 250: // Quoth Plasma Gun
+			if (cl.items & HIT_LASER_CANNON && cl.stats[STAT_CELLS] > 0)
+				best = imp;
+			break;
+		case 226:
+			if (cl.items & HIT_MJOLNIR && cl.stats[STAT_CELLS] > 0)
+				best = 226;
+			break;
 		}
 	}
 
