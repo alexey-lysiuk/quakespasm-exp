@@ -1001,6 +1001,7 @@ static void IN_DebugKeyEvent(SDL_Event *event)
 
 void IN_SendKeyEvents (void)
 {
+	static qboolean oldpaused;
 	SDL_Event event;
 	int key;
 	qboolean down;
@@ -1014,12 +1015,15 @@ void IN_SendKeyEvents (void)
 			if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
 			{
 				windowhasfocus = true;
+				sv.paused = oldpaused;
 				S_UnblockSound();
 			}
 			else if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
 			{
 				windowhasfocus = false;
 				S_BlockSound();
+				oldpaused = sv.paused;
+				sv.paused = true;
 			}
 			break;
 #else
@@ -1029,12 +1033,15 @@ void IN_SendKeyEvents (void)
 				if (event.active.gain)
 				{
 					windowhasfocus = true;
+					sv.paused = oldpaused;
 					S_UnblockSound();
 				}
 				else
 				{
 					windowhasfocus = false;
 					S_BlockSound();
+					oldpaused = sv.paused;
+					sv.paused = true;
 				}
 			}
 			break;
