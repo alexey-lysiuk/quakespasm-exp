@@ -998,7 +998,6 @@ static void IN_DebugKeyEvent(SDL_Event *event)
 
 void IN_SendKeyEvents (void)
 {
-	static qboolean oldpaused;
 	SDL_Event event;
 	int key;
 	qboolean down;
@@ -1010,32 +1009,17 @@ void IN_SendKeyEvents (void)
 #if defined(USE_SDL2)
 		case SDL_WINDOWEVENT:
 			if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-			{
 				S_UnblockSound();
-				sv.paused = oldpaused;
-			}
 			else if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-			{
-				oldpaused = sv.paused;
-				sv.paused = true;
 				S_BlockSound();
-			}
 			break;
 #else
 		case SDL_ACTIVEEVENT:
 			if (event.active.state & (SDL_APPINPUTFOCUS|SDL_APPACTIVE))
 			{
 				if (event.active.gain)
-				{
 					S_UnblockSound();
-					sv.paused = oldpaused;
-				}
-				else
-				{
-					S_BlockSound();
-					oldpaused = sv.paused;
-					sv.paused = true;
-				}
+				else	S_BlockSound();
 			}
 			break;
 #endif
