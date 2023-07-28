@@ -654,6 +654,24 @@ void SCR_DrawCrosshair (void)
 }
 
 
+extern char edict_info[8][128];
+
+static void SCR_DrawEdictInfo (void)
+{
+	GL_SetCanvas (CANVAS_CROSSHAIR);
+
+	for (size_t i = 0; i < sizeof edict_info / sizeof edict_info[0]; ++i)
+	{
+		const char *edict_line = edict_info[i];
+
+		if (edict_line[0] == '\0')
+			break;
+
+		Draw_String (30, 20 + i * 10, edict_line);
+	}
+}
+
+
 
 //=============================================================================
 
@@ -1095,6 +1113,7 @@ void SCR_UpdateScreen (void)
 	else
 	{
 		SCR_DrawCrosshair (); //johnfitz
+		SCR_DrawEdictInfo ();
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();

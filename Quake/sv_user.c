@@ -369,6 +369,8 @@ void SV_AirMove (void)
 	}
 }
 
+void SV_TraceEdict(void);
+
 /*
 ===================
 SV_ClientThink
@@ -410,6 +412,8 @@ void SV_ClientThink (void)
 		angles[PITCH] = -v_angle[PITCH]/3;
 		angles[YAW] = v_angle[YAW];
 	}
+
+	SV_TraceEdict();
 
 	if ( (int)sv_player->v.flags & FL_WATERJUMP )
 	{
