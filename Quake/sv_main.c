@@ -119,7 +119,7 @@ void SV_Init (void)
 	extern	cvar_t	sv_idealpitchscale;
 	extern	cvar_t	sv_aim;
 	extern	cvar_t	sv_altnoclip; //johnfitz
-	extern	cvar_t	sv_traceedict;
+	extern	cvar_t	sv_traceentity;
 
 	sv.edicts = NULL; // ericw -- sv.edicts switched to use malloc()
 
@@ -138,7 +138,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_nostep);
 	Cvar_RegisterVariable (&sv_freezenonclients);
 	Cvar_RegisterVariable (&sv_altnoclip); //johnfitz
-	Cvar_RegisterVariable (&sv_traceedict);
+	Cvar_RegisterVariable (&sv_traceentity);
 
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz
 	Cmd_AddCommand ("sv_saveentfile", &SV_SaveEntFile_f);

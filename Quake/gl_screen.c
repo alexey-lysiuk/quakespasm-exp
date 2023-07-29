@@ -654,20 +654,20 @@ void SCR_DrawCrosshair (void)
 }
 
 
-extern char edict_info[8][128];
+extern char sv_entityinfo[8][128];
 
 static void SCR_DrawEdictInfo (void)
 {
 	GL_SetCanvas (CANVAS_CROSSHAIR);
 
-	for (size_t i = 0; i < sizeof edict_info / sizeof edict_info[0]; ++i)
+	for (size_t i = 0; i < sizeof sv_entityinfo / sizeof sv_entityinfo[0]; ++i)
 	{
-		const char *edict_line = edict_info[i];
+		const char *info_line = sv_entityinfo[i];
 
-		if (edict_line[0] == '\0')
+		if (info_line[0] == '\0')
 			break;
 
-		Draw_String (30, 20 + i * 10, edict_line);
+		Draw_String (30, 20 + i * 10, info_line);
 	}
 }
 

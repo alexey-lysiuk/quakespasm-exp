@@ -937,7 +937,7 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 
 //
-// Edict tracing
+// Entity tracing
 //
 
 typedef struct
@@ -948,7 +948,7 @@ typedef struct
 	vec3_t end;
 } moveclip_storage_t;
 
-static void ET_InitEdictTrace(moveclip_t* clip, moveclip_storage_t* storage)
+static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
 {
 	VectorCopy(vec3_origin, storage->mins);
 	VectorCopy(vec3_origin, storage->maxs);
@@ -1055,18 +1055,18 @@ static inline void ET_MidPoint(edict_t *ed, vec3_t pos)
 
 enum ET_TraceFlags
 {
-	ET_CHECK_OWNER = 2,  // Use owner (if set) for edict without classname and model
-	ET_PREFER_SOLID = 4,  // If solid and trigger edicts are picked, do not check distance to them, but choose solid one
+	ET_CHECK_OWNER = 2,  // Use owner (if set) for entity without classname and model
+	ET_PREFER_SOLID = 4,  // If solid and trigger entities are picked, do not check distance to them, but choose solid one
 };
 
-cvar_t sv_traceedict = { "sv_traceedict", "0", CVAR_NONE };
+cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
+char sv_entityinfo[8][128];
 
-char edict_info[8][128];
-double et_timesinceupdate;
+static double et_timesinceupdate;
 
-void SV_TraceEdict(void)
+void SV_TraceEntity(void)
 {
-	if (edict_info[0][0] == '\0')
+	if (sv_entityinfo[0][0] == '\0')
 		et_timesinceupdate = DBL_MAX;
 	else
 		et_timesinceupdate += host_frametime;
@@ -1076,17 +1076,17 @@ void SV_TraceEdict(void)
 
 	et_timesinceupdate = 0;
 
-	for (size_t i = 0; i < sizeof edict_info / sizeof edict_info[0]; ++i)
-		edict_info[i][0] = '\0';
+	for (size_t i = 0; i < sizeof sv_entityinfo / sizeof sv_entityinfo[0]; ++i)
+		sv_entityinfo[i][0] = '\0';
 
-	int tracemode = sv_traceedict.value;
+	int tracemode = sv_traceentity.value;
 
 	if (tracemode < 1 || svs.maxclients != 1)
 		return;
 
 	moveclip_t clip;
 	moveclip_storage_t storage;
-	ET_InitEdictTrace(&clip, &storage);
+	ET_InitEntityTrace(&clip, &storage);
 
 	trace_t trace = clip.trace;
 
@@ -1145,30 +1145,30 @@ void SV_TraceEdict(void)
 		vec_t* max = ent->v.absmax;
 		int line = 0;
 
-#define edict_sprintf(format, ...) \
-	q_snprintf(edict_info[line++], sizeof(edict_info[0]), format, __VA_ARGS__)
+#define entity_sprintf(format, ...) \
+	q_snprintf(sv_entityinfo[line++], sizeof(sv_entityinfo[0]), format, __VA_ARGS__)
 
-		edict_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
-		edict_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
-		edict_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
+		entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
+		entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
+		entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
 
 		{
 			float health = ent->v.health;
 			if (health != 0.f)
-				edict_sprintf("health: %.0f", health);
+				entity_sprintf("health: %.0f", health);
 		}
 		{
 			const char *target = PR_GetString(ent->v.target);
 			if (target[0] != '\0')
-				edict_sprintf("target: %s", target);
+				entity_sprintf("target: %s", target);
 		}
 		{
 			const char *targetname = PR_GetString(ent->v.targetname);
 			if (targetname[0] != '\0')
-				edict_sprintf("targetname: %s", targetname);
+				entity_sprintf("targetname: %s", targetname);
 		}
 
-#undef edict_sprintf
+#undef entity_sprintf
 
 		break;
 	}
