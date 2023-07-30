@@ -32,6 +32,9 @@ line of sight checks trace->crosscontent, but bullets don't
 
 */
 
+extern cvar_t sv_autodumpareanodes;
+void SV_DumpAreaNodes(void);
+
 
 typedef struct
 {
@@ -345,6 +348,9 @@ void SV_TouchLinks (edict_t *ent)
 	
 	listcount = 0;
 	SV_AreaTriggerEdicts (ent, sv_areanodes, list, &listcount, sv.num_edicts);
+
+	if (sv_autodumpareanodes.value)
+		SV_DumpAreaNodes();
 
 	for (i = 0; i < listcount; i++)
 	{
@@ -932,6 +938,9 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 // clip to entities
 	SV_ClipToLinks ( sv_areanodes, &clip );
 
+	if (sv_autodumpareanodes.value)
+		SV_DumpAreaNodes();
+
 	return clip.trace;
 }
 
@@ -1236,15 +1245,26 @@ static void DumpAreaNode(FILE* f, areanode_t* areanode, int level)
 	DumpAreaNode(f, areanode->children[1], level + 2);
 }
 
+static int dan_currentframe;
+static int dan_framedumpcounter;
+
 void SV_DumpAreaNodes(void)
 {
+	if (dan_currentframe != host_framecount)
+	{
+		dan_currentframe = host_framecount;
+		dan_framedumpcounter = 0;
+	}
+	else
+		++dan_framedumpcounter;
+
 #if 1
 	char nowstr[256];
 	struct tm* now = localtime(&(time_t){time(NULL)});
 	strftime(nowstr, sizeof nowstr, "%Y-%m-%d_%H-%M-%S", now);
 
 	char fname[1024];
-	q_snprintf(fname, sizeof fname, "areanodes_%s_%i.yml", nowstr, host_framecount);
+	q_snprintf(fname, sizeof fname, "areanodes_%s_%04i-%04i.yml", nowstr, dan_currentframe, dan_framedumpcounter);
 #else
 	const char* fname = "areanodes.yml";
 #endif
