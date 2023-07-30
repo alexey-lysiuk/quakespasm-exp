@@ -1173,3 +1173,86 @@ void SV_TraceEntity(void)
 		break;
 	}
 }
+
+
+static void DumpAreaNodeEdicts(FILE* f, link_t *edlink, const char* name, int level)
+{
+	link_t *current = edlink->next;
+	link_t *next;
+
+	if (current == edlink)
+		return;
+
+	fprintf(f, "%*s%s:\n", level * 2, "", name);
+	++level;
+
+	for (/* empty */; current != edlink; current = next)
+	{
+		edict_t* ed = EDICT_FROM_AREA(current);
+		fprintf(f, "%*s- edict: %p\n", level * 2, "", ed);
+		{
+			const char* classname = PR_GetString(ed->v.classname);
+			if (classname[0] != '\0')
+				fprintf(f, "%*s  classname: %s\n", level * 2, "", classname);
+		}
+		{
+			const char* model = PR_GetString(ed->v.model);
+			if (model[0] != '\0')
+				fprintf(f, "%*s  model: %s\n", level * 2, "", model);
+		}
+		{
+			vec_t* min = ed->v.absmin;
+			fprintf(f, "%*s  absmin: %.1f %.1f %.1f\n", level * 2, "", min[0], min[1], min[2]);
+		}
+		{
+			vec_t* max = ed->v.absmax;
+			fprintf(f, "%*s  absmax: %.1f %.1f %.1f\n", level * 2, "", max[0], max[1], max[2]);
+		}
+		fprintf(f, "%*s  solid: %i\n", level * 2, "", (int)ed->v.solid);
+		{
+			int flags = ed->v.flags;
+			if (flags != 0)
+				fprintf(f, "%*s  flags: %i\n", level * 2, "", flags);
+		}
+
+		next = current->next;
+	}
+}
+
+static void DumpAreaNode(FILE* f, areanode_t* areanode, int level)
+{
+	fprintf(f, "%*s- node: %p\n", level * 2, "", areanode);
+	fprintf(f, "%*s  axis: %i\n", level * 2, "", areanode->axis);
+	fprintf(f, "%*s  dist: %.2f\n", level * 2, "", areanode->dist);
+
+	DumpAreaNodeEdicts(f, &areanode->solid_edicts, "solids", level + 1);
+	DumpAreaNodeEdicts(f, &areanode->trigger_edicts, "triggers", level + 1);
+
+	if (areanode->axis == -1)
+		return;
+
+	fprintf(f, "%*s  children:\n", level * 2, "");
+	DumpAreaNode(f, areanode->children[0], level + 2);
+	DumpAreaNode(f, areanode->children[1], level + 2);
+}
+
+void SV_DumpAreaNodes(void)
+{
+#if 1
+	char nowstr[256];
+	struct tm* now = localtime(&(time_t){time(NULL)});
+	strftime(nowstr, sizeof nowstr, "%Y-%m-%d_%H-%M-%S", now);
+
+	char fname[1024];
+	q_snprintf(fname, sizeof fname, "areanodes_%s_%i.yml", nowstr, host_framecount);
+#else
+	const char* fname = "areanodes.yml";
+#endif
+
+	FILE* f = fopen(fname, "w");
+	if (f)
+	{
+		DumpAreaNode(f, sv_areanodes, 0);
+		fclose(f);
+	}
+}
