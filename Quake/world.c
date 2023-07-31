@@ -1217,6 +1217,12 @@ static void DumpAreaNodeEdicts(link_t *edlink, const char* name, int level)
 
 	for (/* empty */; current != edlink; current = next)
 	{
+		if (!current)
+		{
+			dam_sprintf("%*s- edict: null [BROKEN LINK]\n", level * 2, "");
+			return;
+		}
+
 		edict_t* ed = EDICT_FROM_AREA(current);
 		dam_sprintf("%*s- edict: %p\n", level * 2, "", ed);
 		{
