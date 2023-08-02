@@ -1011,9 +1011,6 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 		|| clip->boxmaxs[2] < touch->v.absmin[2] )
 			continue;
 
-		if (clip->passedict && clip->passedict->v.size[0] && !touch->v.size[0])
-			continue;	// points never interact
-
 		// might intersect, so do an exact clip
 		if (clip->trace.allsolid)
 			return;
@@ -1025,10 +1022,58 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 				continue;	// don't clip against owner
 		}
 
-		if ((int)touch->v.flags & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end);
-		else
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end);
+		{
+			// Replacemet of SV_ClipMoveToEntity()
+			vec3_t offset;
+			vec3_t start_l, end_l;
+			hull_t *hull;
+
+			// fill in a default trace
+			memset (&trace, 0, sizeof(trace_t));
+			trace.fraction = 1;
+			trace.allsolid = true;
+			VectorCopy (clip->end, trace.endpos);
+
+			// get the clipping hull
+			{
+				// Replacemet of SV_HullForEntity() with adjustment for zero-sized triggers
+				// like lava balls (fireball quakec class)
+
+				vec3_t hullmins, hullmaxs;
+				VectorSubtract (touch->v.mins, clip->maxs, hullmins);
+				VectorSubtract (touch->v.maxs, clip->mins, hullmaxs);
+
+				if (VectorCompare(vec3_origin, hullmins) && VectorCompare(vec3_origin, hullmaxs))
+				{
+					// Set predifined size in order to make zero-sized trigger trace-able
+					hullmins[0] = -16.f;
+					hullmins[1] = -16.f;
+					hullmins[2] = -16.f;
+					hullmaxs[0] = 16.f;
+					hullmaxs[1] = 16.f;
+					hullmaxs[2] = 16.f;
+				}
+
+				hull = SV_HullForBox (hullmins, hullmaxs);
+
+				VectorCopy (touch->v.origin, offset);
+			}
+
+			VectorSubtract (clip->start, offset, start_l);
+			VectorSubtract (clip->end, offset, end_l);
+
+			// trace a line through the apropriate clipping hull
+			SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+
+			// fix trace up by the offset
+			if (trace.fraction != 1)
+				VectorAdd (trace.endpos, offset, trace.endpos);
+
+			// did we clip the move?
+			if (trace.fraction < 1 || trace.startsolid  )
+				trace.ent = touch;
+		}
+
 		if (trace.allsolid || trace.startsolid ||
 		trace.fraction < clip->trace.fraction)
 		{
