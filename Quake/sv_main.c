@@ -140,6 +140,8 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_freezenonclients);
 	Cvar_RegisterVariable (&sv_altnoclip); //johnfitz
 	Cvar_RegisterVariable (&sv_traceentity);
+	extern void SV_ResetEntityTrace(cvar_t *var);
+	Cvar_SetCallback (&sv_traceentity, SV_ResetEntityTrace);
 	Cvar_RegisterVariable (&sv_autodumpareanodes);
 
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz

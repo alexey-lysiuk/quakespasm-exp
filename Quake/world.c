@@ -1120,8 +1120,23 @@ char sv_entityinfo[8][128];
 
 static double et_timesinceupdate;
 
+void SV_ResetEntityTrace(cvar_t *var)
+{
+	(void)var;
+
+	for (size_t i = 0; i < sizeof sv_entityinfo / sizeof sv_entityinfo[0]; ++i)
+		sv_entityinfo[i][0] = '\0';
+
+	et_timesinceupdate = 0;
+}
+
 void SV_TraceEntity(void)
 {
+	int tracemode = sv_traceentity.value;
+
+	if (tracemode < 1 || svs.maxclients != 1)
+		return;
+
 	if (sv_entityinfo[0][0] == '\0')
 		et_timesinceupdate = DBL_MAX;
 	else
@@ -1130,15 +1145,7 @@ void SV_TraceEntity(void)
 	if (et_timesinceupdate < 0.1)
 		return;
 
-	et_timesinceupdate = 0;
-
-	for (size_t i = 0; i < sizeof sv_entityinfo / sizeof sv_entityinfo[0]; ++i)
-		sv_entityinfo[i][0] = '\0';
-
-	int tracemode = sv_traceentity.value;
-
-	if (tracemode < 1 || svs.maxclients != 1)
-		return;
+	SV_ResetEntityTrace(NULL);
 
 	moveclip_t clip;
 	moveclip_storage_t storage;
