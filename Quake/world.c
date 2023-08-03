@@ -34,9 +34,6 @@ line of sight checks trace->crosscontent, but bullets don't
 
 */
 
-extern cvar_t sv_autodumpareanodes;
-void SV_DumpAreaNodes(void);
-
 
 typedef struct
 {
@@ -350,9 +347,6 @@ void SV_TouchLinks (edict_t *ent)
 	
 	listcount = 0;
 	SV_AreaTriggerEdicts (ent, sv_areanodes, list, &listcount, sv.num_edicts);
-
-	if (sv_autodumpareanodes.value)
-		SV_DumpAreaNodes();
 
 	for (i = 0; i < listcount; i++)
 	{
@@ -940,9 +934,6 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 // clip to entities
 	SV_ClipToLinks ( sv_areanodes, &clip );
 
-	if (sv_autodumpareanodes.value)
-		SV_DumpAreaNodes();
-
 	return clip.trace;
 }
 
@@ -1238,25 +1229,7 @@ void SV_TraceEntity(void)
 }
 
 
-#define dan_buffersize 256 * 1024
-char* dan_buffer;
-char* dan_bufferptr;
-
-static inline void dam_sprintf(const char* format, ...)
-{
-	size_t size = dan_buffersize - (dan_bufferptr - dan_buffer);
-	if (size == 0)
-		return;
-
-	va_list argptr;
-	va_start(argptr, format);
-
-	dan_bufferptr += q_vsnprintf(dan_bufferptr, size, format, argptr);
-
-	va_end(argptr);
-}
-
-static void DumpAreaNodeEdicts(link_t *edlink, const char* name, int level)
+static void DumpAreaNodeEdicts(FILE* f, link_t *edlink, const char* name, int level)
 {
 	link_t *current = edlink->next;
 	link_t *next;
@@ -1264,99 +1237,74 @@ static void DumpAreaNodeEdicts(link_t *edlink, const char* name, int level)
 	if (current == edlink)
 		return;
 
-	dam_sprintf("%*s%s:\n", level * 2, "", name);
+	fprintf(f, "%*s%s:\n", level * 2, "", name);
 	++level;
 
 	for (/* empty */; current != edlink; current = next)
 	{
 		if (!current)
 		{
-			dam_sprintf("%*s- edict: null [BROKEN LINK]\n", level * 2, "");
+			fprintf(f, "%*s- edict: null [BROKEN LINK]\n", level * 2, "");
 			return;
 		}
 
 		edict_t* ed = EDICT_FROM_AREA(current);
-		dam_sprintf("%*s- edict: %p\n", level * 2, "", ed);
+		fprintf(f, "%*s- edict: %p\n", level * 2, "", ed);
 		{
 			const char* classname = PR_GetString(ed->v.classname);
 			if (classname[0] != '\0')
-				dam_sprintf("%*s  classname: %s\n", level * 2, "", classname);
+				fprintf(f, "%*s  classname: %s\n", level * 2, "", classname);
 		}
 		{
 			const char* model = PR_GetString(ed->v.model);
 			if (model[0] != '\0')
-				dam_sprintf("%*s  model: %s\n", level * 2, "", model);
+				fprintf(f, "%*s  model: %s\n", level * 2, "", model);
 		}
 		{
 			vec_t* min = ed->v.absmin;
-			dam_sprintf("%*s  absmin: %.1f %.1f %.1f\n", level * 2, "", min[0], min[1], min[2]);
+			fprintf(f, "%*s  absmin: %.1f %.1f %.1f\n", level * 2, "", min[0], min[1], min[2]);
 		}
 		{
 			vec_t* max = ed->v.absmax;
-			dam_sprintf("%*s  absmax: %.1f %.1f %.1f\n", level * 2, "", max[0], max[1], max[2]);
+			fprintf(f, "%*s  absmax: %.1f %.1f %.1f\n", level * 2, "", max[0], max[1], max[2]);
 		}
-		dam_sprintf("%*s  solid: %i\n", level * 2, "", (int)ed->v.solid);
+		fprintf(f, "%*s  solid: %i\n", level * 2, "", (int)ed->v.solid);
 		{
 			int flags = ed->v.flags;
 			if (flags != 0)
-				dam_sprintf("%*s  flags: %i\n", level * 2, "", flags);
+				fprintf(f, "%*s  flags: %i\n", level * 2, "", flags);
 		}
 
 		next = current->next;
 	}
 }
 
-static void DumpAreaNode(areanode_t* areanode, int level)
+static void DumpAreaNode(FILE* f, areanode_t* areanode, int level)
 {
-	dam_sprintf("%*s- node: %p\n", level * 2, "", areanode);
-	dam_sprintf("%*s  axis: %i\n", level * 2, "", areanode->axis);
-	dam_sprintf("%*s  dist: %.2f\n", level * 2, "", areanode->dist);
+	fprintf(f, "%*s- node: %p\n", level * 2, "", areanode);
+	fprintf(f, "%*s  axis: %i\n", level * 2, "", areanode->axis);
+	fprintf(f, "%*s  dist: %.2f\n", level * 2, "", areanode->dist);
 
-	DumpAreaNodeEdicts(&areanode->solid_edicts, "solids", level + 1);
-	DumpAreaNodeEdicts(&areanode->trigger_edicts, "triggers", level + 1);
+	DumpAreaNodeEdicts(f, &areanode->solid_edicts, "solids", level + 1);
+	DumpAreaNodeEdicts(f, &areanode->trigger_edicts, "triggers", level + 1);
 
 	if (areanode->axis == -1)
 		return;
 
-	dam_sprintf("%*s  children:\n", level * 2, "");
-	DumpAreaNode(areanode->children[0], level + 2);
-	DumpAreaNode(areanode->children[1], level + 2);
+	fprintf(f, "%*s  children:\n", level * 2, "");
+	DumpAreaNode(f, areanode->children[0], level + 2);
+	DumpAreaNode(f, areanode->children[1], level + 2);
 }
-
-static int dan_currentframe;
-static int dan_framedumpcounter;
-static unsigned dan_hash;
 
 void SV_DumpAreaNodes(void)
 {
-	if (!dan_buffer)
-		dan_buffer = malloc(dan_buffersize);
-
-	dan_bufferptr = dan_buffer;
-
-	DumpAreaNode(sv_areanodes, 0);
-
-	unsigned hash = COM_HashString(dan_buffer);
-	if (hash == dan_hash)
-		return;
-
-	dan_hash = hash;
-
 #if 1
-	if (dan_currentframe != host_framecount)
-	{
-		dan_currentframe = host_framecount;
-		dan_framedumpcounter = 0;
-	}
-	else
-		++dan_framedumpcounter;
-
 	char nowstr[256];
 	struct tm* now = localtime(&(time_t){time(NULL)});
 	strftime(nowstr, sizeof nowstr, "%Y-%m-%d_%H-%M-%S", now);
 
 	char fname[1024];
-	q_snprintf(fname, sizeof fname, "areanodes_%s_%04i-%04i.yml", nowstr, dan_currentframe, dan_framedumpcounter);
+	q_snprintf(fname, sizeof fname, "areanodes_%s_%i.yml", nowstr, host_framecount);
 #else
 	const char* fname = "areanodes.yml";
 #endif
@@ -1364,7 +1312,7 @@ void SV_DumpAreaNodes(void)
 	FILE* f = fopen(fname, "w");
 	if (f)
 	{
-		fwrite(dan_buffer, dan_bufferptr - dan_buffer, 1, f);
+		DumpAreaNode(f, sv_areanodes, 0);
 		fclose(f);
 	}
 }

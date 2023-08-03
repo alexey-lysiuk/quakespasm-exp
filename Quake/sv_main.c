@@ -120,7 +120,6 @@ void SV_Init (void)
 	extern	cvar_t	sv_aim;
 	extern	cvar_t	sv_altnoclip; //johnfitz
 	extern	cvar_t	sv_traceentity;
-	extern	cvar_t	sv_autodumpareanodes;
 
 	sv.edicts = NULL; // ericw -- sv.edicts switched to use malloc()
 
@@ -142,7 +141,6 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_traceentity);
 	extern void SV_ResetEntityTrace(cvar_t *var);
 	Cvar_SetCallback (&sv_traceentity, SV_ResetEntityTrace);
-	Cvar_RegisterVariable (&sv_autodumpareanodes);
 
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz
 	Cmd_AddCommand ("sv_saveentfile", &SV_SaveEntFile_f);
