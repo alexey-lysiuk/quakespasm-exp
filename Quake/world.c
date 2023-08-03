@@ -1253,26 +1253,26 @@ static void DumpAreaNodeEdicts(FILE* f, link_t *edlink, const char* name, int le
 		{
 			const char* classname = PR_GetString(ed->v.classname);
 			if (classname[0] != '\0')
-				fprintf(f, "%*s  classname: %s\n", level * 2, "", classname);
+				fprintf(f, "%*s  classname: '%s'\n", level * 2, "", classname);
 		}
 		{
 			const char* model = PR_GetString(ed->v.model);
 			if (model[0] != '\0')
-				fprintf(f, "%*s  model: %s\n", level * 2, "", model);
+				fprintf(f, "%*s  model: '%s'\n", level * 2, "", model);
 		}
 		{
 			vec_t* min = ed->v.absmin;
-			fprintf(f, "%*s  absmin: %.1f %.1f %.1f\n", level * 2, "", min[0], min[1], min[2]);
+			fprintf(f, "%*s  absmin: [%.1f, %.1f, %.1f]\n", level * 2, "", min[0], min[1], min[2]);
 		}
 		{
 			vec_t* max = ed->v.absmax;
-			fprintf(f, "%*s  absmax: %.1f %.1f %.1f\n", level * 2, "", max[0], max[1], max[2]);
+			fprintf(f, "%*s  absmax: [%.1f, %.1f, %.1f]\n", level * 2, "", max[0], max[1], max[2]);
 		}
 		fprintf(f, "%*s  solid: %i\n", level * 2, "", (int)ed->v.solid);
 		{
 			int flags = ed->v.flags;
 			if (flags != 0)
-				fprintf(f, "%*s  flags: %i\n", level * 2, "", flags);
+				fprintf(f, "%*s  flags: 0x%x\n", level * 2, "", flags);
 		}
 
 		next = current->next;
@@ -1283,7 +1283,7 @@ static void DumpAreaNode(FILE* f, areanode_t* areanode, int level)
 {
 	fprintf(f, "%*s- node: %p\n", level * 2, "", areanode);
 	fprintf(f, "%*s  axis: %i\n", level * 2, "", areanode->axis);
-	fprintf(f, "%*s  dist: %.2f\n", level * 2, "", areanode->dist);
+	fprintf(f, "%*s  dist: %.1f\n", level * 2, "", areanode->dist);
 
 	DumpAreaNodeEdicts(f, &areanode->solid_edicts, "solids", level + 1);
 	DumpAreaNodeEdicts(f, &areanode->trigger_edicts, "triggers", level + 1);
