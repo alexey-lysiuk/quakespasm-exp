@@ -20,6 +20,7 @@
 #ifdef USE_LUA_SCRIPTING
 
 #include "lua.h"
+#include "lualib.h"
 #include "lauxlib.h"
 
 #include "quakedef.h"
@@ -53,6 +54,9 @@ static void LUA_Exec(void)
 
 		if (state)
 		{
+			luaL_requiref(state, LUA_STRLIBNAME, luaopen_string, 1);
+			lua_pop(state, 1);
+
 			lua_pushcfunction(state, LUA_Echo);
 			lua_setglobal(state, "echo");
 
