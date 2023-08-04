@@ -115,9 +115,9 @@ static void LUA_PrepareState(lua_State* state)
 	// Available standard libraries
 	static const luaL_Reg stdlibs[] =
 	{
-		{LUA_GNAME, luaopen_base},
-		{LUA_STRLIBNAME, luaopen_string},
-		{NULL, NULL}
+		{ LUA_GNAME, luaopen_base },
+		{ LUA_STRLIBNAME, luaopen_string },
+		{ NULL, NULL }
 	};
 
 	for (const luaL_Reg* lib = stdlibs; lib->func; ++lib)
@@ -141,14 +141,25 @@ static void LUA_PrepareState(lua_State* state)
 	}
 
 	// Scripting functions
-	lua_pushcfunction(state, LUA_Echo);
-	lua_setglobal(state, "echo");
+	typedef struct
+	{
+		const char* name;
+		lua_CFunction ptr;
+	} ScriptFunction;
 
-	lua_pushcfunction(state, LUA_Edict);
-	lua_setglobal(state, "edict");
+	static const ScriptFunction scriptfuncs[] =
+	{
+		{ "echo", LUA_Echo },
+		{ "edict", LUA_Edict },
+		{ "edicts", LUA_Edicts },
+		{ NULL, NULL }
+	};
 
-	lua_pushcfunction(state, LUA_Edicts);
-	lua_setglobal(state, "edicts");
+	for (const ScriptFunction* func = scriptfuncs; func->name; ++func)
+	{
+		lua_pushcfunction(state, func->ptr);
+		lua_setglobal(state, func->name);
+	}
 
 	// Script arguments
 	int argc = Cmd_Argc() - 1;
