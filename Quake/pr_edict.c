@@ -1576,3 +1576,41 @@ int PR_AllocString (int size, char **ptr)
 	return -1 - i;
 }
 
+
+qboolean ED_GetFieldAt(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value)
+{
+	if (fieldindex >= (size_t)progs->numfielddefs)
+		return false;
+
+	const ddef_t* fielddef = &pr_fielddefs[fieldindex];
+	const char* fieldname = PR_GetString(fielddef->s_name);
+
+	size_t namelen = strlen(fieldname);
+	if (namelen > 1 && fieldname[namelen - 2] == '_')
+		return false; // skip _x, _y, _z vars
+
+	const int* fieldvalue = (int*)((byte*)&ed->v + fielddef->ofs * 4);
+
+	// if the value is still all 0, skip the field
+	int fieldtype = fielddef->type & ~DEF_SAVEGLOBAL;
+
+	if (fieldtype >= NUM_TYPE_SIZES)
+		return false;
+
+	int tsi;
+
+	for (tsi = 0; tsi < type_size[fieldtype]; ++tsi)
+	{
+		if (fieldvalue[tsi])
+			break;
+	}
+
+	if (tsi == type_size[fieldtype])
+		return false;
+
+	*type = fieldtype;
+	*name = fieldname;
+	*value = (const eval_t*)fieldvalue;
+
+	return true;
+}

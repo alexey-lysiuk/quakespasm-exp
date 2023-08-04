@@ -48,9 +48,38 @@ static int LUA_GetNextEdict(lua_State* state)
 	edict_t* ed = EDICT_NUM(i);
 
 	lua_createtable(state, 0, 0);
-	lua_pushstring(state, PR_GetString(ed->v.classname));
-	lua_setfield(state, -2, "classname");
-	// TODO: more fields
+
+	for (int fi = 1; fi < progs->numfielddefs; ++fi)
+	{
+		etype_t type;
+		const char* name;
+		const eval_t* value;
+
+		extern qboolean ED_GetFieldAt(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value);
+		if (!ED_GetFieldAt(ed, fi, &type, &name, &value))
+			continue;
+
+		dfunction_t* func;
+
+		switch (type)
+		{
+		case ev_string:
+			lua_pushstring(state, PR_GetString(value->string));
+			lua_setfield(state, -2, name);
+			break;
+
+		case ev_function:
+			func = pr_functions + value->function;
+			lua_pushfstring(state, "%s()", PR_GetString(func->s_name));
+			lua_setfield(state, -2, name);
+			break;
+
+		// TODO: other types
+
+		default:
+			break;
+		}
+	}
 
 	return 2;
 }
