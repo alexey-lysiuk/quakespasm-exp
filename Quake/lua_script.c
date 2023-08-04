@@ -60,6 +60,17 @@ static void LUA_Exec(void)
 			lua_pushcfunction(state, LUA_Echo);
 			lua_setglobal(state, "echo");
 
+			int argc = Cmd_Argc() - 1;
+			lua_createtable(state, argc, 0);
+
+			for (int i = 0; i < argc; ++i)
+			{
+				lua_pushstring(state, Cmd_Argv(i + 1));
+				lua_rawseti(state, -2, i);
+			}
+
+			lua_setglobal(state, "args");
+
 			int result = luaL_dostring(state, script);
 			int top = lua_gettop(state);
 
