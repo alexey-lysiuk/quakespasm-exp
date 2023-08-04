@@ -35,15 +35,33 @@ static void LUA_Exec(void)
 		return;
 	}
 
+	const char* filename = Cmd_Argv(1);
 	int mark = Hunk_LowMark();
-	const char* script = (const char *)COM_LoadHunkFile(Cmd_Argv(1), NULL);
+	const char* script = (const char *)COM_LoadHunkFile(filename, NULL);
 
 	if (script)
 	{
 		lua_State* state = luaL_newstate();
-		luaL_dostring(state, script);
-		lua_close(state);
+
+		if (state)
+		{
+			int result = luaL_dostring(state, script);
+			int top = lua_gettop(state);
+
+			if (result != LUA_OK)
+			{
+				const char* error = lua_tostring(state, top);
+				Con_Printf("Error while executing lua script '%s':\n%s\n", filename, error);
+			}
+
+			lua_pop(state, top);
+			lua_close(state);
+		}
+		else
+			Con_Printf("Failed to create lua state, out of memory?\n");
 	}
+	else
+		Con_Printf("Failed to load lua script '%s'\n", filename);
 
 	Hunk_FreeToLowMark(mark);
 }
