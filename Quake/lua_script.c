@@ -178,24 +178,31 @@ static void LUA_Exec(const char* script, const char* filename)
 {
 	lua_State* state = luaL_newstate();
 
-	if (state)
+	if (!state)
 	{
-		LUA_PrepareState(state);
-
-		int result = luaL_dostring(state, script);
-		int top = lua_gettop(state);
-
-		if (result != LUA_OK)
-		{
-			const char* error = lua_tostring(state, top);
-			Con_SafePrintf("Error while executing lua script '%s':\n%s\n", filename, error);
-		}
-
-		lua_pop(state, top);
-		lua_close(state);
-	}
-	else
 		Con_SafePrintf("Failed to create lua state, out of memory?\n");
+		return;
+	}
+
+	LUA_PrepareState(state);
+
+	int result = luaL_dostring(state, script);
+	int top = lua_gettop(state);
+
+	if (result != LUA_OK)
+	{
+		const char* error = lua_tostring(state, top);
+		assert(error);
+
+		// Remove junk from [string "beginning of script..."]:line: message
+		const char* nojunkerror = strstr(error, "...\"]:");
+
+		Con_SafePrintf("Error while executing Lua script\n%s%s\n",
+			filename, nojunkerror ? nojunkerror + 5 : error);
+	}
+
+	lua_pop(state, top);
+	lua_close(state);
 }
 
 static void LUA_Exec_f(void)
