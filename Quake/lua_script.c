@@ -51,17 +51,17 @@ static void LUA_Exec(void)
 			if (result != LUA_OK)
 			{
 				const char* error = lua_tostring(state, top);
-				Con_Printf("Error while executing lua script '%s':\n%s\n", filename, error);
+				Con_SafePrintf("Error while executing lua script '%s':\n%s\n", filename, error);
 			}
 
 			lua_pop(state, top);
 			lua_close(state);
 		}
 		else
-			Con_Printf("Failed to create lua state, out of memory?\n");
+			Con_SafePrintf("Failed to create lua state, out of memory?\n");
 	}
 	else
-		Con_Printf("Failed to load lua script '%s'\n", filename);
+		Con_SafePrintf("Failed to load lua script '%s'\n", filename);
 
 	Hunk_FreeToLowMark(mark);
 }
