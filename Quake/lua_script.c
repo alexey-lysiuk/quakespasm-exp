@@ -33,11 +33,70 @@ static int LUA_Echo(lua_State* state)
 	return 0;
 }
 
-static void LUA_Exec(void)
+static int LUA_Edicts(lua_State* state)
 {
-	if (!sv.active)
-		return;
+	//lua_createtable(state, 0, 4);
 
+//	if (!sv.active)
+//		return 1;
+
+	// TODO: edicts
+	lua_pushnil(state);
+	return 1;
+}
+
+static void LUA_PrepareState(lua_State* state)
+{
+	// String library
+	luaL_requiref(state, LUA_STRLIBNAME, luaopen_string, 1);
+	lua_pop(state, 1);
+
+	// Exposed functions
+	lua_pushcfunction(state, LUA_Echo);
+	lua_setglobal(state, "echo");
+
+	lua_pushcfunction(state, LUA_Edicts);
+	lua_setglobal(state, "edicts");
+
+	// Script arguments
+	int argc = Cmd_Argc() - 1;
+	lua_createtable(state, argc, 0);
+
+	for (int i = 0; i < argc; ++i)
+	{
+		lua_pushstring(state, Cmd_Argv(i + 1));
+		lua_rawseti(state, -2, i);
+	}
+
+	lua_setglobal(state, "args");
+}
+
+static void LUA_Exec(const char* script, const char* filename)
+{
+	lua_State* state = luaL_newstate();
+
+	if (state)
+	{
+		LUA_PrepareState(state);
+
+		int result = luaL_dostring(state, script);
+		int top = lua_gettop(state);
+
+		if (result != LUA_OK)
+		{
+			const char* error = lua_tostring(state, top);
+			Con_SafePrintf("Error while executing lua script '%s':\n%s\n", filename, error);
+		}
+
+		lua_pop(state, top);
+		lua_close(state);
+	}
+	else
+		Con_SafePrintf("Failed to create lua state, out of memory?\n");
+}
+
+static void LUA_Exec_f(void)
+{
 	if (Cmd_Argc() < 2)
 	{
 		Con_Printf("lua <filename>\n");
@@ -49,43 +108,7 @@ static void LUA_Exec(void)
 	const char* script = (const char *)COM_LoadHunkFile(filename, NULL);
 
 	if (script)
-	{
-		lua_State* state = luaL_newstate();
-
-		if (state)
-		{
-			luaL_requiref(state, LUA_STRLIBNAME, luaopen_string, 1);
-			lua_pop(state, 1);
-
-			lua_pushcfunction(state, LUA_Echo);
-			lua_setglobal(state, "echo");
-
-			int argc = Cmd_Argc() - 1;
-			lua_createtable(state, argc, 0);
-
-			for (int i = 0; i < argc; ++i)
-			{
-				lua_pushstring(state, Cmd_Argv(i + 1));
-				lua_rawseti(state, -2, i);
-			}
-
-			lua_setglobal(state, "args");
-
-			int result = luaL_dostring(state, script);
-			int top = lua_gettop(state);
-
-			if (result != LUA_OK)
-			{
-				const char* error = lua_tostring(state, top);
-				Con_SafePrintf("Error while executing lua script '%s':\n%s\n", filename, error);
-			}
-
-			lua_pop(state, top);
-			lua_close(state);
-		}
-		else
-			Con_SafePrintf("Failed to create lua state, out of memory?\n");
-	}
+		LUA_Exec(script, filename);
 	else
 		Con_SafePrintf("Failed to load lua script '%s'\n", filename);
 
@@ -94,7 +117,7 @@ static void LUA_Exec(void)
 
 void LUA_Init(void)
 {
-	Cmd_AddCommand("lua", LUA_Exec);
+	Cmd_AddCommand("lua", LUA_Exec_f);
 }
 
 #endif // USE_LUA_SCRIPTING
