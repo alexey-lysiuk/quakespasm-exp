@@ -152,6 +152,7 @@ set(LUA_SOURCES
 	${LUA_DIR}/lapi.h
 	${LUA_DIR}/lauxlib.c
 	${LUA_DIR}/lauxlib.h
+	${LUA_DIR}/lbaselib.c
 	${LUA_DIR}/lcode.c
 	${LUA_DIR}/lcode.h
 	${LUA_DIR}/lctype.c

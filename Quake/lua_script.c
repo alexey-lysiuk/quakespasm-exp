@@ -112,11 +112,35 @@ static int LUA_Edicts(lua_State* state)
 
 static void LUA_PrepareState(lua_State* state)
 {
-	// String library
-	luaL_requiref(state, LUA_STRLIBNAME, luaopen_string, 1);
-	lua_pop(state, 1);
+	// Available standard libraries
+	static const luaL_Reg stdlibs[] =
+	{
+		{LUA_GNAME, luaopen_base},
+		{LUA_STRLIBNAME, luaopen_string},
+		{NULL, NULL}
+	};
 
-	// Exposed functions
+	for (const luaL_Reg* lib = stdlibs; lib->func; ++lib)
+	{
+		luaL_requiref(state, lib->name, lib->func, 1);
+		lua_pop(state, 1);
+	}
+
+	// Remove "unsafe" functions from standard libraries
+	static const char* unsafefuncs[] =
+	{
+		"dofile",
+		"loadfile",
+		NULL
+	};
+
+	for (const char** func = unsafefuncs; *func; ++func)
+	{
+		lua_pushnil(state);
+		lua_setglobal(state, *func);
+	}
+
+	// Scripting functions
 	lua_pushcfunction(state, LUA_Echo);
 	lua_setglobal(state, "echo");
 
