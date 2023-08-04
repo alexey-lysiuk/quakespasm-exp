@@ -24,6 +24,14 @@
 
 #include "quakedef.h"
 
+static int LUA_Echo(lua_State* state)
+{
+	const char* str = luaL_checkstring(state, 1);
+	if (str)
+		Con_SafePrintf("%s\n", str);
+	return 0;
+}
+
 static void LUA_Exec(void)
 {
 	if (!sv.active)
@@ -45,6 +53,9 @@ static void LUA_Exec(void)
 
 		if (state)
 		{
+			lua_pushcfunction(state, LUA_Echo);
+			lua_setglobal(state, "echo");
+
 			int result = luaL_dostring(state, script);
 			int top = lua_gettop(state);
 
