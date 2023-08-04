@@ -19,6 +19,8 @@
 
 #ifdef USE_LUA_SCRIPTING
 
+#include <assert.h>
+
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -33,19 +35,16 @@ static int LUA_Echo(lua_State* state)
 	return 0;
 }
 
-static int LUA_GetNextEdict(lua_State* state)
+static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 {
-	lua_Integer i = luaL_checkinteger(state, 2);
-	i = luaL_intop(+, i, 1);
-	lua_pushinteger(state, i);
-
-	if (!sv.active || i >= sv.num_edicts)
+	if (!sv.active || index < 0 || index >= sv.max_edicts)
 	{
 		lua_pushnil(state);
-		return 1;
+		return false;
 	}
 
-	edict_t* ed = EDICT_NUM(i);
+	edict_t* ed = EDICT_NUM(index);
+	assert(ed);
 
 	lua_createtable(state, 0, 0);
 
@@ -58,6 +57,10 @@ static int LUA_GetNextEdict(lua_State* state)
 		extern qboolean ED_GetFieldAt(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value);
 		if (!ED_GetFieldAt(ed, fi, &type, &name, &value))
 			continue;
+
+		assert(type != ev_bad);
+		assert(name);
+		assert(value);
 
 		dfunction_t* func;
 
@@ -81,7 +84,22 @@ static int LUA_GetNextEdict(lua_State* state)
 		}
 	}
 
-	return 2;
+	return true;
+}
+
+static int LUA_Edict(lua_State* state)
+{
+	lua_Integer i = luaL_checkinteger(state, 1);
+	LUA_MakeEdictTable(state, i);
+	return 1;
+}
+
+static int LUA_GetNextEdict(lua_State* state)
+{
+	lua_Integer i = luaL_checkinteger(state, 2);
+	i = luaL_intop(+, i, 1);
+	lua_pushinteger(state, i);
+	return LUA_MakeEdictTable(state, i) ? 2 : 1;
 }
 
 static int LUA_Edicts(lua_State* state)
@@ -101,6 +119,9 @@ static void LUA_PrepareState(lua_State* state)
 	// Exposed functions
 	lua_pushcfunction(state, LUA_Echo);
 	lua_setglobal(state, "echo");
+
+	lua_pushcfunction(state, LUA_Edict);
+	lua_setglobal(state, "edict");
 
 	lua_pushcfunction(state, LUA_Edicts);
 	lua_setglobal(state, "edicts");
