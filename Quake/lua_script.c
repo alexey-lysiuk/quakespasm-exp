@@ -33,16 +33,34 @@ static int LUA_Echo(lua_State* state)
 	return 0;
 }
 
+static int LUA_GetNextEdict(lua_State* state)
+{
+	lua_Integer i = luaL_checkinteger(state, 2);
+	i = luaL_intop(+, i, 1);
+	lua_pushinteger(state, i);
+
+	if (!sv.active || i >= sv.num_edicts)
+	{
+		lua_pushnil(state);
+		return 1;
+	}
+
+	edict_t* ed = EDICT_NUM(i);
+
+	lua_createtable(state, 0, 0);
+	lua_pushstring(state, PR_GetString(ed->v.classname));
+	lua_setfield(state, -2, "classname");
+	// TODO: more fields
+
+	return 2;
+}
+
 static int LUA_Edicts(lua_State* state)
 {
-	//lua_createtable(state, 0, 4);
-
-//	if (!sv.active)
-//		return 1;
-
-	// TODO: edicts
-	lua_pushnil(state);
-	return 1;
+	lua_pushcfunction(state, LUA_GetNextEdict);
+	lua_createtable(state, 0, 4);
+	lua_pushinteger(state, -1);
+	return 3;
 }
 
 static void LUA_PrepareState(lua_State* state)
