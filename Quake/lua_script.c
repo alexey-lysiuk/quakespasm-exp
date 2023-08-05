@@ -28,6 +28,9 @@
 #include "quakedef.h"
 
 
+qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value);
+const char* ED_GetFieldNameByOffset(int offset);
+
 static const char* LUA_axisnames[] = { "x", "y", "z" };
 
 static int LUA_Vec3String(lua_State* state)
@@ -69,15 +72,12 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 		const char* name;
 		const eval_t* value;
 
-		extern qboolean ED_GetFieldAt(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value);
-		if (!ED_GetFieldAt(ed, fi, &type, &name, &value))
+		if (!ED_GetFieldByIndex(ed, fi, &type, &name, &value))
 			continue;
 
 		assert(type != ev_bad);
 		assert(name);
 		assert(value);
-
-		dfunction_t* func;
 
 		switch (type)
 		{
@@ -111,12 +111,11 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 			break;
 
 		case ev_field:
-			lua_pushfstring(state, ".%s", "_TODO_");
+			lua_pushfstring(state, ".%s", ED_GetFieldNameByOffset(value->_int));
 			break;
 
 		case ev_function:
-			func = pr_functions + value->function;
-			lua_pushfstring(state, "%s()", PR_GetString(func->s_name));
+			lua_pushfstring(state, "%s()", PR_GetString((pr_functions + value->function)->s_name));
 			break;
 
 		case ev_pointer:

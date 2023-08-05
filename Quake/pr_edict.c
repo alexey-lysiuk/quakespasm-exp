@@ -1577,7 +1577,7 @@ int PR_AllocString (int size, char **ptr)
 }
 
 
-qboolean ED_GetFieldAt(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value)
+qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
 		return false;
@@ -1613,4 +1613,10 @@ qboolean ED_GetFieldAt(edict_t* ed, size_t fieldindex, etype_t* type, const char
 	*value = (const eval_t*)fieldvalue;
 
 	return true;
+}
+
+const char* ED_GetFieldNameByOffset(int offset)
+{
+	const ddef_t* def = ED_FieldAtOfs(offset);
+	return def ? PR_GetString(def->s_name) : "";
 }
