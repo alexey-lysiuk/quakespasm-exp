@@ -55,26 +55,52 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 		assert(name);
 		assert(value);
 
+		static const char* axisnames[] = { "x", "y", "z" };
 		dfunction_t* func;
 
 		switch (type)
 		{
 		case ev_string:
 			lua_pushstring(state, PR_GetString(value->string));
-			lua_setfield(state, -2, name);
+			break;
+
+		case ev_float:
+			lua_pushnumber(state, value->_float);
+			break;
+
+		case ev_vector:
+			lua_createtable(state, 0, 3);
+			for (int i = 0; i < 3; ++i)
+			{
+				lua_pushnumber(state, value->vector[i]);
+				lua_setfield(state, -2, axisnames[i]);
+			}
+			break;
+
+		case ev_entity:
+			lua_pushfstring(state, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+			break;
+
+		case ev_field:
+			lua_pushfstring(state, ".%s", "_TODO_");
 			break;
 
 		case ev_function:
 			func = pr_functions + value->function;
 			lua_pushfstring(state, "%s()", PR_GetString(func->s_name));
-			lua_setfield(state, -2, name);
 			break;
 
-		// TODO: other types
+		case ev_pointer:
+			lua_pushstring(state, "pointer");
+			break;
 
 		default:
+			// Unknown type, e.g. some of FTE extensions
+			lua_pushfstring(state, "bad type %i", type);
 			break;
 		}
+
+		lua_setfield(state, -2, name);
 	}
 
 	return true;
