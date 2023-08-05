@@ -27,13 +27,6 @@
 
 #include "quakedef.h"
 
-static int LUA_Echo(lua_State* state)
-{
-	const char* str = luaL_checkstring(state, 1);
-	if (str)
-		Con_SafePrintf("%s\n", str);
-	return 0;
-}
 
 static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 {
@@ -149,7 +142,6 @@ static void LUA_PrepareState(lua_State* state)
 
 	static const ScriptFunction scriptfuncs[] =
 	{
-		{ "echo", LUA_Echo },
 		{ "edict", LUA_Edict },
 		{ "edicts", LUA_Edicts },
 		{ NULL, NULL }
