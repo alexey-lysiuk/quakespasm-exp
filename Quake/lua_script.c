@@ -28,6 +28,28 @@
 #include "quakedef.h"
 
 
+static const char* LUA_axisnames[] = { "x", "y", "z" };
+
+static int LUA_Vec3String(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TTABLE);
+
+	vec3_t value;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		int type = lua_getfield(state, 1, LUA_axisnames[i]);
+		if (type != LUA_TNUMBER)
+			luaL_error(state, "Bad value in vec3_t at index %i", i);
+
+		value[i] = lua_tonumber(state, 2);
+		lua_pop(state, 1);
+	}
+
+	lua_pushfstring(state, "'%f %f %f'", value[0], value[1], value[2]);
+	return 1;
+}
+
 static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 {
 	if (!sv.active || index < 0 || index >= sv.max_edicts)
@@ -55,7 +77,6 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 		assert(name);
 		assert(value);
 
-		static const char* axisnames[] = { "x", "y", "z" };
 		dfunction_t* func;
 
 		switch (type)
@@ -70,11 +91,19 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 
 		case ev_vector:
 			lua_createtable(state, 0, 3);
+			int vtindex = lua_gettop(state);
+
 			for (int i = 0; i < 3; ++i)
 			{
 				lua_pushnumber(state, value->vector[i]);
-				lua_setfield(state, -2, axisnames[i]);
+				lua_setfield(state, -2, LUA_axisnames[i]);
 			}
+
+			lua_createtable(state, 0, 1);
+			lua_pushcfunction(state, LUA_Vec3String);
+			lua_setfield(state, -2, "__tostring");
+			lua_setmetatable(state, vtindex);
+			// TODO: __concat
 			break;
 
 		case ev_entity:
