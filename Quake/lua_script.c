@@ -214,9 +214,12 @@ static void LUA_Exec(const char* script, const char* filename)
 
 		// Remove junk from [string "beginning of script..."]:line: message
 		const char* nojunkerror = strstr(error, "...\"]:");
+		Con_SafePrintf("Error while executing Lua script\n%s", filename);
 
-		Con_SafePrintf("Error while executing Lua script\n%s%s\n",
-			filename, nojunkerror ? nojunkerror + 5 : error);
+		if (nojunkerror)
+			Con_SafePrintf("%s\n", nojunkerror + 5);
+		else
+			Con_SafePrintf(":0: %s\n", error);
 	}
 
 	lua_pop(state, top);
