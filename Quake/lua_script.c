@@ -163,6 +163,8 @@ static void LUA_PrepareState(lua_State* state)
 	static const luaL_Reg stdlibs[] =
 	{
 		{ LUA_GNAME, luaopen_base },
+		{ LUA_MATHLIBNAME, luaopen_math },
+		{ LUA_TABLIBNAME, luaopen_table },
 		{ LUA_STRLIBNAME, luaopen_string },
 		{ NULL, NULL }
 	};

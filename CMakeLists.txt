@@ -170,6 +170,7 @@ set(LUA_SOURCES
 	${LUA_DIR}/llex.c
 	${LUA_DIR}/llex.h
 	${LUA_DIR}/llimits.h
+	${LUA_DIR}/lmathlib.c
 	${LUA_DIR}/lmem.c
 	${LUA_DIR}/lmem.h
 	${LUA_DIR}/lobject.c
@@ -186,6 +187,7 @@ set(LUA_SOURCES
 	${LUA_DIR}/lstrlib.c
 	${LUA_DIR}/ltable.c
 	${LUA_DIR}/ltable.h
+	${LUA_DIR}/ltablib.c
 	${LUA_DIR}/ltm.c
 	${LUA_DIR}/ltm.h
 	${LUA_DIR}/lua.h
