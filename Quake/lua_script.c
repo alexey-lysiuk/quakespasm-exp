@@ -157,7 +157,7 @@ static int LUA_Edicts(lua_State* state)
 	return 3;
 }
 
-static void LUA_PrepareState(lua_State* state)
+static void LUA_InitStandardLibraries(lua_State* state)
 {
 	// Available standard libraries
 	static const luaL_Reg stdlibs[] =
@@ -188,8 +188,13 @@ static void LUA_PrepareState(lua_State* state)
 		lua_pushnil(state);
 		lua_setglobal(state, *func);
 	}
+}
 
-	// Scripting functions
+static void LUA_PrepareState(lua_State* state)
+{
+	LUA_InitStandardLibraries(state);
+
+	// Register scripting functions
 	typedef struct
 	{
 		const char* name;
