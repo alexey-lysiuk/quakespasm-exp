@@ -30,6 +30,7 @@
 
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
+qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
 
@@ -187,14 +188,17 @@ static int LS_EdictIndex(lua_State* state)
 	luaL_checktype(state, 1, LUA_TTABLE);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
-	//const char* fieldname = luaL_checkstring(state, 2);
 	lua_pushvalue(state, 2);
 
 	int valuetype = lua_rawget(state, 1);
 
 	if (valuetype == LUA_TNIL)
 	{
-		lua_pop(state, 1);  // remove 'nil'
+		const char* fieldname = luaL_checkstring(state, 2);
+
+		//ED_GetFieldByName(
+
+		//lua_pop(state, 1);  // remove 'nil'
 		// TODO
 	}
 

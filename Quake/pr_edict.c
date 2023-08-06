@@ -1620,3 +1620,19 @@ const char* ED_GetFieldNameByOffset(int offset)
 	const ddef_t* def = ED_FieldAtOfs(offset);
 	return def ? PR_GetString(def->s_name) : "";
 }
+
+qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
+{
+	// TODO: Use GetEdictFieldValue() cache?
+	// TODO: Optimize for fields from entvars_t?
+
+	ddef_t*	def = ED_FindField(name);
+
+	if (!def)
+		return false;
+
+	*type = def->type;
+	*value = (eval_t*)((byte*)&ed->v + def->ofs * 4);
+
+	return true;
+}
