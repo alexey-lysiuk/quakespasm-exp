@@ -32,7 +32,6 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, etype_t* type, const
 const char* ED_GetFieldNameByOffset(int offset);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
-static const char ls_edictsname[] = "edicts";
 
 static int LS_Vec3ToString(lua_State* state)
 {
@@ -44,7 +43,7 @@ static int LS_Vec3ToString(lua_State* state)
 	{
 		int type = lua_getfield(state, 1, ls_axisnames[i]);
 		if (type != LUA_TNUMBER)
-			luaL_error(state, "Bad value in vec3_t at index %i", i);
+			luaL_error(state, "Bad value in vec3_t at index %d", i);
 
 		value[i] = lua_tonumber(state, 2);
 		lua_pop(state, 1);
@@ -62,9 +61,9 @@ static void LS_SetVec3MetaTable(lua_State* state)
 
 	if (mtbltype == LUA_TNIL)
 	{
-		lua_pop(state, 1);
+		lua_pop(state, 1);  // remove 'nil'
 		lua_createtable(state, 0, 1);
-		lua_pushvalue(state, -1);
+		lua_pushvalue(state, -1);  // copy of table for lua_setglobal()
 		lua_setglobal(state, vec3mtblname);
 		lua_pushcfunction(state, LS_Vec3ToString);
 		lua_setfield(state, -2, "__tostring");
@@ -183,9 +182,52 @@ static int LS_EdictsCount(lua_State* state)
 	return 1;
 }
 
+static int LS_EdictIndex(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TTABLE);
+	luaL_checktype(state, 2, LUA_TSTRING);
+
+	//const char* fieldname = luaL_checkstring(state, 2);
+	lua_pushvalue(state, 2);
+
+	int valuetype = lua_rawget(state, 1);
+
+	if (valuetype == LUA_TNIL)
+	{
+		lua_pop(state, 1);  // remove 'nil'
+		// TODO
+	}
+
+	//lua_pushnil(state);
+	return 1;
+}
+
+static void LS_SetEdictMetaTable(lua_State* state)
+{
+	static const char edictmtbl[] = "__edictmtbl";
+	lua_getglobal(state, edictmtbl);
+	int mtbltype = lua_type(state, -1);
+
+	if (mtbltype == LUA_TNIL)
+	{
+		lua_pop(state, 1);  // remove 'nil'
+		lua_createtable(state, 0, 1);
+		lua_pushvalue(state, -1);  // copy of table for lua_setglobal()
+		lua_setglobal(state, edictmtbl);
+		lua_pushcfunction(state, LS_EdictIndex);
+		lua_setfield(state, -2, "__index");
+	}
+	else if (mtbltype != LUA_TTABLE)
+		luaL_error(state, "Broken edict metatable");
+
+	lua_setmetatable(state, -2);
+}
+
 static int LS_EdictsIndex(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 1);
+	luaL_checktype(state, 1, LUA_TTABLE);
+
+	lua_Integer index = luaL_checkinteger(state, 2);
 
 	if (!sv.active || index < 0 || index >= sv.num_edicts)
 	{
@@ -193,21 +235,37 @@ static int LS_EdictsIndex(lua_State* state)
 		return 1;
 	}
 
-	lua_getglobal(state, ls_edictsname);
-
-	if (lua_type(state, -1) != LUA_TTABLE)
-		luaL_error(state, "Broken edicts global table");
-
-	lua_rawgeti(state, -1, index);
-	int edicttype = lua_type(state, -1);
+	int edicttype = lua_rawgeti(state, 1, index);
 
 	if (edicttype == LUA_TNIL)
 	{
-
+		lua_pop(state, 1);  // remove 'nil'
+		lua_createtable(state, 0, 0);
+		lua_pushvalue(state, -1);  // copy for return value
+		lua_rawseti(state, -2, index);
+		LS_SetEdictMetaTable(state);
 	}
 	else if (edicttype != LUA_TTABLE)
-		luaL_error(state, "Broken edicts global table");
+		luaL_error(state, "Broken edict table at index %d", index);
 
+	
+//	lua_getglobal(state, ls_edictsname);
+//
+//	if (lua_type(state, -1) != LUA_TTABLE)
+//		luaL_error(state, "Broken edicts global table");
+
+//	lua_rawgeti(state, -1, index);
+//	int edicttype = lua_type(state, -1);
+//
+//	if (edicttype == LUA_TNIL)
+//	{
+//		lua_pop(state, 1);  // remove 'nil'
+//		lua_createtable(state, 0, 0);
+//		lua_pushvalue(state, -1);  // copy for return value
+//		lua_rawseti(state, -1, index);
+//	}
+//	else if (edicttype != LUA_TTABLE)
+//		luaL_error(state, "Broken edicts global table");
 
 	return 1;
 }
@@ -269,14 +327,18 @@ static void LS_PrepareState(lua_State* state)
 //		lua_setglobal(state, func->name);
 //	}
 
-	lua_createtable(state, 0, 1);
+	// Edicts table
+	lua_createtable(state, 0, 0);
+	lua_pushvalue(state, -1);
+	lua_setglobal(state, "edicts");
+
+	// Edicts metatable
+	lua_createtable(state, 0, 2);
 	lua_pushcfunction(state, LS_EdictsIndex);
 	lua_setfield(state, -2, "__index");
 	lua_pushcfunction(state, LS_EdictsCount);
 	lua_setfield(state, -2, "__len");
 	lua_setmetatable(state, -2);
-
-	lua_setglobal(state, ls_edictsname);
 }
 
 static qboolean LS_Verify(lua_State* state, const char* filename, int result)
