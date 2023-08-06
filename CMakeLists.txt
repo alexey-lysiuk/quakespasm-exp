@@ -201,6 +201,8 @@ set(LUA_SOURCES
 	${LUA_DIR}/lzio.h
 )
 
+source_group("Source Files\\Lua" FILES ${LUA_SOURCES})
+
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
