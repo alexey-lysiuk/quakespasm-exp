@@ -31,9 +31,10 @@
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, etype_t* type, const char** name, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
 
-static const char* LUA_axisnames[] = { "x", "y", "z" };
+static const char* ls_axisnames[] = { "x", "y", "z" };
+static const char ls_edictsname[] = "edicts";
 
-static int LUA_Vec3String(lua_State* state)
+static int LS_Vec3ToString(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TTABLE);
 
@@ -41,7 +42,7 @@ static int LUA_Vec3String(lua_State* state)
 
 	for (int i = 0; i < 3; ++i)
 	{
-		int type = lua_getfield(state, 1, LUA_axisnames[i]);
+		int type = lua_getfield(state, 1, ls_axisnames[i]);
 		if (type != LUA_TNUMBER)
 			luaL_error(state, "Bad value in vec3_t at index %i", i);
 
@@ -53,7 +54,7 @@ static int LUA_Vec3String(lua_State* state)
 	return 1;
 }
 
-static void LUA_SetVec3MetaTable(lua_State* state)
+static void LS_SetVec3MetaTable(lua_State* state)
 {
 	static const char vec3mtblname[] = "__vec3mtbl";
 	lua_getglobal(state, vec3mtblname);
@@ -65,16 +66,16 @@ static void LUA_SetVec3MetaTable(lua_State* state)
 		lua_createtable(state, 0, 1);
 		lua_pushvalue(state, -1);
 		lua_setglobal(state, vec3mtblname);
-		lua_pushcfunction(state, LUA_Vec3String);
+		lua_pushcfunction(state, LS_Vec3ToString);
 		lua_setfield(state, -2, "__tostring");
 	}
 	else if (mtbltype != LUA_TTABLE)
-		luaL_error(state, "Broken metatable of vec3_t");
+		luaL_error(state, "Broken vec3_t metatable");
 
 	lua_setmetatable(state, -2);
 }
 
-static qboolean LUA_MakeEdictTable(lua_State* state, int index)
+static qboolean LS_MakeEdictTable(lua_State* state, int index)
 {
 	if (!sv.active || index < 0 || index >= sv.num_edicts)
 	{
@@ -115,12 +116,12 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 
 		case ev_vector:
 			lua_createtable(state, 0, 3);
-			LUA_SetVec3MetaTable(state);
+			LS_SetVec3MetaTable(state);
 
 			for (int i = 0; i < 3; ++i)
 			{
 				lua_pushnumber(state, value->vector[i]);
-				lua_setfield(state, -2, LUA_axisnames[i]);
+				lua_setfield(state, -2, ls_axisnames[i]);
 			}
 
 			break;
@@ -153,30 +154,65 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 	return true;
 }
 
-static int LUA_Edict(lua_State* state)
+static int LS_Edict(lua_State* state)
 {
 	lua_Integer i = luaL_checkinteger(state, 1);
-	LUA_MakeEdictTable(state, i);
+	LS_MakeEdictTable(state, i);
 	return 1;
 }
 
-static int LUA_GetNextEdict(lua_State* state)
+static int LS_GetNextEdict(lua_State* state)
 {
 	lua_Integer i = luaL_checkinteger(state, 2);
 	i = luaL_intop(+, i, 1);
 	lua_pushinteger(state, i);
-	return LUA_MakeEdictTable(state, i) ? 2 : 1;
+	return LS_MakeEdictTable(state, i) ? 2 : 1;
 }
 
-static int LUA_Edicts(lua_State* state)
+static int LS_Edicts(lua_State* state)
 {
-	lua_pushcfunction(state, LUA_GetNextEdict);
+	lua_pushcfunction(state, LS_GetNextEdict);
 	lua_createtable(state, 0, 4);
 	lua_pushinteger(state, -1);
 	return 3;
 }
 
-static void LUA_InitStandardLibraries(lua_State* state)
+static int LS_EdictsCount(lua_State* state)
+{
+	lua_pushinteger(state, sv.active ? sv.num_edicts : 0);
+	return 1;
+}
+
+static int LS_EdictsIndex(lua_State* state)
+{
+	lua_Integer index = luaL_checkinteger(state, 1);
+
+	if (!sv.active || index < 0 || index >= sv.num_edicts)
+	{
+		lua_pushnil(state);
+		return 1;
+	}
+
+	lua_getglobal(state, ls_edictsname);
+
+	if (lua_type(state, -1) != LUA_TTABLE)
+		luaL_error(state, "Broken edicts global table");
+
+	lua_rawgeti(state, -1, index);
+	int edicttype = lua_type(state, -1);
+
+	if (edicttype == LUA_TNIL)
+	{
+
+	}
+	else if (edicttype != LUA_TTABLE)
+		luaL_error(state, "Broken edicts global table");
+
+
+	return 1;
+}
+
+static void LS_InitStandardLibraries(lua_State* state)
 {
 	// Available standard libraries
 	static const luaL_Reg stdlibs[] =
@@ -209,32 +245,41 @@ static void LUA_InitStandardLibraries(lua_State* state)
 	}
 }
 
-static void LUA_PrepareState(lua_State* state)
+static void LS_PrepareState(lua_State* state)
 {
-	LUA_InitStandardLibraries(state);
+	LS_InitStandardLibraries(state);
 
-	// Register scripting functions
-	typedef struct
-	{
-		const char* name;
-		lua_CFunction ptr;
-	} ScriptFunction;
+//	// Register scripting functions
+//	typedef struct
+//	{
+//		const char* name;
+//		lua_CFunction ptr;
+//	} ScriptFunction;
+//
+//	static const ScriptFunction scriptfuncs[] =
+//	{
+//		{ "edict", LUA_Edict },
+//		{ "edicts", LUA_Edicts },
+//		{ NULL, NULL }
+//	};
+//
+//	for (const ScriptFunction* func = scriptfuncs; func->name; ++func)
+//	{
+//		lua_pushcfunction(state, func->ptr);
+//		lua_setglobal(state, func->name);
+//	}
 
-	static const ScriptFunction scriptfuncs[] =
-	{
-		{ "edict", LUA_Edict },
-		{ "edicts", LUA_Edicts },
-		{ NULL, NULL }
-	};
+	lua_createtable(state, 0, 1);
+	lua_pushcfunction(state, LS_EdictsIndex);
+	lua_setfield(state, -2, "__index");
+	lua_pushcfunction(state, LS_EdictsCount);
+	lua_setfield(state, -2, "__len");
+	lua_setmetatable(state, -2);
 
-	for (const ScriptFunction* func = scriptfuncs; func->name; ++func)
-	{
-		lua_pushcfunction(state, func->ptr);
-		lua_setglobal(state, func->name);
-	}
+	lua_setglobal(state, ls_edictsname);
 }
 
-static qboolean LUA_Verify(lua_State* state, const char* filename, int result)
+static qboolean LS_Verify(lua_State* state, const char* filename, int result)
 {
 	if (result == LUA_OK)
 		return true;
@@ -254,7 +299,7 @@ static qboolean LUA_Verify(lua_State* state, const char* filename, int result)
 	return false;
 }
 
-static void LUA_Exec(const char* script, const char* filename)
+static void LS_Exec(const char* script, const char* filename)
 {
 	// TODO: memory allocation via Hunk_Alloc(), see lua_Alloc
 	lua_State* state = luaL_newstate();
@@ -265,22 +310,22 @@ static void LUA_Exec(const char* script, const char* filename)
 		return;
 	}
 
-	LUA_PrepareState(state);
+	LS_PrepareState(state);
 
-	if (LUA_Verify(state, filename, luaL_loadstring(state, script)))
+	if (LS_Verify(state, filename, luaL_loadstring(state, script)))
 	{
 		int argc = Cmd_Argc();
 
 		for (int i = 2; i < argc; ++i)  // skip command and script name
 			lua_pushstring(state, Cmd_Argv(i));
 
-		LUA_Verify(state, filename, lua_pcall(state, argc - 2, 0, 0));
+		LS_Verify(state, filename, lua_pcall(state, argc - 2, 0, 0));
 	}
 
 	lua_close(state);
 }
 
-static void LUA_Exec_f(void)
+static void LS_Exec_f(void)
 {
 	if (Cmd_Argc() < 2)
 	{
@@ -293,16 +338,16 @@ static void LUA_Exec_f(void)
 	const char* script = (const char *)COM_LoadHunkFile(filename, NULL);
 
 	if (script)
-		LUA_Exec(script, filename);
+		LS_Exec(script, filename);
 	else
 		Con_SafePrintf("Failed to load Lua script '%s'\n", filename);
 
 	Hunk_FreeToLowMark(mark);
 }
 
-void LUA_Init(void)
+void LS_Init(void)
 {
-	Cmd_AddCommand("lua", LUA_Exec_f);
+	Cmd_AddCommand("lua", LS_Exec_f);
 }
 
 #endif // USE_LUA_SCRIPTING

@@ -850,8 +850,8 @@ void Host_Init (void)
 	SV_Init ();
 
 #ifdef USE_LUA_SCRIPTING
-	extern void LUA_Init (void);
-	LUA_Init ();
+	extern void LS_Init (void);
+	LS_Init ();
 #endif // USE_LUA_SCRIPTING
 
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
