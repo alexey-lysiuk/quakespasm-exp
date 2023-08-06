@@ -213,18 +213,26 @@ static void LUA_PrepareState(lua_State* state)
 		lua_pushcfunction(state, func->ptr);
 		lua_setglobal(state, func->name);
 	}
+}
 
-	// Script arguments
-	int argc = Cmd_Argc() - 1;
-	lua_createtable(state, argc, 0);
+static qboolean LUA_Verify(lua_State* state, const char* filename, int result)
+{
+	if (result == LUA_OK)
+		return true;
 
-	for (int i = 0; i < argc; ++i)
-	{
-		lua_pushstring(state, Cmd_Argv(i + 1));
-		lua_rawseti(state, -2, i);
-	}
+	const char* error = lua_tostring(state, -1);
+	assert(error);
 
-	lua_setglobal(state, "args");
+	// Remove junk from [string "beginning of script..."]:line: message
+	const char* nojunkerror = strstr(error, "...\"]:");
+	Con_SafePrintf("Error while executing Lua script\n%s", filename);
+
+	if (nojunkerror)
+		Con_SafePrintf("%s\n", nojunkerror + 5);
+	else
+		Con_SafePrintf(":0: %s\n", error);
+
+	return false;
 }
 
 static void LUA_Exec(const char* script, const char* filename)
@@ -239,25 +247,16 @@ static void LUA_Exec(const char* script, const char* filename)
 
 	LUA_PrepareState(state);
 
-	int result = luaL_dostring(state, script);
-	int top = lua_gettop(state);
-
-	if (result != LUA_OK)
+	if (LUA_Verify(state, filename, luaL_loadstring(state, script)))
 	{
-		const char* error = lua_tostring(state, top);
-		assert(error);
+		int argc = Cmd_Argc();
 
-		// Remove junk from [string "beginning of script..."]:line: message
-		const char* nojunkerror = strstr(error, "...\"]:");
-		Con_SafePrintf("Error while executing Lua script\n%s", filename);
+		for (int i = 2; i < argc; ++i)  // skip command and script name
+			lua_pushstring(state, Cmd_Argv(i));
 
-		if (nojunkerror)
-			Con_SafePrintf("%s\n", nojunkerror + 5);
-		else
-			Con_SafePrintf(":0: %s\n", error);
+		LUA_Verify(state, filename, lua_pcall(state, argc - 2, 0, 0));
 	}
 
-	lua_pop(state, top);
 	lua_close(state);
 }
 
@@ -276,7 +275,7 @@ static void LUA_Exec_f(void)
 	if (script)
 		LUA_Exec(script, filename);
 	else
-		Con_SafePrintf("Failed to load lua script '%s'\n", filename);
+		Con_SafePrintf("Failed to load Lua script '%s'\n", filename);
 
 	Hunk_FreeToLowMark(mark);
 }
