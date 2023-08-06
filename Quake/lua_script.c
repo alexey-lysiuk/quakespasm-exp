@@ -53,6 +53,27 @@ static int LUA_Vec3String(lua_State* state)
 	return 1;
 }
 
+static void LUA_SetVec3MetaTable(lua_State* state)
+{
+	static const char vec3mtblname[] = "__vec3mtbl";
+	lua_getglobal(state, vec3mtblname);
+	int mtbltype = lua_type(state, -1);
+
+	if (mtbltype == LUA_TNIL)
+	{
+		lua_pop(state, 1);
+		lua_createtable(state, 0, 1);
+		lua_pushvalue(state, -1);
+		lua_setglobal(state, vec3mtblname);
+		lua_pushcfunction(state, LUA_Vec3String);
+		lua_setfield(state, -2, "__tostring");
+	}
+	else if (mtbltype != LUA_TTABLE)
+		luaL_error(state, "Broken metatable of vec3_t");
+
+	lua_setmetatable(state, -2);
+}
+
 static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 {
 	if (!sv.active || index < 0 || index >= sv.num_edicts)
@@ -94,7 +115,7 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 
 		case ev_vector:
 			lua_createtable(state, 0, 3);
-			int vtindex = lua_gettop(state);
+			LUA_SetVec3MetaTable(state);
 
 			for (int i = 0; i < 3; ++i)
 			{
@@ -102,11 +123,6 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 				lua_setfield(state, -2, LUA_axisnames[i]);
 			}
 
-			lua_createtable(state, 0, 1);
-			lua_pushcfunction(state, LUA_Vec3String);
-			lua_setfield(state, -2, "__tostring");
-			lua_setmetatable(state, vtindex);
-			// TODO: __concat
 			break;
 
 		case ev_entity:
@@ -240,6 +256,7 @@ static qboolean LUA_Verify(lua_State* state, const char* filename, int result)
 
 static void LUA_Exec(const char* script, const char* filename)
 {
+	// TODO: memory allocation via Hunk_Alloc(), see lua_Alloc
 	lua_State* state = luaL_newstate();
 
 	if (!state)
