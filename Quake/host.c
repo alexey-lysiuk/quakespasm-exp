@@ -849,6 +849,11 @@ void Host_Init (void)
 	NET_Init ();
 	SV_Init ();
 
+#ifdef USE_LUA_SCRIPTING
+	extern void LS_Init (void);
+	LS_Init ();
+#endif // USE_LUA_SCRIPTING
+
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 	Con_Printf ("%4.1f megabyte heap\n", host_parms->memsize/ (1024*1024.0));
 

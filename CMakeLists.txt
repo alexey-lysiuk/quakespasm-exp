@@ -58,6 +58,7 @@ set(COMMON_SOURCES
 	Quake/keys.c
 	Quake/keys.h
 	Quake/lodepng.h
+	Quake/lua_script.c
 	Quake/main_sdl.c
 	Quake/mathlib.c
 	Quake/mathlib.h
@@ -278,6 +279,7 @@ endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_CODEC_UMX
 	USE_CODEC_WAVE
+	USE_LUA_SCRIPTING
 )
 
 if(MSVC)
