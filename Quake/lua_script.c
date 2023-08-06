@@ -55,7 +55,7 @@ static int LUA_Vec3String(lua_State* state)
 
 static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 {
-	if (!sv.active || index < 0 || index >= sv.max_edicts)
+	if (!sv.active || index < 0 || index >= sv.num_edicts)
 	{
 		lua_pushnil(state);
 		return false;
@@ -65,6 +65,9 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 	assert(ed);
 
 	lua_createtable(state, 0, 0);
+
+	if (ed->free)
+		return true;
 
 	for (int fi = 1; fi < progs->numfielddefs; ++fi)
 	{
