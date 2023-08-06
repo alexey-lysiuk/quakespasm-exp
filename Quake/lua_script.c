@@ -107,7 +107,7 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 			break;
 
 		case ev_entity:
-			lua_pushfstring(state, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+			lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
 			break;
 
 		case ev_field:
@@ -124,7 +124,7 @@ static qboolean LUA_MakeEdictTable(lua_State* state, int index)
 
 		default:
 			// Unknown type, e.g. some of FTE extensions
-			lua_pushfstring(state, "bad type %i", type);
+			lua_pushfstring(state, "bad type %d", type);
 			break;
 		}
 
