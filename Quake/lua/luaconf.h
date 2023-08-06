@@ -787,6 +787,15 @@
 
 
 
+extern void Con_SafePrintf(const char *fmt, ...)
+#ifdef __GNUC__
+	__attribute__((__format__(__printf__,1,2)))
+#endif /* __GNUC__ */
+;
+
+#define lua_writestring(s, l) Con_SafePrintf("%*s", (int)l, s)
+#define lua_writeline() Con_SafePrintf("\n")
+#define lua_writestringerror(s,p) Con_SafePrintf(s, p)
 
 
 #endif
