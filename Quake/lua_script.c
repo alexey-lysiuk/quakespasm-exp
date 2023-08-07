@@ -33,6 +33,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
+static const char ls_edictindexname[] = "_luascripting_edictindex";
 
 static int LS_Vec3ToString(lua_State* state)
 {
@@ -75,6 +76,60 @@ static void LS_SetVec3MetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
+static void LS_PushFieldValue(lua_State* state, etype_t type, const char* name, const eval_t* value)
+{
+	assert(type != ev_bad);
+	assert(name);
+	assert(value);
+
+	switch (type)
+	{
+	case ev_void:
+		lua_pushstring(state, "void");
+		break;
+
+	case ev_string:
+		lua_pushstring(state, PR_GetString(value->string));
+		break;
+
+	case ev_float:
+		lua_pushnumber(state, value->_float);
+		break;
+
+	case ev_vector:
+		lua_createtable(state, 0, 3);
+		LS_SetVec3MetaTable(state);
+
+		for (int i = 0; i < 3; ++i)
+		{
+			lua_pushnumber(state, value->vector[i]);
+			lua_setfield(state, -2, ls_axisnames[i]);
+		}
+		break;
+
+	case ev_entity:
+		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+		break;
+
+	case ev_field:
+		lua_pushfstring(state, ".%s", ED_GetFieldNameByOffset(value->_int));
+		break;
+
+	case ev_function:
+		lua_pushfstring(state, "%s()", PR_GetString((pr_functions + value->function)->s_name));
+		break;
+
+	case ev_pointer:
+		lua_pushstring(state, "pointer");
+		break;
+
+	default:
+		// Unknown type, e.g. some of FTE extensions
+		lua_pushfstring(state, "bad type %d", type);
+		break;
+	}
+}
+
 static qboolean LS_MakeEdictTable(lua_State* state, int index)
 {
 	if (!sv.active || index < 0 || index >= sv.num_edicts)
@@ -100,54 +155,7 @@ static qboolean LS_MakeEdictTable(lua_State* state, int index)
 		if (!ED_GetFieldByIndex(ed, fi, &type, &name, &value))
 			continue;
 
-		assert(type != ev_bad);
-		assert(name);
-		assert(value);
-
-		switch (type)
-		{
-		case ev_string:
-			lua_pushstring(state, PR_GetString(value->string));
-			break;
-
-		case ev_float:
-			lua_pushnumber(state, value->_float);
-			break;
-
-		case ev_vector:
-			lua_createtable(state, 0, 3);
-			LS_SetVec3MetaTable(state);
-
-			for (int i = 0; i < 3; ++i)
-			{
-				lua_pushnumber(state, value->vector[i]);
-				lua_setfield(state, -2, ls_axisnames[i]);
-			}
-
-			break;
-
-		case ev_entity:
-			lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
-			break;
-
-		case ev_field:
-			lua_pushfstring(state, ".%s", ED_GetFieldNameByOffset(value->_int));
-			break;
-
-		case ev_function:
-			lua_pushfstring(state, "%s()", PR_GetString((pr_functions + value->function)->s_name));
-			break;
-
-		case ev_pointer:
-			lua_pushstring(state, "pointer");
-			break;
-
-		default:
-			// Unknown type, e.g. some of FTE extensions
-			lua_pushfstring(state, "bad type %d", type);
-			break;
-		}
-
+		LS_PushFieldValue(state, type, name, value);
 		lua_setfield(state, -2, name);
 	}
 
@@ -188,15 +196,42 @@ static int LS_EdictIndex(lua_State* state)
 	luaL_checktype(state, 1, LUA_TTABLE);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
-	lua_pushvalue(state, 2);
-
-	int valuetype = lua_rawget(state, 1);
-
-	if (valuetype == LUA_TNIL)
+//	lua_pushvalue(state, 2);
+//
+//	int valuetype = lua_rawget(state, 1);
+//
+//	if (valuetype == LUA_TNIL)
 	{
-		const char* fieldname = luaL_checkstring(state, 2);
+		//lua_pop(state, 1);  // remove 'nil'
+		lua_pushstring(state, ls_edictindexname);
+		lua_rawget(state, 1);
 
-		//ED_GetFieldByName(
+		lua_Integer index = luaL_checkinteger(state, -1);
+		lua_pop(state, 1);  // remove ls_edictindexname
+
+		if (!sv.active || index < 0 || index >= sv.num_edicts)
+		{
+			lua_pushnil(state);
+			return 1;
+		}
+
+		edict_t* ed = EDICT_NUM(index);
+		assert(ed);
+
+		const char* name = luaL_checkstring(state, 2);
+		etype_t type;
+		const eval_t* value;
+
+		if (ED_GetFieldByName(ed, name, &type, &value))
+		{
+			LS_PushFieldValue(state, type, name, value);
+
+			lua_pushvalue(state, 2);  // field name
+			lua_pushvalue(state, -2);  // copy of value for lua_rawset()
+			lua_rawset(state, 1);
+		}
+		else
+			lua_pushnil(state);
 
 		//lua_pop(state, 1);  // remove 'nil'
 		// TODO
@@ -244,8 +279,10 @@ static int LS_EdictsIndex(lua_State* state)
 	if (edicttype == LUA_TNIL)
 	{
 		lua_pop(state, 1);  // remove 'nil'
-		lua_createtable(state, 0, 0);
+		lua_createtable(state, 0, 16);
 		lua_pushvalue(state, -1);  // copy for return value
+		lua_pushnumber(state, index);
+		lua_setfield(state, -2, ls_edictindexname);
 		lua_rawseti(state, -2, index);
 		LS_SetEdictMetaTable(state);
 	}
