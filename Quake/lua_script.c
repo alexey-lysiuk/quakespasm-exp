@@ -202,36 +202,29 @@ static int LS_EdictIndex(lua_State* state)
 	lua_Integer index = luaL_checkinteger(state, -1);
 	lua_pop(state, 1);  // remove ls_edictindexname
 
-	if (!sv.active || index < 0 || index >= sv.num_edicts)
+	if (sv.active && index >= 0 && index < sv.num_edicts)
 	{
-		lua_pushnil(state);
-		return 1;
+		edict_t* ed = EDICT_NUM(index);
+		assert(ed);
+
+		if (!ed->free)
+		{
+			const char* name = luaL_checkstring(state, 2);
+			etype_t type;
+			const eval_t* value;
+
+			if (ED_GetFieldByName(ed, name, &type, &value))
+			{
+				LS_PushFieldValue(state, type, name, value);
+				lua_pushvalue(state, 2);  // field name
+				lua_pushvalue(state, -2);  // copy of value for lua_rawset()
+				lua_rawset(state, 1);
+				return 1;
+			}
+		}
 	}
 
-	edict_t* ed = EDICT_NUM(index);
-	assert(ed);
-
-	if (ed->free)
-	{
-		lua_pushnil(state);
-		return 1;
-	}
-
-	const char* name = luaL_checkstring(state, 2);
-	etype_t type;
-	const eval_t* value;
-
-	if (!ED_GetFieldByName(ed, name, &type, &value))
-	{
-		lua_pushnil(state);
-		return 1;
-	}
-
-	LS_PushFieldValue(state, type, name, value);
-	lua_pushvalue(state, 2);  // field name
-	lua_pushvalue(state, -2);  // copy of value for lua_rawset()
-	lua_rawset(state, 1);
-
+	lua_pushnil(state);
 	return 1;
 }
 
@@ -283,25 +276,6 @@ static int LS_EdictsIndex(lua_State* state)
 	else if (edicttype != LUA_TTABLE)
 		luaL_error(state, "Broken edict table at index %d", index);
 
-	
-//	lua_getglobal(state, ls_edictsname);
-//
-//	if (lua_type(state, -1) != LUA_TTABLE)
-//		luaL_error(state, "Broken edicts global table");
-
-//	lua_rawgeti(state, -1, index);
-//	int edicttype = lua_type(state, -1);
-//
-//	if (edicttype == LUA_TNIL)
-//	{
-//		lua_pop(state, 1);  // remove 'nil'
-//		lua_createtable(state, 0, 0);
-//		lua_pushvalue(state, -1);  // copy for return value
-//		lua_rawseti(state, -1, index);
-//	}
-//	else if (edicttype != LUA_TTABLE)
-//		luaL_error(state, "Broken edicts global table");
-
 	return 1;
 }
 
@@ -342,32 +316,12 @@ static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
 
-//	// Register scripting functions
-//	typedef struct
-//	{
-//		const char* name;
-//		lua_CFunction ptr;
-//	} ScriptFunction;
-//
-//	static const ScriptFunction scriptfuncs[] =
-//	{
-//		{ "edict", LUA_Edict },
-//		{ "edicts", LUA_Edicts },
-//		{ NULL, NULL }
-//	};
-//
-//	for (const ScriptFunction* func = scriptfuncs; func->name; ++func)
-//	{
-//		lua_pushcfunction(state, func->ptr);
-//		lua_setglobal(state, func->name);
-//	}
-
-	// Edicts table
+	// Register 'edicts' global table
 	lua_createtable(state, 0, 0);
 	lua_pushvalue(state, -1);
 	lua_setglobal(state, "edicts");
 
-	// Edicts metatable
+	// Set metatable for 'edicts' global table
 	lua_createtable(state, 0, 2);
 	lua_pushcfunction(state, LS_EdictsIndex);
 	lua_setfield(state, -2, "__index");
