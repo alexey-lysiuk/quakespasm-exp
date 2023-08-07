@@ -185,12 +185,14 @@ static void LS_PushFieldValue(lua_State* state, etype_t type, const char* name, 
 //	return 3;
 //}
 
+// Pushes number of edicts
 static int LS_EdictsCount(lua_State* state)
 {
 	lua_pushinteger(state, sv.active ? sv.num_edicts : 0);
 	return 1;
 }
 
+// Pushes value of edict field by its name
 static int LS_EdictIndex(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TTABLE);
@@ -249,6 +251,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
+// Pushes edict table by its index, [0..num_edicts)
 static int LS_EdictsIndex(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TTABLE);
