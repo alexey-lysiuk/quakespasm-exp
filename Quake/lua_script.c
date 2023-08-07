@@ -264,20 +264,20 @@ static int LS_EdictsIndex(lua_State* state)
 		return 1;
 	}
 
-	int edicttype = lua_rawgeti(state, 1, index);
+	//int edicttype = lua_rawgeti(state, 1, index);
 
-	if (edicttype == LUA_TNIL)
-	{
-		lua_pop(state, 1);  // remove 'nil'
+	//if (edicttype == LUA_TNIL)
+	//{
+	//	lua_pop(state, 1);  // remove 'nil'
 		lua_createtable(state, 0, 16);
 		lua_pushvalue(state, -1);  // copy for return value
 		lua_pushnumber(state, index);
 		lua_setfield(state, -2, ls_edictindexname);
-		lua_rawseti(state, -2, index);
+		lua_rawseti(state, 1, index);
 		LS_SetEdictMetaTable(state);
-	}
-	else if (edicttype != LUA_TTABLE)
-		luaL_error(state, "Broken edict table at index %d", index);
+	//}
+	//else if (edicttype != LUA_TTABLE)
+	//	luaL_error(state, "Broken edict table at index %d", index);
 
 	return 1;
 }
