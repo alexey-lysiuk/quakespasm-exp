@@ -198,6 +198,7 @@ static int LS_EdictIndex(lua_State* state)
 	luaL_checktype(state, 1, LUA_TTABLE);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
+	// Fetch edict index, [0..num_edicts), from edict table
 	lua_pushstring(state, ls_edictindexname);
 	lua_rawget(state, 1);
 
@@ -218,9 +219,12 @@ static int LS_EdictIndex(lua_State* state)
 			if (ED_GetFieldByName(ed, name, &type, &value))
 			{
 				LS_PushFieldValue(state, type, name, value);
+
+				// Add field and its value to edict table
 				lua_pushvalue(state, 2);  // field name
-				lua_pushvalue(state, -2);  // copy of value for lua_rawset()
+				lua_pushvalue(state, -2);  // copy of field value for lua_rawset()
 				lua_rawset(state, 1);
+
 				return 1;
 			}
 		}
@@ -232,16 +236,22 @@ static int LS_EdictIndex(lua_State* state)
 
 static void LS_SetEdictMetaTable(lua_State* state)
 {
-	static const char edictmtbl[] = "__edictmtbl";
+	static const char edictmtbl[] = "_luascripting_edictmetatable";
 	lua_getglobal(state, edictmtbl);
+
+	// Check edict metatable type, and create it if needed
 	int mtbltype = lua_type(state, -1);
 
 	if (mtbltype == LUA_TNIL)
 	{
 		lua_pop(state, 1);  // remove 'nil'
+
+		// Create metatable, and save it to global variable
 		lua_createtable(state, 0, 1);
 		lua_pushvalue(state, -1);  // copy of table for lua_setglobal()
 		lua_setglobal(state, edictmtbl);
+
+		// Add function to metatable
 		lua_pushcfunction(state, LS_EdictIndex);
 		lua_setfield(state, -2, "__index");
 	}
@@ -256,6 +266,7 @@ static int LS_EdictsIndex(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TTABLE);
 
+	// Check edict index, [0..num_edicts), for validity
 	lua_Integer index = luaL_checkinteger(state, 2);
 
 	if (!sv.active || index < 0 || index >= sv.num_edicts)
@@ -264,20 +275,17 @@ static int LS_EdictsIndex(lua_State* state)
 		return 1;
 	}
 
-	//int edicttype = lua_rawgeti(state, 1, index);
+	// Create edict table
+	lua_createtable(state, 0, 16);
+	LS_SetEdictMetaTable(state);
 
-	//if (edicttype == LUA_TNIL)
-	//{
-	//	lua_pop(state, 1);  // remove 'nil'
-		lua_createtable(state, 0, 16);
-		lua_pushvalue(state, -1);  // copy for return value
-		lua_pushnumber(state, index);
-		lua_setfield(state, -2, ls_edictindexname);
-		lua_rawseti(state, 1, index);
-		LS_SetEdictMetaTable(state);
-	//}
-	//else if (edicttype != LUA_TTABLE)
-	//	luaL_error(state, "Broken edict table at index %d", index);
+	// Set own edict index, [0..num_edicts), to edict table
+	lua_pushnumber(state, index);
+	lua_setfield(state, -2, ls_edictindexname);
+
+	// Add this edict to 'edicts' global table
+	lua_pushvalue(state, -1);
+	lua_rawseti(state, 1, index);
 
 	return 1;
 }
