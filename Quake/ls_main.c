@@ -48,8 +48,8 @@ static int LS_Vec3ToString(lua_State* state)
 		if (type != LUA_TNUMBER)
 			luaL_error(state, "Bad value in vec3_t at index %d", i);
 
-		value[i] = lua_tonumber(state, 2);
-		lua_pop(state, 1);
+		value[i] = lua_tonumber(state, -1);
+		lua_pop(state, 1);  // remove value
 	}
 
 	char buf[128];
@@ -61,16 +61,20 @@ static int LS_Vec3ToString(lua_State* state)
 
 static void LS_SetVec3MetaTable(lua_State* state)
 {
-	static const char vec3mtblname[] = "__vec3mtbl";
+	static const char vec3mtblname[] = "_luascripting_vec3metatable";
 	lua_getglobal(state, vec3mtblname);
 	int mtbltype = lua_type(state, -1);
 
 	if (mtbltype == LUA_TNIL)
 	{
 		lua_pop(state, 1);  // remove 'nil'
+
+		// Create metatable, and save it to global variable
 		lua_createtable(state, 0, 1);
 		lua_pushvalue(state, -1);  // copy of table for lua_setglobal()
 		lua_setglobal(state, vec3mtblname);
+
+		// Add function to metatable
 		lua_pushcfunction(state, LS_Vec3ToString);
 		lua_setfield(state, -2, "__tostring");
 	}
