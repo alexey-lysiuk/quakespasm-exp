@@ -34,6 +34,7 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
 static const char ls_edictindexname[] = "_luascripting_edictindex";
+static const char ls_lazyevalname[] = "lazyeval";
 
 static int LS_Vec3ToString(lua_State* state)
 {
@@ -51,7 +52,10 @@ static int LS_Vec3ToString(lua_State* state)
 		lua_pop(state, 1);
 	}
 
-	lua_pushfstring(state, "'%f %f %f'", value[0], value[1], value[2]);
+	char buf[128];
+	int length = q_snprintf(buf, sizeof buf, "%.1f %.1f %.1f", value[0], value[1], value[2]);
+
+	lua_pushlstring(state, buf, length);
 	return 1;
 }
 
@@ -130,14 +134,9 @@ static void LS_PushFieldValue(lua_State* state, etype_t type, const char* name, 
 	}
 }
 
+// Pushes competle edict table with all fields set
 static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
 {
-//	if (!sv.active || index < 0 || index >= sv.num_edicts)
-//	{
-//		lua_pushnil(state);
-//		return false;
-//	}
-
 	edict_t* ed = EDICT_NUM(index);
 	assert(ed);
 
@@ -161,29 +160,6 @@ static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
 
 	return true;
 }
-
-//static int LS_Edict(lua_State* state)
-//{
-//	lua_Integer i = luaL_checkinteger(state, 1);
-//	LS_MakeEdictTable(state, i);
-//	return 1;
-//}
-//
-//static int LS_GetNextEdict(lua_State* state)
-//{
-//	lua_Integer i = luaL_checkinteger(state, 2);
-//	i = luaL_intop(+, i, 1);
-//	lua_pushinteger(state, i);
-//	return LS_MakeEdictTable(state, i) ? 2 : 1;
-//}
-//
-//static int LS_Edicts(lua_State* state)
-//{
-//	lua_pushcfunction(state, LS_GetNextEdict);
-//	lua_createtable(state, 0, 4);
-//	lua_pushinteger(state, -1);
-//	return 3;
-//}
 
 // Pushes number of edicts
 static int LS_EdictsCount(lua_State* state)
@@ -275,22 +251,25 @@ static int LS_EdictsIndex(lua_State* state)
 		return 1;
 	}
 
-	lua_pushstring(state, "lazyeval");
+	// Fetch edict lazy evaluation status
+	lua_pushstring(state, ls_lazyevalname);
 	lua_rawget(state, 1);
 
-	int lazyeval = lua_toboolean(state, -1);
+	qboolean lazyeval = lua_toboolean(state, -1);
 
 	// Create edict table
 	lua_createtable(state, 0, 16);
 
 	if (lazyeval)
+	{
 		LS_SetEdictMetaTable(state);
+
+		// Set own edict index, [0..num_edicts), to edict table
+		lua_pushnumber(state, index);
+		lua_setfield(state, -2, ls_edictindexname);
+	}
 	else
 		LS_BuildFullEdictTable(state, index);
-
-	// Set own edict index, [0..num_edicts), to edict table
-	lua_pushnumber(state, index);
-	lua_setfield(state, -2, ls_edictindexname);
 
 	// Add this edict to 'edicts' global table
 	lua_pushvalue(state, -1);
@@ -339,7 +318,7 @@ static void LS_PrepareState(lua_State* state)
 	// Create and register 'edicts' global table
 	lua_createtable(state, sv.active ? sv.num_edicts : 0, 1);
 	lua_pushboolean(state, true);
-	lua_setfield(state, -2, "lazyeval");
+	lua_setfield(state, -2, ls_lazyevalname);
 	lua_pushvalue(state, -1);
 	lua_setglobal(state, "edicts");
 
