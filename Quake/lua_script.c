@@ -130,60 +130,60 @@ static void LS_PushFieldValue(lua_State* state, etype_t type, const char* name, 
 	}
 }
 
-static qboolean LS_MakeEdictTable(lua_State* state, int index)
-{
-	if (!sv.active || index < 0 || index >= sv.num_edicts)
-	{
-		lua_pushnil(state);
-		return false;
-	}
+//static qboolean LS_MakeEdictTable(lua_State* state, int index)
+//{
+//	if (!sv.active || index < 0 || index >= sv.num_edicts)
+//	{
+//		lua_pushnil(state);
+//		return false;
+//	}
+//
+//	edict_t* ed = EDICT_NUM(index);
+//	assert(ed);
+//
+//	lua_createtable(state, 0, 0);
+//
+//	if (ed->free)
+//		return true;
+//
+//	for (int fi = 1; fi < progs->numfielddefs; ++fi)
+//	{
+//		etype_t type;
+//		const char* name;
+//		const eval_t* value;
+//
+//		if (!ED_GetFieldByIndex(ed, fi, &type, &name, &value))
+//			continue;
+//
+//		LS_PushFieldValue(state, type, name, value);
+//		lua_setfield(state, -2, name);
+//	}
+//
+//	return true;
+//}
 
-	edict_t* ed = EDICT_NUM(index);
-	assert(ed);
-
-	lua_createtable(state, 0, 0);
-
-	if (ed->free)
-		return true;
-
-	for (int fi = 1; fi < progs->numfielddefs; ++fi)
-	{
-		etype_t type;
-		const char* name;
-		const eval_t* value;
-
-		if (!ED_GetFieldByIndex(ed, fi, &type, &name, &value))
-			continue;
-
-		LS_PushFieldValue(state, type, name, value);
-		lua_setfield(state, -2, name);
-	}
-
-	return true;
-}
-
-static int LS_Edict(lua_State* state)
-{
-	lua_Integer i = luaL_checkinteger(state, 1);
-	LS_MakeEdictTable(state, i);
-	return 1;
-}
-
-static int LS_GetNextEdict(lua_State* state)
-{
-	lua_Integer i = luaL_checkinteger(state, 2);
-	i = luaL_intop(+, i, 1);
-	lua_pushinteger(state, i);
-	return LS_MakeEdictTable(state, i) ? 2 : 1;
-}
-
-static int LS_Edicts(lua_State* state)
-{
-	lua_pushcfunction(state, LS_GetNextEdict);
-	lua_createtable(state, 0, 4);
-	lua_pushinteger(state, -1);
-	return 3;
-}
+//static int LS_Edict(lua_State* state)
+//{
+//	lua_Integer i = luaL_checkinteger(state, 1);
+//	LS_MakeEdictTable(state, i);
+//	return 1;
+//}
+//
+//static int LS_GetNextEdict(lua_State* state)
+//{
+//	lua_Integer i = luaL_checkinteger(state, 2);
+//	i = luaL_intop(+, i, 1);
+//	lua_pushinteger(state, i);
+//	return LS_MakeEdictTable(state, i) ? 2 : 1;
+//}
+//
+//static int LS_Edicts(lua_State* state)
+//{
+//	lua_pushcfunction(state, LS_GetNextEdict);
+//	lua_createtable(state, 0, 4);
+//	lua_pushinteger(state, -1);
+//	return 3;
+//}
 
 static int LS_EdictsCount(lua_State* state)
 {
@@ -196,48 +196,42 @@ static int LS_EdictIndex(lua_State* state)
 	luaL_checktype(state, 1, LUA_TTABLE);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
-//	lua_pushvalue(state, 2);
-//
-//	int valuetype = lua_rawget(state, 1);
-//
-//	if (valuetype == LUA_TNIL)
+	lua_pushstring(state, ls_edictindexname);
+	lua_rawget(state, 1);
+
+	lua_Integer index = luaL_checkinteger(state, -1);
+	lua_pop(state, 1);  // remove ls_edictindexname
+
+	if (!sv.active || index < 0 || index >= sv.num_edicts)
 	{
-		//lua_pop(state, 1);  // remove 'nil'
-		lua_pushstring(state, ls_edictindexname);
-		lua_rawget(state, 1);
-
-		lua_Integer index = luaL_checkinteger(state, -1);
-		lua_pop(state, 1);  // remove ls_edictindexname
-
-		if (!sv.active || index < 0 || index >= sv.num_edicts)
-		{
-			lua_pushnil(state);
-			return 1;
-		}
-
-		edict_t* ed = EDICT_NUM(index);
-		assert(ed);
-
-		const char* name = luaL_checkstring(state, 2);
-		etype_t type;
-		const eval_t* value;
-
-		if (ED_GetFieldByName(ed, name, &type, &value))
-		{
-			LS_PushFieldValue(state, type, name, value);
-
-			lua_pushvalue(state, 2);  // field name
-			lua_pushvalue(state, -2);  // copy of value for lua_rawset()
-			lua_rawset(state, 1);
-		}
-		else
-			lua_pushnil(state);
-
-		//lua_pop(state, 1);  // remove 'nil'
-		// TODO
+		lua_pushnil(state);
+		return 1;
 	}
 
-	//lua_pushnil(state);
+	edict_t* ed = EDICT_NUM(index);
+	assert(ed);
+
+	if (ed->free)
+	{
+		lua_pushnil(state);
+		return 1;
+	}
+
+	const char* name = luaL_checkstring(state, 2);
+	etype_t type;
+	const eval_t* value;
+
+	if (!ED_GetFieldByName(ed, name, &type, &value))
+	{
+		lua_pushnil(state);
+		return 1;
+	}
+
+	LS_PushFieldValue(state, type, name, value);
+	lua_pushvalue(state, 2);  // field name
+	lua_pushvalue(state, -2);  // copy of value for lua_rawset()
+	lua_rawset(state, 1);
+
 	return 1;
 }
 
