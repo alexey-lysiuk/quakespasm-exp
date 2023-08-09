@@ -317,7 +317,7 @@ static void LS_InitStandardLibraries(lua_State* state)
 
 static int LS_Print(lua_State* state)
 {
-	static const int MAX_LENGTH = 4096;  // MAXPRINTMSG
+	enum PrintDummyEnum { MAX_LENGTH = 4096 };  // See MAXPRINTMSG
 	char buf[MAX_LENGTH] = { '\0' };
 
 	char* bufptr = buf;
