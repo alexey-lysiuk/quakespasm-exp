@@ -84,7 +84,7 @@ static void LS_SetVec3MetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static void LS_PushFieldValue(lua_State* state, etype_t type, const char* name, const eval_t* value)
+static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, const eval_t* value)
 {
 	assert(type != ev_bad);
 	assert(name);
@@ -158,7 +158,7 @@ static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
 		if (!ED_GetFieldByIndex(ed, fi, &name, &type, &value))
 			continue;
 
-		LS_PushFieldValue(state, type, name, value);
+		LS_PushFieldValue(state, name, type, value);
 		lua_setfield(state, -2, name);
 	}
 
@@ -198,7 +198,7 @@ static int LS_EdictIndex(lua_State* state)
 
 			if (ED_GetFieldByName(ed, name, &type, &value))
 			{
-				LS_PushFieldValue(state, type, name, value);
+				LS_PushFieldValue(state, name, type, value);
 
 				// Add field and its value to edict table
 				lua_pushvalue(state, 2);  // field name
