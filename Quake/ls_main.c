@@ -36,6 +36,30 @@ static const char* ls_axisnames[] = { "x", "y", "z" };
 static const char ls_edictindexname[] = "_luascripting_edictindex";
 static const char ls_lazyevalname[] = "lazyeval";
 
+// Creates metatable (if doesn't exist) and sets it for value on top of the stack
+static void LS_SetMetaTable(lua_State* state, const char* metatablename, const luaL_Reg* functions)
+{
+	int type = luaL_getmetatable(state, metatablename);
+
+	if (type == LUA_TNIL)
+	{
+		// Create metatable
+		lua_pop(state, 1);  // remove 'nil'
+		luaL_newmetatable(state, metatablename);
+
+		// Add function(s) to metatable
+		for (const luaL_Reg* entry = functions; entry->func; ++entry)
+		{
+			lua_pushcfunction(state, entry->func);
+			lua_setfield(state, -2, entry->name);
+		}
+	}
+	else if (type != LUA_TTABLE)
+		luaL_error(state, "Broken '%s' metatable", metatablename);
+
+	lua_setmetatable(state, -2);
+}
+
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
 {
@@ -60,30 +84,16 @@ static int LS_Vec3ToString(lua_State* state)
 	return 1;
 }
 
-// Create and set metatable for vec3_t table
+// Sets metatable for vec3_t table
 static void LS_SetVec3MetaTable(lua_State* state)
 {
-	static const char vec3mtblname[] = "_luascripting_vec3metatable";
-	lua_getglobal(state, vec3mtblname);
-	int mtbltype = lua_type(state, -1);
-
-	if (mtbltype == LUA_TNIL)
+	static const luaL_Reg functions[] =
 	{
-		lua_pop(state, 1);  // remove 'nil'
+		{ "__tostring", LS_Vec3ToString },
+		{ NULL, NULL }
+	};
 
-		// Create metatable, and save it to global variable
-		lua_createtable(state, 0, 1);
-		lua_pushvalue(state, -1);  // copy of table for lua_setglobal()
-		lua_setglobal(state, vec3mtblname);
-
-		// Add function to metatable
-		lua_pushcfunction(state, LS_Vec3ToString);
-		lua_setfield(state, -2, "__tostring");
-	}
-	else if (mtbltype != LUA_TTABLE)
-		luaL_error(state, "Broken vec3_t metatable");
-
-	lua_setmetatable(state, -2);
+	LS_SetMetaTable(state, "vec3_t", functions);
 }
 
 // Pushes field value by its type and name
@@ -217,32 +227,16 @@ static int LS_EdictIndex(lua_State* state)
 	return 1;
 }
 
-// Create and set metatable for edict table
+// Sets metatable for edict table
 static void LS_SetEdictMetaTable(lua_State* state)
 {
-	static const char edictmtbl[] = "_luascripting_edictmetatable";
-	lua_getglobal(state, edictmtbl);
-
-	// Check edict metatable type, and create it if needed
-	int mtbltype = lua_type(state, -1);
-
-	if (mtbltype == LUA_TNIL)
+	static const luaL_Reg functions[] =
 	{
-		lua_pop(state, 1);  // remove 'nil'
+		{ "__index", LS_EdictIndex },
+		{ NULL, NULL }
+	};
 
-		// Create metatable, and save it to global variable
-		lua_createtable(state, 0, 1);
-		lua_pushvalue(state, -1);  // copy of table for lua_setglobal()
-		lua_setglobal(state, edictmtbl);
-
-		// Add function to metatable
-		lua_pushcfunction(state, LS_EdictIndex);
-		lua_setfield(state, -2, "__index");
-	}
-	else if (mtbltype != LUA_TTABLE)
-		luaL_error(state, "Broken edict metatable");
-
-	lua_setmetatable(state, -2);
+	LS_SetMetaTable(state, "edict", functions);
 }
 
 // Pushes edict table by its index, [0..num_edicts)
