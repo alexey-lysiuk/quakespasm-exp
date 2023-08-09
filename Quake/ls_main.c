@@ -303,6 +303,8 @@ static void LS_InitStandardLibraries(lua_State* state)
 	{
 		"dofile",
 		"loadfile",
+		"getmetatable",
+		"setmetatable",
 		NULL
 	};
 
