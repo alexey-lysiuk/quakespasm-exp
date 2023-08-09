@@ -315,9 +315,40 @@ static void LS_InitStandardLibraries(lua_State* state)
 	}
 }
 
+static int LS_Print(lua_State* state)
+{
+	static const int MAX_LENGTH = 4096;  // MAXPRINTMSG
+	char buf[MAX_LENGTH] = { '\0' };
+
+	char* bufptr = buf;
+	int remain = MAX_LENGTH;
+
+	for (int i = 1, n = lua_gettop(state); i <= n; ++i)
+	{
+		const char* str = luaL_tolstring(state, i, NULL);
+		int charscount = q_snprintf(bufptr, remain, "%s%s", (i == 1 ? "" : " "), str);
+
+		bufptr += charscount;
+		assert(bufptr <= &buf[MAX_LENGTH - 1]);
+
+		remain -= charscount;
+		assert(remain >= 0);
+
+		lua_pop(state, 1);  // pop string value
+	}
+
+	Con_SafePrintf("%s\n", buf);
+
+	return 0;
+}
+
 static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
+
+	// Register own global 'print()' function
+	lua_pushcfunction(state, LS_Print);
+	lua_setglobal(state, "print");
 
 	// Create and register 'edicts' global table
 	lua_createtable(state, sv.active ? sv.num_edicts : 0, 1);
