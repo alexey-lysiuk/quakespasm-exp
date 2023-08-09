@@ -386,18 +386,15 @@ static qboolean LS_Verify(lua_State* state, const char* filename, int result)
 	return false;
 }
 
-static void LS_Exec(const char* script, const char* filename)
+static void LS_Exec(lua_State* state, const char* filename)
 {
-	// TODO: memory allocation via Hunk_Alloc(), see lua_Alloc
-	lua_State* state = luaL_newstate();
+	const char* script =(const char *)COM_LoadHunkFile(filename, NULL);
 
-	if (!state)
+	if (!script)
 	{
-		Con_SafePrintf("Failed to create lua state, out of memory?\n");
+		Con_SafePrintf("Failed to load Lua script '%s'\n", filename);
 		return;
 	}
-
-	LS_PrepareState(state);
 
 	if (LS_Verify(state, filename, luaL_loadstring(state, script)))
 	{
@@ -408,8 +405,6 @@ static void LS_Exec(const char* script, const char* filename)
 
 		LS_Verify(state, filename, lua_pcall(state, argc - 2, 0, 0));
 	}
-
-	lua_close(state);
 }
 
 static void LS_Exec_f(void)
@@ -420,14 +415,22 @@ static void LS_Exec_f(void)
 		return;
 	}
 
-	const char* filename = Cmd_Argv(1);
 	int mark = Hunk_LowMark();
-	const char* script = (const char *)COM_LoadHunkFile(filename, NULL);
 
-	if (script)
-		LS_Exec(script, filename);
-	else
-		Con_SafePrintf("Failed to load Lua script '%s'\n", filename);
+	// TODO: memory allocation via Hunk_Alloc(), see lua_Alloc
+	lua_State* state = luaL_newstate();
+
+	if (!state)
+	{
+		Con_SafePrintf("Failed to create lua state, out of memory?\n");
+		return;
+	}
+
+	LS_PrepareState(state);
+	LS_Exec(state, "qcommon.lua");
+	LS_Exec(state, Cmd_Argv(1));
+
+	lua_close(state);
 
 	Hunk_FreeToLowMark(mark);
 }
