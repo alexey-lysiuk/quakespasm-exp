@@ -60,22 +60,43 @@ static void LS_SetMetaTable(lua_State* state, const char* metatablename, const l
 	lua_setmetatable(state, -2);
 }
 
-// Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
-static int LS_Vec3ToString(lua_State* state)
+// Converts table on top of the stack to vec3_t value
+static void LS_TableToVec3(lua_State* state, int index, vec3_t out)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
+	luaL_checktype(state, index, LUA_TTABLE);
 
-	vec3_t value;
+	VectorCopy(vec3_origin, out);
 
 	for (int i = 0; i < 3; ++i)
 	{
-		int type = lua_getfield(state, 1, ls_axisnames[i]);
+		int type = lua_getfield(state, index, ls_axisnames[i]);
 		if (type != LUA_TNUMBER)
 			luaL_error(state, "Bad value in vec3_t at index %d", i);
 
-		value[i] = lua_tonumber(state, -1);
+		out[i] = lua_tonumber(state, -1);
 		lua_pop(state, 1);  // remove value
 	}
+}
+
+static void LS_SetVec3MetaTable(lua_State* state);
+
+static void LS_Vec3ToTable(lua_State* state, const vec3_t value)
+{
+	lua_createtable(state, 0, 3);
+	LS_SetVec3MetaTable(state);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		lua_pushnumber(state, value[i]);
+		lua_setfield(state, -2, ls_axisnames[i]);
+	}
+}
+
+// Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
+static int LS_Vec3ToString(lua_State* state)
+{
+	vec3_t value;
+	LS_TableToVec3(state, 1, value);
 
 	char buf[128];
 	int length = q_snprintf(buf, sizeof buf, "%.1f %.1f %.1f", value[0], value[1], value[2]);
@@ -84,11 +105,25 @@ static int LS_Vec3ToString(lua_State* state)
 	return 1;
 }
 
+static int LS_Vec3Substract(lua_State* state)
+{
+	vec3_t left, right;
+	LS_TableToVec3(state, 1, left);
+	LS_TableToVec3(state, 2, right);
+
+	vec3_t result;
+	VectorSubtract(left, right, result);
+
+	LS_Vec3ToTable(state, result);
+	return 1;
+}
+
 // Sets metatable for vec3_t table
 static void LS_SetVec3MetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "__sub", LS_Vec3Substract },
 		{ "__tostring", LS_Vec3ToString },
 		{ NULL, NULL }
 	};
@@ -118,14 +153,7 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 		break;
 
 	case ev_vector:
-		lua_createtable(state, 0, 3);
-		LS_SetVec3MetaTable(state);
-
-		for (int i = 0; i < 3; ++i)
-		{
-			lua_pushnumber(state, value->vector[i]);
-			lua_setfield(state, -2, ls_axisnames[i]);
-		}
+		LS_Vec3ToTable(state, value->vector);
 		break;
 
 	case ev_entity:
@@ -303,8 +331,8 @@ static void LS_InitStandardLibraries(lua_State* state)
 	{
 		"dofile",
 		"loadfile",
-		"getmetatable",
-		"setmetatable",
+//		"getmetatable",
+//		"setmetatable",
 		NULL
 	};
 
