@@ -36,6 +36,7 @@ static const char* ls_axisnames[] = { "x", "y", "z" };
 static const char ls_edictindexname[] = "_luascripting_edictindex";
 static const char ls_lazyevalname[] = "lazyeval";
 
+// Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TTABLE);
@@ -59,6 +60,7 @@ static int LS_Vec3ToString(lua_State* state)
 	return 1;
 }
 
+// Create and set metatable for vec3_t table
 static void LS_SetVec3MetaTable(lua_State* state)
 {
 	static const char vec3mtblname[] = "_luascripting_vec3metatable";
@@ -84,6 +86,7 @@ static void LS_SetVec3MetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
+// Pushes field value by its type and name
 static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, const eval_t* value)
 {
 	assert(type != ev_bad);
@@ -138,7 +141,7 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 	}
 }
 
-// Pushes competle edict table with all fields set
+// Pushes complete edict table with all fields set
 static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
 {
 	edict_t* ed = EDICT_NUM(index);
@@ -214,6 +217,7 @@ static int LS_EdictIndex(lua_State* state)
 	return 1;
 }
 
+// Create and set metatable for edict table
 static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const char edictmtbl[] = "_luascripting_edictmetatable";
