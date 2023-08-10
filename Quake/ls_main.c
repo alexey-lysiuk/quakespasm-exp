@@ -320,55 +320,141 @@ static void LS_InitStandardLibraries(lua_State* state)
 //  return lua_gettop(L) - 1;
 //}
 
+static int skipBOM (FILE *f) {
+  int c = getc(f);  /* read first character */
+  if (c == 0xEF && getc(f) == 0xBB && getc(f) == 0xBF)  /* correct BOM? */
+	return getc(f);  /* ignore BOM and return next char */
+  else  /* no (valid) BOM */
+	return c;  /* return first character */
+}
+
+static int skipcomment (FILE *f, int *cp) {
+  int c = *cp = skipBOM(f);
+  if (c == '#') {  /* first line is a comment (Unix exec. file)? */
+	do {  /* skip first line */
+	  c = getc(f);
+	} while (c != EOF && c != '\n');
+	*cp = getc(f);  /* next character after comment, if present */
+	return 1;  /* there was a comment */
+  }
+  else return 0;  /* no comment */
+}
+
+#include <errno.h>
+
+static int errfile (lua_State *L, const char *what, int fnameindex) {
+  const char *serr = strerror(errno);
+  const char *filename = lua_tostring(L, fnameindex) + 1;
+  lua_pushfstring(L, "cannot %s %s: %s", what, filename, serr);
+  lua_remove(L, fnameindex);
+  return LUA_ERRFILE;
+}
+
+typedef struct LS_LoadF {
+  int n;  /* number of pre-read characters */
+  FILE *f;  /* file being read */
+  char buff[BUFSIZ];  /* area for reading file */
+} LS_LoadF;
+
+static const char *getF (lua_State *state, void *ud, size_t *size) {
+  LS_LoadF *lf = (LS_LoadF *)ud;
+  (void)state;  /* not used */
+  if (lf->n > 0) {  /* are there pre-read characters to be read? */
+	*size = lf->n;  /* return them (chars already in buffer) */
+	lf->n = 0;  /* no more pre-read characters */
+  }
+  else {  /* read a block from file */
+	/* 'fread' can return > 0 *and* set the EOF flag. If next call to
+	   'getF' called 'fread', it might still wait for user input.
+	   The next check avoids this problem. */
+	if (feof(lf->f)) return NULL;
+	*size = fread(lf->buff, 1, sizeof(lf->buff), lf->f);  /* read block */
+  }
+  return lf->buff;
+}
+
+static int LS_LoadFileX(lua_State* state, const char* filename, const char* mode)
+{
+	if (filename == NULL)
+	{
+		lua_pushstring(state, "reading from stdin is not supported");
+		return LUA_ERRFILE;
+	}
+
+	LS_LoadF lf;
+	int status, readstatus;
+	int c;
+	int fnameindex = lua_gettop(state) + 1;  /* index of filename on the stack */
+//	if (filename == NULL) {
+//	  lua_pushliteral(state, "=stdin");
+//	  lf.f = stdin;
+//	}
+//	else {
+	  lua_pushfstring(state, "@%s", filename);
+	  lf.f = fopen(filename, "r");
+	  if (lf.f == NULL) return errfile(state, "open", fnameindex);
+//	}
+	lf.n = 0;
+	if (skipcomment(lf.f, &c))  /* read initial portion */
+	  lf.buff[lf.n++] = '\n';  /* add newline to correct line numbers */
+	if (c == LUA_SIGNATURE[0]) {  /* binary file? */
+	  lf.n = 0;  /* remove possible newline */
+	  if (filename) {  /* "real" file? */
+		lf.f = freopen(filename, "rb", lf.f);  /* reopen in binary mode */
+		if (lf.f == NULL) return errfile(state, "reopen", fnameindex);
+		skipcomment(lf.f, &c);  /* re-read initial portion */
+	  }
+	}
+	if (c != EOF)
+	  lf.buff[lf.n++] = c;  /* 'c' is the first character of the stream */
+	status = lua_load(state, getF, &lf, lua_tostring(state, -1), mode);
+	readstatus = ferror(lf.f);
+	if (filename) fclose(lf.f);  /* close file (even in case of errors) */
+	if (readstatus) {
+	  lua_settop(state, fnameindex);  /* ignore results from 'lua_load' */
+	  return errfile(state, "read", fnameindex);
+	}
+	lua_remove(state, fnameindex);
+	return status;
+}
+
 static int LS_DoFile(lua_State* state)
 {
-	const char *fname = luaL_optstring(state, 1, NULL);
+	const char* filename = luaL_optstring(state, 1, NULL);
 	lua_settop(state, 1);
-	//if (luaL_loadfile(state, fname) != LUA_OK)
-	if (luaL_loadfilex(state, fname, NULL) != LUA_OK)
-	  return lua_error(state);
-	//lua_callk(state, 0, LUA_MULTRET, 0, dofilecont);
+
+	if (LS_LoadFileX(state, filename, NULL) != LUA_OK)
+		return lua_error(state);
+
 	lua_call(state, 0, LUA_MULTRET);
-	//return dofilecont(state, 0, 0);
 	return lua_gettop(state) - 1;
 }
 
-//static int load_aux (lua_State *L, int status, int envidx) {
-//  if (status == LUA_OK) {
-//	if (envidx != 0) {  /* 'env' parameter? */
-//	  lua_pushvalue(L, envidx);  /* environment for loaded function */
-//	  if (!lua_setupvalue(L, -2, 1))  /* set it as 1st upvalue */
-//		lua_pop(L, 1);  /* remove 'env' if not used by previous call */
-//	}
-//	return 1;
-//  }
-//  else {  /* error (message is on top of the stack) */
-//	luaL_pushfail(L);
-//	lua_insert(L, -2);  /* put before error message */
-//	return 2;  /* return fail plus error message */
-//  }
-//}
-
 static int LS_LoadFile(lua_State* state)
 {
-	const char *fname = luaL_optstring(state, 1, NULL);
-	const char *mode = luaL_optstring(state, 2, NULL);
-	int env = (!lua_isnone(state, 3) ? 3 : 0);  /* 'env' index or 0 if no 'env' */
-	int status = luaL_loadfilex(state, fname, mode);
-	//return load_aux(state, status, env);
+	const char* filename = luaL_optstring(state, 1, NULL);
+	const char* mode = luaL_optstring(state, 2, NULL);
+	int env = !lua_isnone(state, 3) ? 3 : 0;  // 'env' index or 0 if no 'env'
+	int status = LS_LoadFileX(state, filename, mode);
 
-	if (status == LUA_OK) {
-	  if (env != 0) {  /* 'env' parameter? */
-		lua_pushvalue(state, env);  /* environment for loaded function */
-		if (!lua_setupvalue(state, -2, 1))  /* set it as 1st upvalue */
-		  lua_pop(state, 1);  /* remove 'env' if not used by previous call */
-	  }
-	  return 1;
+	if (status == LUA_OK)
+	{
+		if (env != 0)
+		{
+			// 'env' parameter?
+			lua_pushvalue(state, env);  // environment for loaded function
+			if (!lua_setupvalue(state, -2, 1))  // set it as 1st upvalue
+				lua_pop(state, 1);  // remove 'env' if not used by previous call
+		}
+
+		return 1;
 	}
-	else {  /* error (message is on top of the stack) */
-	  luaL_pushfail(state);
-	  lua_insert(state, -2);  /* put before error message */
-	  return 2;  /* return fail plus error message */
+	else
+	{
+		// error (message is on top of the stack)
+		luaL_pushfail(state);
+		lua_insert(state, -2);  // put before error message
+		return 2;  // return fail plus error message
 	}
 }
 
