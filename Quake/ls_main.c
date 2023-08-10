@@ -366,6 +366,34 @@ static void LS_PrepareState(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
+static void* LS_Alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
+{
+	(void)userdata;
+
+	if (newsize == 0)
+	{
+		// Free memory, this means "do nothing" for hunk memory
+		return NULL;
+	}
+	else if (ptr == NULL)
+	{
+		// Allocate memory
+		void* newptr = Hunk_Alloc(newsize);
+		assert(newptr);
+		return newptr;
+	}
+	else if (oldsize < newsize)
+	{
+		// Reallocate memory, do it only when new size is bigger than old
+		void* newptr = Hunk_Alloc(newsize);
+		assert(newptr);
+		memcpy(newptr, ptr, oldsize);
+		return newptr;
+	}
+
+	return ptr;
+}
+
 static void LS_Exec_f(void)
 {
 	int mark = Hunk_LowMark();
@@ -373,14 +401,8 @@ static void LS_Exec_f(void)
 
 	if (argc > 1)
 	{
-		// TODO: memory allocation via Hunk_Alloc(), see lua_Alloc
-		lua_State* state = luaL_newstate();
-
-		if (!state)
-		{
-			Con_SafePrintf("Failed to create lua state, out of memory?\n");
-			return;
-		}
+		lua_State* state = lua_newstate(LS_Alloc, NULL);
+		assert(state);
 
 		LS_PrepareState(state);
 
