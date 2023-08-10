@@ -315,6 +315,63 @@ static void LS_InitStandardLibraries(lua_State* state)
 //	}
 }
 
+//static int dofilecont (lua_State *L, int d1, lua_KContext d2) {
+//  (void)d1;  (void)d2;  /* only to match 'lua_Kfunction' prototype */
+//  return lua_gettop(L) - 1;
+//}
+
+static int LS_DoFile(lua_State* state)
+{
+	const char *fname = luaL_optstring(state, 1, NULL);
+	lua_settop(state, 1);
+	//if (luaL_loadfile(state, fname) != LUA_OK)
+	if (luaL_loadfilex(state, fname, NULL) != LUA_OK)
+	  return lua_error(state);
+	//lua_callk(state, 0, LUA_MULTRET, 0, dofilecont);
+	lua_call(state, 0, LUA_MULTRET);
+	//return dofilecont(state, 0, 0);
+	return lua_gettop(state) - 1;
+}
+
+//static int load_aux (lua_State *L, int status, int envidx) {
+//  if (status == LUA_OK) {
+//	if (envidx != 0) {  /* 'env' parameter? */
+//	  lua_pushvalue(L, envidx);  /* environment for loaded function */
+//	  if (!lua_setupvalue(L, -2, 1))  /* set it as 1st upvalue */
+//		lua_pop(L, 1);  /* remove 'env' if not used by previous call */
+//	}
+//	return 1;
+//  }
+//  else {  /* error (message is on top of the stack) */
+//	luaL_pushfail(L);
+//	lua_insert(L, -2);  /* put before error message */
+//	return 2;  /* return fail plus error message */
+//  }
+//}
+
+static int LS_LoadFile(lua_State* state)
+{
+	const char *fname = luaL_optstring(state, 1, NULL);
+	const char *mode = luaL_optstring(state, 2, NULL);
+	int env = (!lua_isnone(state, 3) ? 3 : 0);  /* 'env' index or 0 if no 'env' */
+	int status = luaL_loadfilex(state, fname, mode);
+	//return load_aux(state, status, env);
+
+	if (status == LUA_OK) {
+	  if (env != 0) {  /* 'env' parameter? */
+		lua_pushvalue(state, env);  /* environment for loaded function */
+		if (!lua_setupvalue(state, -2, 1))  /* set it as 1st upvalue */
+		  lua_pop(state, 1);  /* remove 'env' if not used by previous call */
+	  }
+	  return 1;
+	}
+	else {  /* error (message is on top of the stack) */
+	  luaL_pushfail(state);
+	  lua_insert(state, -2);  /* put before error message */
+	  return 2;  /* return fail plus error message */
+	}
+}
+
 static int LS_Print(lua_State* state)
 {
 	enum PrintDummyEnum { MAX_LENGTH = 4096 };  // See MAXPRINTMSG
@@ -346,7 +403,11 @@ static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
 
-	// Register own global 'print()' function
+	// Replace global functions
+	lua_pushcfunction(state, LS_DoFile);
+	lua_setglobal(state, "dofile");
+	lua_pushcfunction(state, LS_LoadFile);
+	lua_setglobal(state, "loadfile");
 	lua_pushcfunction(state, LS_Print);
 	lua_setglobal(state, "print");
 
