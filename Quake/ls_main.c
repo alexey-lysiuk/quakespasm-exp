@@ -386,37 +386,8 @@ static qboolean LS_Verify(lua_State* state, const char* filename, int result)
 	return false;
 }
 
-static void LS_Exec(lua_State* state, const char* filename)
+static void LS_Exec(const char* script, const char* filename)
 {
-	const char* script =(const char *)COM_LoadHunkFile(filename, NULL);
-
-	if (!script)
-	{
-		Con_SafePrintf("Failed to load Lua script '%s'\n", filename);
-		return;
-	}
-
-	if (LS_Verify(state, filename, luaL_loadstring(state, script)))
-	{
-		int argc = Cmd_Argc();
-
-		for (int i = 2; i < argc; ++i)  // skip command and script name
-			lua_pushstring(state, Cmd_Argv(i));
-
-		LS_Verify(state, filename, lua_pcall(state, argc - 2, 0, 0));
-	}
-}
-
-static void LS_Exec_f(void)
-{
-	if (Cmd_Argc() < 2)
-	{
-		Con_Printf("lua <filename>\n");
-		return;
-	}
-
-	int mark = Hunk_LowMark();
-
 	// TODO: memory allocation via Hunk_Alloc(), see lua_Alloc
 	lua_State* state = luaL_newstate();
 
@@ -427,10 +398,36 @@ static void LS_Exec_f(void)
 	}
 
 	LS_PrepareState(state);
-	LS_Exec(state, "qcommon.lua");
-	LS_Exec(state, Cmd_Argv(1));
+
+	if (LS_Verify(state, filename, luaL_loadstring(state, script)))
+	{
+		int argc = Cmd_Argc();
+
+		for (int i = 2; i < argc; ++i)  // skip command and script name
+			lua_pushstring(state, Cmd_Argv(i));
+
+		LS_Verify(state, filename, lua_pcall(state, argc - 2, 0, 0));
+	}
 
 	lua_close(state);
+}
+
+static void LS_Exec_f(void)
+{
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf("lua <filename>\n");
+		return;
+	}
+
+	const char* filename = Cmd_Argv(1);
+	int mark = Hunk_LowMark();
+	const char* script = (const char *)COM_LoadHunkFile(filename, NULL);
+
+	if (script)
+		LS_Exec(script, filename);
+	else
+		Con_SafePrintf("Failed to load Lua script '%s'\n", filename);
 
 	Hunk_FreeToLowMark(mark);
 }
