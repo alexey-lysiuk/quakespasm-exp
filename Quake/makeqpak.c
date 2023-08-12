@@ -1,5 +1,5 @@
 /*
- * mkpak.c
+ * makeqpak.c
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,164 +23,86 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void ReportFileError(const char* operation, const char* fileName)
+
+typedef struct
 {
-	printf("ERROR: Failed to %s file '%s', errno = %i, %s\n", operation, fileName, errno, strerror(errno));
-}
+	char magic[4];
+	uint32_t offset;
+	uint32_t size;
+} PakHeader;
+
+#define PAK_HEADER_SIZE sizeof(PakHeader)
+
+#define MAX_FILENAME_LENGTH 55
+
+typedef struct
+{
+	char name[MAX_FILENAME_LENGTH + 1];
+	uint32_t offset;
+	uint32_t size;
+} PakEntry;
+
+#define PAK_ENTRY_SIZE sizeof(PakEntry)
+
+#define MQP_VERIFY(EXPR) { if (!(EXPR)) { printf("ERROR: '%s' failed at line %i\n", #EXPR, __LINE__); return __LINE__; } }
+
 
 static int BuildPakFile(const char* pakFileName, char** inputFileNames, size_t inputFilesCount)
 {
-	enum DummyEnum { MAX_FILENAME_LENGTH = 55 };
-
 	for (size_t i = 0; i < inputFilesCount; ++i)
-	{
-		const char* inputFileName = inputFileNames[i];
-		size_t inputFileNameLength = strlen(inputFileName);
-
-		if (inputFileNameLength > MAX_FILENAME_LENGTH)
-		{
-			printf("ERROR: File name %s is too long, %zu > %i\n", inputFileName, inputFileNameLength, MAX_FILENAME_LENGTH);
-			return -1;
-		}
-	}
+		MQP_VERIFY(strlen(inputFileNames[i]) <= MAX_FILENAME_LENGTH);
 
 	FILE* pakFile = fopen(pakFileName, "wb");
+	MQP_VERIFY(pakFile != NULL);
+	MQP_VERIFY(fseek(pakFile, PAK_HEADER_SIZE, SEEK_SET) == 0);
 
-	if (!pakFile)
-	{
-		ReportFileError("open output", pakFileName);
-		return -2;
-	}
+	size_t directorySize = PAK_ENTRY_SIZE * inputFilesCount;
+	PakEntry* directory = malloc(directorySize);
+	MQP_VERIFY(directory != NULL);
 
-	typedef struct
-	{
-		char magic[4];
-		uint32_t offset;
-		uint32_t size;
-	} Header;
-
-	if (fseek(pakFile, sizeof(Header), SEEK_SET) != 0)
-	{
-		ReportFileError("seek output", pakFileName);
-		return -3;
-	}
-
-	typedef struct
-	{
-		char name[MAX_FILENAME_LENGTH + 1];
-		uint32_t offset;
-		uint32_t size;
-	} Entry;
-
-	size_t directorySize = sizeof(Entry) * inputFilesCount;
-	Entry* directory = malloc(directorySize);
-	size_t offset = sizeof(Header);
-
-	if (!directory)
-	{
-		printf("ERROR: Failed to allocate memory for %zu PAK directory entries\n", inputFilesCount);
-		return -4;
-	}
+	size_t offset = PAK_HEADER_SIZE;
 
 	for (size_t i = 0; i < inputFilesCount; ++i)
 	{
 		const char* inputFileName = inputFileNames[i];
 		FILE* inputFile = fopen(inputFileName, "rb");
-
-		if (!inputFile)
-		{
-			//printf("ERROR: Cannot open input file '%s', errno = %i, %s", inputFileName, errno, strerror(errno));
-			ReportFileError("open input", inputFileName);
-			return -5;
-		}
-
-		if (fseek(inputFile, 0, SEEK_END) != 0)
-		{
-			ReportFileError("seek input", inputFileName);
-			return -6;
-		}
+		MQP_VERIFY(inputFile != NULL);
+		MQP_VERIFY(fseek(inputFile, 0, SEEK_END) == 0);
 
 		long inputFileSize = ftell(inputFile);
-
-		if (inputFileSize == -1)
-		{
-			ReportFileError("get size", inputFileName);
-			return -7;
-		}
-
-		if (fseek(inputFile, 0, SEEK_SET) != 0)
-		{
-			ReportFileError("seek input", inputFileName);
-			return -8;
-		}
+		MQP_VERIFY(inputFileSize != -1);
+		MQP_VERIFY(fseek(inputFile, 0, SEEK_SET) == 0);
 
 		void* buffer = malloc(inputFileSize);
-
-		if (!buffer)
-		{
-			printf("ERROR: Failed to allocate %li bytes\n", inputFileSize);
-			return -9;
-		}
-
-		if (fread(buffer, 1, inputFileSize, inputFile) != inputFileSize)
-		{
-			ReportFileError("read input", inputFileName);
-			return -10;
-		}
-
-		if (fwrite(buffer, 1, inputFileSize, pakFile) != inputFileSize)
-		{
-			ReportFileError("write content to output", pakFileName);
-			return -11;
-		}
-
+		MQP_VERIFY(buffer != NULL);
+		MQP_VERIFY(fread(buffer, 1, inputFileSize, inputFile) == inputFileSize);
+		MQP_VERIFY(fclose(inputFile) == 0);
+		MQP_VERIFY(fwrite(buffer, 1, inputFileSize, pakFile) == inputFileSize);
 		free(buffer);
 
-		if (fclose(inputFile) != 0)
-		{
-			ReportFileError("close input", inputFileName);
-			return -12;
-		}
-
-		Entry* entry = &directory[i];
-		memset(entry, 0, sizeof *entry);
+		PakEntry* entry = &directory[i];
+		memset(entry, 0, PAK_ENTRY_SIZE);
 		strcpy(entry->name, inputFileName);
 		// TODO: sanitize filename
 		entry->offset = (uint32_t)offset;
 		entry->size = (uint32_t)inputFileSize;
+		// TODO: swap on big endian system
 
 		int padding = (4 - (inputFileSize & 3)) & 3;
-
-		if (padding > 0 && fseek(pakFile, padding, SEEK_CUR) != 0)
-		{
-			ReportFileError("seek output", pakFileName);
-			return -13;
-		}
+		if (padding > 0)
+			MQP_VERIFY(fseek(pakFile, padding, SEEK_CUR) == 0);
 
 		offset += inputFileSize + padding;
 	}
 
 	for (size_t i = 0; i < inputFilesCount; ++i)
-	{
-		Entry* entry = &directory[i];
-		// TODO: swap on big endian system
-
-		if (fwrite(entry, 1, sizeof *entry, pakFile) != sizeof *entry)
-		{
-			ReportFileError("write directory entry to output", pakFileName);
-			return -14;
-		}
-	}
+		MQP_VERIFY(fwrite(&directory[i], 1, PAK_ENTRY_SIZE, pakFile) == PAK_ENTRY_SIZE);
 
 	free(directory);
 
-	if (fseek(pakFile, 0, SEEK_SET) != 0)
-	{
-		ReportFileError("seek output", pakFileName);
-		return -15;
-	}
+	MQP_VERIFY(fseek(pakFile, 0, SEEK_SET) == 0);
 
-	Header header =
+	PakHeader header =
 	{
 		{ 'P', 'A', 'C', 'K' },
 		(uint32_t)offset,
@@ -188,17 +110,8 @@ static int BuildPakFile(const char* pakFileName, char** inputFileNames, size_t i
 	};
 	// TODO: swap on big endian system
 
-	if (fwrite(&header, 1, sizeof header, pakFile) != sizeof header)
-	{
-		ReportFileError("write header to output", pakFileName);
-		return -16;
-	}
-
-	if (fclose(pakFile) != 0)
-	{
-		ReportFileError("close output", pakFileName);
-		return -17;
-	}
+	MQP_VERIFY(fwrite(&header, 1, PAK_HEADER_SIZE, pakFile) == PAK_HEADER_SIZE);
+	MQP_VERIFY(fclose(pakFile) == 0);
 
 	return 0;
 }
