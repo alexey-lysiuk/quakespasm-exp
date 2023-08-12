@@ -39,23 +39,28 @@ static const char ls_edictindexname[] = "_luascripting_edictindex";
 // Creates metatable (if doesn't exist) and sets it for value on top of the stack
 static void LS_SetMetaTable(lua_State* state, const char* metatablename, const luaL_Reg* functions)
 {
-	int type = luaL_getmetatable(state, metatablename);
+//	int type = luaL_getmetatable(state, metatablename);
+//
+//	if (type == LUA_TNIL)
+//	{
+//		// Create metatable
+//		lua_pop(state, 1);  // remove 'nil'
+//		luaL_newmetatable(state, metatablename);
+//
+//		// Add function(s) to metatable
+//		for (const luaL_Reg* entry = functions; entry->func; ++entry)
+//		{
+//			lua_pushcfunction(state, entry->func);
+//			lua_setfield(state, -2, entry->name);
+//		}
+//	}
+//	else if (type != LUA_TTABLE)
+//		luaL_error(state, "Broken '%s' metatable", metatablename);
+//
+//	lua_setmetatable(state, -2);
 
-	if (type == LUA_TNIL)
-	{
-		// Create metatable
-		lua_pop(state, 1);  // remove 'nil'
-		luaL_newmetatable(state, metatablename);
-
-		// Add function(s) to metatable
-		for (const luaL_Reg* entry = functions; entry->func; ++entry)
-		{
-			lua_pushcfunction(state, entry->func);
-			lua_setfield(state, -2, entry->name);
-		}
-	}
-	else if (type != LUA_TTABLE)
-		luaL_error(state, "Broken '%s' metatable", metatablename);
+	if (luaL_newmetatable(state, metatablename))
+		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
 }
@@ -227,12 +232,19 @@ static int LS_EdictIndex(lua_State* state)
 	return 1;
 }
 
+//static int LS_EdictPairs(lua_State* state)
+//{
+//	luaL_checktype(state, 1, LUA_TTABLE);
+//	luaL_checktype(state, 2, LUA_TSTRING);
+//}
+
 // Sets metatable for edict table
 static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_EdictIndex },
+//		{ "__pairs", LS_EdictPairs },
 		{ NULL, NULL }
 	};
 
@@ -439,13 +451,13 @@ static void LS_PrepareState(lua_State* state)
 //	lua_setglobal(state, "edicts");
 
 	// Create underlying table for 'edicts' global userdata
-	lua_createtable(state, sv.active ? sv.num_edicts : 0, 1);
+	lua_createtable(state, sv.active ? sv.num_edicts : 0, 8);
 //	lua_pushvalue(state, -1);  // copy for '__index'
 //	lua_pushvalue(state, -1);  // copy for '__len'
 //	lua_pushvalue(state, -1);  // copy for '__newindex'
 
 	// Create and set metatable for underlying table
-	lua_createtable(state, 0, 2);
+	lua_createtable(state, 0, 1);
 	lua_pushcfunction(state, LS_EdictsIndex);
 	lua_setfield(state, -2, "__index");
 //	lua_pushcfunction(state, LS_EdictsCount);
