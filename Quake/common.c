@@ -2054,7 +2054,7 @@ _add_path:
 		else {
 			qboolean old = com_modified;
 			if (been_here) base = host_parms->userdir;
-			q_snprintf (pakfile, sizeof(pakfile), "%s/quakespasm.pak", base);
+			q_snprintf (pakfile, sizeof(pakfile), "%s/quakespasm-exp.pak", base);
 			qspak = COM_LoadPackFile (pakfile);
 			com_modified = old;
 		}

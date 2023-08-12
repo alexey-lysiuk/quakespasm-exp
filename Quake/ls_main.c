@@ -298,21 +298,19 @@ static void LS_InitStandardLibraries(lua_State* state)
 		lua_pop(state, 1);
 	}
 
-//	// Remove "unsafe" functions from standard libraries
-//	static const char* unsafefuncs[] =
-//	{
-//		"dofile",
-//		"loadfile",
-//		"getmetatable",
-//		"setmetatable",
-//		NULL
-//	};
-//
-//	for (const char** func = unsafefuncs; *func; ++func)
-//	{
-//		lua_pushnil(state);
-//		lua_setglobal(state, *func);
-//	}
+	// Remove "unsafe" functions from standard libraries
+	static const char* unsafefuncs[] =
+	{
+		"getmetatable",
+		"setmetatable",
+		NULL
+	};
+
+	for (const char** func = unsafefuncs; *func; ++func)
+	{
+		lua_pushnil(state);
+		lua_setglobal(state, *func);
+	}
 }
 
 static int LS_LoadFileX(lua_State* state, const char* filename, const char* mode)
@@ -495,7 +493,7 @@ static void LS_Exec_f(void)
 		lua_close(state);
 	}
 	else
-		Con_Printf("Running %s\n", LUA_RELEASE);
+		Con_SafePrintf("Running %s\n", LUA_RELEASE);
 
 	Hunk_FreeToLowMark(mark);
 }

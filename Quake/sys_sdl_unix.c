@@ -53,6 +53,7 @@ cvar_t		sys_throttle = {"sys_throttle", "0.02", CVAR_ARCHIVE};
 
 #define	MAX_HANDLES		32	/* johnfitz -- was 10 */
 static FILE		*sys_handles[MAX_HANDLES];
+static qboolean		stdinIsATTY;	/* from ioquake3 source */
 
 
 static int findhandle (void)
@@ -374,6 +375,12 @@ static void Sys_GetBasedir (char *argv0, char *dst, size_t dstsize)
 
 void Sys_Init (void)
 {
+	const char* term = getenv("TERM");
+	stdinIsATTY = isatty(STDIN_FILENO) &&
+			!(term && (!strcmp(term, "raw") || !strcmp(term, "dumb")));
+	if (!stdinIsATTY)
+		Sys_Printf("Terminal input not available.\n");
+
 	memset (cwd, 0, sizeof(cwd));
 	Sys_GetBasedir(host_parms->argv[0], cwd, sizeof(cwd));
 	host_parms->basedir = cwd;
@@ -453,11 +460,15 @@ double Sys_DoubleTime (void)
 
 const char *Sys_ConsoleInput (void)
 {
+	static qboolean	con_eof = false;
 	static char	con_text[256];
 	static int	textlen;
 	char		c;
 	fd_set		set;
 	struct timeval	timeout;
+
+	if (!stdinIsATTY || con_eof)
+		return NULL;
 
 	FD_ZERO (&set);
 	FD_SET (0, &set);	// stdin
@@ -466,7 +477,13 @@ const char *Sys_ConsoleInput (void)
 
 	while (select (1, &set, NULL, NULL, &timeout))
 	{
-		read (0, &c, 1);
+		if (read(0, &c, 1) <= 0)
+		{
+			// Finish processing whatever is already in the
+			// buffer (if anything), then stop reading
+			con_eof = true;
+			c = '\n';
+		}
 		if (c == '\n' || c == '\r')
 		{
 			con_text[textlen] = '\0';

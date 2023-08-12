@@ -344,7 +344,7 @@ if(APPLE)
 		)
 
 		# Workaround missing main function
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-alias -Wl,_SDL_main -Wl,_main") 
+		target_link_libraries(${PROJECT_NAME} PRIVATE "-Wl,-alias -Wl,_SDL_main -Wl,_main")
 	endif()
 elseif(WIN32)
 	target_link_libraries(${PROJECT_NAME} PRIVATE Winmm Ws2_32)
@@ -504,8 +504,25 @@ find_codec(NAME XMP
 	DEFINE USE_CODEC_XMP
 )
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND
-	${CMAKE_COMMAND} -E copy_if_different
-	"${CMAKE_SOURCE_DIR}/Quake/quakespasm.pak"
-	"$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+if(CMAKE_CROSSCOMPILING)
+	find_package(MakeQuakePak)
+else()
+	add_executable(makeqpak Quake/makeqpak.c)
+	export(TARGETS makeqpak FILE "${CMAKE_BINARY_DIR}/MakeQuakePakConfig.cmake")
+endif()
+
+set(ENGINE_PAK_SOURCES
+	gfx/conback.lmp
+	maps/e1m1@c49d.ent
+	maps/e1m2@0caa.ent
+	maps/e1m4@958e.ent
+	maps/e2m2@fbfe.ent
+	maps/e2m3@237a.ent
+	maps/e2m7@10a8.ent
+	default.cfg
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	COMMAND makeqpak "$<TARGET_FILE_DIR:${PROJECT_NAME}>/quakespasm-exp.pak" ${ENGINE_PAK_SOURCES}
+	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Misc/qs_pak"
 )
