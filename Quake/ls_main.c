@@ -301,8 +301,6 @@ static void LS_InitStandardLibraries(lua_State* state)
 	// Remove "unsafe" functions from standard libraries
 	static const char* unsafefuncs[] =
 	{
-		"dofile",
-		"loadfile",
 		"getmetatable",
 		"setmetatable",
 		NULL
@@ -312,6 +310,80 @@ static void LS_InitStandardLibraries(lua_State* state)
 	{
 		lua_pushnil(state);
 		lua_setglobal(state, *func);
+	}
+}
+
+static int LS_LoadFileX(lua_State* state, const char* filename, const char* mode)
+{
+	if (filename == NULL)
+	{
+		lua_pushstring(state, "reading from stdin is not supported");
+		return LUA_ERRFILE;
+	}
+
+	int handle;
+	int length = COM_OpenFile(filename, &handle, NULL);
+
+	if (handle == -1)
+	{
+		lua_pushfstring(state, "cannot open Lua script '%s'", filename);
+		return LUA_ERRFILE;
+	}
+
+	char* script = (char*)Hunk_AllocName(length, filename);
+	assert(script);
+
+	int bytesread = Sys_FileRead(handle, script, length);
+	COM_CloseFile(handle);
+
+	if (bytesread != length)
+	{
+		lua_pushfstring(state,
+			"error while reading Lua script '%s', read %d bytes instead of %d",
+			filename, bytesread, length);
+		return LUA_ERRFILE;
+	}
+
+	return luaL_loadbufferx(state, script, length, filename, mode);
+}
+
+static int LS_DoFile(lua_State* state)
+{
+	const char* filename = luaL_optstring(state, 1, NULL);
+	lua_settop(state, 1);
+
+	if (LS_LoadFileX(state, filename, NULL) != LUA_OK)
+		return lua_error(state);
+
+	lua_call(state, 0, LUA_MULTRET);
+	return lua_gettop(state) - 1;
+}
+
+static int LS_LoadFile(lua_State* state)
+{
+	const char* filename = luaL_optstring(state, 1, NULL);
+	const char* mode = luaL_optstring(state, 2, NULL);
+	int env = !lua_isnone(state, 3) ? 3 : 0;  // 'env' index or 0 if no 'env'
+	int status = LS_LoadFileX(state, filename, mode);
+
+	if (status == LUA_OK)
+	{
+		if (env != 0)
+		{
+			// 'env' parameter?
+			lua_pushvalue(state, env);  // environment for loaded function
+			if (!lua_setupvalue(state, -2, 1))  // set it as 1st upvalue
+				lua_pop(state, 1);  // remove 'env' if not used by previous call
+		}
+
+		return 1;
+	}
+	else
+	{
+		// error (message is on top of the stack)
+		luaL_pushfail(state);
+		lua_insert(state, -2);  // put before error message
+		return 2;  // return fail plus error message
 	}
 }
 
@@ -346,7 +418,11 @@ static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
 
-	// Register own global 'print()' function
+	// Replace global functions
+	lua_pushcfunction(state, LS_DoFile);
+	lua_setglobal(state, "dofile");
+	lua_pushcfunction(state, LS_LoadFile);
+	lua_setglobal(state, "loadfile");
 	lua_pushcfunction(state, LS_Print);
 	lua_setglobal(state, "print");
 
