@@ -30,7 +30,7 @@ static void ReportFileError(const char* operation, const char* fileName)
 
 static int BuildPakFile(const char* pakFileName, char** inputFileNames, size_t inputFilesCount)
 {
-	enum DummyEnum { MAX_FILENAME_LENGTH = 56 };
+	enum DummyEnum { MAX_FILENAME_LENGTH = 55 };
 
 	for (size_t i = 0; i < inputFilesCount; ++i)
 	{
@@ -67,7 +67,7 @@ static int BuildPakFile(const char* pakFileName, char** inputFileNames, size_t i
 
 	typedef struct
 	{
-		char name[MAX_FILENAME_LENGTH];
+		char name[MAX_FILENAME_LENGTH + 1];
 		uint32_t offset;
 		uint32_t size;
 	} Entry;
@@ -144,7 +144,8 @@ static int BuildPakFile(const char* pakFileName, char** inputFileNames, size_t i
 
 		Entry* entry = &directory[i];
 		memset(entry, 0, sizeof *entry);
-		memcpy(entry->name, inputFileName, strlen(inputFileName));
+		strcpy(entry->name, inputFileName);
+		// TODO: sanitize filename
 		entry->offset = (uint32_t)offset;
 		entry->size = (uint32_t)inputFileSize;
 
