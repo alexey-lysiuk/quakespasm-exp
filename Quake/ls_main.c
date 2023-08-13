@@ -33,7 +33,6 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 const char* ED_GetFieldNameByOffset(int offset);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
-//static const char ls_edictindexname[] = "_luascripting_edictindex";
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
@@ -129,33 +128,6 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 	}
 }
 
-// Pushes complete edict table with all fields set
-//static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
-//{
-//	edict_t* ed = EDICT_NUM(index);
-//	assert(ed);
-//
-//	lua_createtable(state, 0, 0);
-//
-//	if (ed->free)
-//		return true;
-//
-//	for (int fi = 1; fi < progs->numfielddefs; ++fi)
-//	{
-//		etype_t type;
-//		const char* name;
-//		const eval_t* value;
-//
-//		if (!ED_GetFieldByIndex(ed, fi, &name, &type, &value))
-//			continue;
-//
-//		LS_PushFieldValue(state, name, type, value);
-//		lua_setfield(state, -2, name);
-//	}
-//
-//	return true;
-//}
-
 // Pushes number of edicts
 static int LS_EdictsCount(lua_State* state)
 {
@@ -169,56 +141,28 @@ static int LS_EdictIndex(lua_State* state)
 	luaL_checktype(state, 1, LUA_TUSERDATA);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
-//	// Fetch edict index, [0..num_edicts), from edict table
-//	lua_pushstring(state, ls_edictindexname);
-//	lua_rawget(state, 1);
-//
-//	lua_Integer index = luaL_checkinteger(state, -1);
-//	lua_pop(state, 1);  // remove ls_edictindexname
-
-//	if (sv.active && index >= 0 && index < sv.num_edicts)
-//	{
-//		edict_t* ed = EDICT_NUM(index);
-
-//	if (lua_getiuservalue(state, 1, 1) != LUA_TLIGHTUSERDATA)
-//		luaL_error(state, "Incorrect pointer in edict userdata");
-//
-//	const edict_t* ed = lua_topointer(state, 1);
 	edict_t** edptr = lua_touserdata(state, 1);
 	assert(edptr);
 
 	edict_t* ed = *edptr;
-		assert(ed);
+	assert(ed);
 
-		if (!ed->free)
-		{
-			const char* name = luaL_checkstring(state, 2);
-			etype_t type;
-			const eval_t* value;
+	if (ed->free)
+		lua_pushnil(state);  // TODO: default value instead of nil
+	else
+	{
+		const char* name = luaL_checkstring(state, 2);
+		etype_t type;
+		const eval_t* value;
 
-			if (ED_GetFieldByName(ed, name, &type, &value))
-			{
-				LS_PushFieldValue(state, name, type, value);
+		if (ED_GetFieldByName(ed, name, &type, &value))
+			LS_PushFieldValue(state, name, type, value);
+		else
+			lua_pushnil(state);  // TODO: default value instead of nil
+	}
 
-//				// Add field and its value to edict table
-//				lua_pushvalue(state, 2);  // field name
-//				lua_pushvalue(state, -2);  // copy of field value for lua_rawset()
-//				lua_rawset(state, 1);
-
-				return 1;
-			}
-		}
-//	}
-
-	lua_pushnil(state);
 	return 1;
 }
-
-//static int LS_EdictPairs(lua_State* state)
-//{
-//	luaL_checktype(state, 1, LUA_TTABLE);
-//	luaL_checktype(state, 2, LUA_TSTRING);
-//}
 
 // Sets metatable for edict table
 static void LS_SetEdictMetaTable(lua_State* state)
@@ -226,7 +170,6 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_EdictIndex },
-//		{ "__pairs", LS_EdictPairs },
 		{ NULL, NULL }
 	};
 
