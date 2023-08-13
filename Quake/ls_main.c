@@ -33,7 +33,6 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 const char* ED_GetFieldNameByOffset(int offset);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
-static const char ls_edictindexname[] = "_luascripting_edictindex";
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
@@ -139,42 +138,29 @@ static int LS_EdictsCount(lua_State* state)
 // Pushes value of edict field by its name
 static int LS_EdictIndex(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
+	luaL_checktype(state, 1, LUA_TUSERDATA);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
-	// Fetch edict index, [0..num_edicts), from edict table
-	lua_pushstring(state, ls_edictindexname);
-	lua_rawget(state, 1);
+	edict_t** edptr = lua_touserdata(state, 1);
+	assert(edptr);
 
-	lua_Integer index = luaL_checkinteger(state, -1);
-	lua_pop(state, 1);  // remove ls_edictindexname
+	edict_t* ed = *edptr;
+	assert(ed);
 
-	if (sv.active && index >= 0 && index < sv.num_edicts)
+	if (ed->free)
+		lua_pushnil(state);  // TODO: default value instead of nil
+	else
 	{
-		edict_t* ed = EDICT_NUM(index);
-		assert(ed);
+		const char* name = luaL_checkstring(state, 2);
+		etype_t type;
+		const eval_t* value;
 
-		if (!ed->free)
-		{
-			const char* name = luaL_checkstring(state, 2);
-			etype_t type;
-			const eval_t* value;
-
-			if (ED_GetFieldByName(ed, name, &type, &value))
-			{
-				LS_PushFieldValue(state, name, type, value);
-
-				// Add field and its value to edict table
-				lua_pushvalue(state, 2);  // field name
-				lua_pushvalue(state, -2);  // copy of field value for lua_rawset()
-				lua_rawset(state, 1);
-
-				return 1;
-			}
-		}
+		if (ED_GetFieldByName(ed, name, &type, &value))
+			LS_PushFieldValue(state, name, type, value);
+		else
+			lua_pushnil(state);  // TODO: default value instead of nil
 	}
 
-	lua_pushnil(state);
 	return 1;
 }
 
