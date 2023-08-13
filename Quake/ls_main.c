@@ -36,30 +36,6 @@ static const char* ls_axisnames[] = { "x", "y", "z" };
 static const char ls_edictindexname[] = "_luascripting_edictindex";
 static const char ls_lazyevalname[] = "lazyeval";
 
-// Creates metatable (if doesn't exist) and sets it for value on top of the stack
-static void LS_SetMetaTable(lua_State* state, const char* metatablename, const luaL_Reg* functions)
-{
-	int type = luaL_getmetatable(state, metatablename);
-
-	if (type == LUA_TNIL)
-	{
-		// Create metatable
-		lua_pop(state, 1);  // remove 'nil'
-		luaL_newmetatable(state, metatablename);
-
-		// Add function(s) to metatable
-		for (const luaL_Reg* entry = functions; entry->func; ++entry)
-		{
-			lua_pushcfunction(state, entry->func);
-			lua_setfield(state, -2, entry->name);
-		}
-	}
-	else if (type != LUA_TTABLE)
-		luaL_error(state, "Broken '%s' metatable", metatablename);
-
-	lua_setmetatable(state, -2);
-}
-
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
 {
@@ -93,7 +69,10 @@ static void LS_SetVec3MetaTable(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	LS_SetMetaTable(state, "vec3_t", functions);
+	if (luaL_newmetatable(state, "vec3_t"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
 }
 
 // Pushes field value by its type and name
@@ -236,7 +215,10 @@ static void LS_SetEdictMetaTable(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	LS_SetMetaTable(state, "edict", functions);
+	if (luaL_newmetatable(state, "edict"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
 }
 
 // Pushes edict table by its index, [0..num_edicts)
