@@ -179,6 +179,46 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
+static int LS_ForEachEdict(lua_State* state)
+{
+	if (!sv.active)
+		return 0;
+
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checktype(state, 2, LUA_TFUNCTION);
+
+	lua_Integer target = luaL_optinteger(state, 3, 0);
+	lua_Integer current = 1;
+
+	for (int i = 0; i < sv.num_edicts; ++i)
+	{
+		edict_t* ed = EDICT_NUM(i);
+
+		if (ed->free)
+			continue;
+
+		lua_pushvalue(state, 2);  // iteration function to call
+		lua_geti(state, 1, i);  // get edict by index, [0..num_edicts)
+		lua_pushinteger(state, current);
+		lua_pushinteger(state, target);
+		lua_call(state, 3, 1);
+
+		int restype = lua_type(state, -1);
+
+		if (restype == LUA_TNIL)
+			break;
+		else if (restype == LUA_TNUMBER)
+		{
+			current = lua_tointeger(state, -1);
+			lua_pop(state, 1);  // remove result
+		}
+		else
+			luaL_error(state, "Invalid type returned from edicts.foreach() iteration function");
+	}
+
+	return 0;
+}
+
 // Pushes either
 // * edict userdata by its integer index, [0..num_edicts)
 // * method of 'edicts' userdata by its name
@@ -186,7 +226,17 @@ static int LS_EdictsIndex(lua_State* state)
 {
 	int indextype = lua_type(state, 2);
 
-	if (indextype == LUA_TNUMBER)
+	if (indextype == LUA_TSTRING)
+	{
+		const char* key = lua_tostring(state, 2);
+		assert(key);
+
+		if (strcmp(key, "foreach") == 0)
+			lua_pushcfunction(state, LS_ForEachEdict);
+		else
+			luaL_error(state, "Unknown edicts key '%s'", key);
+	}
+	else if (indextype == LUA_TNUMBER)
 	{
 		// Check edict index, [0..num_edicts), for validity
 		lua_Integer index = lua_tointeger(state, 2);
@@ -206,6 +256,12 @@ static int LS_EdictsIndex(lua_State* state)
 		luaL_error(state, "Invalid type %i of edicts key", indextype);
 
 	return 1;
+}
+
+static int LS_EdictsNewIndex(lua_State* state)
+{
+	// TODO: cache key to value mapping (?)
+	return 0;
 }
 
 static void LS_InitStandardLibraries(lua_State* state)
@@ -366,6 +422,7 @@ static void LS_PrepareState(lua_State* state)
 	{
 		{ "__index", LS_EdictsIndex },
 		{ "__len", LS_EdictsCount },
+		{ "__newindex", LS_EdictsNewIndex },
 		{ NULL, NULL }
 	};
 
