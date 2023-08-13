@@ -34,7 +34,6 @@ const char* ED_GetFieldNameByOffset(int offset);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
 static const char ls_edictindexname[] = "_luascripting_edictindex";
-static const char ls_lazyevalname[] = "lazyeval";
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
@@ -131,31 +130,31 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 }
 
 // Pushes complete edict table with all fields set
-static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
-{
-	edict_t* ed = EDICT_NUM(index);
-	assert(ed);
-
-	lua_createtable(state, 0, 0);
-
-	if (ed->free)
-		return true;
-
-	for (int fi = 1; fi < progs->numfielddefs; ++fi)
-	{
-		etype_t type;
-		const char* name;
-		const eval_t* value;
-
-		if (!ED_GetFieldByIndex(ed, fi, &name, &type, &value))
-			continue;
-
-		LS_PushFieldValue(state, name, type, value);
-		lua_setfield(state, -2, name);
-	}
-
-	return true;
-}
+//static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
+//{
+//	edict_t* ed = EDICT_NUM(index);
+//	assert(ed);
+//
+//	lua_createtable(state, 0, 0);
+//
+//	if (ed->free)
+//		return true;
+//
+//	for (int fi = 1; fi < progs->numfielddefs; ++fi)
+//	{
+//		etype_t type;
+//		const char* name;
+//		const eval_t* value;
+//
+//		if (!ED_GetFieldByIndex(ed, fi, &name, &type, &value))
+//			continue;
+//
+//		LS_PushFieldValue(state, name, type, value);
+//		lua_setfield(state, -2, name);
+//	}
+//
+//	return true;
+//}
 
 // Pushes number of edicts
 static int LS_EdictsCount(lua_State* state)
@@ -235,7 +234,6 @@ static int LS_ForEachEdict(lua_State* state)
 
 	luaL_checktype(state, 1, LUA_TUSERDATA);
 	luaL_checktype(state, 2, LUA_TFUNCTION);
-	//luaL_checkinteger(state, 2);
 
 	lua_Integer target = luaL_optinteger(state, 3, 0);
 	lua_Integer current = 1;
@@ -247,7 +245,7 @@ static int LS_ForEachEdict(lua_State* state)
 		if (ed->free)
 			continue;
 
-		lua_pushvalue(state, 2);  // function to call
+		lua_pushvalue(state, 2);  // iteration function to call
 		lua_geti(state, 1, i);  // get edict by index, [0..num_edicts)
 		lua_pushinteger(state, current);
 		lua_pushinteger(state, target);
@@ -264,15 +262,6 @@ static int LS_ForEachEdict(lua_State* state)
 		}
 		else
 			luaL_error(state, "Invalid type returned from edicts.foreach() iteration function");
-
-//		int result = lua_toboolean(state, -1);
-//		lua_pop(state, 1);
-
-//		if (!result)
-//			break;
-
-		//if (lua_callp(state, 0, 1, 0) != LUA_OK)
-		//	luaL_error(state, "edicts.foreach() call failed");
 	}
 
 	return 0;
@@ -286,16 +275,12 @@ static int LS_EdictsIndex(lua_State* state)
 	if (indextype == LUA_TSTRING)
 	{
 		const char* key = lua_tostring(state, 2);
+		assert(key);
 
-		if (strcmp(key, ls_lazyevalname) == 0)
-			lua_pushboolean(state, 1);  // TODO: ...
-		else if (strcmp(key, "foreach") == 0)
+		if (strcmp(key, "foreach") == 0)
 			lua_pushcfunction(state, LS_ForEachEdict);
-
-		//	lua_pushboolean(state, true);
-		//	lua_setfield(state, -2, ls_lazyevalname);
-		//	lua_pushcfunction(state, LS_ForEachEdict);
-		//	lua_setfield(state, -2, "foreach");
+		else
+			lua_pushnil(state);
 
 		return 1;
 	}
@@ -316,26 +301,19 @@ static int LS_EdictsIndex(lua_State* state)
 
 	luaL_checktype(state, 1, LUA_TUSERDATA);
 
-//	// Fetch edict lazy evaluation status
-//	lua_pushstring(state, ls_lazyevalname);
-//	lua_rawget(state, 1);
-
-	// TODO
-	qboolean lazyeval = true; //lua_toboolean(state, -1);
-
 	// Create edict table
 	lua_createtable(state, 0, 16);
 
-	if (lazyeval)
-	{
+//	if (lazyeval)
+//	{
 		LS_SetEdictMetaTable(state);
 
 		// Set own edict index, [0..num_edicts), to edict table
 		lua_pushnumber(state, index);
 		lua_setfield(state, -2, ls_edictindexname);
-	}
-	else
-		LS_BuildFullEdictTable(state, index);
+//	}
+//	else
+//		LS_BuildFullEdictTable(state, index);
 
 //	// Add this edict to 'edicts' global table
 //	lua_pushvalue(state, -1);
@@ -346,13 +324,7 @@ static int LS_EdictsIndex(lua_State* state)
 
 static int LS_EdictsNewIndex(lua_State* state)
 {
-	//	lua_pushboolean(state, true);
-	//	lua_setfield(state, -2, ls_lazyevalname);
-	//	lua_pushcfunction(state, LS_ForEachEdict);
-	//	lua_setfield(state, -2, "foreach");
-
-//	luaL_checktype(state, 1, LUA_TUSERDATA);
-//	luaL_checktype(state, 2, LUA_TSTRING);
+	// TODO: cache index to value mapping (?)
 	return 0;
 }
 
@@ -502,14 +474,12 @@ static void LS_PrepareState(lua_State* state)
 	lua_pushcfunction(state, LS_Print);
 	lua_setglobal(state, "print");
 
+	static const char* edictsname = "edicts";
+
 	// Create and register 'edicts' global userdata
 	lua_newuserdatauv(state, 0, 0);
 	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
-//	lua_pushboolean(state, true);
-//	lua_setfield(state, -2, ls_lazyevalname);
-//	lua_pushcfunction(state, LS_ForEachEdict);
-//	lua_setfield(state, -2, "foreach");
-	lua_setglobal(state, "edicts");
+	lua_setglobal(state, edictsname);
 
 	// Create and set metatable for 'edicts' global userdata
 	static const luaL_Reg functions[] =
@@ -520,33 +490,9 @@ static void LS_PrepareState(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	luaL_newmetatable(state, "edicts");
+	luaL_newmetatable(state, edictsname);
 	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
-
-//	lua_createtable(state, 0, 1);
-//	lua_pushcfunction(state, LS_EdictsIndex);
-//	lua_setfield(state, -2, "__index");
-//	lua_pushcfunction(state, LS_EdictsCount);
-//	lua_setfield(state, -2, "__len");
-//
-//	lua_setmetatable(state, -2);
-
-//	// Create and register 'edicts' global userdata
-//	lua_newuserdatauv(state, 0, 0);
-//	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
-//	lua_setglobal(state, "edicts");
-//
-//	// Create and set metatable for 'edicts' global userdata
-//	lua_createtable(state, 0, 3);
-//	lua_pushvalue(state, -3);  // copy for underlying table
-//	lua_setfield(state, -2, "__index");
-//	//lua_pushvalue(state, -3);  // copy for underlying table
-//	lua_pushcfunction(state, LS_EdictsCount);
-//	lua_setfield(state, -2, "__len");
-//	lua_pushvalue(state, -3);  // copy for underlying table
-//	lua_setfield(state, -2, "__newindex");
-//	lua_setmetatable(state, -2);
 }
 
 static void* LS_Alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
