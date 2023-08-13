@@ -64,49 +64,101 @@ static int LS_Vec3MidPoint(lua_State* state)
 	return 1;
 }
 
+static int LS_Vec3Origin(lua_State* state)
+{
+	LS_PushVec3Value(state, vec3_origin);
+	return 1;
+}
+
+static int LS_Vec3KeyToIndex(const char* key)
+{
+	assert(key);
+
+	if (strcmp(key, "x") == 0)
+		return 0;
+	else if (strcmp(key, "y") == 0)
+		return 1;
+	else if (strcmp(key, "z") == 0)
+		return 2;
+
+	return -1;
+}
+
 static int LS_Vec3Index(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TUSERDATA);
-
-	vec3_t* value = lua_touserdata(state, 1);
-	assert(value);
-
 	int indextype = lua_type(state, 2);
+	int index;
 
 	if (indextype == LUA_TSTRING)
 	{
 		const char* key = lua_tostring(state, 2);
 		assert(key);
 
-		if (strcmp(key, "x") == 0)
-			lua_pushnumber(state, (*value)[0]);
-		else if (strcmp(key, "y") == 0)
-			lua_pushnumber(state, (*value)[1]);
-		else if (strcmp(key, "z") == 0)
-			lua_pushnumber(state, (*value)[2]);
-		else if (strcmp(key, "midpoint") == 0)
+		if (strcmp(key, "midpoint") == 0)
+		{
 			lua_pushcfunction(state, LS_Vec3MidPoint);
-		else
+			return 1;
+		}
+
+		index = LS_Vec3KeyToIndex(key);
+		assert(index >= -1 && index < 3);
+
+		if (index == -1)
 			luaL_error(state, "Invalid vec3_t key '%s'", key);
 	}
 	else if (indextype == LUA_TNUMBER)
-	{
-		lua_Integer index = lua_tointeger(state, 2);
-
-		if (index >= 0 && index < 3)
-			lua_pushnumber(state, (*value)[index]);
-		else
-			luaL_error(state, "vec3_t index %i is out of range [0..2)", index);
-	}
+		index = lua_tointeger(state, 2);
 	else
-		luaL_error(state, "Invalid type %i of vec3_t key", indextype);
+		luaL_error(state, "Invalid type %d of vec3_t key", indextype);
+
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+
+	vec3_t* value = lua_touserdata(state, 1);
+	assert(value);
+
+	if (index >= 0 && index < 3)
+		lua_pushnumber(state, (*value)[index]);
+	else
+		luaL_error(state, "vec3_t index %d is out of range [0..2)", index);
 
 	return 1;
 }
 
 static int LS_Vec3NewIndex(lua_State* state)
 {
-	// TODO: ...
+	int indextype = lua_type(state, 2);
+	int index;
+
+	if (indextype == LUA_TSTRING)
+	{
+		const char* key = lua_tostring(state, 2);
+		assert(key);
+
+		index = LS_Vec3KeyToIndex(key);
+		assert(index >= -1 && index < 3);
+
+		if (index == -1)
+			luaL_error(state, "Invalid vec3_t key '%s'", key);
+	}
+	else if (indextype == LUA_TNUMBER)
+		index = lua_tointeger(state, 2);
+	else
+		luaL_error(state, "Invalid type %d of vec3_t key", indextype);
+
+	lua_Number newvalue;
+
+	if (index >= 0 && index < 3)
+		newvalue = luaL_checknumber(state, 3);
+	else
+		luaL_error(state, "vec3_t index %d is out of range [0..2)", index);
+
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+
+	vec3_t* value = lua_touserdata(state, 1);
+	assert(value);
+
+	(*value)[index] = newvalue;
+
 	return 0;
 }
 
@@ -316,10 +368,10 @@ static int LS_EdictsIndex(lua_State* state)
 			LS_SetEdictMetaTable(state);
 		}
 		else
-			luaL_error(state, "Edicts index %i is out of range [0..%i)", index, sv.num_edicts);
+			luaL_error(state, "Edicts index %d is out of range [0..%d)", index, sv.num_edicts);
 	}
 	else
-		luaL_error(state, "Invalid type %i of edicts key", indextype);
+		luaL_error(state, "Invalid type %d of edicts key", indextype);
 
 	return 1;
 }
@@ -475,6 +527,9 @@ static void LS_PrepareState(lua_State* state)
 	lua_setglobal(state, "loadfile");
 	lua_pushcfunction(state, LS_Print);
 	lua_setglobal(state, "print");
+
+	lua_pushcfunction(state, LS_Vec3Origin);
+	lua_setglobal(state, "vec3_origin");
 
 	static const char* edictsname = "edicts";
 
