@@ -34,7 +34,6 @@ const char* ED_GetFieldNameByOffset(int offset);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
 static const char ls_edictindexname[] = "_luascripting_edictindex";
-static const char ls_lazyevalname[] = "lazyeval";
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
@@ -130,33 +129,6 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 	}
 }
 
-// Pushes complete edict table with all fields set
-static qboolean LS_BuildFullEdictTable(lua_State* state, int index)
-{
-	edict_t* ed = EDICT_NUM(index);
-	assert(ed);
-
-	lua_createtable(state, 0, 0);
-
-	if (ed->free)
-		return true;
-
-	for (int fi = 1; fi < progs->numfielddefs; ++fi)
-	{
-		etype_t type;
-		const char* name;
-		const eval_t* value;
-
-		if (!ED_GetFieldByIndex(ed, fi, &name, &type, &value))
-			continue;
-
-		LS_PushFieldValue(state, name, type, value);
-		lua_setfield(state, -2, name);
-	}
-
-	return true;
-}
-
 // Pushes number of edicts
 static int LS_EdictsCount(lua_State* state)
 {
@@ -221,43 +193,31 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-// Pushes edict table by its index, [0..num_edicts)
+// Pushes either
+// * edict userdata by its integer index, [0..num_edicts)
+// * method of 'edicts' userdata by its name
 static int LS_EdictsIndex(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
+	int indextype = lua_type(state, 2);
 
-	// Check edict index, [0..num_edicts), for validity
-	lua_Integer index = luaL_checkinteger(state, 2);
-
-	if (!sv.active || index < 0 || index >= sv.num_edicts)
+	if (indextype == LUA_TNUMBER)
 	{
-		lua_pushnil(state);
-		return 1;
-	}
+		// Check edict index, [0..num_edicts), for validity
+		lua_Integer index = lua_tointeger(state, 2);
 
-	// Fetch edict lazy evaluation status
-	lua_pushstring(state, ls_lazyevalname);
-	lua_rawget(state, 1);
-
-	qboolean lazyeval = lua_toboolean(state, -1);
-
-	// Create edict table
-	lua_createtable(state, 0, 16);
-
-	if (lazyeval)
-	{
-		LS_SetEdictMetaTable(state);
-
-		// Set own edict index, [0..num_edicts), to edict table
-		lua_pushnumber(state, index);
-		lua_setfield(state, -2, ls_edictindexname);
+		if (sv.active && index >= 0 && index < sv.num_edicts)
+		{
+			// Create edict userdata, and assign edict_t* to it
+			edict_t** edictptr = lua_newuserdatauv(state, sizeof(edict_t*), 0);
+			assert(edictptr);
+			*edictptr = EDICT_NUM(index);
+			LS_SetEdictMetaTable(state);
+		}
+		else
+			luaL_error(state, "Edicts index %i is out of range [0..%i)", index, sv.num_edicts);
 	}
 	else
-		LS_BuildFullEdictTable(state, index);
-
-	// Add this edict to 'edicts' global table
-	lua_pushvalue(state, -1);
-	lua_rawseti(state, 1, index);
+		luaL_error(state, "Invalid type %i of edicts key", indextype);
 
 	return 1;
 }
@@ -408,19 +368,23 @@ static void LS_PrepareState(lua_State* state)
 	lua_pushcfunction(state, LS_Print);
 	lua_setglobal(state, "print");
 
-	// Create and register 'edicts' global table
-	lua_createtable(state, sv.active ? sv.num_edicts : 0, 1);
-	lua_pushboolean(state, true);
-	lua_setfield(state, -2, ls_lazyevalname);
-	lua_pushvalue(state, -1);
-	lua_setglobal(state, "edicts");
+	static const char* edictsname = "edicts";
 
-	// Create and set metatable for 'edicts' global table
-	lua_createtable(state, 0, 3);
-	lua_pushcfunction(state, LS_EdictsIndex);
-	lua_setfield(state, -2, "__index");
-	lua_pushcfunction(state, LS_EdictsCount);
-	lua_setfield(state, -2, "__len");
+	// Create and register 'edicts' global userdata
+	lua_newuserdatauv(state, 0, 0);
+	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
+	lua_setglobal(state, edictsname);
+
+	// Create and set metatable for 'edicts' global userdata
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_EdictsIndex },
+		{ "__len", LS_EdictsCount },
+		{ NULL, NULL }
+	};
+
+	luaL_newmetatable(state, edictsname);
+	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
 }
 
