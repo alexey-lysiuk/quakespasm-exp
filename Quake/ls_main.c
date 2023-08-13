@@ -250,10 +250,10 @@ static int LS_EdictsIndex(lua_State* state)
 			LS_SetEdictMetaTable(state);
 		}
 		else
-			luaL_error(state, "Edicts index %i is out of range [0..%i)", index, sv.num_edicts);
+			luaL_error(state, "Edicts index %d is out of range [0..%d)", index, sv.num_edicts);
 	}
 	else
-		luaL_error(state, "Invalid type %i of edicts key", indextype);
+		luaL_error(state, "Invalid type %d of edicts key", indextype);
 
 	return 1;
 }
