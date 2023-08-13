@@ -32,37 +32,110 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, e
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
 
-static const char* ls_axisnames[] = { "x", "y", "z" };
+//static const char* ls_axisnames[] = { "x", "y", "z" };
+
+
+static void LS_PushVec3Value(lua_State* state, const vec_t* value);
+
+static int LS_Vec3MidPoint(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checktype(state, 2, LUA_TUSERDATA);
+
+	vec3_t* value1 = lua_touserdata(state, 1);
+	assert(value1);
+
+	vec3_t* value2 = lua_touserdata(state, 2);
+	assert(value2);
+
+	vec3_t result;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		vec_t v1 = (*value1)[i];
+		vec_t v2 = (*value2)[i];
+
+		result[i] = v1 < v2
+			? v1 + (v2 - v1) * 0.5f
+			: v2 + (v1 - v2) * 0.5f;
+	}
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+static int LS_Vec3Index(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+
+	vec3_t* value = lua_touserdata(state, 1);
+	assert(value);
+
+	int indextype = lua_type(state, 2);
+
+	if (indextype == LUA_TSTRING)
+	{
+		const char* key = lua_tostring(state, 2);
+		assert(key);
+
+		if (strcmp(key, "x") == 0)
+			lua_pushnumber(state, (*value)[0]);
+		else if (strcmp(key, "y") == 0)
+			lua_pushnumber(state, (*value)[1]);
+		else if (strcmp(key, "z") == 0)
+			lua_pushnumber(state, (*value)[2]);
+		else if (strcmp(key, "midpoint") == 0)
+			lua_pushcfunction(state, LS_Vec3MidPoint);
+		else
+			luaL_error(state, "Invalid vec3_t key '%s'", key);
+	}
+	else if (indextype == LUA_TNUMBER)
+	{
+		lua_Integer index = lua_tointeger(state, 2);
+
+		if (index >= 0 && index < 3)
+			lua_pushnumber(state, (*value)[index]);
+		else
+			luaL_error(state, "vec3_t index %i is out of range [0..2)", index);
+	}
+	else
+		luaL_error(state, "Invalid type %i of vec3_t key", indextype);
+
+	return 1;
+}
+
+static int LS_Vec3NewIndex(lua_State* state)
+{
+	// TODO: ...
+	return 0;
+}
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
+	luaL_checktype(state, 1, LUA_TUSERDATA);
 
-	vec3_t value;
-
-	for (int i = 0; i < 3; ++i)
-	{
-		int type = lua_getfield(state, 1, ls_axisnames[i]);
-		if (type != LUA_TNUMBER)
-			luaL_error(state, "Bad value in vec3_t at index %d", i);
-
-		value[i] = lua_tonumber(state, -1);
-		lua_pop(state, 1);  // remove value
-	}
+	vec3_t* value = lua_touserdata(state, 1);
+	assert(value);
 
 	char buf[128];
-	int length = q_snprintf(buf, sizeof buf, "%.1f %.1f %.1f", value[0], value[1], value[2]);
+	int length = q_snprintf(buf, sizeof buf, "%.1f %.1f %.1f", (*value)[0], (*value)[1], (*value)[2]);
 
 	lua_pushlstring(state, buf, length);
 	return 1;
 }
 
-// Sets metatable for vec3_t table
-static void LS_SetVec3MetaTable(lua_State* state)
+static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 {
+	vec3_t* valueptr = lua_newuserdatauv(state, sizeof(edict_t*), 0);
+	assert(valueptr);
+	VectorCopy(value, *valueptr);
+
+	// Create and set vec3_t metatable
 	static const luaL_Reg functions[] =
 	{
+		{ "__index", LS_Vec3Index },
+		{ "__newindex", LS_Vec3NewIndex },
 		{ "__tostring", LS_Vec3ToString },
 		{ NULL, NULL }
 	};
@@ -95,14 +168,7 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 		break;
 
 	case ev_vector:
-		lua_createtable(state, 0, 3);
-		LS_SetVec3MetaTable(state);
-
-		for (int i = 0; i < 3; ++i)
-		{
-			lua_pushnumber(state, value->vector[i]);
-			lua_setfield(state, -2, ls_axisnames[i]);
-		}
+		LS_PushVec3Value(state, value->vector);
 		break;
 
 	case ev_entity:
