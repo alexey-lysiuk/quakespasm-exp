@@ -33,7 +33,7 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 const char* ED_GetFieldNameByOffset(int offset);
 
 static const char* ls_axisnames[] = { "x", "y", "z" };
-static const char ls_edictindexname[] = "_luascripting_edictindex";
+//static const char ls_edictindexname[] = "_luascripting_edictindex";
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
 static int LS_Vec3ToString(lua_State* state)
@@ -166,19 +166,28 @@ static int LS_EdictsCount(lua_State* state)
 // Pushes value of edict field by its name
 static int LS_EdictIndex(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
+	luaL_checktype(state, 1, LUA_TUSERDATA);
 	luaL_checktype(state, 2, LUA_TSTRING);
 
-	// Fetch edict index, [0..num_edicts), from edict table
-	lua_pushstring(state, ls_edictindexname);
-	lua_rawget(state, 1);
+//	// Fetch edict index, [0..num_edicts), from edict table
+//	lua_pushstring(state, ls_edictindexname);
+//	lua_rawget(state, 1);
+//
+//	lua_Integer index = luaL_checkinteger(state, -1);
+//	lua_pop(state, 1);  // remove ls_edictindexname
 
-	lua_Integer index = luaL_checkinteger(state, -1);
-	lua_pop(state, 1);  // remove ls_edictindexname
+//	if (sv.active && index >= 0 && index < sv.num_edicts)
+//	{
+//		edict_t* ed = EDICT_NUM(index);
 
-	if (sv.active && index >= 0 && index < sv.num_edicts)
-	{
-		edict_t* ed = EDICT_NUM(index);
+//	if (lua_getiuservalue(state, 1, 1) != LUA_TLIGHTUSERDATA)
+//		luaL_error(state, "Incorrect pointer in edict userdata");
+//
+//	const edict_t* ed = lua_topointer(state, 1);
+	edict_t** edptr = lua_touserdata(state, 1);
+	assert(edptr);
+
+	edict_t* ed = *edptr;
 		assert(ed);
 
 		if (!ed->free)
@@ -191,15 +200,15 @@ static int LS_EdictIndex(lua_State* state)
 			{
 				LS_PushFieldValue(state, name, type, value);
 
-				// Add field and its value to edict table
-				lua_pushvalue(state, 2);  // field name
-				lua_pushvalue(state, -2);  // copy of field value for lua_rawset()
-				lua_rawset(state, 1);
+//				// Add field and its value to edict table
+//				lua_pushvalue(state, 2);  // field name
+//				lua_pushvalue(state, -2);  // copy of field value for lua_rawset()
+//				lua_rawset(state, 1);
 
 				return 1;
 			}
 		}
-	}
+//	}
 
 	lua_pushnil(state);
 	return 1;
@@ -267,7 +276,9 @@ static int LS_ForEachEdict(lua_State* state)
 	return 0;
 }
 
-// Pushes edict table by its index, [0..num_edicts)
+// Pushes either
+// * edict userdata by its integer index, [0..num_edicts)
+// * method of 'edicts' userdata by its name
 static int LS_EdictsIndex(lua_State* state)
 {
 	int indextype = lua_type(state, 2);
@@ -280,51 +291,33 @@ static int LS_EdictsIndex(lua_State* state)
 		if (strcmp(key, "foreach") == 0)
 			lua_pushcfunction(state, LS_ForEachEdict);
 		else
-			lua_pushnil(state);
-
-		return 1;
+			luaL_error(state, "Unknown edicts key '%s'", key);
 	}
-	else if (indextype != LUA_TNUMBER)
+	else if (indextype == LUA_TNUMBER)
 	{
-		lua_pushnil(state);
-		return 1;
+		// Check edict index, [0..num_edicts), for validity
+		lua_Integer index = lua_tointeger(state, 2);
+
+		if (sv.active && index >= 0 && index < sv.num_edicts)
+		{
+			// Create edict userdata, and assign edict_t* to it
+			edict_t** edictptr = lua_newuserdatauv(state, sizeof(edict_t*), 0);
+			assert(edictptr);
+			*edictptr = EDICT_NUM(index);
+			LS_SetEdictMetaTable(state);
+		}
+		else
+			luaL_error(state, "Edicts index %i is out of range [0..%i)", index, sv.num_edicts);
 	}
-
-	// Check edict index, [0..num_edicts), for validity
-	lua_Integer index = lua_tointeger(state, 2);
-
-	if (!sv.active || index < 0 || index >= sv.num_edicts)
-	{
-		lua_pushnil(state);
-		return 1;
-	}
-
-	luaL_checktype(state, 1, LUA_TUSERDATA);
-
-	// Create edict table
-	lua_createtable(state, 0, 16);
-
-//	if (lazyeval)
-//	{
-		LS_SetEdictMetaTable(state);
-
-		// Set own edict index, [0..num_edicts), to edict table
-		lua_pushnumber(state, index);
-		lua_setfield(state, -2, ls_edictindexname);
-//	}
-//	else
-//		LS_BuildFullEdictTable(state, index);
-
-//	// Add this edict to 'edicts' global table
-//	lua_pushvalue(state, -1);
-//	lua_rawseti(state, 1, index);
+	else
+		luaL_error(state, "Invalid type %i of edicts key", indextype);
 
 	return 1;
 }
 
 static int LS_EdictsNewIndex(lua_State* state)
 {
-	// TODO: cache index to value mapping (?)
+	// TODO: cache key to value mapping (?)
 	return 0;
 }
 
