@@ -32,42 +32,103 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, e
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
 
-static const char* ls_axisnames[] = { "x", "y", "z" };
 
-// Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
+//
+// Expose vec3_t as 'vec3' userdata
+//
+
+// Converts 'vec3' component at given stack index to vec3_t integer index [0..2]
+static int LS_Vec3GetComponent(lua_State* state, int index)
+{
+	int comptype = lua_type(state, index);
+	int component;
+
+	if (comptype == LUA_TSTRING)
+	{
+		const char* compstr = lua_tostring(state, 2);
+		assert(compstr);
+
+		if (strcmp(compstr, "x") == 0)
+			component = 0;
+		else if (strcmp(compstr, "y") == 0)
+			component = 1;
+		else if (strcmp(compstr, "z") == 0)
+			component = 2;
+		else
+			luaL_error(state, "Invalid vec3_t component '%s'", compstr);
+	}
+	else if (comptype == LUA_TNUMBER)
+		component = lua_tointeger(state, 2);
+	else
+		luaL_error(state, "Invalid type %d of vec3_t component", comptype);
+
+	if (component < 0 || component >= 3)
+		luaL_error(state, "vec3_t component %d is out of range [0..2]", component);
+
+	return component;
+}
+
+// Get value of 'vec3' from userdata at given index
+static vec_t* LS_Vec3GetValue(lua_State* state, int index)
+{
+	luaL_checktype(state, index, LUA_TUSERDATA);
+
+	vec3_t* value = lua_touserdata(state, index);
+	assert(value);
+
+	return *value;
+}
+
+// Pushes value of 'vec3' component, indexed by integer [0..2] or string 'x', 'y', 'z'
+static int LS_value_vec3_index(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+	int component = LS_Vec3GetComponent(state, 2);
+
+	lua_pushnumber(state, value[component]);
+	return 1;
+}
+
+// Sets new value of 'vec3_t' component, indexed by integer [0..2] or string 'x', 'y', 'z'
+static int LS_value_vec3_newindex(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+	int component = LS_Vec3GetComponent(state, 2);
+
+	lua_Number compvalue = luaL_checknumber(state, 3);
+	value[component] = compvalue;
+
+	return 0;
+}
+
+// Pushes string built from 'vec3' value
 static int LS_value_vec3_tostring(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
-
-	vec3_t value;
-
-	for (int i = 0; i < 3; ++i)
-	{
-		int type = lua_getfield(state, 1, ls_axisnames[i]);
-		if (type != LUA_TNUMBER)
-			luaL_error(state, "Bad value in vec3_t at index %d", i);
-
-		value[i] = lua_tonumber(state, -1);
-		lua_pop(state, 1);  // remove value
-	}
-
-	char buf[128];
+	char buf[64];
+	vec_t* value = LS_Vec3GetValue(state, 1);
 	int length = q_snprintf(buf, sizeof buf, "%.1f %.1f %.1f", value[0], value[1], value[2]);
 
 	lua_pushlstring(state, buf, length);
 	return 1;
 }
 
-// Sets metatable for vec3_t table
-static void LS_SetVec3MetaTable(lua_State* state)
+// Creates and pushes 'vec3' userdata built from vec3_t value
+static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 {
+	vec3_t* valueptr = lua_newuserdatauv(state, sizeof(edict_t*), 0);
+	assert(valueptr);
+	VectorCopy(value, *valueptr);
+
+	// Create and set 'vec3_t' metatable
 	static const luaL_Reg functions[] =
 	{
+		{ "__index", LS_value_vec3_index },
+		{ "__newindex", LS_value_vec3_newindex },
 		{ "__tostring", LS_value_vec3_tostring },
 		{ NULL, NULL }
 	};
 
-	if (luaL_newmetatable(state, "vec3_t"))
+	if (luaL_newmetatable(state, "vec3"))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
@@ -100,14 +161,7 @@ static void LS_PushEdictFieldValue(lua_State* state, const char* name, etype_t t
 		break;
 
 	case ev_vector:
-		lua_createtable(state, 0, 3);
-		LS_SetVec3MetaTable(state);
-
-		for (int i = 0; i < 3; ++i)
-		{
-			lua_pushnumber(state, value->vector[i]);
-			lua_setfield(state, -2, ls_axisnames[i]);
-		}
+		LS_PushVec3Value(state, value->vector);
 		break;
 
 	case ev_entity:
