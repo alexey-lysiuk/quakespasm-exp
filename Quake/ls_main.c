@@ -281,20 +281,6 @@ static void LS_InitStandardLibraries(lua_State* state)
 		luaL_requiref(state, lib->name, lib->func, 1);
 		lua_pop(state, 1);
 	}
-
-	// Remove "unsafe" functions from standard libraries
-	static const char* unsafefuncs[] =
-	{
-		"getmetatable",
-		"setmetatable",
-		NULL
-	};
-
-	for (const char** func = unsafefuncs; *func; ++func)
-	{
-		lua_pushnil(state);
-		lua_setglobal(state, *func);
-	}
 }
 
 static int LS_LoadFileX(lua_State* state, const char* filename, const char* mode)
