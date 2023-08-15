@@ -136,10 +136,10 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 
 
 //
-// ...
+// Helper functions for 'vec3' values
 //
 
-// Creates and pushes 'vec3' userdata built from separate component values
+// Pushes new 'vec3' userdata built from individual component values
 static int LS_global_vec3_new(lua_State* state)
 {
 	vec3_t result;
@@ -151,7 +151,22 @@ static int LS_global_vec3_new(lua_State* state)
 	return 1;
 }
 
-// Creates and pushes 'vec3' userdata that is a cross product of functions arguments
+// Pushes new 'vec3' userdata which value is a mid point of functions arguments
+static int LS_global_vec3_mid(lua_State* state)
+{
+	vec_t* min = LS_Vec3GetValue(state, 1);
+	vec_t* max = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+
+	for (int i = 0; i < 3; ++i)
+		result[i] = min[i] + (max[i] - min[i]) * 0.5f;
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes new 'vec3' userdata which value is a cross product of functions arguments
 static int LS_global_vec3_cross(lua_State* state)
 {
 	vec_t* v1 = LS_Vec3GetValue(state, 1);
@@ -164,7 +179,7 @@ static int LS_global_vec3_cross(lua_State* state)
 	return 1;
 }
 
-// Creates and pushes 'vec3' userdata that is a dot product of functions arguments
+// Pushes new 'vec3' userdata which value is a dot product of functions arguments
 static int LS_global_vec3_dot(lua_State* state)
 {
 	vec_t* v1 = LS_Vec3GetValue(state, 1);
@@ -186,6 +201,8 @@ static int LS_global_vec3_index(lua_State* state)
 
 	if (strcmp(key, "new") == 0)
 		lua_pushcfunction(state, LS_global_vec3_new);
+	else if (strcmp(key, "mid") == 0)
+		lua_pushcfunction(state, LS_global_vec3_mid);
 	else if (strcmp(key, "cross") == 0)
 		lua_pushcfunction(state, LS_global_vec3_cross);
 	else if (strcmp(key, "dot") == 0)
