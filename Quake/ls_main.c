@@ -504,9 +504,17 @@ static int LS_global_print(lua_State* state)
 	return 0;
 }
 
+static void LS_global_warning(void* ud, const char *msg, int tocont)
+{
+	(void)ud;
+	Con_SafePrintf("%s%s", msg, tocont ? "" : "\n");
+}
+
 static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
+
+	lua_setwarnf(state, LS_global_warning, NULL);
 
 	// Replace global functions
 	lua_pushcfunction(state, LS_global_dofile);
@@ -597,7 +605,13 @@ static void LS_Exec_f(void)
 			status = lua_pcall(state, 0, 0, 0);
 
 		if (status != LUA_OK)
-			Con_SafePrintf("Error while executing Lua script\n%s\n", lua_tostring(state, -1));
+		{
+			Con_SafePrintf("Error while executing Lua script\n");
+
+			const char* errormessage = lua_tostring(state, -1);
+			if (errormessage)
+				Con_SafePrintf("%s\n", errormessage);
+		}
 
 		lua_close(state);
 	}
