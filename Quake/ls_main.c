@@ -179,7 +179,7 @@ static int LS_global_vec3_cross(lua_State* state)
 	return 1;
 }
 
-// Pushes new 'vec3' userdata which value is a dot product of functions arguments
+// Pushes a number which value is a dot product of functions arguments
 static int LS_global_vec3_dot(lua_State* state)
 {
 	vec_t* v1 = LS_Vec3GetValue(state, 1);
