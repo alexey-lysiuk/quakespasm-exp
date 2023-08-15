@@ -35,7 +35,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 static const char* ls_axisnames[] = { "x", "y", "z" };
 
 // Pushes string built from vec3_t value, i.e. from a table with 'x', 'y', 'z' fields
-static int LS_Vec3ToString(lua_State* state)
+static int LS_value_vec3_tostring(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TTABLE);
 
@@ -63,7 +63,7 @@ static void LS_SetVec3MetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-		{ "__tostring", LS_Vec3ToString },
+		{ "__tostring", LS_value_vec3_tostring },
 		{ NULL, NULL }
 	};
 
@@ -73,8 +73,13 @@ static void LS_SetVec3MetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
+
+//
+// Expose edict_t as 'edict' userdata
+//
+
 // Pushes field value by its type and name
-static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, const eval_t* value)
+static void LS_PushEdictFieldValue(lua_State* state, const char* name, etype_t type, const eval_t* value)
 {
 	assert(type != ev_bad);
 	assert(name);
@@ -128,15 +133,8 @@ static void LS_PushFieldValue(lua_State* state, const char* name, etype_t type, 
 	}
 }
 
-// Pushes number of edicts
-static int LS_EdictsCount(lua_State* state)
-{
-	lua_pushinteger(state, sv.active ? sv.num_edicts : 0);
-	return 1;
-}
-
 // Pushes value of edict field by its name
-static int LS_EdictIndex(lua_State* state)
+static int LS_value_edict_index(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TUSERDATA);
 	luaL_checktype(state, 2, LUA_TSTRING);
@@ -156,7 +154,7 @@ static int LS_EdictIndex(lua_State* state)
 		const eval_t* value;
 
 		if (ED_GetFieldByName(ed, name, &type, &value))
-			LS_PushFieldValue(state, name, type, value);
+			LS_PushEdictFieldValue(state, name, type, value);
 		else
 			lua_pushnil(state);  // TODO: default value instead of nil
 	}
@@ -169,7 +167,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_EdictIndex },
+		{ "__index", LS_value_edict_index },
 		{ NULL, NULL }
 	};
 
@@ -179,7 +177,12 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static int LS_ForEachEdict(lua_State* state)
+
+//
+// Expose sv.edicts as 'edicts' global userdata
+//
+
+static int LS_global_edicts_foreach(lua_State* state)
 {
 	if (!sv.active)
 		return 0;
@@ -222,7 +225,7 @@ static int LS_ForEachEdict(lua_State* state)
 // Pushes either
 // * edict userdata by its integer index, [0..num_edicts)
 // * method of 'edicts' userdata by its name
-static int LS_EdictsIndex(lua_State* state)
+static int LS_global_edicts_index(lua_State* state)
 {
 	int indextype = lua_type(state, 2);
 
@@ -232,7 +235,7 @@ static int LS_EdictsIndex(lua_State* state)
 		assert(key);
 
 		if (strcmp(key, "foreach") == 0)
-			lua_pushcfunction(state, LS_ForEachEdict);
+			lua_pushcfunction(state, LS_global_edicts_foreach);
 		else
 			luaL_error(state, "Unknown edicts key '%s'", key);
 	}
@@ -258,10 +261,11 @@ static int LS_EdictsIndex(lua_State* state)
 	return 1;
 }
 
-static int LS_EdictsNewIndex(lua_State* state)
+// Pushes number of edicts
+static int LS_global_edicts_len(lua_State* state)
 {
-	// TODO: cache key to value mapping (?)
-	return 0;
+	lua_pushinteger(state, sv.active ? sv.num_edicts : 0);
+	return 1;
 }
 
 static void LS_InitStandardLibraries(lua_State* state)
@@ -283,7 +287,7 @@ static void LS_InitStandardLibraries(lua_State* state)
 	}
 }
 
-static int LS_LoadFileX(lua_State* state, const char* filename, const char* mode)
+static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 {
 	if (filename == NULL)
 	{
@@ -317,24 +321,24 @@ static int LS_LoadFileX(lua_State* state, const char* filename, const char* mode
 	return luaL_loadbufferx(state, script, length, filename, mode);
 }
 
-static int LS_DoFile(lua_State* state)
+static int LS_global_dofile(lua_State* state)
 {
 	const char* filename = luaL_optstring(state, 1, NULL);
 	lua_settop(state, 1);
 
-	if (LS_LoadFileX(state, filename, NULL) != LUA_OK)
+	if (LS_LoadFile(state, filename, NULL) != LUA_OK)
 		return lua_error(state);
 
 	lua_call(state, 0, LUA_MULTRET);
 	return lua_gettop(state) - 1;
 }
 
-static int LS_LoadFile(lua_State* state)
+static int LS_global_loadfile(lua_State* state)
 {
 	const char* filename = luaL_optstring(state, 1, NULL);
 	const char* mode = luaL_optstring(state, 2, NULL);
 	int env = !lua_isnone(state, 3) ? 3 : 0;  // 'env' index or 0 if no 'env'
-	int status = LS_LoadFileX(state, filename, mode);
+	int status = LS_LoadFile(state, filename, mode);
 
 	if (status == LUA_OK)
 	{
@@ -357,7 +361,7 @@ static int LS_LoadFile(lua_State* state)
 	}
 }
 
-static int LS_Print(lua_State* state)
+static int LS_global_print(lua_State* state)
 {
 	enum PrintDummyEnum { MAX_LENGTH = 4096 };  // See MAXPRINTMSG
 	char buf[MAX_LENGTH] = { '\0' };
@@ -389,11 +393,11 @@ static void LS_PrepareState(lua_State* state)
 	LS_InitStandardLibraries(state);
 
 	// Replace global functions
-	lua_pushcfunction(state, LS_DoFile);
+	lua_pushcfunction(state, LS_global_dofile);
 	lua_setglobal(state, "dofile");
-	lua_pushcfunction(state, LS_LoadFile);
+	lua_pushcfunction(state, LS_global_loadfile);
 	lua_setglobal(state, "loadfile");
-	lua_pushcfunction(state, LS_Print);
+	lua_pushcfunction(state, LS_global_print);
 	lua_setglobal(state, "print");
 
 	static const char* edictsname = "edicts";
@@ -406,9 +410,8 @@ static void LS_PrepareState(lua_State* state)
 	// Create and set metatable for 'edicts' global userdata
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_EdictsIndex },
-		{ "__len", LS_EdictsCount },
-		{ "__newindex", LS_EdictsNewIndex },
+		{ "__index", LS_global_edicts_index },
+		{ "__len", LS_global_edicts_len },
 		{ NULL, NULL }
 	};
 
@@ -417,7 +420,7 @@ static void LS_PrepareState(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static void* LS_Alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
+static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
 {
 	(void)userdata;
 
@@ -452,7 +455,7 @@ static void LS_Exec_f(void)
 
 	if (argc > 1)
 	{
-		lua_State* state = lua_newstate(LS_Alloc, NULL);
+		lua_State* state = lua_newstate(LS_global_alloc, NULL);
 		assert(state);
 
 		LS_PrepareState(state);
