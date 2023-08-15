@@ -80,7 +80,7 @@ static vec_t* LS_Vec3GetValue(lua_State* state, int index)
 }
 
 // Pushes value of 'vec3' component, indexed by integer [0..2] or string 'x', 'y', 'z'
-static int LS_vec3_index(lua_State* state)
+static int LS_value_vec3_index(lua_State* state)
 {
 	vec_t* value = LS_Vec3GetValue(state, 1);
 	int component = LS_Vec3GetComponent(state, 2);
@@ -90,7 +90,7 @@ static int LS_vec3_index(lua_State* state)
 }
 
 // Sets new value of 'vec3_t' component, indexed by integer [0..2] or string 'x', 'y', 'z'
-static int LS_vec3_newindex(lua_State* state)
+static int LS_value_vec3_newindex(lua_State* state)
 {
 	vec_t* value = LS_Vec3GetValue(state, 1);
 	int component = LS_Vec3GetComponent(state, 2);
@@ -102,7 +102,7 @@ static int LS_vec3_newindex(lua_State* state)
 }
 
 // Pushes string built from 'vec3' value
-static int LS_vec3_tostring(lua_State* state)
+static int LS_value_vec3_tostring(lua_State* state)
 {
 	char buf[64];
 	vec_t* value = LS_Vec3GetValue(state, 1);
@@ -122,9 +122,9 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 	// Create and set 'vec3_t' metatable
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_vec3_index },
-		{ "__newindex", LS_vec3_newindex },
-		{ "__tostring", LS_vec3_tostring },
+		{ "__index", LS_value_vec3_index },
+		{ "__newindex", LS_value_vec3_newindex },
+		{ "__tostring", LS_value_vec3_tostring },
 		{ NULL, NULL }
 	};
 
@@ -135,7 +135,7 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 }
 
 // Creates and pushes vec3_t userdata built from separate component values
-static int LS_vec3(lua_State* state)
+static int LS_global_vec3(lua_State* state)
 {
 	vec3_t value;
 
@@ -200,7 +200,7 @@ static void LS_PushEdictFieldValue(lua_State* state, const char* name, etype_t t
 }
 
 // Pushes value of edict field by its name
-static int LS_edict_index(lua_State* state)
+static int LS_value_edict_index(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TUSERDATA);
 	luaL_checktype(state, 2, LUA_TSTRING);
@@ -233,7 +233,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_edict_index },
+		{ "__index", LS_value_edict_index },
 		{ NULL, NULL }
 	};
 
@@ -248,7 +248,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 // Expose sv.edicts as 'edicts' global userdata
 //
 
-static int LS_edicts_foreach(lua_State* state)
+static int LS_global_edicts_foreach(lua_State* state)
 {
 	if (!sv.active)
 		return 0;
@@ -291,7 +291,7 @@ static int LS_edicts_foreach(lua_State* state)
 // Pushes either
 // * edict userdata by its integer index, [0..num_edicts)
 // * method of 'edicts' userdata by its name
-static int LS_edicts_index(lua_State* state)
+static int LS_global_edicts_index(lua_State* state)
 {
 	int indextype = lua_type(state, 2);
 
@@ -301,7 +301,7 @@ static int LS_edicts_index(lua_State* state)
 		assert(key);
 
 		if (strcmp(key, "foreach") == 0)
-			lua_pushcfunction(state, LS_edicts_foreach);
+			lua_pushcfunction(state, LS_global_edicts_foreach);
 		else
 			luaL_error(state, "Unknown edicts key '%s'", key);
 	}
@@ -328,13 +328,13 @@ static int LS_edicts_index(lua_State* state)
 }
 
 // Pushes number of edicts
-static int LS_edicts_len(lua_State* state)
+static int LS_global_edicts_len(lua_State* state)
 {
 	lua_pushinteger(state, sv.active ? sv.num_edicts : 0);
 	return 1;
 }
 
-static int LS_edicts_newindex(lua_State* state)
+static int LS_global_edicts_newindex(lua_State* state)
 {
 	// TODO: cache key to value mapping (?)
 	return 0;
@@ -407,7 +407,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 	return luaL_loadbufferx(state, script, length, filename, mode);
 }
 
-static int LS_dofile(lua_State* state)
+static int LS_global_dofile(lua_State* state)
 {
 	const char* filename = luaL_optstring(state, 1, NULL);
 	lua_settop(state, 1);
@@ -419,7 +419,7 @@ static int LS_dofile(lua_State* state)
 	return lua_gettop(state) - 1;
 }
 
-static int LS_loadfile(lua_State* state)
+static int LS_global_loadfile(lua_State* state)
 {
 	const char* filename = luaL_optstring(state, 1, NULL);
 	const char* mode = luaL_optstring(state, 2, NULL);
@@ -447,7 +447,7 @@ static int LS_loadfile(lua_State* state)
 	}
 }
 
-static int LS_print(lua_State* state)
+static int LS_global_print(lua_State* state)
 {
 	enum PrintDummyEnum { MAX_LENGTH = 4096 };  // See MAXPRINTMSG
 	char buf[MAX_LENGTH] = { '\0' };
@@ -479,14 +479,14 @@ static void LS_PrepareState(lua_State* state)
 	LS_InitStandardLibraries(state);
 
 	// Replace global functions
-	lua_pushcfunction(state, LS_dofile);
+	lua_pushcfunction(state, LS_global_dofile);
 	lua_setglobal(state, "dofile");
-	lua_pushcfunction(state, LS_loadfile);
+	lua_pushcfunction(state, LS_global_loadfile);
 	lua_setglobal(state, "loadfile");
-	lua_pushcfunction(state, LS_print);
+	lua_pushcfunction(state, LS_global_print);
 	lua_setglobal(state, "print");
 
-	lua_pushcfunction(state, LS_vec3);
+	lua_pushcfunction(state, LS_global_vec3);
 	lua_setglobal(state, "vec3");
 
 	static const char* edictsname = "edicts";
@@ -499,9 +499,9 @@ static void LS_PrepareState(lua_State* state)
 	// Create and set metatable for 'edicts' global userdata
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_edicts_index },
-		{ "__len", LS_edicts_len },
-		{ "__newindex", LS_edicts_newindex },
+		{ "__index", LS_global_edicts_index },
+		{ "__len", LS_global_edicts_len },
+		{ "__newindex", LS_global_edicts_newindex },
 		{ NULL, NULL }
 	};
 
@@ -510,7 +510,7 @@ static void LS_PrepareState(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static void* LS_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
+static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
 {
 	(void)userdata;
 
@@ -545,7 +545,7 @@ static void LS_Exec_f(void)
 
 	if (argc > 1)
 	{
-		lua_State* state = lua_newstate(LS_alloc, NULL);
+		lua_State* state = lua_newstate(LS_global_alloc, NULL);
 		assert(state);
 
 		LS_PrepareState(state);
