@@ -334,12 +334,6 @@ static int LS_global_edicts_len(lua_State* state)
 	return 1;
 }
 
-static int LS_global_edicts_newindex(lua_State* state)
-{
-	// TODO: cache key to value mapping (?)
-	return 0;
-}
-
 static void LS_InitStandardLibraries(lua_State* state)
 {
 	// Available standard libraries
@@ -357,20 +351,6 @@ static void LS_InitStandardLibraries(lua_State* state)
 		luaL_requiref(state, lib->name, lib->func, 1);
 		lua_pop(state, 1);
 	}
-
-//	// Remove "unsafe" functions from standard libraries
-//	static const char* unsafefuncs[] =
-//	{
-//		"getmetatable",
-//		"setmetatable",
-//		NULL
-//	};
-//
-//	for (const char** func = unsafefuncs; *func; ++func)
-//	{
-//		lua_pushnil(state);
-//		lua_setglobal(state, *func);
-//	}
 }
 
 static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
@@ -501,7 +481,6 @@ static void LS_PrepareState(lua_State* state)
 	{
 		{ "__index", LS_global_edicts_index },
 		{ "__len", LS_global_edicts_len },
-		{ "__newindex", LS_global_edicts_newindex },
 		{ NULL, NULL }
 	};
 
