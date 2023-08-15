@@ -128,21 +128,71 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 		{ NULL, NULL }
 	};
 
-	if (luaL_newmetatable(state, "vec3"))
+	if (luaL_newmetatable(state, "value_vec3"))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
 }
 
-// Creates and pushes vec3_t userdata built from separate component values
-static int LS_global_vec3(lua_State* state)
+
+//
+// ...
+//
+
+// Creates and pushes 'vec3' userdata built from separate component values
+static int LS_global_vec3_new(lua_State* state)
 {
-	vec3_t value;
+	vec3_t result;
 
 	for (int i = 0; i < 3; ++i)
-		value[i] = luaL_optnumber(state, i + 1, 0.f);
+		result[i] = luaL_optnumber(state, i + 1, 0.f);
 
-	LS_PushVec3Value(state, value);
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Creates and pushes 'vec3' userdata that is a cross product of functions arguments
+static int LS_global_vec3_cross(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	CrossProduct(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Creates and pushes 'vec3' userdata that is a dot product of functions arguments
+static int LS_global_vec3_dot(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec_t result = DotProduct(v1, v2);
+
+	lua_pushnumber(state, result);
+	return 1;
+}
+
+static int LS_global_vec3_index(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checkstring(state, 2);
+
+	const char* key = lua_tostring(state, 2);
+	assert(key);
+
+	if (strcmp(key, "new") == 0)
+		lua_pushcfunction(state, LS_global_vec3_new);
+	else if (strcmp(key, "cross") == 0)
+		lua_pushcfunction(state, LS_global_vec3_cross);
+	else if (strcmp(key, "dot") == 0)
+		lua_pushcfunction(state, LS_global_vec3_dot);
+	else
+		luaL_error(state, "Unknown vec3 function '%s'", key);
+
 	return 1;
 }
 
@@ -466,18 +516,30 @@ static void LS_PrepareState(lua_State* state)
 	lua_pushcfunction(state, LS_global_print);
 	lua_setglobal(state, "print");
 
-	lua_pushcfunction(state, LS_global_vec3);
+	// ...
+	lua_newuserdatauv(state, 0, 0);
+	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
 	lua_setglobal(state, "vec3");
 
-	static const char* edictsname = "edicts";
+	static const luaL_Reg vec3_metatable[] =
+	{
+		{ "__index", LS_global_vec3_index },
+		{ NULL, NULL }
+	};
+
+	luaL_newmetatable(state, "global_vec3");
+	luaL_setfuncs(state, vec3_metatable, 0);
+	lua_setmetatable(state, -2);
 
 	// Create and register 'edicts' global userdata
+	static const char* edictsname = "edicts";
+
 	lua_newuserdatauv(state, 0, 0);
 	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
 	lua_setglobal(state, edictsname);
 
 	// Create and set metatable for 'edicts' global userdata
-	static const luaL_Reg functions[] =
+	static const luaL_Reg edicts_metatable[] =
 	{
 		{ "__index", LS_global_edicts_index },
 		{ "__len", LS_global_edicts_len },
@@ -485,7 +547,7 @@ static void LS_PrepareState(lua_State* state)
 	};
 
 	luaL_newmetatable(state, edictsname);
-	luaL_setfuncs(state, functions, 0);
+	luaL_setfuncs(state, edicts_metatable, 0);
 	lua_setmetatable(state, -2);
 }
 
