@@ -31,8 +31,7 @@ local function processSecret(edict, current, target)
 		if target <= 0 then
 			print(current .. ':', secretPos(edict))
 		elseif target == current then
-			-- TODO
-			print('setpos', secretPos(edict))  -- TODO
+			player.setpos(secretPos(edict))
 			return nil
 		end
 
@@ -70,8 +69,9 @@ local function processMonster(edict, current, target)
 		if target <= 0 then
 			print(current .. ':', edict.classname, 'at', edict.origin)
 		elseif target == current then
-			-- TODO
-			print('god 1; notarget 1; setpos', edict.origin, edict.angles)  -- TODO
+			player.god(true)
+			player.notarget(true)
+			player.setpos(edict.origin, edict.angles)
 			return nil
 		end
 	end
