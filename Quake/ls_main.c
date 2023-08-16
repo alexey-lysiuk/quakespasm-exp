@@ -369,7 +369,7 @@ static int LS_global_edicts_foreach(lua_State* state)
 			continue;
 
 		lua_pushvalue(state, 2);  // iteration function to call
-		lua_geti(state, 1, i);  // get edict by index, [0..num_edicts)
+		lua_geti(state, 1, i + 1);  // get edict by index, [1..num_edicts]
 		lua_pushinteger(state, current);
 		lua_pushinteger(state, target);
 		lua_call(state, 3, 1);
@@ -391,10 +391,13 @@ static int LS_global_edicts_foreach(lua_State* state)
 }
 
 // Pushes either
-// * edict userdata by its integer index, [0..num_edicts)
+// * edict userdata by its integer index, [1..num_edicts]
 // * method of 'edicts' userdata by its name
 static int LS_global_edicts_index(lua_State* state)
 {
+	if (!sv.active)
+		luaL_error(state, "Game is not running");
+
 	int indextype = lua_type(state, 2);
 
 	if (indextype == LUA_TSTRING)
@@ -409,19 +412,19 @@ static int LS_global_edicts_index(lua_State* state)
 	}
 	else if (indextype == LUA_TNUMBER)
 	{
-		// Check edict index, [0..num_edicts), for validity
+		// Check edict index, [1..num_edicts], for validity
 		lua_Integer index = lua_tointeger(state, 2);
 
-		if (sv.active && index >= 0 && index < sv.num_edicts)
+		if (index > 0 && index <= sv.num_edicts)
 		{
 			// Create edict userdata, and assign edict_t* to it
 			edict_t** edictptr = lua_newuserdatauv(state, sizeof(edict_t*), 0);
 			assert(edictptr);
-			*edictptr = EDICT_NUM(index);
+			*edictptr = EDICT_NUM(index - 1);
 			LS_SetEdictMetaTable(state);
 		}
 		else
-			luaL_error(state, "Edicts index %d is out of range [0..%d)", index, sv.num_edicts);
+			lua_pushnil(state);
 	}
 	else
 		luaL_error(state, "Invalid type %d of edicts key", indextype);

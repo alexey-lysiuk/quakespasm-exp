@@ -101,10 +101,7 @@ local function processTeleport(edict, current, target)
 			local targetpos
 
 			if teletarget then
-				-- for _, testedict in ipairs(edicts) do
-				for i = 0, #edicts - 1 do
-					testedict = edicts[i]
-
+				for _, testedict in ipairs(edicts) do
 					if teletarget == testedict.targetname then
 						-- Special case for Arcane Dimensions, ad_tears map in particular
 						-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
