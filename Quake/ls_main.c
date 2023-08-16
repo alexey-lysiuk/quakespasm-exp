@@ -38,6 +38,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 //
 
 // Converts 'vec3' component at given stack index to vec3_t integer index [0..2]
+// On Lua side, valid numeric component indices are 1, 2, 3
 static int LS_Vec3GetComponent(lua_State* state, int index)
 {
 	int comptype = lua_type(state, index);
@@ -58,12 +59,12 @@ static int LS_Vec3GetComponent(lua_State* state, int index)
 			luaL_error(state, "Invalid vec3_t component '%s'", compstr);
 	}
 	else if (comptype == LUA_TNUMBER)
-		component = lua_tointeger(state, 2);
+		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
 	else
 		luaL_error(state, "Invalid type %d of vec3_t component", comptype);
 
 	if (component < 0 || component >= 3)
-		luaL_error(state, "vec3_t component %d is out of range [0..2]", component);
+		luaL_error(state, "vec3_t component %d is out of range [1..3]", component + 1);  // on Lua side, indices start with 1
 
 	return component;
 }
