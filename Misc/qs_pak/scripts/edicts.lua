@@ -3,8 +3,27 @@
 --
 
 local function secretPos(edict)
-	-- TODO: ...
-	return vec3.mid(edict.absmin, edict.absmax)
+	local min = edict.absmin
+	local max = edict.absmax
+	local count
+	
+	-- Try to handle Arcane Dimensions secret
+	if min == vec3.new(-1, -1, -1) and max == vec3.new(1, 1, 1) then
+		count = edict.count
+	end
+	
+	if count then
+		if count == 0 then
+			-- Revealed Arcane Dimensions secret, skip it
+			return nil
+		else
+			-- Disabled or switched off Arcane Dimensions secret
+			-- Actual coodinates are stored in oldorigin member
+			return edict.oldorigin
+		end
+	end
+
+	return vec3.mid(min, max)
 end
 
 local function processSecret(edict, current, target)
@@ -12,6 +31,7 @@ local function processSecret(edict, current, target)
 		if target <= 0 then
 			print(current .. ':', secretPos(edict))
 		elseif target == current then
+			-- TODO
 			print('setpos', secretPos(edict))  -- TODO
 			return nil
 		end
@@ -50,6 +70,7 @@ local function processMonster(edict, current, target)
 		if target <= 0 then
 			print(current .. ':', edict.classname, 'at', edict.origin)
 		elseif target == current then
+			-- TODO
 			print('god 1; notarget 1; setpos', edict.origin, edict.angles)  -- TODO
 			return nil
 		end
