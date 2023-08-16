@@ -80,7 +80,33 @@ static vec_t* LS_Vec3GetValue(lua_State* state, int index)
 	return *value;
 }
 
-// Pushes boolean of two 'vec3' values comparison for equality
+static void LS_PushVec3Value(lua_State* state, const vec_t* value);
+
+static int LS_Vec3Operation(lua_State* state, void(*opfunc)(vec_t*, vec_t*, vec_t*))
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	opfunc(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of two 'vec3' values addition
+static int LS_value_vec3_add(lua_State* state)
+{
+	return LS_Vec3Operation(state, _VectorAdd);
+}
+
+// Pushes result of two 'vec3' values subtraction
+static int LS_value_vec3_sub(lua_State* state)
+{
+	return LS_Vec3Operation(state, _VectorSubtract);
+}
+
+// Pushes result of two 'vec3' values comparison for equality
 static int LS_value_vec3_eq(lua_State* state)
 {
 	vec_t* v1 = LS_Vec3GetValue(state, 1);
@@ -134,6 +160,14 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 	// Create and set 'vec3_t' metatable
 	static const luaL_Reg functions[] =
 	{
+		// Math functions
+		{ "__add", LS_value_vec3_add },
+		{ "__sub", LS_value_vec3_sub },
+//		{ "__mul", LS_value_vec3_eq },
+//		{ "__div", LS_value_vec3_eq },
+//		{ "__unm", LS_value_vec3_eq },
+
+		// Other functions
 		{ "__eq", LS_value_vec3_eq },
 		{ "__index", LS_value_vec3_index },
 		{ "__newindex", LS_value_vec3_newindex },
@@ -164,32 +198,22 @@ static int LS_global_vec3_new(lua_State* state)
 	return 1;
 }
 
+static void LS_Vec3MidPoint(vec_t* v1, vec_t* v2, vec_t* result)
+{
+	for (int i = 0; i < 3; ++i)
+		result[i] = min[i] + (max[i] - min[i]) * 0.5f;
+}
+
 // Pushes new 'vec3' userdata which value is a mid point of functions arguments
 static int LS_global_vec3_mid(lua_State* state)
 {
-	vec_t* min = LS_Vec3GetValue(state, 1);
-	vec_t* max = LS_Vec3GetValue(state, 2);
-
-	vec3_t result;
-
-	for (int i = 0; i < 3; ++i)
-		result[i] = min[i] + (max[i] - min[i]) * 0.5f;
-
-	LS_PushVec3Value(state, result);
-	return 1;
+	return LS_Vec3Operation(state, LS_Vec3MidPoint);
 }
 
 // Pushes new 'vec3' userdata which value is a cross product of functions arguments
 static int LS_global_vec3_cross(lua_State* state)
 {
-	vec_t* v1 = LS_Vec3GetValue(state, 1);
-	vec_t* v2 = LS_Vec3GetValue(state, 2);
-
-	vec3_t result;
-	CrossProduct(v1, v2, result);
-
-	LS_PushVec3Value(state, result);
-	return 1;
+	return LS_Vec3Operation(state, CrossProduct);
 }
 
 // Pushes a number which value is a dot product of functions arguments
