@@ -6,12 +6,12 @@ local function secretPos(edict)
 	local min = edict.absmin
 	local max = edict.absmax
 	local count
-	
+
 	-- Try to handle Arcane Dimensions secret
 	if min == vec3.new(-1, -1, -1) and max == vec3.new(1, 1, 1) then
 		count = edict.count
 	end
-	
+
 	if count then
 		if count == 0 then
 			-- Revealed Arcane Dimensions secret, skip it
@@ -65,7 +65,7 @@ local function processMonster(edict, current, target)
 		if not ismonster or not isalive then
 			return current
 		end
-	
+
 		if target <= 0 then
 			print(current .. ':', edict.classname, 'at', edict.origin)
 		elseif target == current then
@@ -83,4 +83,63 @@ end
 
 function monsters(target)
 	edicts:foreach(processMonster, target)
+end
+
+
+--
+-- Teleports
+--
+
+local function processTeleport(edict, current, target)
+	local vec3origin = vec3.new()
+
+	if edict.classname == 'trigger_teleport' then
+		local pos = vec3.mid(edict.absmin, edict.absmax)
+
+		if target <= 0 then
+			local teletarget = edict.target
+			local targetpos
+
+			if teletarget then
+				-- for _, testedict in ipairs(edicts) do
+				for i = 0, #edicts - 1 do
+					testedict = edicts[i]
+
+					if teletarget == testedict.targetname then
+						-- Special case for Arcane Dimensions, ad_tears map in particular
+						-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
+						-- Some teleport destinations were missing despite their valid setup
+						-- Actual destination coordinates are stored in oldorigin member
+						if testedict.origin == vec3origin then
+							targetpos = testedict.oldorigin
+						else
+							targetpos = testedict.origin
+						end
+						break
+					end
+				end
+			end
+
+			if targetpos then
+				targetstr = 'at ' .. tostring(targetpos)
+			else
+				targetstr = '(target not found)'
+			end
+
+			print(current .. ':', pos, '->', teletarget, targetstr)
+		elseif target == current then
+			player.setpos(pos)
+			return nil
+		end
+
+		return current + 1
+	end
+
+	return current
+end
+
+-- > lua dofile('scripts/edicts.lua') teleports()
+
+function teleports(target)
+	edicts:foreach(processTeleport, target)
 end
