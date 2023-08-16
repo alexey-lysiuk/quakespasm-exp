@@ -543,12 +543,23 @@ static int LS_global_print(lua_State* state)
 	return 0;
 }
 
+static int ls_hunk_lowmark;
+
+static void LS_FreeMemory(void)
+{
+	assert(ls_hunk_lowmark > 0);
+	Hunk_FreeToLowMark(ls_hunk_lowmark);
+	ls_hunk_lowmark = 0;
+}
+
 static int LS_global_panic(lua_State* state)
 {
 	const char* message = lua_tostring(state, -1);
 
 	if (!message)
 		message = "unknown error";
+
+	LS_FreeMemory();
 
 	Host_Error("%s", message);
 
@@ -642,7 +653,8 @@ static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t n
 
 static void LS_Exec_f(void)
 {
-	int mark = Hunk_LowMark();
+	ls_hunk_lowmark = Hunk_LowMark();
+
 	int argc = Cmd_Argc();
 
 	if (argc > 1)
@@ -691,7 +703,7 @@ static void LS_Exec_f(void)
 	else
 		Con_SafePrintf("Running %s\n", LUA_RELEASE);
 
-	Hunk_FreeToLowMark(mark);
+	LS_FreeMemory();
 }
 
 void LS_Init(void)
