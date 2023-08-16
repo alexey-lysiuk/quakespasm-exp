@@ -543,6 +543,19 @@ static int LS_global_print(lua_State* state)
 	return 0;
 }
 
+static int LS_global_panic(lua_State* state)
+{
+	const char* message = lua_tostring(state, -1);
+
+	if (!message)
+		message = "unknown error";
+
+	Host_Error("%s", message);
+
+	assert(false);
+	return 0;
+}
+
 static void LS_global_warning(void* ud, const char *msg, int tocont)
 {
 	(void)ud;
@@ -553,6 +566,7 @@ static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
 
+	lua_atpanic(state, LS_global_panic);
 	lua_setwarnf(state, LS_global_warning, NULL);
 
 	// Replace global functions
