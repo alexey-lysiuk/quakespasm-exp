@@ -369,24 +369,41 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 // Pushes value of edict field by its name
 static int LS_value_edict_index(lua_State* state)
 {
-	luaL_checktype(state, 2, LUA_TSTRING);
-
 	edict_t* ed = LS_GetEdictFromUserData(state);
 	assert(ed);
 
-	if (ed->free)
-		lua_pushnil(state);  // TODO: default value instead of nil
-	else
-	{
-		const char* name = luaL_checkstring(state, 2);
-		etype_t type;
-		const eval_t* value;
+	const char* name;
+	etype_t type;
+	const eval_t* value;
 
-		if (ED_GetFieldByName(ed, name, &type, &value))
+	int indextype = lua_type(state, 2);
+
+	if (indextype == LUA_TSTRING)
+	{
+		if (ed->free)
+			lua_pushnil(state);  // TODO: default value instead of nil
+		else
+		{
+			name = luaL_checkstring(state, 2);
+
+			if (ED_GetFieldByName(ed, name, &type, &value))
+				LS_PushEdictFieldValue(state, name, type, value);
+			else
+				lua_pushnil(state);
+		}
+	}
+	else if (indextype == LUA_TNUMBER)
+	{
+		int fieldindex = lua_tointeger(state, 2);
+
+		if (ED_GetFieldByIndex(ed, fieldindex - 1, &name, &type, &value))  // on Lua side, indices start with one
+			// TODO: push name-value pair
 			LS_PushEdictFieldValue(state, name, type, value);
 		else
-			lua_pushnil(state);  // TODO: default value instead of nil
+			lua_pushnil(state);
 	}
+	else
+		luaL_error(state, "Invalid type %d of edict index", indextype);
 
 	return 1;
 }
