@@ -82,28 +82,69 @@ static vec_t* LS_Vec3GetValue(lua_State* state, int index)
 
 static void LS_PushVec3Value(lua_State* state, const vec_t* value);
 
-static int LS_Vec3Operation(lua_State* state, void(*opfunc)(vec_t*, vec_t*, vec_t*))
+// Pushes result of two 'vec3' values addition
+static int LS_value_vec3_add(lua_State* state)
 {
 	vec_t* v1 = LS_Vec3GetValue(state, 1);
 	vec_t* v2 = LS_Vec3GetValue(state, 2);
 
 	vec3_t result;
-	opfunc(v1, v2, result);
+	VectorAdd(v1, v2, result);
 
 	LS_PushVec3Value(state, result);
 	return 1;
 }
 
-// Pushes result of two 'vec3' values addition
-static int LS_value_vec3_add(lua_State* state)
-{
-	return LS_Vec3Operation(state, _VectorAdd);
-}
-
 // Pushes result of two 'vec3' values subtraction
 static int LS_value_vec3_sub(lua_State* state)
 {
-	return LS_Vec3Operation(state, _VectorSubtract);
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	VectorSubtract(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of 'vec3' scale by a number (the second argument)
+static int LS_value_vec3_mul(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+	lua_Number scale = luaL_checknumber(state, 2);
+
+	vec3_t result;
+	VectorScale(value, scale, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of 'vec3' scale by a reciprocal of a number (the second argument)
+static int LS_value_vec3_div(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+	lua_Number scale = 1.f / luaL_checknumber(state, 2);
+
+	vec3_t result;
+	VectorScale(value, scale, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of 'vec3' inversion
+static int LS_value_vec3_unm(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+
+	vec3_t result;
+	VectorCopy(value, result);
+	VectorInverse(result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
 }
 
 // Pushes result of two 'vec3' values comparison for equality
@@ -163,9 +204,9 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 		// Math functions
 		{ "__add", LS_value_vec3_add },
 		{ "__sub", LS_value_vec3_sub },
-//		{ "__mul", LS_value_vec3_eq },
-//		{ "__div", LS_value_vec3_eq },
-//		{ "__unm", LS_value_vec3_eq },
+		{ "__mul", LS_value_vec3_mul },
+		{ "__div", LS_value_vec3_div },
+		{ "__unm", LS_value_vec3_unm },
 
 		// Other functions
 		{ "__eq", LS_value_vec3_eq },
@@ -175,7 +216,7 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 		{ NULL, NULL }
 	};
 
-	if (luaL_newmetatable(state, "value_vec3"))
+	if (luaL_newmetatable(state, "vec3"))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
@@ -198,22 +239,32 @@ static int LS_global_vec3_new(lua_State* state)
 	return 1;
 }
 
-static void LS_Vec3MidPoint(vec_t* v1, vec_t* v2, vec_t* result)
-{
-	for (int i = 0; i < 3; ++i)
-		result[i] = min[i] + (max[i] - min[i]) * 0.5f;
-}
-
 // Pushes new 'vec3' userdata which value is a mid point of functions arguments
 static int LS_global_vec3_mid(lua_State* state)
 {
-	return LS_Vec3Operation(state, LS_Vec3MidPoint);
+	vec_t* min = LS_Vec3GetValue(state, 1);
+	vec_t* max = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+
+	for (int i = 0; i < 3; ++i)
+		result[i] = min[i] + (max[i] - min[i]) * 0.5f;
+
+	LS_PushVec3Value(state, result);
+	return 1;
 }
 
 // Pushes new 'vec3' userdata which value is a cross product of functions arguments
 static int LS_global_vec3_cross(lua_State* state)
 {
-	return LS_Vec3Operation(state, CrossProduct);
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	CrossProduct(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
 }
 
 // Pushes a number which value is a dot product of functions arguments
