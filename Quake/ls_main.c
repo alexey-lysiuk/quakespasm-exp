@@ -548,13 +548,39 @@ static void LS_Exec_f(void)
 
 		LS_PrepareState(state);
 
-		int status = luaL_loadstring(state, Cmd_Args());
+		const char* args = Cmd_Args();
+		assert(args);
+
+		const char* script;
+		size_t scriptlength = strlen(args);
+		qboolean removequotes = argc == 2 && scriptlength > 2 && args[0] == '"' && args[scriptlength - 1] == '"';
+
+		if (removequotes)
+		{
+			// Special case of lua CCMD invocation with one argument wrapped with double quotes
+			// Remove these quotes, and pass remaining sctring as script code
+			scriptlength -= 2;
+			char* scriptcopy = Hunk_Alloc(scriptlength + 1);
+			strncpy(scriptcopy, args + 1, scriptlength);
+			scriptcopy[scriptlength] = '\0';
+			script = scriptcopy;
+		}
+		else
+			script = args;
+
+		int status = luaL_loadbuffer(state, script, scriptlength, "script");
 
 		if (status == LUA_OK)
 			status = lua_pcall(state, 0, 0, 0);
 
 		if (status != LUA_OK)
-			Con_SafePrintf("Error while executing Lua script\n%s\n", lua_tostring(state, -1));
+		{
+			Con_SafePrintf("Error while executing Lua script\n");
+
+			const char* errormessage = lua_tostring(state, -1);
+			if (errormessage)
+				Con_SafePrintf("%s\n", errormessage);
+		}
 
 		lua_close(state);
 	}
