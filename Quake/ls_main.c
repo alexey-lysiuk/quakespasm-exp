@@ -224,6 +224,86 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 
 
 //
+// Helper functions for 'vec3' values
+//
+
+// Pushes new 'vec3' userdata built from individual component values
+static int LS_global_vec3_new(lua_State* state)
+{
+	vec3_t result;
+
+	for (int i = 0; i < 3; ++i)
+		result[i] = luaL_optnumber(state, i + 1, 0.f);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes new 'vec3' userdata which value is a mid point of functions arguments
+static int LS_global_vec3_mid(lua_State* state)
+{
+	vec_t* min = LS_Vec3GetValue(state, 1);
+	vec_t* max = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+
+	for (int i = 0; i < 3; ++i)
+		result[i] = min[i] + (max[i] - min[i]) * 0.5f;
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes new 'vec3' userdata which value is a cross product of functions arguments
+static int LS_global_vec3_cross(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	CrossProduct(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes a number which value is a dot product of functions arguments
+static int LS_global_vec3_dot(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec_t result = DotProduct(v1, v2);
+
+	lua_pushnumber(state, result);
+	return 1;
+}
+
+// Pushes helper function by its name
+static int LS_global_vec3_index(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checkstring(state, 2);
+
+	const char* key = lua_tostring(state, 2);
+	assert(key);
+
+	if (strcmp(key, "new") == 0)
+		lua_pushcfunction(state, LS_global_vec3_new);
+	else if (strcmp(key, "mid") == 0)
+		lua_pushcfunction(state, LS_global_vec3_mid);
+	else if (strcmp(key, "cross") == 0)
+		lua_pushcfunction(state, LS_global_vec3_cross);
+	else if (strcmp(key, "dot") == 0)
+		lua_pushcfunction(state, LS_global_vec3_dot);
+	else
+		luaL_error(state, "Unknown vec3 function '%s'", key);
+
+	return 1;
+}
+
+
+//
 // Expose edict_t as 'edict' userdata
 //
 
@@ -563,6 +643,22 @@ static void LS_global_warning(void* ud, const char *msg, int tocont)
 	Con_SafePrintf("%s%s", msg, tocont ? "" : "\n");
 }
 
+static void LS_CreateGlobalUserData(lua_State* state, const char* name, const luaL_Reg* metatable)
+{
+	lua_newuserdatauv(state, 0, 0);
+	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
+	lua_setglobal(state, name);
+
+	char metatablename[64];
+	q_snprintf(metatablename, sizeof(metatablename), "global_%s", name);
+
+	luaL_newmetatable(state, metatablename);
+	luaL_setfuncs(state, metatable, 0);
+	lua_setmetatable(state, -2);
+
+	lua_pop(state, 1);  // remove userdata
+}
+
 static void LS_PrepareState(lua_State* state)
 {
 	LS_InitStandardLibraries(state);
@@ -578,24 +674,27 @@ static void LS_PrepareState(lua_State* state)
 	lua_pushcfunction(state, LS_global_print);
 	lua_setglobal(state, "print");
 
-	static const char* edictsname = "edicts";
+	// Create and register 'vec3' global userdata with helper functions for 'vec3' values
+	{
+		static const luaL_Reg vec3_metatable[] =
+		{
+			{ "__index", LS_global_vec3_index },
+			{ NULL, NULL }
+		};
+		LS_CreateGlobalUserData(state, "vec3", vec3_metatable);
+	}
 
 	// Create and register 'edicts' global userdata
-	lua_newuserdatauv(state, 0, 0);
-	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
-	lua_setglobal(state, edictsname);
-
-	// Create and set metatable for 'edicts' global userdata
-	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_global_edicts_index },
-		{ "__len", LS_global_edicts_len },
-		{ NULL, NULL }
-	};
+		static const luaL_Reg edicts_metatable[] =
+		{
+			{ "__index", LS_global_edicts_index },
+			{ "__len", LS_global_edicts_len },
+			{ NULL, NULL }
+		};
+		LS_CreateGlobalUserData(state, "edicts", edicts_metatable);
+	}
 
-	luaL_newmetatable(state, edictsname);
-	luaL_setfuncs(state, functions, 0);
-	lua_setmetatable(state, -2);
 }
 
 static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
