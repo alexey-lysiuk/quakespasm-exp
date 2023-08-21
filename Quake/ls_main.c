@@ -388,20 +388,44 @@ static int LS_value_edict_index(lua_State* state)
 			if (ED_GetFieldByName(ed, name, &type, &value))
 				LS_PushEdictFieldValue(state, type, value);
 			else
-				lua_pushnil(state);
+				lua_pushnil(state);  // TODO: default value instead of nil
 		}
 	}
 	else if (indextype == LUA_TNUMBER)
 	{
-		//		int fieldindex = lua_tointeger(state, 2);
-		//
-		//		if (ED_GetFieldByIndex(ed, fieldindex - 1, &name, &type, &value))  // on Lua side, indices start with one
-		//			// TODO: push name-value pair
-		//			LS_PushEdictFieldValue(state, name, type, value);
-		//		else
-		//			lua_pushnil(state);
+		// TODO: optimize numeric indexing to be O(n) instead of O(n^2)
 
-		assert(false);
+		int fieldindex = lua_tointeger(state, 2);
+		int fieldswithvalues = 1;  // on Lua side, indices start with one
+
+		for (int i = 1; i < progs->numfielddefs; ++i)
+		{
+			const char* name;
+			etype_t type;
+			const eval_t* value;
+
+			if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+			{
+				if (fieldindex == fieldswithvalues)
+				{
+					lua_createtable(state, 0, 2);
+
+					lua_pushstring(state, name);
+					lua_setfield(state, -2, "name");
+					lua_pushnumber(state, type);
+					lua_setfield(state, -2, "type");
+					LS_PushEdictFieldValue(state, type, value);
+					lua_setfield(state, -2, "value");
+
+					break;
+				}
+
+				++fieldswithvalues;
+			}
+		}
+
+		if (fieldindex > fieldswithvalues)
+			lua_pushnil(state);  // no such index
 	}
 	else
 		luaL_error(state, "Invalid type %d of edict index", indextype);
