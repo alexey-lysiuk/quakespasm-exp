@@ -2,7 +2,7 @@
 -- Secrets
 --
 
-local function secretPos(edict)
+local function secretpos(edict)
 	local min = edict.absmin
 	local max = edict.absmax
 	local count
@@ -26,12 +26,12 @@ local function secretPos(edict)
 	return vec3.mid(min, max)
 end
 
-local function processSecret(edict, current, target)
+local function handlesecret(edict, current, target)
 	if edict.classname == 'trigger_secret' then
 		if target <= 0 then
-			print(current .. ':', secretPos(edict))
+			print(current .. ':', secretpos(edict))
 		elseif target == current then
-			player.setpos(secretPos(edict))
+			player.setpos(secretpos(edict))
 			return nil
 		end
 
@@ -44,7 +44,7 @@ end
 -- > lua dofile('scripts/edicts.lua') secrets()
 
 function secrets(target)
-	edicts:foreach(processSecret, target)
+	edicts:foreach(handlesecret, target)
 end
 
 
@@ -54,7 +54,7 @@ end
 
 local FL_MONSTER = 32
 
-local function processMonster(edict, current, target)
+local function handlemonster(edict, current, target)
 	flags = edict.flags
 	health = edict.health
 
@@ -82,7 +82,7 @@ end
 -- > lua dofile('scripts/edicts.lua') monsters()
 
 function monsters(target)
-	edicts:foreach(processMonster, target)
+	edicts:foreach(handlemonster, target)
 end
 
 
@@ -90,7 +90,7 @@ end
 -- Teleports
 --
 
-local function processTeleport(edict, current, target)
+local function handleteleport(edict, current, target)
 	local vec3origin = vec3.new()
 
 	if edict.classname == 'trigger_teleport' then
@@ -138,5 +138,5 @@ end
 -- > lua dofile('scripts/edicts.lua') teleports()
 
 function teleports(target)
-	edicts:foreach(processTeleport, target)
+	edicts:foreach(handleteleport, target)
 end
