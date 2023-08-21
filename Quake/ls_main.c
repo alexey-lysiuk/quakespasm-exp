@@ -387,7 +387,7 @@ static int LS_value_edict_index(lua_State* state)
 		if (ED_GetFieldByName(ed, name, &type, &value))
 			LS_PushEdictFieldValue(state, type, value);
 		else
-			lua_pushnil(state);  // TODO: default value instead of nil
+			lua_pushnil(state);
 	}
 	else if (indextype == LUA_TNUMBER)
 	{

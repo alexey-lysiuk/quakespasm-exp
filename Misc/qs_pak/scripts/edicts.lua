@@ -158,3 +158,63 @@ end
 function teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
+
+
+--
+-- References
+--
+
+-- local function handlereference(edict, current, choice)
+--
+-- end
+
+-- > lua dofile('scripts/edicts.lua') references()
+
+function references(target, choice)
+	-- edicts:foreach(handlereference, choice)
+
+	if not target or target == '' then
+		return
+	end
+
+	local edictrefs = {}
+	-- local edictrefscount = 1
+	--
+	-- local function collectreferences(edict)
+	-- 	if edict.target or edict.targetname
+	-- 		edictrefs[#edictrefs + 1] = edict
+	-- 	end
+	-- end
+
+	for i, edict in ipairs(edicts) do
+		if edict.target ~= '' or edict.targetname ~= '' then
+			table.insert(edictrefs, i)
+		end
+	end
+
+	if #edictrefs == 0 then
+		return
+	end
+
+	-- edicts:foreach(collectreferences)
+	
+	for _, i in ipairs(edictrefs) do
+		edict = edicts[i]
+
+		-- edtarget = edict.target
+		--
+		-- if edtarget ~= '' and string.find(edtarget, target) then
+		-- 	print(i, edict.classname)
+		-- else
+		-- 	edtargetname = edict.targetname
+		--
+		-- 	if edtargetname ~= '' and string.find(edtargetname, target) then
+		-- 		print(i, edict.classname)
+		-- 	end
+		-- end
+
+		if edict.target == target or edict.targetname == target then
+			print(i, edict.classname)
+		end
+	end
+end
