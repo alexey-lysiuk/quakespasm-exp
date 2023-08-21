@@ -80,6 +80,73 @@ static vec_t* LS_Vec3GetValue(lua_State* state, int index)
 	return *value;
 }
 
+static void LS_PushVec3Value(lua_State* state, const vec_t* value);
+
+// Pushes result of two 'vec3' values addition
+static int LS_value_vec3_add(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	VectorAdd(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of two 'vec3' values subtraction
+static int LS_value_vec3_sub(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	vec3_t result;
+	VectorSubtract(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of 'vec3' scale by a number (the second argument)
+static int LS_value_vec3_mul(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+	lua_Number scale = luaL_checknumber(state, 2);
+
+	vec3_t result;
+	VectorScale(value, scale, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of 'vec3' scale by a reciprocal of a number (the second argument)
+static int LS_value_vec3_div(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+	lua_Number scale = 1.f / luaL_checknumber(state, 2);
+
+	vec3_t result;
+	VectorScale(value, scale, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
+// Pushes result of 'vec3' inversion
+static int LS_value_vec3_unm(lua_State* state)
+{
+	vec_t* value = LS_Vec3GetValue(state, 1);
+
+	vec3_t result;
+	VectorCopy(value, result);
+	VectorInverse(result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
 // Pushes result of two 'vec3' values comparison for equality
 static int LS_value_vec3_eq(lua_State* state)
 {
@@ -134,6 +201,14 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 	// Create and set 'vec3_t' metatable
 	static const luaL_Reg functions[] =
 	{
+		// Math functions
+		{ "__add", LS_value_vec3_add },
+		{ "__sub", LS_value_vec3_sub },
+		{ "__mul", LS_value_vec3_mul },
+		{ "__div", LS_value_vec3_div },
+		{ "__unm", LS_value_vec3_unm },
+
+		// Other functions
 		{ "__eq", LS_value_vec3_eq },
 		{ "__index", LS_value_vec3_index },
 		{ "__newindex", LS_value_vec3_newindex },
