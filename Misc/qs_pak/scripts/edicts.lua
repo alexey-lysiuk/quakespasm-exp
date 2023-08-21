@@ -46,11 +46,11 @@ local function secretpos(edict)
 	return vec3.mid(min, max)
 end
 
-local function handlesecret(edict, current, target)
+local function handlesecret(edict, current, choice)
 	if edict.classname == 'trigger_secret' then
-		if target <= 0 then
+		if choice <= 0 then
 			print(current .. ':', secretpos(edict))
-		elseif target == current then
+		elseif choice == current then
 			player.setpos(secretpos(edict))
 			return nil
 		end
@@ -63,8 +63,8 @@ end
 
 -- > lua dofile('scripts/edicts.lua') secrets()
 
-function secrets(target)
-	edicts:foreach(handlesecret, target)
+function secrets(choice)
+	edicts:foreach(handlesecret, choice)
 end
 
 
@@ -72,7 +72,7 @@ end
 -- Monsters
 --
 
-local function handlemonster(edict, current, target)
+local function handlemonster(edict, current, choice)
 	flags = edict.flags
 	health = edict.health
 
@@ -84,11 +84,11 @@ local function handlemonster(edict, current, target)
 			return current
 		end
 
-		if target <= 0 then
+		if choice <= 0 then
 			print(current .. ':', edict.classname, 'at', edict.origin)
-		elseif target == current then
+		elseif choice == current then
 			player.god(true)
-			player.notarget(true)
+			player.nochoice(true)
 			player.setpos(edict.origin, edict.angles)
 			return nil
 		end
@@ -99,8 +99,8 @@ end
 
 -- > lua dofile('scripts/edicts.lua') monsters()
 
-function monsters(target)
-	edicts:foreach(handlemonster, target)
+function monsters(choice)
+	edicts:foreach(handlemonster, choice)
 end
 
 
@@ -108,41 +108,41 @@ end
 -- Teleports
 --
 
-local function handleteleport(edict, current, target)
+local function handleteleport(edict, current, choice)
 	local vec3origin = vec3.new()
 
 	if edict.classname == 'trigger_teleport' then
 		local pos = vec3.mid(edict.absmin, edict.absmax)
 
-		if target <= 0 then
-			local teletarget = edict.target
-			local targetpos
+		if choice <= 0 then
+			local telechoice = edict.choice
+			local choicepos
 
-			if teletarget then
+			if telechoice then
 				for _, testedict in ipairs(edicts) do
-					if teletarget == testedict.targetname then
+					if telechoice == testedict.choicename then
 						-- Special case for Arcane Dimensions, ad_tears map in particular
-						-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
+						-- It uses own teleport choice class (info_teleportinstant_dest) which is disabled by default
 						-- Some teleport destinations were missing despite their valid setup
 						-- Actual destination coordinates are stored in oldorigin member
 						if testedict.origin == vec3origin then
-							targetpos = testedict.oldorigin
+							choicepos = testedict.oldorigin
 						else
-							targetpos = testedict.origin
+							choicepos = testedict.origin
 						end
 						break
 					end
 				end
 			end
 
-			if targetpos then
-				targetstr = 'at ' .. tostring(targetpos)
+			if choicepos then
+				choicestr = 'at ' .. tostring(choicepos)
 			else
-				targetstr = '(target not found)'
+				choicestr = '(choice not found)'
 			end
 
-			print(current .. ':', pos, '->', teletarget, targetstr)
-		elseif target == current then
+			print(current .. ':', pos, '->', telechoice, choicestr)
+		elseif choice == current then
 			player.setpos(pos)
 			return nil
 		end
@@ -155,6 +155,6 @@ end
 
 -- > lua dofile('scripts/edicts.lua') teleports()
 
-function teleports(target)
-	edicts:foreach(handleteleport, target)
+function teleports(choice)
+	edicts:foreach(handleteleport, choice)
 end
