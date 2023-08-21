@@ -80,6 +80,17 @@ static vec_t* LS_Vec3GetValue(lua_State* state, int index)
 	return *value;
 }
 
+// Pushes result of two 'vec3' values comparison for equality
+static int LS_value_vec3_eq(lua_State* state)
+{
+	vec_t* v1 = LS_Vec3GetValue(state, 1);
+	vec_t* v2 = LS_Vec3GetValue(state, 2);
+
+	// TODO: compare with some epsilon
+	lua_pushboolean(state, VectorCompare(v1, v2));
+	return 1;
+}
+
 // Pushes value of 'vec3' component, indexed by integer [0..2] or string 'x', 'y', 'z'
 static int LS_value_vec3_index(lua_State* state)
 {
@@ -123,6 +134,7 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 	// Create and set 'vec3_t' metatable
 	static const luaL_Reg functions[] =
 	{
+		{ "__eq", LS_value_vec3_eq },
 		{ "__index", LS_value_vec3_index },
 		{ "__newindex", LS_value_vec3_newindex },
 		{ "__tostring", LS_value_vec3_tostring },
