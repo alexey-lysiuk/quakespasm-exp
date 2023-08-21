@@ -308,10 +308,9 @@ static int LS_global_vec3_index(lua_State* state)
 //
 
 // Pushes field value by its type and name
-static void LS_PushEdictFieldValue(lua_State* state, const char* name, etype_t type, const eval_t* value)
+static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
 	assert(type != ev_bad);
-	assert(name);
 	assert(value);
 
 	switch (type)
@@ -387,25 +386,53 @@ static int LS_value_edict_index(lua_State* state)
 			name = luaL_checkstring(state, 2);
 
 			if (ED_GetFieldByName(ed, name, &type, &value))
-				LS_PushEdictFieldValue(state, name, type, value);
+				LS_PushEdictFieldValue(state, type, value);
 			else
 				lua_pushnil(state);
 		}
 	}
 	else if (indextype == LUA_TNUMBER)
 	{
-		int fieldindex = lua_tointeger(state, 2);
+		//		int fieldindex = lua_tointeger(state, 2);
+		//
+		//		if (ED_GetFieldByIndex(ed, fieldindex - 1, &name, &type, &value))  // on Lua side, indices start with one
+		//			// TODO: push name-value pair
+		//			LS_PushEdictFieldValue(state, name, type, value);
+		//		else
+		//			lua_pushnil(state);
 
-		if (ED_GetFieldByIndex(ed, fieldindex - 1, &name, &type, &value))  // on Lua side, indices start with one
-			// TODO: push name-value pair
-			LS_PushEdictFieldValue(state, name, type, value);
-		else
-			lua_pushnil(state);
+		assert(false);
 	}
 	else
 		luaL_error(state, "Invalid type %d of edict index", indextype);
 
 	return 1;
+}
+
+// Pushes next() function, table with edict's fields and values, initial value (nil)
+static int LS_value_edict_pairs(lua_State* state)
+{
+	edict_t* ed = LS_GetEdictFromUserData(state);
+	assert(ed);
+
+	lua_getglobal(state, "next");
+	lua_createtable(state, 0, 16);
+
+	for (int i = 1; i < progs->numfielddefs; ++i)
+	{
+		const char* name;
+		etype_t type;
+		const eval_t* value;
+
+		if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+		{
+			LS_PushEdictFieldValue(state, type, value);
+			lua_setfield(state, -2, name);
+		}
+	}
+
+	lua_pushnil(state);
+	return 3;
 }
 
 // Pushes string representation of given edict
@@ -428,6 +455,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_edict_index },
+		{ "__pairs", LS_value_edict_pairs },
 		{ "__tostring", LS_value_edict_tostring },
 		{ NULL, NULL }
 	};
