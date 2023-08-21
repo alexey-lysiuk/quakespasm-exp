@@ -1,3 +1,23 @@
+
+--
+-- Edict flags
+--
+
+FL_FLY            = 1
+FL_SWIM           = 2
+FL_CONVEYOR       = 4
+FL_CLIENT         = 8
+FL_INWATER        = 16
+FL_MONSTER        = 32
+FL_GODMODE        = 64
+FL_NOTARGET       = 128
+FL_ITEM           = 256
+FL_ONGROUND       = 512
+FL_PARTIALGROUND  = 1024  -- not all corners are valid
+FL_WATERJUMP      = 2048  -- player jumping out of water
+FL_JUMPRELEASED   = 4096  -- for jump debouncing
+
+
 --
 -- Secrets
 --
@@ -51,8 +71,6 @@ end
 --
 -- Monsters
 --
-
-local FL_MONSTER = 32
 
 local function handlemonster(edict, current, target)
 	flags = edict.flags
