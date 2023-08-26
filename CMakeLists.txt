@@ -504,25 +504,38 @@ find_codec(NAME XMP
 	DEFINE USE_CODEC_XMP
 )
 
-if(CMAKE_CROSSCOMPILING)
-	find_package(MakeQuakePak)
+option(QUAKE_BUILD_ENGINE_PAK "Build engine .pak file from individual files" ON)
+
+set(ENGINE_PAK_FILENAME quakespasm-exp.pak)
+
+if(QUAKE_BUILD_ENGINE_PAK)
+	if(CMAKE_CROSSCOMPILING)
+		find_package(MakeQuakePak)
+	else()
+		add_executable(makeqpak Quake/makeqpak.c)
+		export(TARGETS makeqpak FILE "${CMAKE_BINARY_DIR}/MakeQuakePakConfig.cmake")
+	endif()
+
+	set(ENGINE_PAK_SOURCES
+		gfx/conback.lmp
+		maps/e1m1@c49d.ent
+		maps/e1m2@0caa.ent
+		maps/e1m4@958e.ent
+		maps/e2m2@fbfe.ent
+		maps/e2m3@237a.ent
+		maps/e2m7@10a8.ent
+		scripts/edicts.lua
+		default.cfg
+	)
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND makeqpak "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${ENGINE_PAK_FILENAME}" ${ENGINE_PAK_SOURCES}
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Misc/qs_pak"
+	)
 else()
-	add_executable(makeqpak Quake/makeqpak.c)
-	export(TARGETS makeqpak FILE "${CMAKE_BINARY_DIR}/MakeQuakePakConfig.cmake")
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"${CMAKE_SOURCE_DIR}/Quake/quakespasm.pak"
+			"$<TARGET_FILE_DIR:${PROJECT_NAME}>/${ENGINE_PAK_FILENAME}"
+	)
 endif()
-
-set(ENGINE_PAK_SOURCES
-	gfx/conback.lmp
-	maps/e1m1@c49d.ent
-	maps/e1m2@0caa.ent
-	maps/e1m4@958e.ent
-	maps/e2m2@fbfe.ent
-	maps/e2m3@237a.ent
-	maps/e2m7@10a8.ent
-	default.cfg
-)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-	COMMAND makeqpak "$<TARGET_FILE_DIR:${PROJECT_NAME}>/quakespasm-exp.pak" ${ENGINE_PAK_SOURCES}
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Misc/qs_pak"
-)
