@@ -308,10 +308,9 @@ static int LS_global_vec3_index(lua_State* state)
 //
 
 // Pushes field value by its type and name
-static void LS_PushEdictFieldValue(lua_State* state, const char* name, etype_t type, const eval_t* value)
+static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
 	assert(type != ev_bad);
-	assert(name);
 	assert(value);
 
 	switch (type)
