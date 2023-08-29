@@ -375,7 +375,7 @@ static int LS_value_edict_index(lua_State* state)
 		const eval_t* value;
 
 		if (ED_GetFieldByName(ed, name, &type, &value))
-			LS_PushEdictFieldValue(state, name, type, value);
+			LS_PushEdictFieldValue(state, type, value);
 		else
 			lua_pushnil(state);  // TODO: default value instead of nil
 	}
