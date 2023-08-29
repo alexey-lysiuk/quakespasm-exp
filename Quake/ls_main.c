@@ -492,6 +492,84 @@ static int LS_global_edicts_len(lua_State* state)
 	return 1;
 }
 
+
+//
+// Expose 'player' userdata with corresponding helper functions
+//
+
+static int LS_global_player_setpos(lua_State* state)
+{
+	vec_t* pos = LS_Vec3GetValue(state, 1);
+	char anglesstr[64] = { '\0' };
+
+	if (lua_type(state, 2) == LUA_TUSERDATA)
+	{
+		vec_t* angles = LS_Vec3GetValue(state, 2);
+		q_snprintf(anglesstr, sizeof anglesstr, " %.02f %.02f %.02f", angles[0], angles[1], angles[2]);
+	}
+
+	char command[128];
+	q_snprintf(command, sizeof command, "setpos %.02f %.02f %.02f%s;", pos[0], pos[1], pos[2], anglesstr);
+
+	Cbuf_AddText(command);
+	return 0;
+}
+
+static int LS_PlayerCheatCommand(lua_State* state, const char* command)
+{
+	const char* argstr = "";
+
+	if (lua_isnumber(state, 1))
+		argstr = lua_tonumber(state, 1) ? " 1" : " 0";
+	else if (lua_isboolean(state, 1))
+		argstr = lua_toboolean(state, 1) ? " 1" : " 0";
+
+	char cmdbuf[64];
+	q_snprintf(cmdbuf, sizeof cmdbuf, "%s%s;", command, argstr);
+
+	Cbuf_AddText(cmdbuf);
+}
+
+static int LS_global_player_god(lua_State* state)
+{
+	return LS_PlayerCheatCommand(state, "god");
+}
+
+static int LS_global_player_notarget(lua_State* state)
+{
+	return LS_PlayerCheatCommand(state, "notarget");
+}
+
+static int LS_global_player_noclip(lua_State* state)
+{
+	return LS_PlayerCheatCommand(state, "noclip");
+}
+
+// Pushes player helper function by its name
+static int LS_global_player_index(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checkstring(state, 2);
+
+	const char* key = lua_tostring(state, 2);
+	assert(key);
+
+	if (strcmp(key, "setpos") == 0)
+		lua_pushcfunction(state, LS_global_player_setpos);
+	else if (strcmp(key, "god") == 0)
+		lua_pushcfunction(state, LS_global_player_god);
+	else if (strcmp(key, "notarget") == 0)
+		lua_pushcfunction(state, LS_global_player_notarget);
+	else if (strcmp(key, "noclip") == 0)
+		lua_pushcfunction(state, LS_global_player_noclip);
+	else
+		luaL_error(state, "Unknown player function '%s'", key);
+
+	return 1;
+}
+
+
+
 static void LS_InitStandardLibraries(lua_State* state)
 {
 	// Available standard libraries
@@ -694,6 +772,15 @@ static void LS_PrepareState(lua_State* state)
 		LS_CreateGlobalUserData(state, "edicts", edicts_metatable);
 	}
 
+	// Create and register 'player' global userdata
+	{
+		static const luaL_Reg player_metatable[] =
+		{
+			{ "__index", LS_global_player_index },
+			{ NULL, NULL }
+		};
+		LS_CreateGlobalUserData(state, "player", player_metatable);
+	}
 }
 
 static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
