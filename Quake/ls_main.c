@@ -354,16 +354,21 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 	}
 }
 
-// Pushes value of edict field by its name
-static int LS_value_edict_index(lua_State* state)
+// Gets pointer to edict_t from 'edict' userdata
+static edict_t* LS_GetEdictFromUserData(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TUSERDATA);
-	luaL_checktype(state, 2, LUA_TSTRING);
 
 	edict_t** edptr = lua_touserdata(state, 1);
 	assert(edptr);
 
-	edict_t* ed = *edptr;
+	return *edptr;
+}
+
+// Pushes value of edict field by its name
+static int LS_value_edict_index(lua_State* state)
+{
+	edict_t* ed = LS_GetEdictFromUserData(state);
 	assert(ed);
 
 	if (ed->free)
@@ -383,12 +388,39 @@ static int LS_value_edict_index(lua_State* state)
 	return 1;
 }
 
+// Pushes string representation of given edict
+static int LS_value_edict_tostring(lua_State* state)
+{
+	edict_t* ed = LS_GetEdictFromUserData(state);
+	assert(ed);
+
+	int index = NUM_FOR_EDICT(ed) + 1;  // on Lua side, indices start with 1
+	const char* description;
+
+	if (ed->free)
+		description = "<free>";
+	else
+	{
+		description = PR_GetString(ed->v.classname);
+
+		if (description[0] == '\0')
+			description = PR_GetString(ed->v.model);
+
+		if (description[0] == '\0')
+			description = "<unnamed>";
+	}
+
+	lua_pushfstring(state, "edict %d: %s", index, description);
+	return 1;
+}
+
 // Sets metatable for edict table
 static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_edict_index },
+		{ "__tostring", LS_value_edict_tostring },
 		{ NULL, NULL }
 	};
 
