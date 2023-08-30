@@ -388,6 +388,32 @@ static int LS_value_edict_index(lua_State* state)
 	return 1;
 }
 
+// Pushes next() function, table with edict's fields and values, initial value (nil)
+static int LS_value_edict_pairs(lua_State* state)
+{
+	edict_t* ed = LS_GetEdictFromUserData(state);
+	assert(ed);
+
+	lua_getglobal(state, "next");
+	lua_createtable(state, 0, 16);
+
+	for (int i = 1; i < progs->numfielddefs; ++i)
+	{
+		const char* name;
+		etype_t type;
+		const eval_t* value;
+
+		if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+		{
+			LS_PushEdictFieldValue(state, type, value);
+			lua_setfield(state, -2, name);
+		}
+	}
+
+	lua_pushnil(state);
+	return 3;
+}
+
 // Pushes string representation of given edict
 static int LS_value_edict_tostring(lua_State* state)
 {
@@ -420,6 +446,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_edict_index },
+		{ "__pairs", LS_value_edict_pairs },
 		{ "__tostring", LS_value_edict_tostring },
 		{ NULL, NULL }
 	};
