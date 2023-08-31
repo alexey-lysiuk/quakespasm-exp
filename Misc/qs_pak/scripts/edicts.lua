@@ -88,7 +88,7 @@ local function handlemonster(edict, current, choice)
 			print(current .. ':', edict.classname, 'at', edict.origin)
 		elseif choice == current then
 			player.god(true)
-			player.nochoice(true)
+			player.notarget(true)
 			player.setpos(edict.origin, edict.angles)
 			return nil
 		end
@@ -115,33 +115,33 @@ local function handleteleport(edict, current, choice)
 		local pos = vec3.mid(edict.absmin, edict.absmax)
 
 		if choice <= 0 then
-			local telechoice = edict.choice
-			local choicepos
+			local teletarget = edict.target
+			local targetpos
 
-			if telechoice then
+			if teletarget then
 				for _, testedict in ipairs(edicts) do
-					if telechoice == testedict.choicename then
+					if teletarget == testedict.targetname then
 						-- Special case for Arcane Dimensions, ad_tears map in particular
-						-- It uses own teleport choice class (info_teleportinstant_dest) which is disabled by default
+						-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
 						-- Some teleport destinations were missing despite their valid setup
 						-- Actual destination coordinates are stored in oldorigin member
 						if testedict.origin == vec3origin then
-							choicepos = testedict.oldorigin
+							targetpos = testedict.oldorigin
 						else
-							choicepos = testedict.origin
+							targetpos = testedict.origin
 						end
 						break
 					end
 				end
 			end
 
-			if choicepos then
-				choicestr = 'at ' .. tostring(choicepos)
+			if targetpos then
+				targetstr = 'at ' .. tostring(targetpos)
 			else
-				choicestr = '(choice not found)'
+				targetstr = '(target not found)'
 			end
 
-			print(current .. ':', pos, '->', telechoice, choicestr)
+			print(current .. ':', pos, '->', teletarget, targetstr)
 		elseif choice == current then
 			player.setpos(pos)
 			return nil
