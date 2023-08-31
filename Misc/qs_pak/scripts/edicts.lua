@@ -66,3 +66,39 @@ end
 function secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
+
+
+--
+-- Monsters
+--
+
+local function handlemonster(edict, current, choice)
+	flags = edict.flags
+	health = edict.health
+
+	if flags and health then
+		ismonster = math.tointeger(flags) & FL_MONSTER == FL_MONSTER
+		isalive = health > 0
+
+		if not ismonster or not isalive then
+			return current
+		end
+
+		if choice <= 0 then
+			print(current .. ':', edict.classname, 'at', edict.origin)
+		elseif choice == current then
+			player.god(true)
+			player.nochoice(true)
+			player.setpos(edict.origin, edict.angles)
+			return nil
+		end
+	end
+
+	return current + 1
+end
+
+-- > lua dofile('scripts/edicts.lua') monsters()
+
+function monsters(choice)
+	edicts:foreach(handlemonster, choice)
+end
