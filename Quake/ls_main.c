@@ -366,6 +366,7 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 }
 
 // Pushes value of edict field by its name
+// or pushes a table with name, type, value by field's numerical index
 static int LS_value_edict_index(lua_State* state)
 {
 	edict_t* ed = LS_GetEdictFromUserData(state);
@@ -463,11 +464,23 @@ static int LS_value_edict_tostring(lua_State* state)
 	edict_t* ed = LS_GetEdictFromUserData(state);
 	assert(ed);
 
-	const char* classname = PR_GetString(ed->v.classname);
-	if (!classname)
-		classname = "<no classname>";
+	int index = NUM_FOR_EDICT(ed) + 1;  // on Lua side, indices start with 1
+	const char* description;
 
-	lua_pushfstring(state, "edict %d: %s", NUM_FOR_EDICT(ed), classname);
+	if (ed->free)
+		description = "<free>";
+	else
+	{
+		description = PR_GetString(ed->v.classname);
+
+		if (description[0] == '\0')
+			description = PR_GetString(ed->v.model);
+
+		if (description[0] == '\0')
+			description = "<unnamed>";
+	}
+
+	lua_pushfstring(state, "edict %d: %s", index, description);
 	return 1;
 }
 
@@ -618,6 +631,7 @@ static int LS_PlayerCheatCommand(lua_State* state, const char* command)
 	q_snprintf(cmdbuf, sizeof cmdbuf, "%s%s;", command, argstr);
 
 	Cbuf_AddText(cmdbuf);
+	return 0;
 }
 
 static int LS_global_player_god(lua_State* state)

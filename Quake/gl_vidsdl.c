@@ -97,6 +97,7 @@ modestate_t	modestate = MS_UNINIT;
 qboolean	scr_skipupdate;
 
 qboolean gl_mtexable = false;
+qboolean gl_nv_depth_clamp = false;
 qboolean gl_packed_pixels = false;
 qboolean gl_texture_env_combine = false; //johnfitz
 qboolean gl_texture_env_add = false; //johnfitz
@@ -1245,7 +1246,6 @@ static void GL_CheckExtensions (void)
 	{
 		Con_Warning ("OpenGL version < 2, GLSL not available\n");
 	}
-	
 	// GLSL gamma
 	//
 	if (COM_CheckParm("-noglslgamma"))
@@ -1259,27 +1259,31 @@ static void GL_CheckExtensions (void)
 	{
 		Con_Warning ("GLSL gamma not available, using hardware gamma\n");
 	}
-    
-    // GLSL alias model rendering
-    //
+	// GLSL alias model rendering
+	//
 	if (COM_CheckParm("-noglslalias"))
 		Con_Warning ("GLSL alias model rendering disabled at command line\n");
 	else if (gl_glsl_able && gl_vbo_able && gl_max_texture_units >= 3)
 	{
 		gl_glsl_alias_able = true;
-		gl_packed_pixels = true;
 		Con_Printf("Enabled: GLSL alias model rendering\n");
-		Con_Printf("Enabled: EXT_packed_pixels\n");
 	}
 	else
 	{
 		Con_Warning ("GLSL alias model rendering not available, using Fitz renderer\n");
 	}
 
-#if 0 /* Disabling for non-GLSL path, needs more surgery. See: https://github.com/sezero/quakespasm/issues/47#issuecomment-1681540278 */
 	// packed_pixels
 	//
-	if (!gl_packed_pixels)
+	if (COM_CheckParm("-nopackedpixels"))
+		Con_Warning ("EXT_packed_pixels disabled at command line\n");
+	else if (gl_glsl_alias_able)
+	{
+		gl_packed_pixels = true;
+		Con_Printf("Enabled: EXT_packed_pixels\n");
+	}
+	#if 0 /* Disabling for non-GLSL path, needs more surgery. */
+	else
 	{
 		if (GL_ParseExtensionList(gl_extensions, "GL_APPLE_packed_pixels"))
 		{
@@ -1296,7 +1300,26 @@ static void GL_CheckExtensions (void)
 			Con_Warning ("packed_pixels not supported\n");
 		}
 	}
-#endif
+	#endif
+
+	// ARB_depth_clamp
+	//
+	if (COM_CheckParm("-nodepthclamp"))
+		Con_Warning ("depth_clamp disabled at command line\n");
+	else if (GL_ParseExtensionList(gl_extensions, "GL_ARB_depth_clamp"))
+	{
+		Con_Printf("FOUND: ARB_depth_clamp\n");
+		gl_nv_depth_clamp = true;
+	}
+	else if (GL_ParseExtensionList(gl_extensions, "GL_NV_depth_clamp"))
+	{
+		Con_Printf("FOUND: NV_depth_clamp\n");
+		gl_nv_depth_clamp = true;
+	}
+	else
+	{
+		Con_Warning ("depth_clamp not supported\n");
+	}
 
 	// glGenerateMipmap for warp textures
 	if (COM_CheckParm("-nowarpmipmaps"))
@@ -1346,6 +1369,8 @@ static void GL_SetupState (void)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glDepthRange (0, 1); //johnfitz -- moved here becuase gl_ztrick is gone.
 	glDepthFunc (GL_LEQUAL); //johnfitz -- moved here becuase gl_ztrick is gone.
+	if (gl_nv_depth_clamp)
+	    glEnable(GL_DEPTH_CLAMP_NV);
 }
 
 /*
