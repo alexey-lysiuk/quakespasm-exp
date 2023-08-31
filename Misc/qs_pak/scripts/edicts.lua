@@ -17,6 +17,9 @@ FL_PARTIALGROUND  = 1024  -- not all corners are valid
 FL_WATERJUMP      = 2048  -- player jumping out of water
 FL_JUMPRELEASED   = 4096  -- for jump debouncing
 
+DOOR_GOLD_KEY = 8
+DOOR_SILVER_KEY = 16
+
 
 --
 -- Secrets
@@ -158,6 +161,48 @@ end
 function teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
+
+
+--
+-- Doors
+--
+
+local function handledoor(edict, current, choice)
+	local vec3origin = vec3.new()
+
+	if edict.classname == 'door' then
+		local pos = vec3.mid(edict.absmin, edict.absmax)
+		local info = ''
+
+		if edict.touch == 'secret_touch()' then
+			info = '(secret)'
+		elseif edict.flags & DOOR_GOLD_KEY ~= 0 then
+			info = '(gold key)'
+		elseif edict.flags & DOOR_SILVER_KEY ~= 0 then
+			info = '(silver key)'
+		end
+
+		if choice <= 0 then
+			print(current .. ':', pos, info)
+		elseif choice == current then
+			player.setpos(pos)
+			return nil
+		end
+
+		return current + 1
+	end
+
+	return current
+end
+
+-- > lua dofile('scripts/edicts.lua') doors()
+
+function doors(choice)
+	edicts:foreach(handledoor, choice)
+end
+
+
+-- lua for i,e in ipairs(edicts) do print(i, e.classname) end
 
 
 --
