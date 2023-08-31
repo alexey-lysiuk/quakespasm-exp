@@ -524,6 +524,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/e2m2@fbfe.ent
 		maps/e2m3@237a.ent
 		maps/e2m7@10a8.ent
+		scripts/edicts.lua
 		default.cfg
 	)
 
