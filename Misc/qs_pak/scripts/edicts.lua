@@ -102,3 +102,59 @@ end
 function monsters(choice)
 	edicts:foreach(handlemonster, choice)
 end
+
+
+--
+-- Teleports
+--
+
+local function handleteleport(edict, current, choice)
+	local vec3origin = vec3.new()
+
+	if edict.classname == 'trigger_teleport' then
+		local pos = vec3.mid(edict.absmin, edict.absmax)
+
+		if choice <= 0 then
+			local telechoice = edict.choice
+			local choicepos
+
+			if telechoice then
+				for _, testedict in ipairs(edicts) do
+					if telechoice == testedict.choicename then
+						-- Special case for Arcane Dimensions, ad_tears map in particular
+						-- It uses own teleport choice class (info_teleportinstant_dest) which is disabled by default
+						-- Some teleport destinations were missing despite their valid setup
+						-- Actual destination coordinates are stored in oldorigin member
+						if testedict.origin == vec3origin then
+							choicepos = testedict.oldorigin
+						else
+							choicepos = testedict.origin
+						end
+						break
+					end
+				end
+			end
+
+			if choicepos then
+				choicestr = 'at ' .. tostring(choicepos)
+			else
+				choicestr = '(choice not found)'
+			end
+
+			print(current .. ':', pos, '->', telechoice, choicestr)
+		elseif choice == current then
+			player.setpos(pos)
+			return nil
+		end
+
+		return current + 1
+	end
+
+	return current
+end
+
+-- > lua dofile('scripts/edicts.lua') teleports()
+
+function teleports(choice)
+	edicts:foreach(handleteleport, choice)
+end
