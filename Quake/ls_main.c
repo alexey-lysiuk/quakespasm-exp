@@ -631,6 +631,7 @@ static int LS_PlayerCheatCommand(lua_State* state, const char* command)
 	q_snprintf(cmdbuf, sizeof cmdbuf, "%s%s;", command, argstr);
 
 	Cbuf_AddText(cmdbuf);
+	return 0;
 }
 
 static int LS_global_player_god(lua_State* state)
