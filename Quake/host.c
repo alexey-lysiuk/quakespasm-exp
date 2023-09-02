@@ -933,6 +933,11 @@ void Host_Shutdown(void)
 
 	Host_WriteConfiguration ();
 
+#ifdef USE_LUA_SCRIPTING
+	extern void LS_Shutdown (void);
+	LS_Shutdown ();
+#endif // USE_LUA_SCRIPTING
+
 	NET_Shutdown ();
 
 	if (cls.state != ca_dedicated)

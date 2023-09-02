@@ -32,6 +32,8 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, e
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
 
+static lua_State* ls_state;
+
 
 //
 // Expose vec3_t as 'vec3' userdata
@@ -793,24 +795,12 @@ static int LS_global_print(lua_State* state)
 
 	return 0;
 }
-
-static int ls_hunk_lowmark;
-
-static void LS_FreeMemory(void)
-{
-	assert(ls_hunk_lowmark > 0);
-	Hunk_FreeToLowMark(ls_hunk_lowmark);
-	ls_hunk_lowmark = 0;
-}
-
 static int LS_global_panic(lua_State* state)
 {
 	const char* message = lua_tostring(state, -1);
 
 	if (!message)
 		message = "unknown error";
-
-	LS_FreeMemory();
 
 	Host_Error("%s", message);
 
@@ -840,37 +830,13 @@ static void LS_CreateGlobalUserData(lua_State* state, const char* name, const lu
 	lua_pop(state, 1);  // remove userdata
 }
 
-static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
+static lua_State* LS_GetState(void)
 {
-	(void)userdata;
+	if (ls_state)
+		return ls_state;
 
-	if (newsize == 0)
-	{
-		// Free memory, this means "do nothing" for hunk memory
-		return NULL;
-	}
-	else if (ptr == NULL)
-	{
-		// Allocate memory
-		void* newptr = Hunk_Alloc(newsize);
-		assert(newptr);
-		return newptr;
-	}
-	else if (oldsize < newsize)
-	{
-		// Reallocate memory, do it only when new size is bigger than old
-		void* newptr = Hunk_Alloc(newsize);
-		assert(newptr);
-		memcpy(newptr, ptr, oldsize);
-		return newptr;
-	}
-
-	return ptr;
-}
-
-static lua_State* LS_PrepareState(void)
-{
-	lua_State* state = lua_newstate(LS_global_alloc, NULL);
+	// TODO: memory allocation via Z_Malloc() / Z_Realloc() / Z_Free()
+	lua_State* state = luaL_newstate();
 	assert(state);
 
 	LS_InitStandardLibraries(state);
@@ -922,6 +888,7 @@ static lua_State* LS_PrepareState(void)
 	LS_global_dofile(state);
 	lua_pop(state, 1);  // discard result
 
+	ls_state = state;
 	return state;
 }
 
@@ -936,13 +903,11 @@ static void LS_ReportError(lua_State* state)
 
 static void LS_Exec_f(void)
 {
-	ls_hunk_lowmark = Hunk_LowMark();
-
 	int argc = Cmd_Argc();
 
 	if (argc > 1)
 	{
-		lua_State* state = LS_PrepareState();
+		lua_State* state = LS_GetState();
 
 		const char* args = Cmd_Args();
 		assert(args);
@@ -976,8 +941,6 @@ static void LS_Exec_f(void)
 	}
 	else
 		Con_SafePrintf("Running %s\n", LUA_RELEASE);
-
-	LS_FreeMemory();
 }
 
 void LS_Init(void)
@@ -985,12 +948,20 @@ void LS_Init(void)
 	Cmd_AddCommand("lua", LS_Exec_f);
 }
 
+void LS_Shutdown(void)
+{
+	if (!ls_state)
+		return;
+
+	lua_close(ls_state);
+	ls_state = NULL;
+}
+
 qboolean LS_ConsoleCommand(void)
 {
-	ls_hunk_lowmark = Hunk_LowMark();
 	qboolean result = false;
 
-	lua_State* state = LS_PrepareState();
+	lua_State* state = LS_GetState();
 
 	if (lua_getglobal(state, Cmd_Argv(0)) == LUA_TFUNCTION)
 	{
@@ -1010,10 +981,31 @@ qboolean LS_ConsoleCommand(void)
 			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
 	}
 
-	lua_close(state);
-	LS_FreeMemory();
-
 	return result;
+}
+
+void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
+{
+	size_t partlen = strlen(partial);
+	lua_State* state = LS_GetState();
+
+	lua_pushglobaltable(state);
+	lua_pushnil(state);
+
+	while (lua_next(state, -2) != 0)
+	{
+		const char* name = lua_tostring(state, -2);
+		assert(name);
+
+		// TODO: skip globals from base library?
+
+		if (Q_strncmp(partial, name, partlen) == 0)
+			addtolist(name, "command");
+
+		lua_pop(state, 1);  // remove name
+	}
+
+	lua_pop(state, 1);  // remove global table
 }
 
 #endif // USE_LUA_SCRIPTING
