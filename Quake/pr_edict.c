@@ -1579,6 +1579,8 @@ int PR_AllocString (int size, char **ptr)
 }
 
 
+#ifdef USE_LUA_SCRIPTING
+
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
@@ -1638,3 +1640,5 @@ const char* ED_GetFieldNameByOffset(int offset)
 	const ddef_t* def = ED_FieldAtOfs(offset);
 	return def ? PR_GetString(def->s_name) : "";
 }
+
+#endif // USE_LUA_SCRIPTING
