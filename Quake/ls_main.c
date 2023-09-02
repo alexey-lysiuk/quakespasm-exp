@@ -980,4 +980,44 @@ void LS_Init(void)
 	Cmd_AddCommand("lua", LS_Exec_f);
 }
 
+qboolean LS_ConsoleCommand(void)
+{
+	ls_hunk_lowmark = Hunk_LowMark();
+	qboolean result = false;
+
+	lua_State* state = lua_newstate(LS_global_alloc, NULL);
+	assert(state);
+
+	LS_PrepareState(state);
+
+	if (lua_getglobal(state, Cmd_Argv(0)) == LUA_TFUNCTION)
+	{
+		int argc = Cmd_Argc();
+
+		if (lua_checkstack(state, argc))
+		{
+			for (int i = 1; i < argc; ++i)
+				lua_pushstring(state, Cmd_Argv(i));
+
+			if (lua_pcall(state, argc - 1, 0, 0) == LUA_OK)
+				result = true;
+			else
+			{
+				Con_SafePrintf("Error while executing Lua script\n");
+
+				const char* errormessage = lua_tostring(state, -1);
+				if (errormessage)
+					Con_SafePrintf("%s\n", errormessage);
+			}
+		}
+		else
+			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
+	}
+
+	lua_close(state);
+	LS_FreeMemory();
+
+	return result;
+}
+
 #endif // USE_LUA_SCRIPTING
