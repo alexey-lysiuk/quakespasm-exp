@@ -714,21 +714,27 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = (char*)Hunk_AllocName(length, filename);
+	char* script = malloc(length);
 	assert(script);
 
 	int bytesread = Sys_FileRead(handle, script, length);
 	COM_CloseFile(handle);
 
-	if (bytesread != length)
+	int result;
+
+	if (bytesread == length)
+		result = luaL_loadbufferx(state, script, length, filename, mode);
+	else
 	{
 		lua_pushfstring(state,
 			"error while reading Lua script '%s', read %d bytes instead of %d",
 			filename, bytesread, length);
-		return LUA_ERRFILE;
+		result = LUA_ERRFILE;
 	}
 
-	return luaL_loadbufferx(state, script, length, filename, mode);
+	free(script);
+
+	return result;
 }
 
 static int LS_global_dofile(lua_State* state)
@@ -925,6 +931,7 @@ static void LS_Exec_f(void)
 		const char* args = Cmd_Args();
 		assert(args);
 
+		char* scriptcopy;
 		const char* script;
 		size_t scriptlength = strlen(args);
 		qboolean removequotes = argc == 2 && scriptlength > 2 && args[0] == '"' && args[scriptlength - 1] == '"';
@@ -934,13 +941,16 @@ static void LS_Exec_f(void)
 			// Special case of lua CCMD invocation with one argument wrapped with double quotes
 			// Remove these quotes, and pass remaining sctring as script code
 			scriptlength -= 2;
-			char* scriptcopy = Hunk_Alloc(scriptlength + 1);
+			scriptcopy = malloc(scriptlength + 1);
 			strncpy(scriptcopy, args + 1, scriptlength);
 			scriptcopy[scriptlength] = '\0';
 			script = scriptcopy;
 		}
 		else
+		{
+			scriptcopy = NULL;
 			script = args;
+		}
 
 		int status = luaL_loadbuffer(state, script, scriptlength, "script");
 
@@ -950,7 +960,7 @@ static void LS_Exec_f(void)
 		if (status != LUA_OK)
 			LS_ReportError(state);
 
-		lua_close(state);
+		free(scriptcopy);
 	}
 	else
 		Con_SafePrintf("Running %s\n", LUA_RELEASE);
