@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 
 project(quakespasm-exp LANGUAGES C)
 
-include(CheckCCompilerFlag)
-
 set(COMMON_SOURCES
 	Quake/anorm_dots.h
 	Quake/anorms.h
@@ -284,17 +282,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_LUA_SCRIPTING
 )
 
-function(add_optional_compiler_flag VARIABLE COMPILER_FLAG)
-	check_c_compiler_flag(${COMPILER_FLAG} VARIABLE)
-
-	if(VARIABLE)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMPILER_FLAG}" PARENT_SCOPE)
-	endif()
-endfunction()
-
-add_optional_compiler_flag(HAVE_WALL -Wall)
-add_optional_compiler_flag(HAVE_WNO_TRIGRAPHS -Wno-trigraphs)
-
 if(MSVC)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 	set(CMAKE_C_FLAGS "/MP ${CMAKE_C_FLAGS}")
@@ -304,6 +291,8 @@ else()
 	if(QUAKE_SEARCH_USERDIRS)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
+	
+	set(CMAKE_C_FLAGS "-Wall -Wno-trigraphs ${CMAKE_C_FLAGS}")
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR})
