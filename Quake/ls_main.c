@@ -840,8 +840,39 @@ static void LS_CreateGlobalUserData(lua_State* state, const char* name, const lu
 	lua_pop(state, 1);  // remove userdata
 }
 
-static void LS_PrepareState(lua_State* state)
+static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
 {
+	(void)userdata;
+
+	if (newsize == 0)
+	{
+		// Free memory, this means "do nothing" for hunk memory
+		return NULL;
+	}
+	else if (ptr == NULL)
+	{
+		// Allocate memory
+		void* newptr = Hunk_Alloc(newsize);
+		assert(newptr);
+		return newptr;
+	}
+	else if (oldsize < newsize)
+	{
+		// Reallocate memory, do it only when new size is bigger than old
+		void* newptr = Hunk_Alloc(newsize);
+		assert(newptr);
+		memcpy(newptr, ptr, oldsize);
+		return newptr;
+	}
+
+	return ptr;
+}
+
+static lua_State* LS_PrepareState(void)
+{
+	lua_State* state = lua_newstate(LS_global_alloc, NULL);
+	assert(state);
+
 	LS_InitStandardLibraries(state);
 
 	lua_atpanic(state, LS_global_panic);
@@ -901,34 +932,17 @@ static void LS_PrepareState(lua_State* state)
 			lua_pcall(state, 1, 0, 0);
 		}
 	}
+
+	return state;
 }
 
-static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
+static void LS_ReportError(lua_State* state)
 {
-	(void)userdata;
+	Con_SafePrintf("Error while executing Lua script\n");
 
-	if (newsize == 0)
-	{
-		// Free memory, this means "do nothing" for hunk memory
-		return NULL;
-	}
-	else if (ptr == NULL)
-	{
-		// Allocate memory
-		void* newptr = Hunk_Alloc(newsize);
-		assert(newptr);
-		return newptr;
-	}
-	else if (oldsize < newsize)
-	{
-		// Reallocate memory, do it only when new size is bigger than old
-		void* newptr = Hunk_Alloc(newsize);
-		assert(newptr);
-		memcpy(newptr, ptr, oldsize);
-		return newptr;
-	}
-
-	return ptr;
+	const char* errormessage = lua_tostring(state, -1);
+	if (errormessage)
+		Con_SafePrintf("%s\n", errormessage);
 }
 
 static void LS_Exec_f(void)
@@ -939,10 +953,7 @@ static void LS_Exec_f(void)
 
 	if (argc > 1)
 	{
-		lua_State* state = lua_newstate(LS_global_alloc, NULL);
-		assert(state);
-
-		LS_PrepareState(state);
+		lua_State* state = LS_PrepareState();
 
 		const char* args = Cmd_Args();
 		assert(args);
@@ -970,13 +981,7 @@ static void LS_Exec_f(void)
 			status = lua_pcall(state, 0, 0, 0);
 
 		if (status != LUA_OK)
-		{
-			Con_SafePrintf("Error while executing Lua script\n");
-
-			const char* errormessage = lua_tostring(state, -1);
-			if (errormessage)
-				Con_SafePrintf("%s\n", errormessage);
-		}
+			LS_ReportError(state);
 
 		lua_close(state);
 	}
@@ -989,6 +994,37 @@ static void LS_Exec_f(void)
 void LS_Init(void)
 {
 	Cmd_AddCommand("lua", LS_Exec_f);
+}
+
+qboolean LS_ConsoleCommand(void)
+{
+	ls_hunk_lowmark = Hunk_LowMark();
+	qboolean result = false;
+
+	lua_State* state = LS_PrepareState();
+
+	if (lua_getglobal(state, Cmd_Argv(0)) == LUA_TFUNCTION)
+	{
+		int argc = Cmd_Argc();
+
+		if (lua_checkstack(state, argc))
+		{
+			for (int i = 1; i < argc; ++i)
+				lua_pushstring(state, Cmd_Argv(i));
+
+			if (lua_pcall(state, argc - 1, 0, 0) == LUA_OK)
+				result = true;
+			else
+				LS_ReportError(state);
+		}
+		else
+			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
+	}
+
+	lua_close(state);
+	LS_FreeMemory();
+
+	return result;
 }
 
 #endif // USE_LUA_SCRIPTING
