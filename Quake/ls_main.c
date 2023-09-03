@@ -885,6 +885,22 @@ static void LS_PrepareState(lua_State* state)
 		};
 		LS_CreateGlobalUserData(state, "player", player_metatable);
 	}
+
+	// Load engine scripts
+	{
+		static const char* scripts[] =
+		{
+			"scripts/edicts.lua",
+			NULL
+		};
+
+		for (const char** scriptptr = scripts; *scriptptr != NULL; ++scriptptr)
+		{
+			lua_pushcfunction(state, LS_global_dofile);
+			lua_pushstring(state, *scriptptr);
+			lua_pcall(state, 1, 0, 0);
+		}
+	}
 }
 
 static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
