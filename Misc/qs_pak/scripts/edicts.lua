@@ -64,8 +64,6 @@ local function handlesecret(edict, current, choice)
 	return current
 end
 
--- > lua dofile('scripts/edicts.lua') secrets()
-
 function quake.secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
@@ -99,8 +97,6 @@ local function handlemonster(edict, current, choice)
 
 	return current + 1
 end
-
--- > lua dofile('scripts/edicts.lua') monsters()
 
 function quake.monsters(choice)
 	edicts:foreach(handlemonster, choice)
@@ -156,8 +152,6 @@ local function handleteleport(edict, current, choice)
 	return current
 end
 
--- > lua dofile('scripts/edicts.lua') teleports()
-
 function quake.teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
@@ -194,8 +188,6 @@ local function handledoor(edict, current, choice)
 
 	return current
 end
-
--- > lua dofile('scripts/edicts.lua') doors()
 
 function quake.doors(choice)
 	edicts:foreach(handledoor, choice)
