@@ -3,22 +3,22 @@
 -- Edict flags
 --
 
-FL_FLY            = 1
-FL_SWIM           = 2
-FL_CONVEYOR       = 4
-FL_CLIENT         = 8
-FL_INWATER        = 16
-FL_MONSTER        = 32
-FL_GODMODE        = 64
-FL_NOTARGET       = 128
-FL_ITEM           = 256
-FL_ONGROUND       = 512
-FL_PARTIALGROUND  = 1024  -- not all corners are valid
-FL_WATERJUMP      = 2048  -- player jumping out of water
-FL_JUMPRELEASED   = 4096  -- for jump debouncing
+quake.FL_FLY            = 1
+quake.FL_SWIM           = 2
+quake.FL_CONVEYOR       = 4
+quake.FL_CLIENT         = 8
+quake.FL_INWATER        = 16
+quake.FL_MONSTER        = 32
+quake.FL_GODMODE        = 64
+quake.FL_NOTARGET       = 128
+quake.FL_ITEM           = 256
+quake.FL_ONGROUND       = 512
+quake.FL_PARTIALGROUND  = 1024  -- not all corners are valid
+quake.FL_WATERJUMP      = 2048  -- player jumping out of water
+quake.FL_JUMPRELEASED   = 4096  -- for jump debouncing
 
-DOOR_GOLD_KEY = 8
-DOOR_SILVER_KEY = 16
+quake.DOOR_GOLD_KEY   = 8
+quake.DOOR_SILVER_KEY = 16
 
 
 --
@@ -80,7 +80,7 @@ local function handlemonster(edict, current, choice)
 	health = edict.health
 
 	if flags and health then
-		ismonster = math.tointeger(flags) & FL_MONSTER == FL_MONSTER
+		ismonster = flags & quake.FL_MONSTER ~= 0
 		isalive = health > 0
 
 		if not ismonster or not isalive then
@@ -176,9 +176,9 @@ local function handledoor(edict, current, choice)
 
 		if edict.touch == 'secret_touch()' then
 			info = '(secret)'
-		elseif edict.spawnflags & DOOR_GOLD_KEY ~= 0 then
+		elseif edict.spawnflags & quake.DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
-		elseif edict.spawnflags & DOOR_SILVER_KEY ~= 0 then
+		elseif edict.spawnflags & quake.DOOR_SILVER_KEY ~= 0 then
 			info = '(silver key)'
 		end
 
