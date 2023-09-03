@@ -176,9 +176,9 @@ local function handledoor(edict, current, choice)
 
 		if edict.touch == 'secret_touch()' then
 			info = '(secret)'
-		elseif edict.flags & DOOR_GOLD_KEY ~= 0 then
+		elseif edict.spawnflags & DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
-		elseif edict.flags & DOOR_SILVER_KEY ~= 0 then
+		elseif edict.spawnflags & DOOR_SILVER_KEY ~= 0 then
 			info = '(silver key)'
 		end
 
