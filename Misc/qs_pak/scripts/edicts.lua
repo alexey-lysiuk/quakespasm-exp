@@ -66,7 +66,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') secrets()
 
-function secrets(choice)
+function quake.secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
 
@@ -102,7 +102,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') monsters()
 
-function monsters(choice)
+function quake.monsters(choice)
 	edicts:foreach(handlemonster, choice)
 end
 
@@ -158,7 +158,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') teleports()
 
-function teleports(choice)
+function quake.teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
 
@@ -197,7 +197,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') doors()
 
-function doors(choice)
+function quake.doors(choice)
 	edicts:foreach(handledoor, choice)
 end
 
@@ -215,7 +215,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') references()
 
-function references(target, choice)
+function quake.references(target, choice)
 	-- edicts:foreach(handlereference, choice)
 
 	if not target or target == '' then

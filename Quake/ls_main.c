@@ -33,6 +33,7 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 const char* ED_GetFieldNameByOffset(int offset);
 
 static lua_State* ls_state;
+static const char* ls_namespace = "quake";
 
 
 //
@@ -900,6 +901,10 @@ static lua_State* LS_GetState(void)
 		LS_CreateGlobalUserData(state, "player", player_metatable);
 	}
 
+	// Register our namespace for script
+	lua_createtable(state, 0, 16);
+	lua_setglobal(state, ls_namespace);
+
 	// Load engine scripts
 	{
 		static const char* scripts[] =
@@ -987,8 +992,9 @@ qboolean LS_ConsoleCommand(void)
 	qboolean result = false;
 
 	lua_State* state = LS_GetState();
+	lua_getglobal(state, ls_namespace);
 
-	if (lua_getglobal(state, Cmd_Argv(0)) == LUA_TFUNCTION)
+	if (lua_getfield(state, -1, Cmd_Argv(0)) == LUA_TFUNCTION)
 	{
 		int argc = Cmd_Argc();
 
@@ -1006,6 +1012,8 @@ qboolean LS_ConsoleCommand(void)
 			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
 	}
 
+	lua_pop(state, 1);  // remove namespace table
+
 	return result;
 }
 
@@ -1014,14 +1022,12 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 	size_t partlen = strlen(partial);
 	lua_State* state = LS_GetState();
 
-	lua_pushglobaltable(state);
+	lua_getglobal(state, ls_namespace);
 	lua_pushnil(state);
 
 	while (lua_next(state, -2) != 0)
 	{
-		// TODO: find better way to skip globals from base library
-
-		if (lua_type(state, -1) == LUA_TFUNCTION && !lua_iscfunction(state, -1))
+		if (lua_type(state, -1) == LUA_TFUNCTION)
 		{
 			const char* name = lua_tostring(state, -2);
 			assert(name);
@@ -1033,7 +1039,7 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 		lua_pop(state, 1);  // remove value, keep name for next iteration
 	}
 
-	lua_pop(state, 1);  // remove global table
+	lua_pop(state, 1);  // remove namespace table
 }
 
 #endif // USE_LUA_SCRIPTING
