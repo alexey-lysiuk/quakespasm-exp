@@ -42,30 +42,32 @@ const char* ED_GetFieldNameByOffset(int offset);
 static int LS_Vec3GetComponent(lua_State* state, int index)
 {
 	int comptype = lua_type(state, index);
-	int component;
+	int component = -1;
 
 	if (comptype == LUA_TSTRING)
 	{
 		const char* compstr = lua_tostring(state, 2);
 		assert(compstr);
 
-		if (strcmp(compstr, "x") == 0)
-			component = 0;
-		else if (strcmp(compstr, "y") == 0)
-			component = 1;
-		else if (strcmp(compstr, "z") == 0)
-			component = 2;
-		else
-			luaL_error(state, "Invalid vec3_t component '%s'", compstr);
+		char compchar = compstr[0];
+
+		if (compchar != '\0' && compstr[1] == '\0')
+			component = compchar - 'x';
+
+		if (component < 0 || component > 2)
+			luaL_error(state, "Invalid vec3 component '%s'", compstr);
 	}
 	else if (comptype == LUA_TNUMBER)
+	{
 		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
+
+		if (component < 0 || component > 2)
+			luaL_error(state, "vec3 component %d is out of range [1..3]", component + 1);  // on Lua side, indices start with 1
+	}
 	else
-		luaL_error(state, "Invalid type %d of vec3_t component", comptype);
+		luaL_error(state, "Invalid type %s of vec3 component", lua_typename(state, comptype));
 
-	if (component < 0 || component >= 3)
-		luaL_error(state, "vec3_t component %d is out of range [1..3]", component + 1);  // on Lua side, indices start with 1
-
+	assert(component >= 0 && component <= 2);
 	return component;
 }
 
