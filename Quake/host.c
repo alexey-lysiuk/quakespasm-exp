@@ -850,7 +850,7 @@ void Host_Init (void)
 	SV_Init ();
 
 #ifdef USE_LUA_SCRIPTING
-	extern void LS_Init (void);
+	void LS_Init (void);
 	LS_Init ();
 #endif // USE_LUA_SCRIPTING
 
@@ -932,6 +932,11 @@ void Host_Shutdown(void)
 	scr_disabled_for_loading = true;
 
 	Host_WriteConfiguration ();
+
+#ifdef USE_LUA_SCRIPTING
+	void LS_Shutdown (void);
+	LS_Shutdown ();
+#endif // USE_LUA_SCRIPTING
 
 	NET_Shutdown ();
 

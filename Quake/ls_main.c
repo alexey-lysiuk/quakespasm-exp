@@ -32,6 +32,8 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, e
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
 
+static lua_State* ls_state;
+
 
 //
 // Expose vec3_t as 'vec3' userdata
@@ -712,21 +714,27 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = (char*)Hunk_AllocName(length, filename);
+	char* script = malloc(length);
 	assert(script);
 
 	int bytesread = Sys_FileRead(handle, script, length);
 	COM_CloseFile(handle);
 
-	if (bytesread != length)
+	int result;
+
+	if (bytesread == length)
+		result = luaL_loadbufferx(state, script, length, filename, mode);
+	else
 	{
 		lua_pushfstring(state,
 			"error while reading Lua script '%s', read %d bytes instead of %d",
 			filename, bytesread, length);
-		return LUA_ERRFILE;
+		result = LUA_ERRFILE;
 	}
 
-	return luaL_loadbufferx(state, script, length, filename, mode);
+	free(script);
+
+	return result;
 }
 
 static int LS_global_dofile(lua_State* state)
@@ -795,24 +803,12 @@ static int LS_global_print(lua_State* state)
 
 	return 0;
 }
-
-static int ls_hunk_lowmark;
-
-static void LS_FreeMemory(void)
-{
-	assert(ls_hunk_lowmark > 0);
-	Hunk_FreeToLowMark(ls_hunk_lowmark);
-	ls_hunk_lowmark = 0;
-}
-
 static int LS_global_panic(lua_State* state)
 {
 	const char* message = lua_tostring(state, -1);
 
 	if (!message)
 		message = "unknown error";
-
-	LS_FreeMemory();
 
 	Host_Error("%s", message);
 
@@ -842,37 +838,13 @@ static void LS_CreateGlobalUserData(lua_State* state, const char* name, const lu
 	lua_pop(state, 1);  // remove userdata
 }
 
-static void* LS_global_alloc(void* userdata, void* ptr, size_t oldsize, size_t newsize)
+static lua_State* LS_GetState(void)
 {
-	(void)userdata;
+	if (ls_state)
+		return ls_state;
 
-	if (newsize == 0)
-	{
-		// Free memory, this means "do nothing" for hunk memory
-		return NULL;
-	}
-	else if (ptr == NULL)
-	{
-		// Allocate memory
-		void* newptr = Hunk_Alloc(newsize);
-		assert(newptr);
-		return newptr;
-	}
-	else if (oldsize < newsize)
-	{
-		// Reallocate memory, do it only when new size is bigger than old
-		void* newptr = Hunk_Alloc(newsize);
-		assert(newptr);
-		memcpy(newptr, ptr, oldsize);
-		return newptr;
-	}
-
-	return ptr;
-}
-
-static lua_State* LS_PrepareState(void)
-{
-	lua_State* state = lua_newstate(LS_global_alloc, NULL);
+	// TODO: memory allocation via Z_Malloc() / Z_Realloc() / Z_Free()
+	lua_State* state = luaL_newstate();
 	assert(state);
 
 	LS_InitStandardLibraries(state);
@@ -935,6 +907,7 @@ static lua_State* LS_PrepareState(void)
 		}
 	}
 
+	ls_state = state;
 	return state;
 }
 
@@ -949,17 +922,16 @@ static void LS_ReportError(lua_State* state)
 
 static void LS_Exec_f(void)
 {
-	ls_hunk_lowmark = Hunk_LowMark();
-
 	int argc = Cmd_Argc();
 
 	if (argc > 1)
 	{
-		lua_State* state = LS_PrepareState();
+		lua_State* state = LS_GetState();
 
 		const char* args = Cmd_Args();
 		assert(args);
 
+		char* scriptcopy;
 		const char* script;
 		size_t scriptlength = strlen(args);
 		qboolean removequotes = argc == 2 && scriptlength > 2 && args[0] == '"' && args[scriptlength - 1] == '"';
@@ -969,13 +941,16 @@ static void LS_Exec_f(void)
 			// Special case of lua CCMD invocation with one argument wrapped with double quotes
 			// Remove these quotes, and pass remaining sctring as script code
 			scriptlength -= 2;
-			char* scriptcopy = Hunk_Alloc(scriptlength + 1);
+			scriptcopy = malloc(scriptlength + 1);
 			strncpy(scriptcopy, args + 1, scriptlength);
 			scriptcopy[scriptlength] = '\0';
 			script = scriptcopy;
 		}
 		else
+		{
+			scriptcopy = NULL;
 			script = args;
+		}
 
 		int status = luaL_loadbuffer(state, script, scriptlength, "script");
 
@@ -985,12 +960,10 @@ static void LS_Exec_f(void)
 		if (status != LUA_OK)
 			LS_ReportError(state);
 
-		lua_close(state);
+		free(scriptcopy);
 	}
 	else
 		Con_SafePrintf("Running %s\n", LUA_RELEASE);
-
-	LS_FreeMemory();
 }
 
 void LS_Init(void)
@@ -998,12 +971,20 @@ void LS_Init(void)
 	Cmd_AddCommand("lua", LS_Exec_f);
 }
 
+void LS_Shutdown(void)
+{
+	if (!ls_state)
+		return;
+
+	lua_close(ls_state);
+	ls_state = NULL;
+}
+
 qboolean LS_ConsoleCommand(void)
 {
-	ls_hunk_lowmark = Hunk_LowMark();
 	qboolean result = false;
 
-	lua_State* state = LS_PrepareState();
+	lua_State* state = LS_GetState();
 
 	if (lua_getglobal(state, Cmd_Argv(0)) == LUA_TFUNCTION)
 	{
@@ -1022,9 +1003,6 @@ qboolean LS_ConsoleCommand(void)
 		else
 			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
 	}
-
-	lua_close(state);
-	LS_FreeMemory();
 
 	return result;
 }
