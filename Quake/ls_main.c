@@ -1007,4 +1007,31 @@ qboolean LS_ConsoleCommand(void)
 	return result;
 }
 
+void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
+{
+	size_t partlen = strlen(partial);
+	lua_State* state = LS_GetState();
+
+	lua_pushglobaltable(state);
+	lua_pushnil(state);
+
+	while (lua_next(state, -2) != 0)
+	{
+		// TODO: find better way to skip globals from base library
+
+		if (lua_type(state, -1) == LUA_TFUNCTION && !lua_iscfunction(state, -1))
+		{
+			const char* name = lua_tostring(state, -2);
+			assert(name);
+
+			if (Q_strncmp(partial, name, partlen) == 0)
+				addtolist(name, "command");
+		}
+
+		lua_pop(state, 1);  // remove value, keep name for next iteration
+	}
+
+	lua_pop(state, 1);  // remove global table
+}
+
 #endif // USE_LUA_SCRIPTING
