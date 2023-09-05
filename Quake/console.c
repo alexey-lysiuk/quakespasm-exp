@@ -923,7 +923,7 @@ void BuildTabList (const char *partial)
 
 #ifdef USE_LUA_SCRIPTING
 	void LS_BuildTabList (const char *partial, void (*addtolist) (const char* name, const char* type));
-	LS_BuildTabList(partial, AddToTabList);
+	LS_BuildTabList (partial, AddToTabList);
 #endif // USE_LUA_SCRIPTING
 }
 
