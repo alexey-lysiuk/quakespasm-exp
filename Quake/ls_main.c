@@ -838,6 +838,15 @@ static void LS_CreateGlobalUserData(lua_State* state, const char* name, const lu
 	lua_pop(state, 1);  // remove userdata
 }
 
+static void LS_ReportError(lua_State* state)
+{
+	Con_SafePrintf("Error while executing Lua script\n");
+
+	const char* errormessage = lua_tostring(state, -1);
+	if (errormessage)
+		Con_SafePrintf("%s\n", errormessage);
+}
+
 static lua_State* LS_GetState(void)
 {
 	if (ls_state)
@@ -903,21 +912,14 @@ static lua_State* LS_GetState(void)
 		{
 			lua_pushcfunction(state, LS_global_dofile);
 			lua_pushstring(state, *scriptptr);
-			lua_pcall(state, 1, 0, 0);
+
+			if (lua_pcall(state, 1, 0, 0) != LUA_OK)
+				LS_ReportError(state);
 		}
 	}
 
 	ls_state = state;
 	return state;
-}
-
-static void LS_ReportError(lua_State* state)
-{
-	Con_SafePrintf("Error while executing Lua script\n");
-
-	const char* errormessage = lua_tostring(state, -1);
-	if (errormessage)
-		Con_SafePrintf("%s\n", errormessage);
 }
 
 static void LS_Exec_f(void)
