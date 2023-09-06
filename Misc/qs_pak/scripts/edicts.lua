@@ -67,8 +67,6 @@ local function handlesecret(edict, current, choice)
 	return current
 end
 
--- > lua dofile('scripts/edicts.lua') secrets()
-
 function secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
@@ -102,8 +100,6 @@ local function handlemonster(edict, current, choice)
 
 	return current + 1
 end
-
--- > lua dofile('scripts/edicts.lua') monsters()
 
 function monsters(choice)
 	edicts:foreach(handlemonster, choice)
@@ -158,8 +154,6 @@ local function handleteleport(edict, current, choice)
 
 	return current
 end
-
--- > lua dofile('scripts/edicts.lua') teleports()
 
 function teleports(choice)
 	edicts:foreach(handleteleport, choice)
