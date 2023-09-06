@@ -994,6 +994,8 @@ qboolean LS_ConsoleCommand(void)
 	qboolean result = false;
 
 	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
 
 	lua_getglobal(state, ls_console_name);
 
@@ -1014,6 +1016,11 @@ qboolean LS_ConsoleCommand(void)
 		else
 			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
 	}
+	else
+		lua_pop(state, 1);  // remove nil
+
+	lua_pop(state, 1);  // remove console namespace table
+	assert(lua_gettop(state) == 0);
 
 	return result;
 }
@@ -1021,7 +1028,10 @@ qboolean LS_ConsoleCommand(void)
 void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
 {
 	size_t partlen = strlen(partial);
+
 	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
 
 	lua_getglobal(state, ls_console_name);
 	lua_pushnil(state);
@@ -1040,7 +1050,8 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 		lua_pop(state, 1);  // remove value, keep name for next iteration
 	}
 
-	lua_pop(state, 1);  // remove global table
+	lua_pop(state, 1);  // remove console namespace table
+	assert(lua_gettop(state) == 0);
 }
 
 #endif // USE_LUA_SCRIPTING
