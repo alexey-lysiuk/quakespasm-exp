@@ -846,6 +846,8 @@ static void LS_ReportError(lua_State* state)
 	const char* errormessage = lua_tostring(state, -1);
 	if (errormessage)
 		Con_SafePrintf("%s\n", errormessage);
+
+	lua_pop(state, 1);  // remove error message
 }
 
 static lua_State* LS_GetState(void)
