@@ -3,7 +3,7 @@
 -- Edict flags
 --
 
-quake.edictflags =
+edictflags =
 {
 	FL_FLY            = 1,
 	FL_SWIM           = 2,
@@ -67,9 +67,11 @@ local function handlesecret(edict, current, choice)
 	return current
 end
 
-function quake.secrets(choice)
+local function secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
+
+console.addcommand('secrets', secrets)
 
 
 --
@@ -81,7 +83,7 @@ local function handlemonster(edict, current, choice)
 	health = edict.health
 
 	if flags and health then
-		ismonster = flags & quake.edictflags.FL_MONSTER ~= 0
+		ismonster = flags & edictflags.FL_MONSTER ~= 0
 		isalive = health > 0
 
 		if not ismonster or not isalive then
@@ -101,7 +103,7 @@ local function handlemonster(edict, current, choice)
 	return current + 1
 end
 
-function quake.monsters(choice)
+function monsters(choice)
 	edicts:foreach(handlemonster, choice)
 end
 
@@ -155,7 +157,7 @@ local function handleteleport(edict, current, choice)
 	return current
 end
 
-function quake.teleports(choice)
+function teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
 
@@ -173,9 +175,9 @@ local function handledoor(edict, current, choice)
 
 		if edict.touch == 'secret_touch()' then
 			info = '(secret)'
-		elseif edict.spawnflags & quake.edictflags.DOOR_GOLD_KEY ~= 0 then
+		elseif edict.spawnflags & edictflags.DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
-		elseif edict.spawnflags & quake.edictflags.DOOR_SILVER_KEY ~= 0 then
+		elseif edict.spawnflags & edictflags.DOOR_SILVER_KEY ~= 0 then
 			info = '(silver key)'
 		end
 
@@ -192,7 +194,7 @@ local function handledoor(edict, current, choice)
 	return current
 end
 
-function quake.doors(choice)
+function doors(choice)
 	edicts:foreach(handledoor, choice)
 end
 
@@ -210,7 +212,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') references()
 
-function quake.references(target, choice)
+function references(target, choice)
 	-- edicts:foreach(handlereference, choice)
 
 	if not target or target == '' then
