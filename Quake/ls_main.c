@@ -33,6 +33,7 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 const char* ED_GetFieldNameByOffset(int offset);
 
 static lua_State* ls_state;
+static qboolean ls_resetstate;
 static const char* ls_console_name = "console";
 
 
@@ -850,9 +851,20 @@ static void LS_ReportError(lua_State* state)
 	lua_pop(state, 1);  // remove error message
 }
 
+static int LS_global_resetstate(lua_State* state)
+{
+	ls_resetstate = true;
+	return 0;
+}
+
 static lua_State* LS_GetState(void)
 {
-	if (ls_state)
+	if (ls_resetstate)
+	{
+		lua_close(ls_state);
+		ls_resetstate = false;
+	}
+	else if (ls_state)
 		return ls_state;
 
 	// TODO: memory allocation via Z_Malloc() / Z_Realloc() / Z_Free()
@@ -906,6 +918,10 @@ static lua_State* LS_GetState(void)
 	// Register namespace for console commands
 	lua_createtable(state, 0, 16);
 	lua_setglobal(state, ls_console_name);
+
+	// Register function to recreate Lua state from scratch
+	lua_pushcfunction(state, LS_global_resetstate);
+	lua_setglobal(state, "resetstate");
 
 	// Load engine scripts
 	{
