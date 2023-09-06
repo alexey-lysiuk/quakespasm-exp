@@ -67,7 +67,7 @@ local function handlesecret(edict, current, choice)
 	return current
 end
 
-function secrets(choice)
+function console.secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
 
@@ -101,7 +101,7 @@ local function handlemonster(edict, current, choice)
 	return current + 1
 end
 
-function monsters(choice)
+function console.monsters(choice)
 	edicts:foreach(handlemonster, choice)
 end
 
@@ -155,6 +155,6 @@ local function handleteleport(edict, current, choice)
 	return current
 end
 
-function teleports(choice)
+function console.teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
