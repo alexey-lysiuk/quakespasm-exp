@@ -811,6 +811,12 @@ void	Cmd_ExecuteString (const char *text, cmd_source_t src)
 	if (Cvar_Command ())
 		return;
 
+#ifdef USE_LUA_SCRIPTING
+	qboolean LS_ConsoleCommand (void);
+	if (LS_ConsoleCommand())
+		return;
+#endif // USE_LUA_SCRIPTING
+
 	Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 }
 

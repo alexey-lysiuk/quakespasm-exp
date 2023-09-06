@@ -920,6 +920,11 @@ void BuildTabList (const char *partial)
 	for (alias=cmd_alias ; alias ; alias=alias->next)
 		if (!Q_strncmp (partial, alias->name, len))
 			AddToTabList (alias->name, "alias");
+
+#ifdef USE_LUA_SCRIPTING
+	void LS_BuildTabList (const char *partial, void (*addtolist) (const char* name, const char* type));
+	LS_BuildTabList (partial, AddToTabList);
+#endif // USE_LUA_SCRIPTING
 }
 
 /*

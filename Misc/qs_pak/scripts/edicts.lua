@@ -67,11 +67,9 @@ local function handlesecret(edict, current, choice)
 	return current
 end
 
-local function secrets(choice)
+function console.secrets(choice)
 	edicts:foreach(handlesecret, choice)
 end
-
-console.addcommand('secrets', secrets)
 
 
 --
@@ -103,7 +101,7 @@ local function handlemonster(edict, current, choice)
 	return current + 1
 end
 
-function monsters(choice)
+function console.monsters(choice)
 	edicts:foreach(handlemonster, choice)
 end
 
@@ -157,7 +155,7 @@ local function handleteleport(edict, current, choice)
 	return current
 end
 
-function teleports(choice)
+function console.teleports(choice)
 	edicts:foreach(handleteleport, choice)
 end
 
@@ -194,7 +192,7 @@ local function handledoor(edict, current, choice)
 	return current
 end
 
-function doors(choice)
+function console.doors(choice)
 	edicts:foreach(handledoor, choice)
 end
 
@@ -212,7 +210,7 @@ end
 
 -- > lua dofile('scripts/edicts.lua') references()
 
-function references(target, choice)
+function console.references(target, choice)
 	-- edicts:foreach(handlereference, choice)
 
 	if not target or target == '' then

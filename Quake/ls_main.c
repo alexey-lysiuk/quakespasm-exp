@@ -34,11 +34,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 
 static lua_State* ls_state;
 static qboolean ls_resetstate;
-
 static const char* ls_console_name = "console";
-static const char* ls_console_commands_name = "commands";
-
-static lua_State* LS_GetState(void);
 
 
 //
@@ -859,53 +855,6 @@ static int LS_global_resetstate(lua_State* state)
 	return 0;
 }
 
-static void LS_PushConsoleCommandsTable(lua_State* state)
-{
-	lua_getglobal(state, ls_console_name);
-	luaL_checktype(state, -1, LUA_TTABLE);
-	lua_getfield(state, -1, ls_console_commands_name);
-	luaL_checktype(state, -1, LUA_TTABLE);
-	lua_remove(state, -2);
-}
-
-static void LS_ConsoleCommand(void)
-{
-	lua_State* state = LS_GetState();
-	assert(state);
-
-	LS_PushConsoleCommandsTable(state);
-	lua_getfield(state, -1, Cmd_Argv(0));
-
-	int argc = Cmd_Argc();
-
-	if (lua_checkstack(state, argc))
-	{
-		for (int i = 1; i < argc; ++i)
-			lua_pushstring(state, Cmd_Argv(i));
-
-		if (lua_pcall(state, argc - 1, 0, 0) != LUA_OK)
-			LS_ReportError(state);
-	}
-	else
-		Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
-
-	lua_pop(state, 1);  // remove namespace table
-}
-
-static int LS_global_addcommand(lua_State* state)
-{
-	const char* name = luaL_checkstring(state, 1);
-	luaL_checktype(state, 2, LUA_TFUNCTION);
-
-	LS_PushConsoleCommandsTable(state);
-
-	lua_pushvalue(state, 2);
-	lua_setfield(state, -2, name);
-
-	Cmd_AddCommand(name, LS_ConsoleCommand);
-	return 0;
-}
-
 static lua_State* LS_GetState(void)
 {
 	if (ls_resetstate)
@@ -965,15 +914,13 @@ static lua_State* LS_GetState(void)
 		LS_CreateGlobalUserData(state, "player", player_metatable);
 	}
 
+	// Register namespace for console commands
+	lua_createtable(state, 0, 16);
+	lua_setglobal(state, ls_console_name);
+
+	// Register function to recreate Lua state from scratch
 	lua_pushcfunction(state, LS_global_resetstate);
 	lua_setglobal(state, "resetstate");
-
-	lua_createtable(state, 0, 2);
-	lua_pushcfunction(state, LS_global_addcommand);
-	lua_setfield(state, -2, "addcommand");
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, ls_console_commands_name);
-	lua_setglobal(state, ls_console_name);
 
 	// Load engine scripts
 	{
@@ -1055,6 +1002,61 @@ void LS_Shutdown(void)
 
 	lua_close(ls_state);
 	ls_state = NULL;
+}
+
+qboolean LS_ConsoleCommand(void)
+{
+	qboolean result = false;
+
+	lua_State* state = LS_GetState();
+	lua_getglobal(state, ls_console_name);
+
+	if (lua_getfield(state, -1, Cmd_Argv(0)) == LUA_TFUNCTION)
+	{
+		int argc = Cmd_Argc();
+
+		if (lua_checkstack(state, argc))
+		{
+			for (int i = 1; i < argc; ++i)
+				lua_pushstring(state, Cmd_Argv(i));
+
+			if (lua_pcall(state, argc - 1, 0, 0) == LUA_OK)
+				result = true;
+			else
+				LS_ReportError(state);
+		}
+		else
+			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
+	}
+
+	lua_pop(state, 1);  // remove console namespace table
+
+	return result;
+}
+
+void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
+{
+	size_t partlen = strlen(partial);
+	lua_State* state = LS_GetState();
+
+	lua_getglobal(state, ls_console_name);
+	lua_pushnil(state);
+
+	while (lua_next(state, -2) != 0)
+	{
+		if (lua_type(state, -1) == LUA_TFUNCTION)
+		{
+			const char* name = lua_tostring(state, -2);
+			assert(name);
+
+			if (Q_strncmp(partial, name, partlen) == 0)
+				addtolist(name, "command");
+		}
+
+		lua_pop(state, 1);  // remove value, keep name for next iteration
+	}
+
+	lua_pop(state, 1);  // remove console namespace table
 }
 
 #endif // USE_LUA_SCRIPTING
