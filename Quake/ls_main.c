@@ -1047,25 +1047,16 @@ static void LS_Exec_f(void)
 		const char* args = Cmd_Args();
 		assert(args);
 
-		char* scriptcopy;
-		const char* script;
+		const char* script = args;
 		size_t scriptlength = strlen(args);
 		qboolean removequotes = argc == 2 && scriptlength > 2 && args[0] == '"' && args[scriptlength - 1] == '"';
 
 		if (removequotes)
 		{
 			// Special case of lua CCMD invocation with one argument wrapped with double quotes
-			// Remove these quotes, and pass remaining sctring as script code
+			// Skip these quotes, and pass remaining sctring as script code
 			scriptlength -= 2;
-			scriptcopy = malloc(scriptlength + 1);
-			strncpy(scriptcopy, args + 1, scriptlength);
-			scriptcopy[scriptlength] = '\0';
-			script = scriptcopy;
-		}
-		else
-		{
-			scriptcopy = NULL;
-			script = args;
+			script += 1;
 		}
 
 		int status = luaL_loadbuffer(state, script, scriptlength, "script");
@@ -1077,8 +1068,6 @@ static void LS_Exec_f(void)
 			LS_ReportError(state);
 
 		assert(lua_gettop(state) == 0);
-
-		free(scriptcopy);
 	}
 	else
 		Con_SafePrintf("Running %s\n", LUA_RELEASE);
