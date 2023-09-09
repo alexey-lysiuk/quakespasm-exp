@@ -338,7 +338,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_entity:
-		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)) + 1);  // on Lua side, indices start with 1
 		break;
 
 	case ev_field:
