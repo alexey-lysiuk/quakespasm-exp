@@ -558,7 +558,10 @@ static int LS_global_edicts_foreach(lua_State* state)
 static int LS_global_edicts_index(lua_State* state)
 {
 	if (!sv.active)
-		luaL_error(state, "Game is not running");
+	{
+		lua_pushnil(state);
+		return 1;
+	}
 
 	int indextype = lua_type(state, 2);
 
