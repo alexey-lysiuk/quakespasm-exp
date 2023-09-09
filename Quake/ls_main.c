@@ -433,7 +433,7 @@ static int LS_value_edict_index(lua_State* state)
 			lua_pushnil(state);  // no such index
 	}
 	else
-		luaL_error(state, "Invalid type %d of edict index", indextype);
+		luaL_error(state, "Invalid type %s of edict index", lua_typename(state, indextype));
 
 	return 1;
 }
@@ -546,7 +546,7 @@ static int LS_global_edicts_foreach(lua_State* state)
 			lua_pop(state, 1);  // remove result
 		}
 		else
-			luaL_error(state, "Invalid type returned from edicts.foreach() iteration function");
+			luaL_error(state, "Invalid type %s returned from edicts.foreach() iteration function", lua_typename(state, restype));
 	}
 
 	return 0;
@@ -592,7 +592,7 @@ static int LS_global_edicts_index(lua_State* state)
 			lua_pushnil(state);
 	}
 	else
-		luaL_error(state, "Invalid type %d of edicts key", indextype);
+		luaL_error(state, "Invalid type %s of edicts key", lua_typename(state, indextype));
 
 	return 1;
 }
