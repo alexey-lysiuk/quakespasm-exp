@@ -153,6 +153,25 @@ static int LS_value_vec3_unm(lua_State* state)
 	return 1;
 }
 
+// Pushes result of 'vec3' value concatenation with some other value
+static int LS_value_vec3_concat(lua_State* state)
+{
+	lua_getglobal(state, "tostring");
+	lua_pushvalue(state, -1);  // copy function for the second call
+	lua_pushvalue(state, 1);  // the first argument
+	lua_call(state, 1, 1);
+
+	lua_insert(state, 3);  // swap result and tostring() function
+	lua_pushvalue(state, 2);  // the second argument
+	lua_call(state, 1, 1);
+
+	const char* left = lua_tostring(state, 3);
+	const char* right = lua_tostring(state, 4);
+	lua_pushfstring(state, "%s%s", left, right);
+
+	return 1;
+}
+
 // Pushes result of two 'vec3' values comparison for equality
 static int LS_value_vec3_eq(lua_State* state)
 {
@@ -215,6 +234,7 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 		{ "__unm", LS_value_vec3_unm },
 
 		// Other functions
+		{ "__concat", LS_value_vec3_concat },
 		{ "__eq", LS_value_vec3_eq },
 		{ "__index", LS_value_vec3_index },
 		{ "__newindex", LS_value_vec3_newindex },
