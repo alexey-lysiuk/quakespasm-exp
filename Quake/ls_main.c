@@ -85,7 +85,7 @@ static void* LS_GetValueFromTypedUserData(lua_State* state, int index, LS_UserDa
 		memcpy(actual, result, 4);
 		actual[4] = '\0';
 
-		luaL_error(state, "Invalid userdata type: expected %s, got %s", expected, actual);
+		luaL_error(state, "Invalid userdata type, expected '%s', got '%s'", expected, actual);
 	}
 
 	result += 1;
@@ -1041,6 +1041,8 @@ static void LS_Exec_f(void)
 	if (argc > 1)
 	{
 		lua_State* state = LS_GetState();
+		assert(state);
+		assert(lua_gettop(state) == 0);
 
 		const char* args = Cmd_Args();
 		assert(args);
@@ -1073,6 +1075,8 @@ static void LS_Exec_f(void)
 
 		if (status != LUA_OK)
 			LS_ReportError(state);
+
+		assert(lua_gettop(state) == 0);
 
 		free(scriptcopy);
 	}
