@@ -37,6 +37,36 @@ static qboolean ls_resetstate;
 static const char* ls_console_name = "console";
 
 
+typedef union
+{
+	struct { char ch[4]; };
+	int fourcc;
+} LS_UserDataType;
+
+static const LS_UserDataType ls_edict_type = { {'e', 'd', 'c', 't'} };
+static const LS_UserDataType ls_vec3_type = { {'v', 'e', 'c', '3'} };
+
+static void* LS_CreateTypedUserData(lua_State* state, LS_UserDataType type)
+{
+	size_t size;
+
+	if (type.fourcc == ls_edict_type.fourcc)
+		size = sizeof(int);  // edict index
+	else if (type.fourcc == ls_vec3_type.fourcc)
+		size = sizeof(vec3_t);
+	else
+	{
+		assert(false);
+		size = 0;
+	}
+
+	void* result = lua_newuserdatauv(state, size, 0);
+	assert(result);
+
+	return result;
+}
+
+
 //
 // Expose vec3_t as 'vec3' userdata
 //
