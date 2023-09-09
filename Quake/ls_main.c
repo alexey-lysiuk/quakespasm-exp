@@ -153,6 +153,25 @@ static int LS_value_vec3_unm(lua_State* state)
 	return 1;
 }
 
+// Pushes result of 'vec3' value concatenation with some other value
+static int LS_value_vec3_concat(lua_State* state)
+{
+	lua_getglobal(state, "tostring");
+	lua_pushvalue(state, -1);  // copy function for the second call
+	lua_pushvalue(state, 1);  // the first argument
+	lua_call(state, 1, 1);
+
+	lua_insert(state, 3);  // swap result and tostring() function
+	lua_pushvalue(state, 2);  // the second argument
+	lua_call(state, 1, 1);
+
+	const char* left = lua_tostring(state, 3);
+	const char* right = lua_tostring(state, 4);
+	lua_pushfstring(state, "%s%s", left, right);
+
+	return 1;
+}
+
 // Pushes result of two 'vec3' values comparison for equality
 static int LS_value_vec3_eq(lua_State* state)
 {
@@ -215,6 +234,7 @@ static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 		{ "__unm", LS_value_vec3_unm },
 
 		// Other functions
+		{ "__concat", LS_value_vec3_concat },
 		{ "__eq", LS_value_vec3_eq },
 		{ "__index", LS_value_vec3_index },
 		{ "__newindex", LS_value_vec3_newindex },
@@ -338,7 +358,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_entity:
-		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)) + 1);  // on Lua side, indices start with 1
 		break;
 
 	case ev_field:
@@ -433,7 +453,7 @@ static int LS_value_edict_index(lua_State* state)
 			lua_pushnil(state);  // no such index
 	}
 	else
-		luaL_error(state, "Invalid type %d of edict index", indextype);
+		luaL_error(state, "Invalid type %s of edict index", lua_typename(state, indextype));
 
 	return 1;
 }
@@ -546,7 +566,7 @@ static int LS_global_edicts_foreach(lua_State* state)
 			lua_pop(state, 1);  // remove result
 		}
 		else
-			luaL_error(state, "Invalid type returned from edicts.foreach() iteration function");
+			luaL_error(state, "Invalid type %s returned from edicts.foreach() iteration function", lua_typename(state, restype));
 	}
 
 	return 0;
@@ -558,7 +578,10 @@ static int LS_global_edicts_foreach(lua_State* state)
 static int LS_global_edicts_index(lua_State* state)
 {
 	if (!sv.active)
-		luaL_error(state, "Game is not running");
+	{
+		lua_pushnil(state);
+		return 1;
+	}
 
 	int indextype = lua_type(state, 2);
 
@@ -589,7 +612,7 @@ static int LS_global_edicts_index(lua_State* state)
 			lua_pushnil(state);
 	}
 	else
-		luaL_error(state, "Invalid type %d of edicts key", indextype);
+		luaL_error(state, "Invalid type %s of edicts key", lua_typename(state, indextype));
 
 	return 1;
 }
@@ -847,6 +870,8 @@ static void LS_ReportError(lua_State* state)
 	const char* errormessage = lua_tostring(state, -1);
 	if (errormessage)
 		Con_SafePrintf("%s\n", errormessage);
+
+	lua_pop(state, 1);  // remove error message
 }
 
 static int LS_global_resetstate(lua_State* state)
@@ -860,7 +885,6 @@ static lua_State* LS_GetState(void)
 	if (ls_resetstate)
 	{
 		lua_close(ls_state);
-		ls_state = NULL;
 		ls_resetstate = false;
 	}
 	else if (ls_state)
@@ -1009,6 +1033,9 @@ qboolean LS_ConsoleCommand(void)
 	qboolean result = false;
 
 	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
+
 	lua_getglobal(state, ls_console_name);
 
 	if (lua_getfield(state, -1, Cmd_Argv(0)) == LUA_TFUNCTION)
@@ -1028,8 +1055,11 @@ qboolean LS_ConsoleCommand(void)
 		else
 			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
 	}
+	else
+		lua_pop(state, 1);  // remove nil
 
 	lua_pop(state, 1);  // remove console namespace table
+	assert(lua_gettop(state) == 0);
 
 	return result;
 }
@@ -1037,7 +1067,10 @@ qboolean LS_ConsoleCommand(void)
 void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
 {
 	size_t partlen = strlen(partial);
+
 	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
 
 	lua_getglobal(state, ls_console_name);
 	lua_pushnil(state);
@@ -1057,6 +1090,7 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 	}
 
 	lua_pop(state, 1);  // remove console namespace table
+	assert(lua_gettop(state) == 0);
 }
 
 #endif // USE_LUA_SCRIPTING
