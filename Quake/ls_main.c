@@ -385,10 +385,11 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 {
 	luaL_checktype(state, 1, LUA_TUSERDATA);
 
-	edict_t** edptr = lua_touserdata(state, 1);
-	assert(edptr);
+	int* indexptr = lua_touserdata(state, 1);
+	assert(indexptr);
 
-	return *edptr;
+	int index = *indexptr;
+	return (index >= 0 && index < sv.num_edicts) ? EDICT_NUM(index) : NULL;
 }
 
 // Pushes value of edict field by its name
@@ -396,10 +397,12 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 static int LS_value_edict_index(lua_State* state)
 {
 	edict_t* ed = LS_GetEdictFromUserData(state);
-	assert(ed);
 
-	if (ed->free)
+	if (ed == NULL || ed->free)
+	{
 		lua_pushnil(state);  // TODO: default value instead of nil
+		return 1;
+	}
 
 	const char* name;
 	etype_t type;
@@ -462,25 +465,29 @@ static int LS_value_edict_index(lua_State* state)
 static int LS_value_edict_pairs(lua_State* state)
 {
 	edict_t* ed = LS_GetEdictFromUserData(state);
-	assert(ed);
+	qboolean valid = ed != NULL;
 
 	lua_getglobal(state, "next");
-	lua_createtable(state, 0, 16);
+	lua_createtable(state, 0, valid ? 16 : 0);
 
-	for (int i = 1; i < progs->numfielddefs; ++i)
+	if (valid)
 	{
-		const char* name;
-		etype_t type;
-		const eval_t* value;
-
-		if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+		for (int i = 1; i < progs->numfielddefs; ++i)
 		{
-			LS_PushEdictFieldValue(state, type, value);
-			lua_setfield(state, -2, name);
+			const char* name;
+			etype_t type;
+			const eval_t* value;
+
+			if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+			{
+				LS_PushEdictFieldValue(state, type, value);
+				lua_setfield(state, -2, name);
+			}
 		}
 	}
 
 	lua_pushnil(state);
+
 	return 3;
 }
 
@@ -488,9 +495,13 @@ static int LS_value_edict_pairs(lua_State* state)
 static int LS_value_edict_tostring(lua_State* state)
 {
 	edict_t* ed = LS_GetEdictFromUserData(state);
-	assert(ed);
 
-	int index = NUM_FOR_EDICT(ed) + 1;  // on Lua side, indices start with 1
+	if (ed == NULL)
+	{
+		lua_pushstring(state, "invalid edict");
+		return 1;
+	}
+
 	const char* description;
 
 	if (ed->free)
@@ -506,7 +517,9 @@ static int LS_value_edict_tostring(lua_State* state)
 			description = "<unnamed>";
 	}
 
+	int index = NUM_FOR_EDICT(ed) + 1;  // on Lua side, indices start with 1
 	lua_pushfstring(state, "edict %d: %s", index, description);
+
 	return 1;
 }
 
@@ -602,10 +615,10 @@ static int LS_global_edicts_index(lua_State* state)
 
 		if (index > 0 && index <= sv.num_edicts)
 		{
-			// Create edict userdata, and assign edict_t* to it
-			edict_t** edictptr = lua_newuserdatauv(state, sizeof(edict_t*), 0);
-			assert(edictptr);
-			*edictptr = EDICT_NUM(index - 1);
+			// Create edict userdata, and assign edict index to it
+			int* indexptr = lua_newuserdatauv(state, sizeof(int), 0);
+			assert(indexptr);
+			*indexptr = index - 1;  // on C side, indices start with 0
 			LS_SetEdictMetaTable(state);
 		}
 		else
