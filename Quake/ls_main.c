@@ -1047,6 +1047,48 @@ static lua_State* LS_GetState(void)
 	return state;
 }
 
+typedef struct
+{
+	const char* script;
+	const char* scriptlength;
+	size_t partindex;
+} LS_ReaderData;
+
+static const char* LS_global_reader(lua_State* state, void* data, size_t* size)
+{
+	LS_ReaderData* readerdata = data;
+	assert(readerdata);
+
+	static const char* prefix = "return ";
+	static const char* suffix = ";";
+
+	const char* result;
+
+	switch (readerdata->partindex)
+	{
+		case 0:
+			*size = strlen(prefix);
+			result = prefix;
+			break;
+		case 1:
+			*size = readerdata->scriptlength;
+			result = readerdata->script;
+			break;
+		case 2:
+			*size = strlen(suffix);
+			result = suffix;
+			break;
+		default:
+			*size = 0;
+			result = NULL;
+			break;
+	}
+
+	++readerdata->partindex;
+
+	return result;
+}
+
 static void LS_Exec_f(void)
 {
 	int argc = Cmd_Argc();
@@ -1072,7 +1114,8 @@ static void LS_Exec_f(void)
 			script += 1;
 		}
 
-		int status = luaL_loadbuffer(state, script, scriptlength, "script");
+		LS_ReaderData data = { script, scriptlength, 0 };
+		int status = lua_load(state, LS_global_reader, &data, "script", NULL);
 
 		if (status == LUA_OK)
 			status = lua_pcall(state, 0, 0, 0);
