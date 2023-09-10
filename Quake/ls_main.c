@@ -165,10 +165,7 @@ static int LS_value_vec3_concat(lua_State* state)
 	lua_pushvalue(state, 2);  // the second argument
 	lua_call(state, 1, 1);
 
-	const char* left = lua_tostring(state, 3);
-	const char* right = lua_tostring(state, 4);
-	lua_pushfstring(state, "%s%s", left, right);
-
+	lua_concat(state, 2);
 	return 1;
 }
 
