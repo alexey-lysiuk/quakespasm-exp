@@ -984,6 +984,8 @@ static void LS_Exec_f(void)
 	if (argc > 1)
 	{
 		lua_State* state = LS_GetState();
+		assert(state);
+		assert(lua_gettop(state) == 0);
 
 		const char* args = Cmd_Args();
 		assert(args);
@@ -1016,6 +1018,8 @@ static void LS_Exec_f(void)
 
 		if (status != LUA_OK)
 			LS_ReportError(state);
+
+		assert(lua_gettop(state) == 0);
 
 		free(scriptcopy);
 	}
