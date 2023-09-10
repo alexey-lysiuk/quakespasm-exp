@@ -943,20 +943,45 @@ static int LS_global_resetstate(lua_State* state)
 	return 0;
 }
 
+static struct
+{
+	size_t size;
+	size_t allocs;
+	size_t frees;
+} ls_memstats;
+
 static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
 {
 	(void)ud;
-	(void)osize;
+
+	if (ptr != NULL)
+		ls_memstats.size -= osize;
+
+	ls_memstats.size += nsize;
 
 	if (nsize == 0)
 	{
-		if (ptr)
+		if (ptr != NULL)
+		{
 			Z_Free(ptr);
+			++ls_memstats.frees;
+		}
 
 		return NULL;
 	}
 	else
+	{
+		if (ptr == NULL)
+			++ls_memstats.allocs;
+
 		return Z_Realloc(ptr, nsize);
+	}
+}
+
+static int LS_global_printmemstats(lua_State* state)
+{
+	Con_SafePrintf("Size: %zu bytes, allocations: %zu, frees: %zu\n", ls_memstats.size, ls_memstats.allocs, ls_memstats.frees);
+	return 0;
 }
 
 static lua_State* LS_GetState(void)
@@ -964,6 +989,11 @@ static lua_State* LS_GetState(void)
 	if (ls_resetstate)
 	{
 		lua_close(ls_state);
+
+		assert(ls_memstats.size == 0);
+		assert(ls_memstats.allocs == ls_memstats.frees);
+		memset(&ls_memstats, 0, sizeof ls_memstats);
+
 		ls_resetstate = false;
 	}
 	else if (ls_state)
@@ -1023,6 +1053,8 @@ static lua_State* LS_GetState(void)
 	// Register function to recreate Lua state from scratch
 	lua_pushcfunction(state, LS_global_resetstate);
 	lua_setglobal(state, "resetstate");
+	lua_pushcfunction(state, LS_global_printmemstats);
+	lua_setglobal(state, "printmemstats");
 
 	// Load engine scripts
 	{
