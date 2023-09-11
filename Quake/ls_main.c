@@ -755,7 +755,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = malloc(length);
+	char* script = Z_Malloc(length);
 	assert(script);
 
 	int bytesread = Sys_FileRead(handle, script, length);
@@ -773,7 +773,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		result = LUA_ERRFILE;
 	}
 
-	free(script);
+	Z_Free(script);
 
 	return result;
 }
