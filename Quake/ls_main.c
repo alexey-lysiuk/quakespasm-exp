@@ -573,46 +573,6 @@ static void LS_SetEdictMetaTable(lua_State* state)
 // Expose sv.edicts as 'edicts' global table
 //
 
-static int LS_global_edicts_foreach(lua_State* state)
-{
-	if (!sv.active)
-		return 0;
-
-	luaL_checktype(state, 1, LUA_TTABLE);
-	luaL_checktype(state, 2, LUA_TFUNCTION);
-
-	lua_Integer target = luaL_optinteger(state, 3, 0);
-	lua_Integer current = 1;
-
-	for (int i = 0; i < sv.num_edicts; ++i)
-	{
-		edict_t* ed = EDICT_NUM(i);
-
-		if (ed->free)
-			continue;
-
-		lua_pushvalue(state, 2);  // iteration function to call
-		lua_geti(state, 1, i + 1);  // get edict by index, [1..num_edicts]
-		lua_pushinteger(state, current);
-		lua_pushinteger(state, target);
-		lua_call(state, 3, 1);
-
-		int restype = lua_type(state, -1);
-
-		if (restype == LUA_TNIL)
-			break;
-		else if (restype == LUA_TNUMBER)
-		{
-			current = lua_tointeger(state, -1);
-			lua_pop(state, 1);  // remove result
-		}
-		else
-			luaL_error(state, "Invalid type %s returned from edicts.foreach() iteration function", lua_typename(state, restype));
-	}
-
-	return 0;
-}
-
 // Pushes either
 // * edict userdata by its integer index, [1..num_edicts]
 // * method of 'edicts' userdata by its name
@@ -626,17 +586,7 @@ static int LS_global_edicts_index(lua_State* state)
 
 	int indextype = lua_type(state, 2);
 
-	if (indextype == LUA_TSTRING)
-	{
-		const char* key = lua_tostring(state, 2);
-		assert(key);
-
-		if (strcmp(key, "foreach") == 0)
-			lua_pushcfunction(state, LS_global_edicts_foreach);
-		else
-			luaL_error(state, "Unknown edicts key '%s'", key);
-	}
-	else if (indextype == LUA_TNUMBER)
+	if (indextype == LUA_TNUMBER)
 	{
 		// Check edict index, [1..num_edicts], for validity
 		lua_Integer index = lua_tointeger(state, 2);
