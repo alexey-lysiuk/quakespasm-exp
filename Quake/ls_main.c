@@ -1114,13 +1114,38 @@ static void LS_Exec_f(void)
 			script += 1;
 		}
 
-		LS_ReaderData data = { script, scriptlength, 0 };
-		int status = lua_load(state, LS_global_reader, &data, "script", NULL);
+		static const char* scriptname = "script";
+		static const char* scriptmode = NULL;
 
-		if (status == LUA_OK)
-			status = lua_pcall(state, 0, 0, 0);
+		LS_ReaderData data = { script, scriptlength, 0 };
+		int status = lua_load(state, LS_global_reader, &data, scriptname, scriptmode);
 
 		if (status != LUA_OK)
+		{
+			lua_pop(state, 1);  // remove error message
+			status = luaL_loadbufferx(state, script, scriptlength, scriptname, scriptmode);
+		}
+
+		if (status == LUA_OK)
+			status = lua_pcall(state, 0, LUA_MULTRET, 0);
+
+		if (status == LUA_OK)
+		{
+			int resultcount = lua_gettop(state);
+
+			if (resultcount > 0)
+			{
+				luaL_checkstack(state, LUA_MINSTACK, "too many results to print");
+
+				// Print all results
+				lua_pushcfunction(state, LS_global_print);
+				lua_insert(state, 1);
+				lua_pcall(state, resultcount, 0, 0);
+
+				lua_settop(state, 0);  // clear stack
+			}
+		}
+		else
 			LS_ReportError(state);
 
 		assert(lua_gettop(state) == 0);
