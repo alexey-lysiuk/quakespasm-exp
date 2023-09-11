@@ -570,7 +570,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 
 
 //
-// Expose sv.edicts as 'edicts' global userdata
+// Expose sv.edicts as 'edicts' global table
 //
 
 static int LS_global_edicts_foreach(lua_State* state)
@@ -578,7 +578,7 @@ static int LS_global_edicts_foreach(lua_State* state)
 	if (!sv.active)
 		return 0;
 
-	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checktype(state, 1, LUA_TTABLE);
 	luaL_checktype(state, 2, LUA_TFUNCTION);
 
 	lua_Integer target = luaL_optinteger(state, 3, 0);
@@ -666,7 +666,7 @@ static int LS_global_edicts_len(lua_State* state)
 
 
 //
-// Expose 'player' userdata with corresponding helper functions
+// Expose 'player' global table with corresponding helper functions
 //
 
 static int LS_global_player_setpos(lua_State* state)
