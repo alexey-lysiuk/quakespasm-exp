@@ -801,7 +801,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = malloc(length);
+	char* script = Z_Malloc(length);
 	assert(script);
 
 	int bytesread = Sys_FileRead(handle, script, length);
@@ -819,7 +819,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		result = LUA_ERRFILE;
 	}
 
-	free(script);
+	Z_Free(script);
 
 	return result;
 }
@@ -942,6 +942,22 @@ static int LS_global_resetstate(lua_State* state)
 	return 0;
 }
 
+static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
+{
+	(void)ud;
+	(void)osize;
+
+	if (nsize == 0)
+	{
+		if (ptr)
+			Z_Free(ptr);
+
+		return NULL;
+	}
+	else
+		return Z_Realloc(ptr, nsize);
+}
+
 static lua_State* LS_GetState(void)
 {
 	if (ls_resetstate)
@@ -952,8 +968,7 @@ static lua_State* LS_GetState(void)
 	else if (ls_state)
 		return ls_state;
 
-	// TODO: memory allocation via Z_Malloc() / Z_Realloc() / Z_Free()
-	lua_State* state = luaL_newstate();
+	lua_State* state = lua_newstate(LS_alloc, NULL);
 	assert(state);
 
 	LS_InitStandardLibraries(state);
