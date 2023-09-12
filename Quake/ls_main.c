@@ -992,37 +992,32 @@ static int LS_global_printmemstats(lua_State* state)
 	return 0;
 }
 
-static lua_State* LS_GetState(void)
+static void LS_InitGlobalFunctions(lua_State* state)
 {
-	if (ls_resetstate)
-	{
-		lua_close(ls_state);
-
-		assert(ls_memstats.current == 0);
-		assert(ls_memstats.allocs == ls_memstats.frees);
-		memset(&ls_memstats, 0, sizeof ls_memstats);
-
-		ls_resetstate = false;
-	}
-	else if (ls_state)
-		return ls_state;
-
-	lua_State* state = lua_newstate(LS_alloc, NULL);
-	assert(state);
-
-	LS_InitStandardLibraries(state);
-
 	lua_atpanic(state, LS_global_panic);
 	lua_setwarnf(state, LS_global_warning, NULL);
 
-	// Replace global functions
-	lua_pushcfunction(state, LS_global_dofile);
-	lua_setglobal(state, "dofile");
-	lua_pushcfunction(state, LS_global_loadfile);
-	lua_setglobal(state, "loadfile");
-	lua_pushcfunction(state, LS_global_print);
-	lua_setglobal(state, "print");
+	static const luaL_Reg functions[] =
+	{
+		// Replaced global functions
+		{ "dofile", LS_global_dofile },
+		{ "loadfile", LS_global_loadfile },
+		{ "print", LS_global_print },
 
+		// Helper functions
+		{ "resetstate", LS_global_resetstate },
+		{ "printmemstats", LS_global_printmemstats },
+
+		{ NULL, NULL }
+	};
+
+	lua_pushglobaltable(state);
+	luaL_setfuncs(state, functions, 0);
+	lua_pop(state, 1);  // remove global table
+}
+
+static void LS_InitGlobalUserData(lua_State* state)
+{
 	// Create and register 'vec3' global userdata with helper functions for 'vec3' values
 	{
 		static const luaL_Reg vec3_metatable[] =
@@ -1053,34 +1048,53 @@ static lua_State* LS_GetState(void)
 		};
 		LS_CreateGlobalUserData(state, "player", player_metatable);
 	}
+}
+
+static void LS_LoadEngineScripts(lua_State* state)
+{
+	static const char* scripts[] =
+	{
+		"scripts/edicts.lua",
+		NULL
+	};
+
+	for (const char** scriptptr = scripts; *scriptptr != NULL; ++scriptptr)
+	{
+		lua_pushcfunction(state, LS_global_dofile);
+		lua_pushstring(state, *scriptptr);
+
+		if (lua_pcall(state, 1, 0, 0) != LUA_OK)
+			LS_ReportError(state);
+	}
+}
+
+static lua_State* LS_GetState(void)
+{
+	if (ls_resetstate)
+	{
+		lua_close(ls_state);
+
+		assert(ls_memstats.current == 0);
+		assert(ls_memstats.allocs == ls_memstats.frees);
+		memset(&ls_memstats, 0, sizeof ls_memstats);
+
+		ls_resetstate = false;
+	}
+	else if (ls_state)
+		return ls_state;
+
+	lua_State* state = lua_newstate(LS_alloc, NULL);
+	assert(state);
+
+	LS_InitStandardLibraries(state);
+	LS_InitGlobalFunctions(state);
+	LS_InitGlobalUserData(state);
 
 	// Register namespace for console commands
 	lua_createtable(state, 0, 16);
 	lua_setglobal(state, ls_console_name);
 
-	// Register function to recreate Lua state from scratch
-	lua_pushcfunction(state, LS_global_resetstate);
-	lua_setglobal(state, "resetstate");
-	lua_pushcfunction(state, LS_global_printmemstats);
-	lua_setglobal(state, "printmemstats");
-
-	// Load engine scripts
-	{
-		static const char* scripts[] =
-		{
-			"scripts/edicts.lua",
-			NULL
-		};
-
-		for (const char** scriptptr = scripts; *scriptptr != NULL; ++scriptptr)
-		{
-			lua_pushcfunction(state, LS_global_dofile);
-			lua_pushstring(state, *scriptptr);
-
-			if (lua_pcall(state, 1, 0, 0) != LUA_OK)
-				LS_ReportError(state);
-		}
-	}
+	LS_LoadEngineScripts(state);
 
 	ls_state = state;
 	return state;
