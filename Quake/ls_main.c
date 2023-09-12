@@ -813,6 +813,11 @@ static void LS_global_warning(void* ud, const char *msg, int tocont)
 	Con_SafePrintf("%s%s", msg, tocont ? "" : "\n");
 }
 
+static void LS_global_hook(lua_State* state, lua_Debug* ar)
+{
+	luaL_error(state, "infinite loop detected, aborting");
+}
+
 static void LS_ReportError(lua_State* state)
 {
 	Con_SafePrintf("Error while executing Lua script\n");
@@ -878,11 +883,6 @@ static int LS_global_printmemstats(lua_State* state)
 		"Frees  : %zu\n",
 		ls_memstats.current, ls_memstats.maximum, ls_memstats.allocs, ls_memstats.frees);
 	return 0;
-}
-
-static void LS_global_hook(lua_State* state, lua_Debug* ar)
-{
-	luaL_error(state, "infinite loop detected, aborting");
 }
 
 static void LS_InitGlobalFunctions(lua_State* state)
