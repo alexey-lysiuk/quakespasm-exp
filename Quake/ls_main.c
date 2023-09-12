@@ -43,8 +43,8 @@ typedef union
 	int fourcc;
 } LS_UserDataType;
 
-static const LS_UserDataType ls_edict_type = { {'e', 'd', 'c', 't'} };
-static const LS_UserDataType ls_vec3_type = { {'v', 'e', 'c', '3'} };
+static const LS_UserDataType ls_edict_type = { {{'e', 'd', 'c', 't'}} };
+static const LS_UserDataType ls_vec3_type = { {{'v', 'e', 'c', '3'}} };
 
 static void* LS_CreateTypedUserData(lua_State* state, LS_UserDataType type)
 {
