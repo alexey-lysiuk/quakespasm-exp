@@ -1015,7 +1015,7 @@ static lua_State* LS_GetState(void)
 typedef struct
 {
 	const char* script;
-	const char* scriptlength;
+	size_t scriptlength;
 	size_t partindex;
 } LS_ReaderData;
 
@@ -1024,32 +1024,37 @@ static const char* LS_global_reader(lua_State* state, void* data, size_t* size)
 	LS_ReaderData* readerdata = data;
 	assert(readerdata);
 
-	static const char* prefix = "return ";
-	static const char* suffix = ";";
+	static const char prefix[] = "return ";
+	static const size_t prefixsize = sizeof prefix - 1;
+
+	static const char suffix[] = ";";
+	static const size_t suffixsize = sizeof suffix - 1;
 
 	const char* result;
+	size_t resultsize;
 
 	switch (readerdata->partindex)
 	{
 		case 0:
-			*size = strlen(prefix);
 			result = prefix;
+			resultsize = prefixsize;
 			break;
 		case 1:
-			*size = readerdata->scriptlength;
 			result = readerdata->script;
+			resultsize = readerdata->scriptlength;
 			break;
 		case 2:
-			*size = strlen(suffix);
 			result = suffix;
+			resultsize = suffixsize;
 			break;
 		default:
-			*size = 0;
 			result = NULL;
+			resultsize = 0;
 			break;
 	}
 
 	++readerdata->partindex;
+	*size = resultsize;
 
 	return result;
 }
