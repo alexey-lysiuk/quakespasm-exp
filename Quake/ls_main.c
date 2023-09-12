@@ -614,6 +614,41 @@ static int LS_global_edicts_len(lua_State* state)
 	return 1;
 }
 
+static int LS_global_edicts_isfree(lua_State* state)
+{
+	qboolean isfree = true;
+
+	if (sv.active)
+	{
+		int indextype = lua_type(state, 1);
+
+		if (indextype == LUA_TNUMBER)
+		{
+			// Check edict index, [1..num_edicts], for validity
+			lua_Integer index = lua_tointeger(state, 1);
+
+			if (index > 0 && index <= sv.num_edicts)
+			{
+				edict_t* edict = EDICT_NUM(index - 1);  // on C side, indices start with zero
+				assert(edict);
+
+				isfree = edict->free;
+			}
+		}
+		else if (indextype == LUA_TUSERDATA)
+		{
+			edict_t* edict = LS_GetEdictFromUserData(state);
+			if (edict)
+				isfree = edict->free;
+		}
+		else
+			luaL_error(state, "Invalid type %s of edicts key", lua_typename(state, indextype));
+	}
+
+	lua_pushboolean(state, isfree);
+	return 1;
+}
+
 
 //
 // Expose 'player' global table with corresponding helper functions
@@ -939,6 +974,9 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_newtable(state);
 		lua_pushvalue(state, -1);  // copy for lua_setmetatable()
 		lua_setglobal(state, "edicts");
+
+		lua_pushcfunction(state, LS_global_edicts_isfree);
+		lua_setfield(state, -2, "isfree");
 
 		luaL_newmetatable(state, "edicts");
 		luaL_setfuncs(state, edicts_metatable, 0);
