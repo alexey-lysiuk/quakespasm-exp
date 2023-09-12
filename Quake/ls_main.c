@@ -832,7 +832,8 @@ static int LS_global_resetstate(lua_State* state)
 
 static struct
 {
-	size_t size;
+	size_t current;
+	size_t maximum;
 	size_t allocs;
 	size_t frees;
 } ls_memstats;
@@ -842,9 +843,12 @@ static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
 	(void)ud;
 
 	if (ptr != NULL)
-		ls_memstats.size -= osize;
+		ls_memstats.current -= osize;
 
-	ls_memstats.size += nsize;
+	ls_memstats.current += nsize;
+
+	if (ls_memstats.current > ls_memstats.maximum)
+		ls_memstats.maximum = ls_memstats.current;
 
 	if (nsize == 0)
 	{
@@ -867,7 +871,12 @@ static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
 
 static int LS_global_printmemstats(lua_State* state)
 {
-	Con_SafePrintf("Size: %zu bytes, allocations: %zu, frees: %zu\n", ls_memstats.size, ls_memstats.allocs, ls_memstats.frees);
+	Con_SafePrintf(
+		"Current: %zu bytes\n"
+		"Maximum: %zu bytes\n"
+		"Allocs : %zu\n"
+		"Frees  : %zu\n",
+		ls_memstats.current, ls_memstats.maximum, ls_memstats.allocs, ls_memstats.frees);
 	return 0;
 }
 
@@ -982,7 +991,7 @@ static lua_State* LS_GetState(void)
 	{
 		lua_close(ls_state);
 
-		assert(ls_memstats.size == 0);
+		assert(ls_memstats.current == 0);
 		assert(ls_memstats.allocs == ls_memstats.frees);
 		memset(&ls_memstats, 0, sizeof ls_memstats);
 
