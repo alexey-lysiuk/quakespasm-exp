@@ -358,29 +358,6 @@ static int LS_global_vec3_dot(lua_State* state)
 	return 1;
 }
 
-// Pushes helper function by its name
-static int LS_global_vec3_index(lua_State* state)
-{
-	luaL_checktype(state, 1, LUA_TUSERDATA);
-	luaL_checkstring(state, 2);
-
-	const char* key = lua_tostring(state, 2);
-	assert(key);
-
-	if (strcmp(key, "new") == 0)
-		lua_pushcfunction(state, LS_global_vec3_new);
-	else if (strcmp(key, "mid") == 0)
-		lua_pushcfunction(state, LS_global_vec3_mid);
-	else if (strcmp(key, "cross") == 0)
-		lua_pushcfunction(state, LS_global_vec3_cross);
-	else if (strcmp(key, "dot") == 0)
-		lua_pushcfunction(state, LS_global_vec3_dot);
-	else
-		luaL_error(state, "Unknown vec3 function '%s'", key);
-
-	return 1;
-}
-
 
 //
 // Expose edict_t as 'edict' userdata
@@ -592,7 +569,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 
 
 //
-// Expose sv.edicts as 'edicts' global userdata
+// Expose sv.edicts as 'edicts' global table
 //
 
 static int LS_global_edicts_foreach(lua_State* state)
@@ -600,7 +577,7 @@ static int LS_global_edicts_foreach(lua_State* state)
 	if (!sv.active)
 		return 0;
 
-	luaL_checktype(state, 1, LUA_TUSERDATA);
+	luaL_checktype(state, 1, LUA_TTABLE);
 	luaL_checktype(state, 2, LUA_TFUNCTION);
 
 	lua_Integer target = luaL_optinteger(state, 3, 0);
@@ -688,7 +665,7 @@ static int LS_global_edicts_len(lua_State* state)
 
 
 //
-// Expose 'player' userdata with corresponding helper functions
+// Expose 'player' global table with corresponding helper functions
 //
 
 static int LS_global_player_setpos(lua_State* state)
@@ -739,30 +716,6 @@ static int LS_global_player_noclip(lua_State* state)
 {
 	return LS_PlayerCheatCommand(state, "noclip");
 }
-
-// Pushes player helper function by its name
-static int LS_global_player_index(lua_State* state)
-{
-	luaL_checktype(state, 1, LUA_TUSERDATA);
-	luaL_checkstring(state, 2);
-
-	const char* key = lua_tostring(state, 2);
-	assert(key);
-
-	if (strcmp(key, "setpos") == 0)
-		lua_pushcfunction(state, LS_global_player_setpos);
-	else if (strcmp(key, "god") == 0)
-		lua_pushcfunction(state, LS_global_player_god);
-	else if (strcmp(key, "notarget") == 0)
-		lua_pushcfunction(state, LS_global_player_notarget);
-	else if (strcmp(key, "noclip") == 0)
-		lua_pushcfunction(state, LS_global_player_noclip);
-	else
-		luaL_error(state, "Unknown player function '%s'", key);
-
-	return 1;
-}
-
 
 
 static void LS_InitStandardLibraries(lua_State* state)
@@ -909,22 +862,6 @@ static void LS_global_warning(void* ud, const char *msg, int tocont)
 	Con_SafePrintf("%s%s", msg, tocont ? "" : "\n");
 }
 
-static void LS_CreateGlobalUserData(lua_State* state, const char* name, const luaL_Reg* metatable)
-{
-	lua_newuserdatauv(state, 0, 0);
-	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
-	lua_setglobal(state, name);
-
-	char metatablename[64];
-	q_snprintf(metatablename, sizeof(metatablename), "global_%s", name);
-
-	luaL_newmetatable(state, metatablename);
-	luaL_setfuncs(state, metatable, 0);
-	lua_setmetatable(state, -2);
-
-	lua_pop(state, 1);  // remove userdata
-}
-
 static void LS_ReportError(lua_State* state)
 {
 	Con_SafePrintf("Error while executing Lua script\n");
@@ -1016,19 +953,24 @@ static void LS_InitGlobalFunctions(lua_State* state)
 	lua_pop(state, 1);  // remove global table
 }
 
-static void LS_InitGlobalUserData(lua_State* state)
+static void LS_InitGlobalTables(lua_State* state)
 {
-	// Create and register 'vec3' global userdata with helper functions for 'vec3' values
+	// Create and register 'vec3' table with helper functions for 'vec3' values
 	{
-		static const luaL_Reg vec3_metatable[] =
+		static const luaL_Reg functions[] =
 		{
-			{ "__index", LS_global_vec3_index },
+			{ "cross", LS_global_vec3_cross },
+			{ "dot", LS_global_vec3_dot },
+			{ "mid", LS_global_vec3_mid },
+			{ "new", LS_global_vec3_new },
 			{ NULL, NULL }
 		};
-		LS_CreateGlobalUserData(state, "vec3", vec3_metatable);
+
+		luaL_newlib(state, functions);
+		lua_setglobal(state, "vec3");
 	}
 
-	// Create and register 'edicts' global userdata
+	// Create and register 'edicts' table
 	{
 		static const luaL_Reg edicts_metatable[] =
 		{
@@ -1036,18 +978,36 @@ static void LS_InitGlobalUserData(lua_State* state)
 			{ "__len", LS_global_edicts_len },
 			{ NULL, NULL }
 		};
-		LS_CreateGlobalUserData(state, "edicts", edicts_metatable);
+
+		lua_newtable(state);
+		lua_pushvalue(state, -1);  // copy for lua_setmetatable()
+		lua_setglobal(state, "edicts");
+
+		luaL_newmetatable(state, "edicts");
+		luaL_setfuncs(state, edicts_metatable, 0);
+		lua_setmetatable(state, -2);
+
+		lua_pop(state, 1);  // remove table
 	}
 
-	// Create and register 'player' global userdata
+	// Create and register 'player' table
 	{
-		static const luaL_Reg player_metatable[] =
+		static const luaL_Reg functions[] =
 		{
-			{ "__index", LS_global_player_index },
+			{ "god", LS_global_player_god },
+			{ "noclip", LS_global_player_noclip },
+			{ "notarget", LS_global_player_notarget },
+			{ "setpos", LS_global_player_setpos },
 			{ NULL, NULL }
 		};
-		LS_CreateGlobalUserData(state, "player", player_metatable);
+
+		luaL_newlib(state, functions);
+		lua_setglobal(state, "player");
 	}
+
+	// Register namespace for console commands
+	lua_createtable(state, 0, 16);
+	lua_setglobal(state, ls_console_name);
 }
 
 static void LS_LoadEngineScripts(lua_State* state)
@@ -1088,12 +1048,7 @@ static lua_State* LS_GetState(void)
 
 	LS_InitStandardLibraries(state);
 	LS_InitGlobalFunctions(state);
-	LS_InitGlobalUserData(state);
-
-	// Register namespace for console commands
-	lua_createtable(state, 0, 16);
-	lua_setglobal(state, ls_console_name);
-
+	LS_InitGlobalTables(state);
 	LS_LoadEngineScripts(state);
 
 	ls_state = state;
