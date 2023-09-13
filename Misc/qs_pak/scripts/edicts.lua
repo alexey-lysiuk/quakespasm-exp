@@ -24,6 +24,20 @@ edictflags =
 }
 
 
+function edicts.foreach(func, choice)
+	choice = choice and math.tointeger(choice) or 0
+	local current = 1
+
+	for _, edict in ipairs(edicts) do
+		current = func(edict, current, choice)
+
+		if not current then
+			break
+		end
+	end
+end
+
+
 --
 -- Secrets
 --
@@ -68,7 +82,7 @@ local function handlesecret(edict, current, choice)
 end
 
 function console.secrets(choice)
-	edicts:foreach(handlesecret, choice)
+	edicts.foreach(handlesecret, choice)
 end
 
 
@@ -102,7 +116,7 @@ local function handlemonster(edict, current, choice)
 end
 
 function console.monsters(choice)
-	edicts:foreach(handlemonster, choice)
+	edicts.foreach(handlemonster, choice)
 end
 
 
@@ -156,5 +170,5 @@ local function handleteleport(edict, current, choice)
 end
 
 function console.teleports(choice)
-	edicts:foreach(handleteleport, choice)
+	edicts.foreach(handleteleport, choice)
 end
