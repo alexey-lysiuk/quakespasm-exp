@@ -1127,13 +1127,13 @@ qboolean LS_ConsoleCommand(void)
 			for (int i = 1; i < argc; ++i)
 				lua_pushstring(state, Cmd_Argv(i));
 
-			if (lua_pcall(state, argc - 1, 0, 0) == LUA_OK)
-				result = true;
-			else
+			if (lua_pcall(state, argc - 1, 0, 0) != LUA_OK)
 				LS_ReportError(state);
 		}
 		else
 			Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
+
+		result = true;  // command has been processed
 	}
 	else
 		lua_pop(state, 1);  // remove nil
