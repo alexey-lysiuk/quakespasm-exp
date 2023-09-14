@@ -1005,6 +1005,53 @@ static lua_State* LS_GetState(void)
 	return state;
 }
 
+typedef struct
+{
+	const char* script;
+	size_t scriptlength;
+	size_t partindex;
+} LS_ReaderData;
+
+static const char* LS_global_reader(lua_State* state, void* data, size_t* size)
+{
+	LS_ReaderData* readerdata = data;
+	assert(readerdata);
+
+	static const char prefix[] = "return ";
+	static const size_t prefixsize = sizeof prefix - 1;
+
+	static const char suffix[] = ";";
+	static const size_t suffixsize = sizeof suffix - 1;
+
+	const char* result;
+	size_t resultsize;
+
+	switch (readerdata->partindex)
+	{
+		case 0:
+			result = prefix;
+			resultsize = prefixsize;
+			break;
+		case 1:
+			result = readerdata->script;
+			resultsize = readerdata->scriptlength;
+			break;
+		case 2:
+			result = suffix;
+			resultsize = suffixsize;
+			break;
+		default:
+			result = NULL;
+			resultsize = 0;
+			break;
+	}
+
+	++readerdata->partindex;
+	*size = resultsize;
+
+	return result;
+}
+
 static void LS_Exec_f(void)
 {
 	int argc = Cmd_Argc();
@@ -1030,12 +1077,38 @@ static void LS_Exec_f(void)
 			script += 1;
 		}
 
-		int status = luaL_loadbuffer(state, script, scriptlength, "script");
+		static const char* scriptname = "script";
+		static const char* scriptmode = NULL;
 
-		if (status == LUA_OK)
-			status = lua_pcall(state, 0, 0, 0);
+		LS_ReaderData data = { script, scriptlength, 0 };
+		int status = lua_load(state, LS_global_reader, &data, scriptname, scriptmode);
 
 		if (status != LUA_OK)
+		{
+			lua_pop(state, 1);  // remove error message
+			status = luaL_loadbufferx(state, script, scriptlength, scriptname, scriptmode);
+		}
+
+		if (status == LUA_OK)
+			status = lua_pcall(state, 0, LUA_MULTRET, 0);
+
+		if (status == LUA_OK)
+		{
+			int resultcount = lua_gettop(state);
+
+			if (resultcount > 0)
+			{
+				luaL_checkstack(state, LUA_MINSTACK, "too many results to print");
+
+				// Print all results
+				lua_pushcfunction(state, LS_global_print);
+				lua_insert(state, 1);
+				lua_pcall(state, resultcount, 0, 0);
+
+				lua_settop(state, 0);  // clear stack
+			}
+		}
+		else
 			LS_ReportError(state);
 
 		assert(lua_gettop(state) == 0);
