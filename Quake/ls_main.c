@@ -515,7 +515,6 @@ static int LS_value_edict_pairs(lua_State* state)
 	}
 
 	lua_pushnil(state);
-
 	return 3;
 }
 
