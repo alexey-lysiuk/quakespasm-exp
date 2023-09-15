@@ -29,10 +29,12 @@ function edicts.foreach(func, choice)
 	local current = 1
 
 	for _, edict in ipairs(edicts) do
-		current = func(edict, current, choice)
+		if not edicts.isfree(edict) then
+			current = func(edict, current, choice)
 
-		if not current then
-			break
+			if not current then
+				break
+			end
 		end
 	end
 end
