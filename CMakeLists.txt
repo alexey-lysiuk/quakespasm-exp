@@ -130,6 +130,8 @@ set(COMMON_SOURCES
 	Quake/sv_phys.c
 	Quake/sv_user.c
 	Quake/sys.h
+	Quake/tlsf.c
+	Quake/tlsf.h
 	Quake/vid.h
 	Quake/view.c
 	Quake/view.h
