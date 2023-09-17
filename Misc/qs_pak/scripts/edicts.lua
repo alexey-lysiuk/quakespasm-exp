@@ -18,9 +18,17 @@ edictflags =
 	FL_PARTIALGROUND  = 1024,  -- not all corners are valid
 	FL_WATERJUMP      = 2048,  -- player jumping out of water
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
+}
 
+spawnflags
+{
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
+
+	NOT_EASY          = 256,
+	NOT_MEDIUM        = 512,
+	NOT_HARD          = 1024,
+	NOT_DEATHMATCH    = 2048,
 }
 
 
@@ -189,9 +197,9 @@ local function handledoor(edict, current, choice)
 
 		if edict.touch == 'secret_touch()' then
 			info = '(secret)'
-		elseif edict.spawnflags & edictflags.DOOR_GOLD_KEY ~= 0 then
+		elseif edict.spawnflags & spawnflags.DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
-		elseif edict.spawnflags & edictflags.DOOR_SILVER_KEY ~= 0 then
+		elseif edict.spawnflags & spawnflags.DOOR_SILVER_KEY ~= 0 then
 			info = '(silver key)'
 		end
 
