@@ -730,6 +730,8 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
+	assert(mode != NULL && mode[0] == 't' && mode[1] == '\0');
+
 	int handle;
 	int length = COM_OpenFile(filename, &handle, NULL);
 
@@ -767,7 +769,7 @@ static int LS_global_dofile(lua_State* state)
 	const char* filename = luaL_optstring(state, 1, NULL);
 	lua_settop(state, 1);
 
-	if (LS_LoadFile(state, filename, NULL) != LUA_OK)
+	if (LS_LoadFile(state, filename, "t") != LUA_OK)
 		return lua_error(state);
 
 	lua_call(state, 0, LUA_MULTRET);
@@ -777,9 +779,8 @@ static int LS_global_dofile(lua_State* state)
 static int LS_global_loadfile(lua_State* state)
 {
 	const char* filename = luaL_optstring(state, 1, NULL);
-	const char* mode = luaL_optstring(state, 2, NULL);
 	int env = !lua_isnone(state, 3) ? 3 : 0;  // 'env' index or 0 if no 'env'
-	int status = LS_LoadFile(state, filename, mode);
+	int status = LS_LoadFile(state, filename, "t");
 
 	if (status == LUA_OK)
 	{
@@ -919,16 +920,52 @@ static int LS_global_printmemstats(lua_State* state)
 	return 0;
 }
 
+static lua_CFunction ls_loadfunc;
+
+// Calls original load() function with mode explicitly set to text
+static int LS_global_load(lua_State* state)
+{
+	int argc = lua_gettop(state);
+
+	switch (argc)
+	{
+	case 0:
+		// don't care about erroneous call
+		break;
+
+	case 1:
+		lua_pushnil(state);  // add second argument if it's missing
+		// fall through
+
+	default:
+		lua_pushstring(state, "t");  // text mode only
+		if (argc > 2)
+			lua_replace(state, 3);  // replace mode if it was set
+		break;
+	}
+
+	assert(ls_loadfunc != NULL);
+	return ls_loadfunc(state);
+}
+
 static void LS_InitGlobalFunctions(lua_State* state)
 {
 	lua_atpanic(state, LS_global_panic);
 	lua_setwarnf(state, LS_global_warning, NULL);
 	lua_sethook(state, LS_global_hook, LUA_MASKCOUNT, 1 * 1024 * 1024);
 
+	lua_pushglobaltable(state);
+
+	// Save pointer to load() function
+	lua_getfield(state, 1, "load");
+	ls_loadfunc = lua_tocfunction(state, -1);
+	lua_pop(state, 1);  // remove function
+
 	static const luaL_Reg functions[] =
 	{
 		// Replaced global functions
 		{ "dofile", LS_global_dofile },
+		{ "load", LS_global_load },
 		{ "loadfile", LS_global_loadfile },
 		{ "print", LS_global_print },
 
@@ -939,7 +976,6 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	lua_pushglobaltable(state);
 	luaL_setfuncs(state, functions, 0);
 	lua_pop(state, 1);  // remove global table
 }
@@ -1122,7 +1158,7 @@ static void LS_Exec_f(void)
 		}
 
 		static const char* scriptname = "script";
-		static const char* scriptmode = NULL;
+		static const char* scriptmode = "t";
 
 		LS_ReaderData data = { script, scriptlength, 0 };
 		int status = lua_load(state, LS_global_reader, &data, scriptname, scriptmode);
