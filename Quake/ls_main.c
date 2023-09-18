@@ -934,7 +934,7 @@ static int LS_global_printmemstats(lua_State* state)
 	return 0;
 }
 
-static lua_CFunction ls_saved_load;
+static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
 static int LS_global_load(lua_State* state)
@@ -958,8 +958,8 @@ static int LS_global_load(lua_State* state)
 		break;
 	}
 
-	assert(ls_saved_load != NULL);
-	return ls_saved_load(state);
+	assert(ls_loadfunc != NULL);
+	return ls_loadfunc(state);
 }
 
 static void LS_InitGlobalFunctions(lua_State* state)
@@ -972,7 +972,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 
 	// Save pointer to load() function
 	lua_getfield(state, 1, "load");
-	ls_saved_load = lua_tocfunction(state, -1);
+	ls_loadfunc = lua_tocfunction(state, -1);
 	lua_pop(state, 1);  // remove function
 
 	static const luaL_Reg functions[] =
