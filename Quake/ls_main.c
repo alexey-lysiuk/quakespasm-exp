@@ -26,6 +26,7 @@
 #include "lauxlib.h"
 
 #include "quakedef.h"
+#include "tlsf.h"
 
 
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
@@ -35,6 +36,17 @@ const char* ED_GetFieldNameByOffset(int offset);
 static lua_State* ls_state;
 static qboolean ls_resetstate;
 static const char* ls_console_name = "console";
+
+static tlsf_t ls_memory;
+static const size_t ls_memorysize = 1024 * 1024;
+
+typedef struct
+{
+	size_t usedbytes;
+	size_t usedblocks;
+	size_t freebytes;
+	size_t freeblocks;
+} LS_MemoryStats;
 
 
 typedef union
@@ -741,7 +753,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = Z_Malloc(length);
+	char* script = tlsf_malloc(ls_memory, length);
 	assert(script);
 
 	int bytesread = Sys_FileRead(handle, script, length);
@@ -759,7 +771,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		result = LUA_ERRFILE;
 	}
 
-	Z_Free(script);
+	tlsf_free(ls_memory, script);
 
 	return result;
 }
@@ -870,53 +882,55 @@ static int LS_global_resetstate(lua_State* state)
 	return 0;
 }
 
-static struct
-{
-	size_t current;
-	size_t maximum;
-	size_t allocs;
-	size_t frees;
-} ls_memstats;
-
 static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
 {
 	(void)ud;
 
-	if (ptr != NULL)
-		ls_memstats.current -= osize;
-
-	ls_memstats.current += nsize;
-
-	if (ls_memstats.current > ls_memstats.maximum)
-		ls_memstats.maximum = ls_memstats.current;
-
 	if (nsize == 0)
 	{
 		if (ptr != NULL)
-		{
-			Z_Free(ptr);
-			++ls_memstats.frees;
-		}
+			tlsf_free(ls_memory, ptr);
 
 		return NULL;
 	}
 	else
-	{
-		if (ptr == NULL)
-			++ls_memstats.allocs;
+		return tlsf_realloc(ls_memory, ptr, nsize);
+}
 
-		return Z_Realloc(ptr, nsize);
+static void LS_MemoryStatsCollector(void* pointer, size_t size, int isused, void* user)
+{
+	(void)pointer;
+
+	LS_MemoryStats* stats = user;
+	assert(stats);
+
+	if (isused)
+	{
+		stats->usedbytes += size;
+		++stats->usedblocks;
+	}
+	else
+	{
+		stats->freebytes += size;
+		++stats->freeblocks;
 	}
 }
 
 static int LS_global_printmemstats(lua_State* state)
 {
-	Con_SafePrintf(
-		"Current: %zu bytes\n"
-		"Maximum: %zu bytes\n"
-		"Allocs : %zu\n"
-		"Frees  : %zu\n",
-		ls_memstats.current, ls_memstats.maximum, ls_memstats.allocs, ls_memstats.frees);
+	(void)state;
+
+	LS_MemoryStats stats;
+	memset(&stats, 0, sizeof stats);
+	tlsf_walk_pool(tlsf_get_pool(ls_memory), LS_MemoryStatsCollector, &stats);
+
+	size_t totalblocks = stats.usedblocks + stats.freeblocks;
+	size_t totalbytes = stats.usedbytes + stats.freebytes + tlsf_size() +
+		tlsf_pool_overhead() + tlsf_alloc_overhead() * (totalblocks - 1);
+
+	Con_SafePrintf("Used : %zu bytes, %zu blocks\nFree : %zu bytes, %zu blocks\nTotal: %zu bytes, %zu blocks\n",
+		stats.usedbytes, stats.usedblocks, stats.freebytes, stats.freeblocks, totalbytes, totalblocks);
+
 	return 0;
 }
 
@@ -1058,20 +1072,35 @@ static void LS_LoadEngineScripts(lua_State* state)
 	}
 }
 
+static void LS_CheckMemoryPool()
+{
+#ifndef NDEBUG
+	LS_MemoryStats stats;
+	memset(&stats, 0, sizeof stats);
+	tlsf_walk_pool(tlsf_get_pool(ls_memory), LS_MemoryStatsCollector, &stats);
+
+	assert(stats.usedbytes == 0);
+	assert(stats.usedblocks == 0);
+	assert(stats.freebytes + tlsf_size() + tlsf_pool_overhead() == ls_memorysize);
+	assert(stats.freeblocks == 1);
+#endif // !NDEBUG
+}
+
+
 static lua_State* LS_GetState(void)
 {
 	if (ls_resetstate)
 	{
 		lua_close(ls_state);
-
-		assert(ls_memstats.current == 0);
-		assert(ls_memstats.allocs == ls_memstats.frees);
-		memset(&ls_memstats, 0, sizeof ls_memstats);
-
 		ls_resetstate = false;
+
+		LS_CheckMemoryPool();
 	}
 	else if (ls_state)
 		return ls_state;
+
+	if (ls_memory == NULL)
+		ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
 
 	lua_State* state = lua_newstate(LS_alloc, NULL);
 	assert(state);
@@ -1209,6 +1238,11 @@ void LS_Shutdown(void)
 
 	lua_close(ls_state);
 	ls_state = NULL;
+
+	LS_CheckMemoryPool();
+
+	free(ls_memory);
+	ls_memory = NULL;
 }
 
 qboolean LS_ConsoleCommand(void)
