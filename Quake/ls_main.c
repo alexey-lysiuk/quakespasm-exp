@@ -1296,4 +1296,42 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 	assert(lua_gettop(state) == 0);
 }
 
+const char *LS_GetNextCommand(const char *command)
+{
+	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
+
+	lua_getglobal(state, ls_console_name);
+
+	if (command == NULL)
+		lua_pushnil(state);
+	else
+		lua_pushstring(state, command);
+
+	qboolean found = false;
+
+	while (lua_next(state, -2) != 0)
+	{
+		found = lua_type(state, -1) == LUA_TFUNCTION;
+		lua_pop(state, 1);  // remove value, keep name for next iteration
+
+		if (found)
+			break;
+	}
+
+	const char* result = NULL;
+
+	if (found)
+	{
+		result = lua_tostring(state, -1);
+		lua_pop(state, 1);  // remove key
+	}
+
+	lua_pop(state, 1);  // remove console namespace table
+	assert(lua_gettop(state) == 0);
+
+	return result;
+}
+
 #endif // USE_LUA_SCRIPTING

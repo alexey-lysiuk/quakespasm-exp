@@ -559,6 +559,25 @@ void Cmd_Apropos_f(void)
 			Con_SafePrintf ("%s (current value: \"%s\")\n", Cmd_TintSubstring(var->name, substr, tmpbuf, sizeof(tmpbuf)), var->string);
 		}
 	}
+
+#ifdef USE_LUA_SCRIPTING
+	const char *LS_GetNextCommand (const char *);
+	const char *luacmd = NULL;
+
+	for (;;)
+	{
+		luacmd = LS_GetNextCommand (luacmd);
+		if (luacmd == NULL)
+			break;
+
+		if (q_strcasestr(luacmd, substr))
+		{
+			hits++;
+			Con_SafePrintf ("%s\n", Cmd_TintSubstring(luacmd, substr, tmpbuf, sizeof(tmpbuf)));
+		}
+	}
+#endif // USE_LUA_SCRIPTING
+
 	if (!hits)
 		Con_SafePrintf ("no cvars nor commands contain that substring\n");
 }
