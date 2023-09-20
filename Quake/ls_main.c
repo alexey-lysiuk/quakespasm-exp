@@ -1280,7 +1280,7 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 
 	while (lua_next(state, -2) != 0)
 	{
-		if (lua_type(state, -1) == LUA_TFUNCTION)
+		if (lua_type(state, -1) == LUA_TFUNCTION && lua_type(state, -2) == LUA_TSTRING)
 		{
 			const char* name = lua_tostring(state, -2);
 			assert(name);
@@ -1309,23 +1309,20 @@ const char *LS_GetNextCommand(const char *command)
 	else
 		lua_pushstring(state, command);
 
-	qboolean found = false;
+	const char* result = NULL;
 
 	while (lua_next(state, -2) != 0)
 	{
-		found = lua_type(state, -1) == LUA_TFUNCTION;
-		lua_pop(state, 1);  // remove value, keep name for next iteration
+		if (lua_type(state, -1) == LUA_TFUNCTION && lua_type(state, -2) == LUA_TSTRING)
+		{
+			result = lua_tostring(state, -1);
+			assert(result);
 
-		if (found)
+			lua_pop(state, 1);  // remove key
 			break;
-	}
+		}
 
-	const char* result = NULL;
-
-	if (found)
-	{
-		result = lua_tostring(state, -1);
-		lua_pop(state, 1);  // remove key
+		lua_pop(state, 1);  // remove value, keep name for next iteration
 	}
 
 	lua_pop(state, 1);  // remove console namespace table
