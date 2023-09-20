@@ -57,42 +57,33 @@ local vec3minusone = vec3.new(-1, -1, -1)
 -- Secrets
 --
 
-local function secretpos(edict)
-	local min = edict.absmin
-	local max = edict.absmax
-	local count
+local function handlesecret(edict, current, choice)
+	if edict.classname == 'trigger_secret' then
+		-- Try to handle Arcane Dimensions secret
+		local min = edict.absmin
+		local max = edict.absmax
+		local count, pos
 
-	-- Try to handle Arcane Dimensions secret
-	if min == vec3minusone and max == vec3one then
-		count = edict.count
-	end
+		if min == vec3minusone and max == vec3one then
+			count = edict.count
+		end
 
-	if count then
-		if count == 0 then
+		if not count then
+			-- Regular or Arcane Dimensions secret that was not revealed yet
+			pos = vec3.mid(min, max)
+		elseif count == 0 then
 			-- Revealed Arcane Dimensions secret, skip it
-			return nil
+			return current
 		else
 			-- Disabled or switched off Arcane Dimensions secret
 			-- Actual coodinates are stored in oldorigin member
-			return edict.oldorigin
+			pos = edict.oldorigin
 		end
-	end
 
-	return vec3.mid(min, max)
-end
-
-local function handlesecret(edict, current, choice)
-	if edict.classname == 'trigger_secret' then
 		if choice <= 0 then
-			local pos = secretpos(edict)
-			
-			if pos then
-				print(current .. ':', pos)
-			else
-				return current
-			end
+			print(current .. ':', pos)
 		elseif choice == current then
-			player.setpos(secretpos(edict))
+			player.setpos(pos)
 			return nil
 		end
 
