@@ -48,6 +48,11 @@ function edicts.foreach(func, choice)
 end
 
 
+local vec3origin = vec3.new()
+local vec3one = vec3.new(1, 1, 1)
+local vec3minusone = vec3.new(-1, -1, -1)
+
+
 --
 -- Secrets
 --
@@ -58,7 +63,7 @@ local function secretpos(edict)
 	local count
 
 	-- Try to handle Arcane Dimensions secret
-	if min == vec3.new(-1, -1, -1) and max == vec3.new(1, 1, 1) then
+	if min == vec3minusone and max == vec3one then
 		count = edict.count
 	end
 
@@ -135,8 +140,6 @@ end
 --
 
 local function handleteleport(edict, current, choice)
-	local vec3origin = vec3.new()
-
 	if edict.classname == 'trigger_teleport' then
 		local pos = vec3.mid(edict.absmin, edict.absmax)
 
@@ -161,12 +164,7 @@ local function handleteleport(edict, current, choice)
 				end
 			end
 
-			if targetpos then
-				targetstr = 'at ' .. tostring(targetpos)
-			else
-				targetstr = '(target not found)'
-			end
-
+			local targetstr = targetpos and 'at ' .. tostring(targetpos) or '(target not found)'
 			print(current .. ':', pos, '->', teletarget, targetstr)
 		elseif choice == current then
 			player.setpos(pos)
