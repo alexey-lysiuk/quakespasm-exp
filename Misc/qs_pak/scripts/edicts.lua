@@ -84,7 +84,13 @@ end
 local function handlesecret(edict, current, choice)
 	if edict.classname == 'trigger_secret' then
 		if choice <= 0 then
-			print(current .. ':', secretpos(edict))
+			local pos = secretpos(edict)
+			
+			if pos then
+				print(current .. ':', pos)
+			else
+				return current
+			end
 		elseif choice == current then
 			player.setpos(secretpos(edict))
 			return nil
