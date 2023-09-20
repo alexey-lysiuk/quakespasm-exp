@@ -3,7 +3,7 @@
 -- Edict flags
 --
 
-edictflags =
+edicts.flags =
 {
 	FL_FLY            = 1,
 	FL_SWIM           = 2,
@@ -20,7 +20,7 @@ edictflags =
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
 }
 
-spawnflags
+edicts.spawnflags = 
 {
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
@@ -101,12 +101,12 @@ end
 --
 
 local function handlemonster(edict, current, choice)
-	flags = edict.flags
-	health = edict.health
+	local flags = edict.flags
+	local health = edict.health
 
 	if flags and health then
-		ismonster = flags & edictflags.FL_MONSTER ~= 0
-		isalive = health > 0
+		local ismonster = flags & edicts.flags.FL_MONSTER ~= 0
+		local isalive = health > 0
 
 		if not ismonster or not isalive then
 			return current
@@ -197,9 +197,9 @@ local function handledoor(edict, current, choice)
 
 		if edict.touch == 'secret_touch()' then
 			info = '(secret)'
-		elseif edict.spawnflags & spawnflags.DOOR_GOLD_KEY ~= 0 then
+		elseif edict.spawnflags & edicts.spawnflags.DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
-		elseif edict.spawnflags & spawnflags.DOOR_SILVER_KEY ~= 0 then
+		elseif edict.spawnflags & edicts.spawnflags.DOOR_SILVER_KEY ~= 0 then
 			info = '(silver key)'
 		end
 
