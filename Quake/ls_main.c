@@ -1280,7 +1280,7 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 
 	while (lua_next(state, -2) != 0)
 	{
-		if (lua_type(state, -1) == LUA_TFUNCTION)
+		if (lua_type(state, -1) == LUA_TFUNCTION && lua_type(state, -2) == LUA_TSTRING)
 		{
 			const char* name = lua_tostring(state, -2);
 			assert(name);
