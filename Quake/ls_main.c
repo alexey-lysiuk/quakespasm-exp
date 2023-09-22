@@ -34,7 +34,6 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 const char* ED_GetFieldNameByOffset(int offset);
 
 static lua_State* ls_state;
-static qboolean ls_resetstate;
 static const char* ls_console_name = "console";
 
 static tlsf_t ls_memory;
@@ -876,12 +875,6 @@ static void LS_ReportError(lua_State* state)
 	lua_pop(state, 1);  // remove error message
 }
 
-static int LS_global_resetstate(lua_State* state)
-{
-	ls_resetstate = true;
-	return 0;
-}
-
 static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
 {
 	(void)ud;
@@ -984,7 +977,6 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
-		{ "resetstate", LS_global_resetstate },
 		{ "printmemstats", LS_global_printmemstats },
 
 		{ NULL, NULL }
@@ -1072,9 +1064,16 @@ static void LS_LoadEngineScripts(lua_State* state)
 	}
 }
 
-static void LS_CheckMemoryPool()
+static void LS_ResetState(void)
 {
+	if (ls_state == NULL)
+		return;
+
+	lua_close(ls_state);
+	ls_state = NULL;
+
 #ifndef NDEBUG
+	// check memory pool
 	LS_MemoryStats stats;
 	memset(&stats, 0, sizeof stats);
 	tlsf_walk_pool(tlsf_get_pool(ls_memory), LS_MemoryStatsCollector, &stats);
@@ -1086,17 +1085,9 @@ static void LS_CheckMemoryPool()
 #endif // !NDEBUG
 }
 
-
 static lua_State* LS_GetState(void)
 {
-	if (ls_resetstate)
-	{
-		lua_close(ls_state);
-		ls_resetstate = false;
-
-		LS_CheckMemoryPool();
-	}
-	else if (ls_state)
+	if (ls_state != NULL)
 		return ls_state;
 
 	if (ls_memory == NULL)
@@ -1229,17 +1220,12 @@ static void LS_Exec_f(void)
 void LS_Init(void)
 {
 	Cmd_AddCommand("lua", LS_Exec_f);
+	Cmd_AddCommand("resetluastate", LS_ResetState);
 }
 
 void LS_Shutdown(void)
 {
-	if (!ls_state)
-		return;
-
-	lua_close(ls_state);
-	ls_state = NULL;
-
-	LS_CheckMemoryPool();
+	LS_ResetState();
 
 	free(ls_memory);
 	ls_memory = NULL;
