@@ -3,7 +3,7 @@
 -- Edict flags
 --
 
-edictflags =
+edicts.flags =
 {
 	FL_FLY            = 1,
 	FL_SWIM           = 2,
@@ -18,7 +18,10 @@ edictflags =
 	FL_PARTIALGROUND  = 1024,  -- not all corners are valid
 	FL_WATERJUMP      = 2048,  -- player jumping out of water
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
+}
 
+edicts.spawnflags = 
+{
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
 }
