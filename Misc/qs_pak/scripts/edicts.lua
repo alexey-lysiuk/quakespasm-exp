@@ -22,6 +22,8 @@ edicts.flags =
 
 edicts.spawnflags = 
 {
+	SUPER_SECRET      = 2,  -- Copper specific
+
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
 
@@ -81,7 +83,9 @@ local function handlesecret(edict, current, choice)
 		end
 
 		if choice <= 0 then
-			print(current .. ':', pos)
+			local supersecret = edict.spawnflags & edicts.spawnflags.SUPER_SECRET ~= 0
+			local extra = supersecret and '(super)' or ''
+			print(current .. ':', pos, extra)
 		elseif choice == current then
 			player.setpos(pos)
 			return nil
