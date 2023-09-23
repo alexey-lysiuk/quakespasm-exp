@@ -101,12 +101,12 @@ end
 --
 
 local function handlemonster(edict, current, choice)
-	flags = edict.flags
-	health = edict.health
+	local flags = edict.flags
+	local health = edict.health
 
 	if flags and health then
-		ismonster = flags & edictflags.FL_MONSTER ~= 0
-		isalive = health > 0
+		local ismonster = flags & edicts.flags.FL_MONSTER ~= 0
+		local isalive = health > 0
 
 		if not ismonster or not isalive then
 			return current
