@@ -24,6 +24,11 @@ edicts.spawnflags =
 {
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
+
+	NOT_EASY          = 256,
+	NOT_MEDIUM        = 512,
+	NOT_HARD          = 1024,
+	NOT_DEATHMATCH    = 2048,
 }
 
 
