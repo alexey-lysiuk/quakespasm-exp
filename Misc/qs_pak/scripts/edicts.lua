@@ -145,7 +145,6 @@ local function handleteleport(edict, current, choice)
 
 		if choice <= 0 then
 			local teletarget = edict.target
-			local targetpos
 
 			if teletarget then
 				for _, testedict in ipairs(edicts) do
@@ -164,12 +163,7 @@ local function handleteleport(edict, current, choice)
 				end
 			end
 
-			if targetpos then
-				targetstr = 'at ' .. tostring(targetpos)
-			else
-				targetstr = '(target not found)'
-			end
-
+			local targetstr = targetpos and 'at ' .. targetpos or '(target not found)'
 			print(current .. ':', pos, '->', teletarget, targetstr)
 		elseif choice == current then
 			player.setpos(pos)
