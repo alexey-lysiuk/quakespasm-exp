@@ -49,10 +49,26 @@ function edicts.foreach(func, choice)
 	end
 end
 
+function edicts.isclass(edict, ...)
+	for _, classname in ipairs({...}) do
+		if edict.classname == classname then
+			return classname
+		end
+	end	
+
+	return nil
+end
+
 
 local vec3origin = vec3.new()
 local vec3one = vec3.new(1, 1, 1)
 local vec3minusone = vec3.new(-1, -1, -1)
+
+local FL_MONSTER <const> = edicts.flags.FL_MONSTER
+
+local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local DOOR_GOLD_KEY <const> = edicts.spawnflags.DOOR_GOLD_KEY
+local DOOR_SILVER_KEY <const> = edicts.spawnflags.DOOR_SILVER_KEY
 
 
 --
@@ -83,7 +99,7 @@ local function handlesecret(edict, current, choice)
 		end
 
 		if choice <= 0 then
-			local supersecret = edict.spawnflags & edicts.spawnflags.SUPER_SECRET ~= 0
+			local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
 			local extra = supersecret and '(super)' or ''
 			print(current .. ':', pos, extra)
 		elseif choice == current then
@@ -111,7 +127,7 @@ local function handlemonster(edict, current, choice)
 	local health = edict.health
 
 	if flags and health then
-		local ismonster = flags & edicts.flags.FL_MONSTER ~= 0
+		local ismonster = flags & FL_MONSTER ~= 0
 		local isalive = health > 0
 
 		if not ismonster or not isalive then
@@ -186,20 +202,33 @@ end
 -- Doors
 --
 
-local function handledoor(edict, current, choice)
-	local vec3origin = vec3.new()
+local function getitemname(item)
+	if not item or item == 0 then
+		return nil
+	end
 
-	if edict.classname == 'door' then
-		local pos = vec3.mid(edict.absmin, edict.absmax)
-		local info = ''
-
-		if edict.touch == 'secret_touch()' then
-			info = '(secret)'
-		elseif edict.spawnflags & edicts.spawnflags.DOOR_GOLD_KEY ~= 0 then
-			info = '(gold key)'
-		elseif edict.spawnflags & edicts.spawnflags.DOOR_SILVER_KEY ~= 0 then
-			info = '(silver key)'
+	for _, edict in ipairs(edicts) do
+		if edict.items == item and edict.classname:find('item_') == 1 then
+			return edict.netname
 		end
+	end
+
+	return nil
+end
+
+local function handledoor(edict, current, choice)
+	local door_secret_class = 'func_door_secret'
+	local classname = edicts.isclass(edict, 'door', 'func_door', door_secret_class)
+	
+	if classname then
+		local pos = vec3.mid(edict.absmin, edict.absmax)
+		local info = getitemname(edict.items)
+
+		if classname == door_secret_class or edict.touch == 'secret_touch()' then
+			info = info and info .. ', secret' or 'secret'
+		end
+
+		info = info and '(' .. info .. ')' or ''
 
 		if choice <= 0 then
 			print(current .. ':', pos, info)
@@ -216,67 +245,4 @@ end
 
 function console.doors(choice)
 	edicts.foreach(handledoor, choice)
-end
-
-
--- lua for i,e in ipairs(edicts) do print(i, e.classname) end
-
-
---
--- References
---
-
--- local function handlereference(edict, current, choice)
---
--- end
-
--- > lua dofile('scripts/edicts.lua') references()
-
-function console.references(target, choice)
-	-- edicts.foreach(handlereference, choice)
-
-	if not target or target == '' then
-		return
-	end
-
-	local edictrefs = {}
-	-- local edictrefscount = 1
-	--
-	-- local function collectreferences(edict)
-	-- 	if edict.target or edict.targetname
-	-- 		edictrefs[#edictrefs + 1] = edict
-	-- 	end
-	-- end
-
-	for i, edict in ipairs(edicts) do
-		if edict.target ~= '' or edict.targetname ~= '' then
-			table.insert(edictrefs, i)
-		end
-	end
-
-	if #edictrefs == 0 then
-		return
-	end
-
-	-- edicts.foreach(collectreferences)
-	
-	for _, i in ipairs(edictrefs) do
-		edict = edicts[i]
-
-		-- edtarget = edict.target
-		--
-		-- if edtarget ~= '' and string.find(edtarget, target) then
-		-- 	print(i, edict.classname)
-		-- else
-		-- 	edtargetname = edict.targetname
-		--
-		-- 	if edtargetname ~= '' and string.find(edtargetname, target) then
-		-- 		print(i, edict.classname)
-		-- 	end
-		-- end
-
-		if edict.target == target or edict.targetname == target then
-			print(i, edict.classname)
-		end
-	end
 end

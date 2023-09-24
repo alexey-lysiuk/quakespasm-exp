@@ -1228,6 +1228,7 @@ void SV_TraceEntity(void)
 	}
 }
 
+#ifndef NDEBUG
 
 static void DumpAreaNodeEdicts(FILE* f, link_t *edlink, const char* name, int level)
 {
@@ -1316,3 +1317,5 @@ void SV_DumpAreaNodes(void)
 		fclose(f);
 	}
 }
+
+#endif // !NDEBUG

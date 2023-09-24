@@ -145,8 +145,10 @@ void SV_Init (void)
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz
 	Cmd_AddCommand ("sv_saveentfile", &SV_SaveEntFile_f);
 
+#ifndef NDEBUG
 	void SV_DumpAreaNodes(void);
 	Cmd_AddCommand("sv_dumpareanodes", &SV_DumpAreaNodes);
+#endif // !NDEBUG
 
 	for (i=0 ; i<MAX_MODELS ; i++)
 		sprintf (localmodels[i], "*%i", i);
