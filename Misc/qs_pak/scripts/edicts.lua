@@ -180,3 +180,38 @@ end
 function console.teleports(choice)
 	edicts.foreach(handleteleport, choice)
 end
+
+
+--
+-- Doors
+--
+
+local function handledoor(edict, current, choice)
+	if edict.classname == 'door' then
+		local pos = vec3.mid(edict.absmin, edict.absmax)
+		local info = ''
+
+		if edict.touch == 'secret_touch()' then
+			info = '(secret)'
+		elseif edict.spawnflags & edicts.spawnflags.DOOR_GOLD_KEY ~= 0 then
+			info = '(gold key)'
+		elseif edict.spawnflags & edicts.spawnflags.DOOR_SILVER_KEY ~= 0 then
+			info = '(silver key)'
+		end
+
+		if choice <= 0 then
+			print(current .. ':', pos, info)
+		elseif choice == current then
+			player.setpos(pos)
+			return nil
+		end
+
+		return current + 1
+	end
+
+	return current
+end
+
+function console.doors(choice)
+	edicts.foreach(handledoor, choice)
+end
