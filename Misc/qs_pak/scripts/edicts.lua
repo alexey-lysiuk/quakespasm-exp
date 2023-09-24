@@ -54,6 +54,12 @@ local vec3origin = vec3.new()
 local vec3one = vec3.new(1, 1, 1)
 local vec3minusone = vec3.new(-1, -1, -1)
 
+local FL_MONSTER <const> = edicts.flags.FL_MONSTER
+
+local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local DOOR_GOLD_KEY <const> = edicts.spawnflags.DOOR_GOLD_KEY
+local DOOR_SILVER_KEY <const> = edicts.spawnflags.DOOR_SILVER_KEY
+
 
 --
 -- Secrets
@@ -83,7 +89,7 @@ local function handlesecret(edict, current, choice)
 		end
 
 		if choice <= 0 then
-			local supersecret = edict.spawnflags & edicts.spawnflags.SUPER_SECRET ~= 0
+			local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
 			local extra = supersecret and '(super)' or ''
 			print(current .. ':', pos, extra)
 		elseif choice == current then
@@ -111,7 +117,7 @@ local function handlemonster(edict, current, choice)
 	local health = edict.health
 
 	if flags and health then
-		local ismonster = flags & edicts.flags.FL_MONSTER ~= 0
+		local ismonster = flags & FL_MONSTER ~= 0
 		local isalive = health > 0
 
 		if not ismonster or not isalive then
@@ -193,9 +199,9 @@ local function handledoor(edict, current, choice)
 
 		if edict.touch == 'secret_touch()' then
 			info = '(secret)'
-		elseif edict.spawnflags & edicts.spawnflags.DOOR_GOLD_KEY ~= 0 then
+		elseif edict.spawnflags & DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
-		elseif edict.spawnflags & edicts.spawnflags.DOOR_SILVER_KEY ~= 0 then
+		elseif edict.spawnflags & DOOR_SILVER_KEY ~= 0 then
 			info = '(silver key)'
 		end
 
