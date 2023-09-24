@@ -49,6 +49,16 @@ function edicts.foreach(func, choice)
 	end
 end
 
+function edicts.isclass(edict, ...)
+	for _, classname in ipairs({...}) do
+		if edict.classname == classname then
+			return classname
+		end
+	end	
+
+	return nil
+end
+
 
 local vec3origin = vec3.new()
 local vec3one = vec3.new(1, 1, 1)
@@ -193,11 +203,14 @@ end
 --
 
 local function handledoor(edict, current, choice)
-	if edict.classname == 'door' then
+	local door_secret_class = 'func_door_secret'
+	local classname = edicts.isclass(edict, 'door', 'func_door', door_secret_class)
+	
+	if classname then
 		local pos = vec3.mid(edict.absmin, edict.absmax)
 		local info = ''
 
-		if edict.touch == 'secret_touch()' then
+		if classname == door_secret_class or edict.touch == 'secret_touch()' then
 			info = '(secret)'
 		elseif edict.spawnflags & DOOR_GOLD_KEY ~= 0 then
 			info = '(gold key)'
