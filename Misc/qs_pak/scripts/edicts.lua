@@ -202,21 +202,33 @@ end
 -- Doors
 --
 
+local function getitemname(item)
+	if not item or item == 0 then
+		return nil
+	end
+
+	for _, edict in ipairs(edicts) do
+		if edict.items == item and edict.classname:find('item_') == 1 then
+			return edict.netname
+		end
+	end
+
+	return nil
+end
+
 local function handledoor(edict, current, choice)
 	local door_secret_class = 'func_door_secret'
 	local classname = edicts.isclass(edict, 'door', 'func_door', door_secret_class)
 	
 	if classname then
 		local pos = vec3.mid(edict.absmin, edict.absmax)
-		local info = ''
+		local info = getitemname(edict.items)
 
 		if classname == door_secret_class or edict.touch == 'secret_touch()' then
-			info = '(secret)'
-		elseif edict.spawnflags & DOOR_GOLD_KEY ~= 0 then
-			info = '(gold key)'
-		elseif edict.spawnflags & DOOR_SILVER_KEY ~= 0 then
-			info = '(silver key)'
+			info = info and info .. ', secret' or 'secret'
 		end
+
+		info = info and '(' .. info .. ')' or ''
 
 		if choice <= 0 then
 			print(current .. ':', pos, info)
