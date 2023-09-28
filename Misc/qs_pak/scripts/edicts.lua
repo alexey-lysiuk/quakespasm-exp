@@ -133,7 +133,14 @@ local function handlemonster(edict, current, choice)
 		end
 
 		if choice <= 0 then
-			print(current .. ':', edict.classname, 'at', edict.origin)
+			local classname = edict.classname
+
+			-- Remove classname prefix if present
+			if classname:find("monster_") == 1 then
+				classname = classname:sub(9)
+			end
+
+			print(current .. ':', classname, 'at', edict.origin)
 		elseif choice == current then
 			player.god(true)
 			player.notarget(true)
