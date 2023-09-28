@@ -67,8 +67,6 @@ local vec3minusone = vec3.new(-1, -1, -1)
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
-local DOOR_GOLD_KEY <const> = edicts.spawnflags.DOOR_GOLD_KEY
-local DOOR_SILVER_KEY <const> = edicts.spawnflags.DOOR_SILVER_KEY
 
 
 --
