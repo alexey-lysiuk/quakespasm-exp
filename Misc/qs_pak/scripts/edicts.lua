@@ -67,8 +67,6 @@ local vec3minusone = vec3.new(-1, -1, -1)
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
-local DOOR_GOLD_KEY <const> = edicts.spawnflags.DOOR_GOLD_KEY
-local DOOR_SILVER_KEY <const> = edicts.spawnflags.DOOR_SILVER_KEY
 
 
 --
@@ -135,7 +133,14 @@ local function handlemonster(edict, current, choice)
 		end
 
 		if choice <= 0 then
-			print(current .. ':', edict.classname, 'at', edict.origin)
+			local classname = edict.classname
+
+			-- Remove classname prefix if present
+			if classname:find("monster_") == 1 then
+				classname = classname:sub(9)
+			end
+
+			print(current .. ':', classname, 'at', edict.origin)
 		elseif choice == current then
 			player.god(true)
 			player.notarget(true)

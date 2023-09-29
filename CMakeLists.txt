@@ -272,6 +272,9 @@ if(APPLE)
 	option(QUAKE_MACOS_MOUSE_ACCELERATION "Enable mouse acceleration on macOS" OFF)
 endif()
 
+# Set policy needed for CheckIPOSupported module
+cmake_policy(SET CMP0069 NEW)
+
 if(QUAKE_MACOS_BUNDLE)
 	add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE)
 else()
@@ -384,6 +387,22 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+if(CMAKE_VERSION VERSION_GREATER 3.8)
+	# CheckIPOSupported module is required for proper checking of LTO support
+	option(QUAKE_LTO "Enable link-time optimization if supported by compiler" OFF)
+
+	if(QUAKE_LTO)
+		include(CheckIPOSupported)
+		check_ipo_supported(RESULT QUAKE_LTO_SUPPORTED OUTPUT QUAKE_LTO_ERROR)
+
+		if(QUAKE_LTO_SUPPORTED)
+			set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+		else()
+			message("Link-time optimization was not enabled because of error: ${QUAKE_LTO_ERROR}")
+		endif()
+	endif()
+endif()
 
 # Required dependencies
 
