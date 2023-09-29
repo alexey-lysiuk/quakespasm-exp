@@ -1267,35 +1267,6 @@ qboolean LS_ConsoleCommand(void)
 	return result;
 }
 
-void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
-{
-	size_t partlen = strlen(partial);
-
-	lua_State* state = LS_GetState();
-	assert(state);
-	assert(lua_gettop(state) == 0);
-
-	lua_getglobal(state, ls_console_name);
-	lua_pushnil(state);
-
-	while (lua_next(state, -2) != 0)
-	{
-		if (lua_type(state, -1) == LUA_TFUNCTION && lua_type(state, -2) == LUA_TSTRING)
-		{
-			const char* name = lua_tostring(state, -2);
-			assert(name);
-
-			if (Q_strncmp(partial, name, partlen) == 0)
-				addtolist(name, "command");
-		}
-
-		lua_pop(state, 1);  // remove value, keep name for next iteration
-	}
-
-	lua_pop(state, 1);  // remove console namespace table
-	assert(lua_gettop(state) == 0);
-}
-
 const char *LS_GetNextCommand(const char *command)
 {
 	lua_State* state = LS_GetState();
