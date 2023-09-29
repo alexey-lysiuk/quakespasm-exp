@@ -499,6 +499,20 @@ void Cmd_List_f (void)
 		count++;
 	}
 
+#ifdef USE_LUA_SCRIPTING
+	const char *LS_GetNextCommand (const char *);
+	const char *luacmd = NULL;
+
+	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
+	{
+		if (partial && Q_strncmp (partial, luacmd, len))
+			continue;
+
+		Con_SafePrintf ("   %s\n", luacmd);
+		count++;
+	}
+#endif // USE_LUA_SCRIPTING
+
 	Con_SafePrintf ("%i commands", count);
 	if (partial)
 	{
