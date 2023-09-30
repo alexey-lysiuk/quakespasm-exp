@@ -980,59 +980,61 @@ static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
 // Mostly a copy of SV_ClipToLinks() but for trigger_edicts
 static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 {
-	link_t		*l, *next;
-	edict_t		*touch;
-	trace_t		trace;
-
-	// touch linked edicts
-	for (l = node->trigger_edicts.next ; l != &node->trigger_edicts ; l = next)
+	for (link_t* next, *current = node->trigger_edicts.next; current != &node->trigger_edicts; current = next)
 	{
-		next = l->next;
-		touch = EDICT_FROM_AREA(l);
+		next = current->next;
+
+		edict_t* touch = EDICT_FROM_AREA(current);
+
 		if (touch->v.solid == SOLID_NOT)
 			continue;
+
 		if (touch == clip->passedict)
 			continue;
 
 		if (clip->boxmins[0] > touch->v.absmax[0]
-		|| clip->boxmins[1] > touch->v.absmax[1]
-		|| clip->boxmins[2] > touch->v.absmax[2]
-		|| clip->boxmaxs[0] < touch->v.absmin[0]
-		|| clip->boxmaxs[1] < touch->v.absmin[1]
-		|| clip->boxmaxs[2] < touch->v.absmin[2] )
+			|| clip->boxmins[1] > touch->v.absmax[1]
+			|| clip->boxmins[2] > touch->v.absmax[2]
+			|| clip->boxmaxs[0] < touch->v.absmin[0]
+			|| clip->boxmaxs[1] < touch->v.absmin[1]
+			|| clip->boxmaxs[2] < touch->v.absmin[2])
 			continue;
 
 		// might intersect, so do an exact clip
 		if (clip->trace.allsolid)
 			return;
+
 		if (clip->passedict)
 		{
 			if (PROG_TO_EDICT(touch->v.owner) == clip->passedict)
 				continue;	// don't clip against own missiles
+
 			if (PROG_TO_EDICT(clip->passedict->v.owner) == touch)
 				continue;	// don't clip against owner
 		}
 
+		trace_t trace;
+
 		{
-			// Replacemet of SV_ClipMoveToEntity()
-			vec3_t offset;
-			vec3_t start_l, end_l;
-			hull_t *hull;
+			// Replacement of SV_ClipMoveToEntity()
 
 			// fill in a default trace
-			memset (&trace, 0, sizeof(trace_t));
+			memset(&trace, 0, sizeof(trace_t));
 			trace.fraction = 1;
 			trace.allsolid = true;
-			VectorCopy (clip->end, trace.endpos);
+			VectorCopy(clip->end, trace.endpos);
 
 			// get the clipping hull
+			hull_t* hull;
+			vec3_t offset;
+
 			{
 				// Replacemet of SV_HullForEntity() with adjustment for zero-sized triggers
 				// like lava balls (fireball quakec class)
 
 				vec3_t hullmins, hullmaxs;
-				VectorSubtract (touch->v.mins, clip->maxs, hullmins);
-				VectorSubtract (touch->v.maxs, clip->mins, hullmaxs);
+				VectorSubtract(touch->v.mins, clip->maxs, hullmins);
+				VectorSubtract(touch->v.maxs, clip->mins, hullmaxs);
 
 				if (VectorCompare(vec3_origin, hullmins) && VectorCompare(vec3_origin, hullmaxs))
 				{
@@ -1045,16 +1047,17 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 					hullmaxs[2] = 16.f;
 				}
 
-				hull = SV_HullForBox (hullmins, hullmaxs);
+				hull = SV_HullForBox(hullmins, hullmaxs);
 
-				VectorCopy (touch->v.origin, offset);
+				VectorCopy(touch->v.origin, offset);
 			}
 
-			VectorSubtract (clip->start, offset, start_l);
-			VectorSubtract (clip->end, offset, end_l);
+			vec3_t start, end;
+			VectorSubtract(clip->start, offset, start);
+			VectorSubtract(clip->end, offset, end);
 
 			// trace a line through the apropriate clipping hull
-			SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+			SV_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start, end, &trace);
 
 			// fix trace up by the offset
 			if (trace.fraction != 1)
@@ -1065,10 +1068,10 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 				trace.ent = touch;
 		}
 
-		if (trace.allsolid || trace.startsolid ||
-		trace.fraction < clip->trace.fraction)
+		if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
 		{
 			trace.ent = touch;
+
 			if (clip->trace.startsolid)
 			{
 				clip->trace = trace;
@@ -1085,10 +1088,10 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 	if (node->axis == -1)
 		return;
 
-	if ( clip->boxmaxs[node->axis] > node->dist )
-		ET_TraceTriger ( node->children[0], clip );
-	if ( clip->boxmins[node->axis] < node->dist )
-		ET_TraceTriger ( node->children[1], clip );
+	if (clip->boxmaxs[node->axis] > node->dist)
+		ET_TraceTriger(node->children[0], clip);
+	if (clip->boxmins[node->axis] < node->dist)
+		ET_TraceTriger(node->children[1], clip);
 }
 
 static inline void ET_MidPoint(edict_t *ed, vec3_t pos)
