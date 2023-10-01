@@ -682,6 +682,29 @@ static int LS_global_player_setpos(lua_State* state)
 	return 0;
 }
 
+static int LS_global_player_traceentity(lua_State* state)
+{
+	if (sv.active)
+	{
+		edict_t* SV_TraceEntity(void);
+		edict_t* ed = SV_TraceEntity();
+
+		if (ed == NULL)
+			lua_pushnil(state);
+		else
+		{
+			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+			assert(indexptr);
+			*indexptr = NUM_FOR_EDICT(ed);
+			LS_SetEdictMetaTable(state);
+		}
+	}
+	else
+		lua_pushnil(state);
+
+	return 1;
+}
+
 static int LS_PlayerCheatCommand(lua_State* state, const char* command)
 {
 	const char* argstr = "";
@@ -1034,6 +1057,7 @@ static void LS_InitGlobalTables(lua_State* state)
 			{ "noclip", LS_global_player_noclip },
 			{ "notarget", LS_global_player_notarget },
 			{ "setpos", LS_global_player_setpos },
+			{ "traceentity", LS_global_player_traceentity },
 			{ NULL, NULL }
 		};
 
