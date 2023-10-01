@@ -957,7 +957,7 @@ static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
 
 	VectorCopy(sv_player->v.origin, storage->start);
 	storage->start[2] += 20;
-	VectorMA(storage->start, 2048, pr_global_struct->v_forward, storage->end);
+	VectorMA(storage->start, 16 * 1024, pr_global_struct->v_forward, storage->end);
 
 	memset(clip, 0, sizeof *clip);
 
