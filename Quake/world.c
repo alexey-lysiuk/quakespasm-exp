@@ -1103,11 +1103,36 @@ static inline void ET_MidPoint(edict_t *ed, vec3_t pos)
 		pos[i] = min[i] + (max[i] - min[i]) * 0.5f;
 }
 
-enum ET_TraceFlags
+static const char* ET_GetEntityName(edict_t* entity)
 {
-	ET_CHECK_OWNER = 2,  // Use owner (if set) for entity without classname and model
-	ET_PREFER_SOLID = 4,  // If solid and trigger entities are picked, do not check distance to them, but choose solid one
-};
+	const char* name = PR_GetString(entity->v.classname);
+
+	if (name[0] == '\0')
+		name = PR_GetString(entity->v.netname);
+
+	if (name[0] == '\0')
+		name = PR_GetString(entity->v.model);
+
+	return name;
+}
+
+static edict_t* ET_PropageToOwner(edict_t* entity)
+{
+	for (;;)
+	{
+		if (entity == NULL)
+			break;
+
+		const char* name = ET_GetEntityName(entity);
+		
+		if (name[0] != '\0')
+			break;
+
+		entity = PROG_TO_EDICT(entity->v.owner);
+	}
+
+	return entity;
+}
 
 cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
 char sv_tracedentityinfo[8][128];
@@ -1126,9 +1151,7 @@ void SV_ResetTracedEntityInfo(cvar_t *var)
 
 void SV_UpdateTracedEntityInfo(void)
 {
-	int tracemode = sv_traceentity.value;
-
-	if (tracemode < 1 || svs.maxclients != 1)
+	if (sv_traceentity.value == 0 || svs.maxclients != 1)
 		return;
 
 	if (sv_tracedentityinfo[0][0] == '\0')
@@ -1150,17 +1173,19 @@ void SV_UpdateTracedEntityInfo(void)
 	// clip to entities
 	SV_ClipToLinks(sv_areanodes, &clip);
 	edict_t* solid_ent = clip.trace.ent;
+	solid_ent = ET_PropageToOwner(solid_ent);
 
 	clip.trace = trace;
 
 	ET_TraceTriger(sv_areanodes, &clip);
 	edict_t* trigger_ent = clip.trace.ent;
+	trigger_ent = ET_PropageToOwner(trigger_ent);
 
-	edict_t *ent = NULL;
+	edict_t* ent = NULL;
 
 	if (!solid_ent || solid_ent == sv.edicts)
 		ent = trigger_ent;
-	else if (!trigger_ent || trigger_ent == sv.edicts || (tracemode & ET_PREFER_SOLID))
+	else if (!trigger_ent || trigger_ent == sv.edicts)
 		ent = solid_ent;
 	else
 	{
@@ -1179,24 +1204,10 @@ void SV_UpdateTracedEntityInfo(void)
 
 		ent = trigger_dist > solid_dist ? solid_ent : trigger_ent;
 	}
-	
-	while (ent && ent != sv.edicts)
+
+	if (ent && ent != sv.edicts)
 	{
-		const char* name = PR_GetString(ent->v.classname);
-
-		if (name[0] == '\0')
-			name = PR_GetString(ent->v.model);
-
-		if (name[0] == '\0')
-		{
-			if (tracemode & ET_CHECK_OWNER)
-			{
-				ent = PROG_TO_EDICT(ent->v.owner);
-				continue;
-			}
-
-			break; // Ignore edict without classname and model
-		}
+		const char* name = ET_GetEntityName(ent);
 
 		vec_t* min = ent->v.absmin;
 		vec_t* max = ent->v.absmax;
@@ -1226,8 +1237,6 @@ void SV_UpdateTracedEntityInfo(void)
 		}
 
 #undef entity_sprintf
-
-		break;
 	}
 }
 
