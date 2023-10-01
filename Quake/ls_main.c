@@ -1096,15 +1096,15 @@ static lua_State* LS_GetState(void)
 	lua_State* state = lua_newstate(LS_alloc, NULL);
 	assert(state);
 
-    lua_gc(state, LUA_GCSTOP);
-    
+	lua_gc(state, LUA_GCSTOP);
+
 	LS_InitStandardLibraries(state);
 	LS_InitGlobalFunctions(state);
 	LS_InitGlobalTables(state);
 	LS_LoadEngineScripts(state);
-    
-    lua_gc(state, LUA_GCRESTART);
-    lua_gc(state, LUA_GCCOLLECT);
+
+	lua_gc(state, LUA_GCRESTART);
+	lua_gc(state, LUA_GCCOLLECT);
 
 	ls_state = state;
 	return state;
