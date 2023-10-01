@@ -1134,36 +1134,8 @@ static edict_t* ET_PropageToOwner(edict_t* entity)
 	return entity;
 }
 
-cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
-char sv_tracedentityinfo[8][128];
-
-static double et_timesinceupdate;
-
-void SV_ResetTracedEntityInfo(cvar_t *var)
+edict_t* SV_TraceEntity(void)
 {
-	(void)var;
-
-	for (size_t i = 0; i < sizeof sv_tracedentityinfo / sizeof sv_tracedentityinfo[0]; ++i)
-		sv_tracedentityinfo[i][0] = '\0';
-
-	et_timesinceupdate = 0;
-}
-
-void SV_UpdateTracedEntityInfo(void)
-{
-	if (sv_traceentity.value == 0 || svs.maxclients != 1)
-		return;
-
-	if (sv_tracedentityinfo[0][0] == '\0')
-		et_timesinceupdate = DBL_MAX;
-	else
-		et_timesinceupdate += host_frametime;
-
-	if (et_timesinceupdate < 0.1)
-		return;
-
-	SV_ResetTracedEntityInfo(NULL);
-
 	moveclip_t clip;
 	moveclip_storage_t storage;
 	ET_InitEntityTrace(&clip, &storage);
@@ -1205,39 +1177,74 @@ void SV_UpdateTracedEntityInfo(void)
 		ent = trigger_dist > solid_dist ? solid_ent : trigger_ent;
 	}
 
-	if (ent && ent != sv.edicts)
-	{
-		const char* name = ET_GetEntityName(ent);
+	return ent == sv.edicts ? NULL : ent;
+}
 
-		vec_t* min = ent->v.absmin;
-		vec_t* max = ent->v.absmax;
-		int line = 0;
+cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
+char sv_tracedentityinfo[8][128];
+
+static double et_timesinceupdate;
+
+void SV_ResetTracedEntityInfo(cvar_t *var)
+{
+	(void)var;
+
+	for (size_t i = 0; i < sizeof sv_tracedentityinfo / sizeof sv_tracedentityinfo[0]; ++i)
+		sv_tracedentityinfo[i][0] = '\0';
+
+	et_timesinceupdate = 0;
+}
+
+void SV_UpdateTracedEntityInfo(void)
+{
+	if (sv_traceentity.value == 0 || svs.maxclients != 1)
+		return;
+
+	if (sv_tracedentityinfo[0][0] == '\0')
+		et_timesinceupdate = DBL_MAX;
+	else
+		et_timesinceupdate += host_frametime;
+
+	if (et_timesinceupdate < 0.1)
+		return;
+
+	SV_ResetTracedEntityInfo(NULL);
+
+	edict_t* ent = SV_TraceEntity();
+
+	if (ent == NULL)
+		return;
+
+	const char* name = ET_GetEntityName(ent);
+
+	vec_t* min = ent->v.absmin;
+	vec_t* max = ent->v.absmax;
+	int line = 0;
 
 #define entity_sprintf(format, ...) \
-	q_snprintf(sv_tracedentityinfo[line++], sizeof(sv_tracedentityinfo[0]), format, __VA_ARGS__)
+q_snprintf(sv_tracedentityinfo[line++], sizeof(sv_tracedentityinfo[0]), format, __VA_ARGS__)
 
-		entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
-		entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
-		entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
+	entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
+	entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
+	entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
 
-		{
-			float health = ent->v.health;
-			if (health != 0.f)
-				entity_sprintf("health: %.0f", health);
-		}
-		{
-			const char *target = PR_GetString(ent->v.target);
-			if (target[0] != '\0')
-				entity_sprintf("target: %s", target);
-		}
-		{
-			const char *targetname = PR_GetString(ent->v.targetname);
-			if (targetname[0] != '\0')
-				entity_sprintf("targetname: %s", targetname);
-		}
+	{
+		float health = ent->v.health;
+		if (health != 0.f)
+			entity_sprintf("health: %.0f", health);
+	}
+	{
+		const char *target = PR_GetString(ent->v.target);
+		if (target[0] != '\0')
+			entity_sprintf("target: %s", target);
+	}
+	{
+		const char *targetname = PR_GetString(ent->v.targetname);
+		if (targetname[0] != '\0')
+			entity_sprintf("targetname: %s", targetname);
+	}
 
 #undef entity_sprintf
-	}
 }
 
 #ifndef NDEBUG
