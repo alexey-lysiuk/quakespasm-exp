@@ -1110,28 +1110,28 @@ enum ET_TraceFlags
 };
 
 cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
-char sv_entityinfo[8][128];
+char sv_tracedentityinfo[8][128];
 
 static double et_timesinceupdate;
 
-void SV_ResetEntityTrace(cvar_t *var)
+void SV_ResetTracedEntityInfo(cvar_t *var)
 {
 	(void)var;
 
-	for (size_t i = 0; i < sizeof sv_entityinfo / sizeof sv_entityinfo[0]; ++i)
-		sv_entityinfo[i][0] = '\0';
+	for (size_t i = 0; i < sizeof sv_tracedentityinfo / sizeof sv_tracedentityinfo[0]; ++i)
+		sv_tracedentityinfo[i][0] = '\0';
 
 	et_timesinceupdate = 0;
 }
 
-void SV_TraceEntity(void)
+void SV_UpdateTracedEntityInfo(void)
 {
 	int tracemode = sv_traceentity.value;
 
 	if (tracemode < 1 || svs.maxclients != 1)
 		return;
 
-	if (sv_entityinfo[0][0] == '\0')
+	if (sv_tracedentityinfo[0][0] == '\0')
 		et_timesinceupdate = DBL_MAX;
 	else
 		et_timesinceupdate += host_frametime;
@@ -1139,7 +1139,7 @@ void SV_TraceEntity(void)
 	if (et_timesinceupdate < 0.1)
 		return;
 
-	SV_ResetEntityTrace(NULL);
+	SV_ResetTracedEntityInfo(NULL);
 
 	moveclip_t clip;
 	moveclip_storage_t storage;
@@ -1203,7 +1203,7 @@ void SV_TraceEntity(void)
 		int line = 0;
 
 #define entity_sprintf(format, ...) \
-	q_snprintf(sv_entityinfo[line++], sizeof(sv_entityinfo[0]), format, __VA_ARGS__)
+	q_snprintf(sv_tracedentityinfo[line++], sizeof(sv_tracedentityinfo[0]), format, __VA_ARGS__)
 
 		entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
 		entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);

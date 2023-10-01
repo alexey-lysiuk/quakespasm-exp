@@ -139,8 +139,8 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_freezenonclients);
 	Cvar_RegisterVariable (&sv_altnoclip); //johnfitz
 	Cvar_RegisterVariable (&sv_traceentity);
-	extern void SV_ResetEntityTrace(cvar_t *var);
-	Cvar_SetCallback (&sv_traceentity, SV_ResetEntityTrace);
+	extern void SV_ResetTracedEntityInfo(cvar_t *var);
+	Cvar_SetCallback (&sv_traceentity, SV_ResetTracedEntityInfo);
 
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz
 	Cmd_AddCommand ("sv_saveentfile", &SV_SaveEntFile_f);

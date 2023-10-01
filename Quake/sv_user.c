@@ -369,7 +369,7 @@ void SV_AirMove (void)
 	}
 }
 
-void SV_TraceEntity(void);
+void SV_UpdateTracedEntityInfo(void);
 
 /*
 ===================
@@ -413,7 +413,7 @@ void SV_ClientThink (void)
 		angles[YAW] = v_angle[YAW];
 	}
 
-	SV_TraceEntity();
+	SV_UpdateTracedEntityInfo();
 
 	if ( (int)sv_player->v.flags & FL_WATERJUMP )
 	{
