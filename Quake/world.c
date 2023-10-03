@@ -1178,6 +1178,34 @@ edict_t* SV_TraceEntity(void)
 		ent = trigger_dist > solid_dist ? trigger_ent : solid_ent;
 	}
 
+	// Nothing is traced yet, try all possible entities
+	if (ent == NULL || ent == sv.edicts)
+	{
+		float bestdist = 0;
+		edict_t* check = NEXT_EDICT(sv.edicts);
+
+		for (int i = 1; i < sv.num_edicts; i++, check = NEXT_EDICT(check) )
+		{
+			if (check == sv_player)
+				continue;
+
+			float dist = ET_DistanceToEntity(&storage, check, /* setend = */ true);
+			if (dist < bestdist)
+				continue;	// to far to turn
+
+			if (check->v.solid == SOLID_TRIGGER)
+				ET_TraceTriger(sv_areanodes, &clip);
+			else if (check->v.solid != SOLID_NOT)
+				SV_ClipToLinks(sv_areanodes, &clip);
+
+			if (clip.trace.ent == check)
+			{
+				bestdist = dist;
+				ent = check;
+			}
+		}
+	}
+
 	return ent == sv.edicts ? NULL : ent;
 }
 
