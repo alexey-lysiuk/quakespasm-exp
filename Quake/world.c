@@ -1272,6 +1272,16 @@ q_snprintf(sv_tracedentityinfo[line++], sizeof(sv_tracedentityinfo[0]), format, 
 		if (targetname[0] != '\0')
 			entity_sprintf("targetname: %s", targetname);
 	}
+	{
+		int spawnflags = ent->v.spawnflags;
+		if (spawnflags != 0)
+			entity_sprintf("spawnflags: 0x%X", spawnflags);
+	}
+	{
+		int flags = ent->v.flags;
+		if (flags != 0)
+			entity_sprintf("flags: 0x%X", flags);
+	}
 
 #undef entity_sprintf
 }
