@@ -948,16 +948,31 @@ typedef struct
 	vec3_t maxs;
 	vec3_t start;
 	vec3_t end;
+	vec3_t forward;
 } moveclip_storage_t;
 
 static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
 {
+	const vec_t* angles = sv_player->v.v_angle;
+
+	vec_t angle = angles[YAW] * (M_PI * 2 / 360);
+	vec_t sy = sin(angle);
+	vec_t cy = cos(angle);
+
+	angle = angles[PITCH] * (M_PI*2 / 360);
+	vec_t sp = sin(angle);
+	vec_t cp = cos(angle);
+
+	storage->forward[0] = cp * cy;
+	storage->forward[1] = cp * sy;
+	storage->forward[2] = -sp;
+
 	VectorCopy(vec3_origin, storage->mins);
 	VectorCopy(vec3_origin, storage->maxs);
 
 	VectorCopy(sv_player->v.origin, storage->start);
 	storage->start[2] += 20;
-	VectorMA(storage->start, 16 * 1024, pr_global_struct->v_forward, storage->end);
+	VectorMA(storage->start, 16 * 1024, storage->forward, storage->end);
 
 	memset(clip, 0, sizeof *clip);
 
