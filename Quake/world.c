@@ -1269,7 +1269,7 @@ static void DumpAreaNodeEdicts(FILE* f, link_t *edlink, const char* name, int le
 		}
 
 		edict_t* ed = EDICT_FROM_AREA(current);
-		fprintf(f, "%*s- edict: %p\n", level * 2, "", ed);
+		fprintf(f, "%*s- edict: %i (%p)\n", level * 2, "", NUM_FOR_EDICT(ed), ed);
 		{
 			const char* classname = PR_GetString(ed->v.classname);
 			if (classname[0] != '\0')
