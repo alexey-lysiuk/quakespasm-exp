@@ -1189,7 +1189,7 @@ void SV_ResetTracedEntityInfo(cvar_t *var)
 {
 	(void)var;
 
-	for (size_t i = 0; i < sizeof sv_tracedentityinfo / sizeof sv_tracedentityinfo[0]; ++i)
+	for (size_t i = 0; i < Q_COUNTOF(sv_tracedentityinfo); ++i)
 		sv_tracedentityinfo[i][0] = '\0';
 
 	et_timesinceupdate = 0;

@@ -660,7 +660,7 @@ static void SCR_DrawEdictInfo (void)
 {
 	GL_SetCanvas (CANVAS_CROSSHAIR);
 
-	for (size_t i = 0; i < sizeof sv_tracedentityinfo / sizeof sv_tracedentityinfo[0]; ++i)
+	for (size_t i = 0; i < Q_COUNTOF(sv_tracedentityinfo); ++i)
 	{
 		const char *info_line = sv_tracedentityinfo[i];
 
