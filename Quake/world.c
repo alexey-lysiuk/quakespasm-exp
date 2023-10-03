@@ -1128,25 +1128,13 @@ static const char* ET_GetEntityName(edict_t* entity)
 	if (name[0] == '\0')
 		name = PR_GetString(entity->v.model);
 
-	return name;
-}
-
-static edict_t* ET_PropageToOwner(edict_t* entity)
-{
-	for (;;)
+	if (name[0] == '\0')
 	{
-		if (entity == NULL)
-			break;
-
-		const char* name = ET_GetEntityName(entity);
-		
-		if (name[0] != '\0')
-			break;
-
-		entity = PROG_TO_EDICT(entity->v.owner);
+		dfunction_t* function = pr_functions + entity->v.touch;
+		name = PR_GetString(function->s_name);
 	}
 
-	return entity;
+	return name;
 }
 
 edict_t* SV_TraceEntity(void)
@@ -1160,13 +1148,11 @@ edict_t* SV_TraceEntity(void)
 	// clip to entities
 	SV_ClipToLinks(sv_areanodes, &clip);
 	edict_t* solid_ent = clip.trace.ent;
-	solid_ent = ET_PropageToOwner(solid_ent);
 
 	clip.trace = trace;
 
 	ET_TraceTriger(sv_areanodes, &clip);
 	edict_t* trigger_ent = clip.trace.ent;
-	trigger_ent = ET_PropageToOwner(trigger_ent);
 
 	edict_t* ent = NULL;
 
