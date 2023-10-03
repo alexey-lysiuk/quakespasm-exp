@@ -1109,15 +1109,6 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 		ET_TraceTriger(node->children[1], clip);
 }
 
-static inline void ET_MidPoint(edict_t *ed, vec3_t pos)
-{
-	vec_t* min = ed->v.absmin;
-	vec_t* max = ed->v.absmax;
-
-	for (int i = 0; i < 3; ++i)
-		pos[i] = min[i] + (max[i] - min[i]) * 0.5f;
-}
-
 static const char* ET_GetEntityName(edict_t* entity)
 {
 	const char* name = PR_GetString(entity->v.classname);
@@ -1137,6 +1128,23 @@ static const char* ET_GetEntityName(edict_t* entity)
 	return name;
 }
 
+static vec_t ET_DistanceToEntity(moveclip_storage_t* storage, const edict_t* entity, qboolean setend)
+{
+	vec3_t end;
+
+	for (int i = 0; i < 3; ++i)
+		end[i] = entity->v.origin[i] + 0.5 * (entity->v.mins[i] + entity->v.maxs[i]);
+
+	if (setend)
+		VectorCopy(end, storage->end);
+
+	vec3_t dir;
+	VectorSubtract(end, storage->start, dir);
+	VectorNormalize(dir);
+
+	return DotProduct(dir, storage->forward);
+}
+
 edict_t* SV_TraceEntity(void)
 {
 	moveclip_t clip;
@@ -1145,37 +1153,29 @@ edict_t* SV_TraceEntity(void)
 
 	trace_t trace = clip.trace;
 
-	// clip to entities
+	// Trace solid entity
 	SV_ClipToLinks(sv_areanodes, &clip);
 	edict_t* solid_ent = clip.trace.ent;
 
 	clip.trace = trace;
 
+	// Trace trigger entity
 	ET_TraceTriger(sv_areanodes, &clip);
 	edict_t* trigger_ent = clip.trace.ent;
 
 	edict_t* ent = NULL;
 
+	// Choose entity, solid or trigger, depending on tracing results and proximity
 	if (!solid_ent || solid_ent == sv.edicts)
 		ent = trigger_ent;
 	else if (!trigger_ent || trigger_ent == sv.edicts)
 		ent = solid_ent;
 	else
 	{
-		// TODO: customize distance check, e.g. center-to-center, center-to-plane, ...
+		vec_t trigger_dist = ET_DistanceToEntity(&storage, trigger_ent, /* setend = */ false);
+		vec_t solid_dist = ET_DistanceToEntity(&storage, solid_ent, /* setend = */ false);
 
-		vec3_t solid_pos;
-		ET_MidPoint(solid_ent, solid_pos);
-		VectorSubtract(solid_pos, clip.start, solid_pos);
-
-		vec3_t trigger_pos;
-		ET_MidPoint(trigger_ent, trigger_pos);
-		VectorSubtract(trigger_pos, clip.start, trigger_pos);
-
-		vec_t solid_dist = DotProduct(solid_pos, solid_pos);
-		vec_t trigger_dist = DotProduct(trigger_pos, trigger_pos);
-
-		ent = trigger_dist > solid_dist ? solid_ent : trigger_ent;
+		ent = trigger_dist > solid_dist ? trigger_ent : solid_ent;
 	}
 
 	return ent == sv.edicts ? NULL : ent;
