@@ -1023,7 +1023,7 @@ void IN_SendKeyEvents (void)
 				windowhasfocus = false;
 				S_BlockSound();
 				oldpaused = sv.paused;
-				sv.paused = true;
+				sv.paused = svs.maxclients == 1;
 			}
 			break;
 #else
@@ -1041,7 +1041,7 @@ void IN_SendKeyEvents (void)
 					windowhasfocus = false;
 					S_BlockSound();
 					oldpaused = sv.paused;
-					sv.paused = true;
+					sv.paused = svs.maxclients == 1;
 				}
 			}
 			break;
