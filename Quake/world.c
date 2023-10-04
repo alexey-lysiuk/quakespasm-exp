@@ -1223,7 +1223,27 @@ edict_t* SV_TraceEntity(void)
 }
 
 cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
-char sv_tracedentityinfo[8][128];
+
+#define et_infosize 1024
+char sv_tracedentityinfo[et_infosize];
+static char* et_infoptr;
+
+static inline void entity_sprintf(const char* format, ...)
+{
+	// One character should reserved for terminating zero, i.e. additional '\0' after the last line's null terminator
+	size_t size = et_infosize - (et_infoptr - sv_tracedentityinfo) - 1;
+	if (size == 0)
+		return;
+
+	va_list argptr;
+	va_start(argptr, format);
+
+	et_infoptr += q_vsnprintf(et_infoptr, size, format, argptr);
+	et_infoptr++;  // set current position after null terminator
+
+	va_end(argptr);
+}
+
 
 static double et_timesinceupdate;
 
@@ -1231,9 +1251,7 @@ void SV_ResetTracedEntityInfo(cvar_t *var)
 {
 	(void)var;
 
-	for (size_t i = 0; i < Q_COUNTOF(sv_tracedentityinfo); ++i)
-		sv_tracedentityinfo[i][0] = '\0';
-
+	sv_tracedentityinfo[0] = '\0';
 	et_timesinceupdate = 0;
 }
 
@@ -1242,7 +1260,7 @@ void SV_UpdateTracedEntityInfo(void)
 	if (sv_traceentity.value == 0)
 		return;
 
-	if (sv_tracedentityinfo[0][0] == '\0')
+	if (sv_tracedentityinfo[0] == '\0')
 		et_timesinceupdate = DBL_MAX;
 	else
 		et_timesinceupdate += host_frametime;
@@ -1261,10 +1279,8 @@ void SV_UpdateTracedEntityInfo(void)
 
 	vec_t* min = ent->v.absmin;
 	vec_t* max = ent->v.absmax;
-	int line = 0;
 
-#define entity_sprintf(format, ...) \
-q_snprintf(sv_tracedentityinfo[line++], sizeof(sv_tracedentityinfo[0]), format, __VA_ARGS__)
+	et_infoptr = sv_tracedentityinfo;
 
 	entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
 	entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
@@ -1296,7 +1312,8 @@ q_snprintf(sv_tracedentityinfo[line++], sizeof(sv_tracedentityinfo[0]), format, 
 			entity_sprintf("flags: 0x%X", flags);
 	}
 
-#undef entity_sprintf
+	// Terminating zero (additional '\0' after the last line's null terminator) designates end of info
+	et_infoptr[0] = '\0';
 }
 
 #ifndef NDEBUG

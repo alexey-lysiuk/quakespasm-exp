@@ -654,20 +654,26 @@ void SCR_DrawCrosshair (void)
 }
 
 
-extern char sv_tracedentityinfo[8][128];
+extern char sv_tracedentityinfo[1024];
 
 static void SCR_DrawEdictInfo (void)
 {
 	GL_SetCanvas (CANVAS_CROSSHAIR);
 
-	for (size_t i = 0; i < Q_COUNTOF(sv_tracedentityinfo); ++i)
+	const char *info = sv_tracedentityinfo;
+	char buffer[sizeof sv_tracedentityinfo];
+	int lineindex = 0;
+
+	while (info[0] != '\0')
 	{
-		const char *info_line = sv_tracedentityinfo[i];
+		const char *nextzero = info + 1;
+		for (; nextzero[0] != '\0'; ++nextzero) {}
 
-		if (info_line[0] == '\0')
-			break;
+		strcpy(buffer, info);
+		info = nextzero + 1;
 
-		Draw_String (30, 20 + i * 10, info_line);
+		Draw_String (30, 20 + lineindex * 10, buffer);
+		lineindex++;
 	}
 }
 
