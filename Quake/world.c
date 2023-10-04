@@ -1110,7 +1110,7 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 		ET_TraceTriger(node->children[1], clip);
 }
 
-static const char* ET_GetEntityName(edict_t* entity)
+const char* SV_GetEntityName(edict_t* entity)
 {
 	const char* name = PR_GetString(entity->v.classname);
 
@@ -1275,7 +1275,7 @@ void SV_UpdateTracedEntityInfo(void)
 	if (ent == NULL)
 		return;
 
-	const char* name = ET_GetEntityName(ent);
+	const char* name = SV_GetEntityName(ent);
 
 	vec_t* min = ent->v.absmin;
 	vec_t* max = ent->v.absmax;

@@ -546,10 +546,8 @@ static int LS_value_edict_tostring(lua_State* state)
 		description = "<free>";
 	else
 	{
-		description = PR_GetString(ed->v.classname);
-
-		if (description[0] == '\0')
-			description = PR_GetString(ed->v.model);
+		const char* SV_GetEntityName(edict_t* entity);
+		description = SV_GetEntityName(ed);
 
 		if (description[0] == '\0')
 			description = "<unnamed>";
