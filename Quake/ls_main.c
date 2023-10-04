@@ -684,23 +684,18 @@ static int LS_global_player_setpos(lua_State* state)
 
 static int LS_global_player_traceentity(lua_State* state)
 {
-	if (sv.active)
-	{
-		edict_t* SV_TraceEntity(void);
-		edict_t* ed = SV_TraceEntity();
+	edict_t* SV_TraceEntity(void);
+	edict_t* ed = SV_TraceEntity();
 
-		if (ed == NULL)
-			lua_pushnil(state);
-		else
-		{
-			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
-			assert(indexptr);
-			*indexptr = NUM_FOR_EDICT(ed);
-			LS_SetEdictMetaTable(state);
-		}
-	}
-	else
+	if (ed == NULL)
 		lua_pushnil(state);
+	else
+	{
+		int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+		assert(indexptr);
+		*indexptr = NUM_FOR_EDICT(ed);
+		LS_SetEdictMetaTable(state);
+	}
 
 	return 1;
 }
