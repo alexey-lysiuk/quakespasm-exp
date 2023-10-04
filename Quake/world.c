@@ -944,16 +944,19 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 typedef struct
 {
+	moveclip_t clip;
+	trace_t initialtrace;
 	vec3_t mins;
 	vec3_t maxs;
 	vec3_t start;
 	vec3_t end;
 	vec3_t forward;
-} moveclip_storage_t;
+} et_state_t;
 
-static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
+static void ET_InitEntityTrace(et_state_t* state)
 {
-	const vec_t* angles = sv_player->v.v_angle;
+	edict_t* player = state->clip.passedict;
+	const vec_t* angles = player->v.v_angle;
 
 	vec_t angle = angles[YAW] * (M_PI * 2 / 360);
 	vec_t sy = sin(angle);
@@ -963,33 +966,31 @@ static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
 	vec_t sp = sin(angle);
 	vec_t cp = cos(angle);
 
-	storage->forward[0] = cp * cy;
-	storage->forward[1] = cp * sy;
-	storage->forward[2] = -sp;
+	state->forward[0] = cp * cy;
+	state->forward[1] = cp * sy;
+	state->forward[2] = -sp;
 
-	VectorCopy(vec3_origin, storage->mins);
-	VectorCopy(vec3_origin, storage->maxs);
+	VectorCopy(vec3_origin, state->mins);
+	VectorCopy(vec3_origin, state->maxs);
 
-	VectorCopy(sv_player->v.origin, storage->start);
-	storage->start[2] += 20;
-	VectorMA(storage->start, 16 * 1024, storage->forward, storage->end);
-
-	memset(clip, 0, sizeof *clip);
+	VectorCopy(player->v.origin, state->start);
+	state->start[2] += 20;
+	VectorMA(state->start, 16 * 1024, state->forward, state->end);
 
 	// clip to world
-	clip->trace = SV_ClipMoveToEntity(sv.edicts, storage->start, storage->mins, storage->maxs, storage->end);
-	clip->start = storage->start;
-	clip->end = storage->end;
-	clip->mins = storage->mins;
-	clip->maxs = storage->maxs;
+	moveclip_t* clip = &state->clip;
+	clip->trace = SV_ClipMoveToEntity(sv.edicts, state->start, state->mins, state->maxs, state->end);
+	clip->start = state->start;
+	clip->end = state->end;
+	clip->mins = state->mins;
+	clip->maxs = state->maxs;
 	clip->type = 0;
-	clip->passedict = sv_player;
 
-	VectorCopy(storage->mins, clip->mins2);
-	VectorCopy(storage->maxs, clip->maxs2);
+	VectorCopy(state->mins, clip->mins2);
+	VectorCopy(state->maxs, clip->maxs2);
 
 	// create the bounding box of the entire move
-	SV_MoveBounds(storage->start, clip->mins2, clip->maxs2, storage->end, clip->boxmins, clip->boxmaxs);
+	SV_MoveBounds(state->start, clip->mins2, clip->maxs2, state->end, clip->boxmins, clip->boxmaxs);
 }
 
 // Mostly a copy of SV_ClipToLinks() but for trigger_edicts
@@ -1128,7 +1129,7 @@ static const char* ET_GetEntityName(edict_t* entity)
 	return name;
 }
 
-static vec_t ET_DistanceToEntity(moveclip_storage_t* storage, const edict_t* entity, qboolean setend)
+static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qboolean setend)
 {
 	vec3_t end;
 
@@ -1147,33 +1148,40 @@ static vec_t ET_DistanceToEntity(moveclip_storage_t* storage, const edict_t* ent
 
 edict_t* SV_TraceEntity(void)
 {
-	moveclip_t clip;
-	moveclip_storage_t storage;
-	ET_InitEntityTrace(&clip, &storage);
+	if (svs.clients == NULL || !svs.clients[0].active)
+		return NULL;
 
-	trace_t trace = clip.trace;
+	et_state_t state;
+	memset(&state, 0, sizeof state);
+
+	moveclip_t* clip = &state.clip;
+	edict_t* player = svs.clients[0].edict;
+	clip->passedict = player;
+
+	ET_InitEntityTrace(&state);
+	state.initialtrace = clip->trace;
 
 	// Trace solid entity
-	SV_ClipToLinks(sv_areanodes, &clip);
-	edict_t* solid_ent = clip.trace.ent;
+	SV_ClipToLinks(sv_areanodes, clip);
+	edict_t* solid_ent = clip->trace.ent;
 
-	clip.trace = trace;
+	clip->trace = state.initialtrace;
 
 	// Trace trigger entity
-	ET_TraceTriger(sv_areanodes, &clip);
-	edict_t* trigger_ent = clip.trace.ent;
-
-	edict_t* ent = NULL;
+	ET_TraceTriger(sv_areanodes, clip);
+	edict_t* trigger_ent = clip->trace.ent;
 
 	// Choose entity, solid or trigger, depending on tracing results and proximity
+	edict_t* ent = NULL;
+
 	if (!solid_ent || solid_ent == sv.edicts)
 		ent = trigger_ent;
 	else if (!trigger_ent || trigger_ent == sv.edicts)
 		ent = solid_ent;
 	else
 	{
-		vec_t trigger_dist = ET_DistanceToEntity(&storage, trigger_ent, /* setend = */ false);
-		vec_t solid_dist = ET_DistanceToEntity(&storage, solid_ent, /* setend = */ false);
+		vec_t trigger_dist = ET_DistanceToEntity(&state, trigger_ent, /* setend = */ false);
+		vec_t solid_dist = ET_DistanceToEntity(&state, solid_ent, /* setend = */ false);
 
 		ent = trigger_dist > solid_dist ? trigger_ent : solid_ent;
 	}
@@ -1186,19 +1194,24 @@ edict_t* SV_TraceEntity(void)
 
 		for (int i = 1; i < sv.num_edicts; i++, check = NEXT_EDICT(check) )
 		{
-			if (check == sv_player)
+			if (check == player)
 				continue;
 
-			float dist = ET_DistanceToEntity(&storage, check, /* setend = */ true);
+			if (check->v.solid == SOLID_NOT)
+				continue;
+
+			float dist = ET_DistanceToEntity(&state, check, /* setend = */ true);
 			if (dist < bestdist)
 				continue;	// to far to turn
 
-			if (check->v.solid == SOLID_TRIGGER)
-				ET_TraceTriger(sv_areanodes, &clip);
-			else if (check->v.solid != SOLID_NOT)
-				SV_ClipToLinks(sv_areanodes, &clip);
+			clip->trace = state.initialtrace;
 
-			if (clip.trace.ent == check)
+			if (check->v.solid == SOLID_TRIGGER)
+				ET_TraceTriger(sv_areanodes, clip);
+			else
+				SV_ClipToLinks(sv_areanodes, clip);
+
+			if (clip->trace.ent == check)
 			{
 				bestdist = dist;
 				ent = check;
@@ -1226,7 +1239,7 @@ void SV_ResetTracedEntityInfo(cvar_t *var)
 
 void SV_UpdateTracedEntityInfo(void)
 {
-	if (sv_traceentity.value == 0 || svs.maxclients != 1)
+	if (sv_traceentity.value == 0)
 		return;
 
 	if (sv_tracedentityinfo[0][0] == '\0')
