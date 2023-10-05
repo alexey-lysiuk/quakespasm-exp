@@ -921,8 +921,14 @@ void BuildTabList (const char *partial)
 			AddToTabList (alias->name, "alias");
 
 #ifdef USE_LUA_SCRIPTING
-	void LS_BuildTabList (const char *partial, void (*addtolist) (const char* name, const char* type));
-	LS_BuildTabList (partial, AddToTabList);
+	const char *LS_GetNextCommand (const char *);
+	const char *luacmd = NULL;
+
+	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
+	{
+		if (!Q_strncmp (partial, luacmd, len))
+			AddToTabList (luacmd, "alias");
+	}
 #endif // USE_LUA_SCRIPTING
 }
 

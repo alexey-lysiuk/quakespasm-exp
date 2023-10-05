@@ -260,7 +260,7 @@ Cmd_Exec_f
 */
 void Cmd_Exec_f (void)
 {
-	char	*f;
+	const char	*f;
 	int		mark;
 
 	if (Cmd_Argc () != 2)
@@ -270,7 +270,7 @@ void Cmd_Exec_f (void)
 	}
 
 	mark = Hunk_LowMark ();
-	f = (char *)COM_LoadHunkFile (Cmd_Argv(1), NULL);
+	f = (const char *)COM_LoadHunkFile (Cmd_Argv(1), NULL);
 	if (!f && !strcmp(Cmd_Argv(1), "default.cfg")) {
 		f = default_cfg;	/* see above.. */
 	}
@@ -499,6 +499,20 @@ void Cmd_List_f (void)
 		count++;
 	}
 
+#ifdef USE_LUA_SCRIPTING
+	const char *LS_GetNextCommand (const char *);
+	const char *luacmd = NULL;
+
+	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
+	{
+		if (partial && Q_strncmp (partial, luacmd, len))
+			continue;
+
+		Con_SafePrintf ("   %s\n", luacmd);
+		count++;
+	}
+#endif // USE_LUA_SCRIPTING
+
 	Con_SafePrintf ("%i commands", count);
 	if (partial)
 	{
@@ -564,12 +578,8 @@ void Cmd_Apropos_f(void)
 	const char *LS_GetNextCommand (const char *);
 	const char *luacmd = NULL;
 
-	for (;;)
+	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
 	{
-		luacmd = LS_GetNextCommand (luacmd);
-		if (luacmd == NULL)
-			break;
-
 		if (q_strcasestr(luacmd, substr))
 		{
 			hits++;

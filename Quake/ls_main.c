@@ -546,10 +546,8 @@ static int LS_value_edict_tostring(lua_State* state)
 		description = "<free>";
 	else
 	{
-		description = PR_GetString(ed->v.classname);
-
-		if (description[0] == '\0')
-			description = PR_GetString(ed->v.model);
+		const char* SV_GetEntityName(edict_t* entity);
+		description = SV_GetEntityName(ed);
 
 		if (description[0] == '\0')
 			description = "<unnamed>";
@@ -680,6 +678,24 @@ static int LS_global_player_setpos(lua_State* state)
 
 	Cbuf_AddText(command);
 	return 0;
+}
+
+static int LS_global_player_traceentity(lua_State* state)
+{
+	edict_t* SV_TraceEntity(void);
+	edict_t* ed = SV_TraceEntity();
+
+	if (ed == NULL)
+		lua_pushnil(state);
+	else
+	{
+		int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+		assert(indexptr);
+		*indexptr = NUM_FOR_EDICT(ed);
+		LS_SetEdictMetaTable(state);
+	}
+
+	return 1;
 }
 
 static int LS_PlayerCheatCommand(lua_State* state, const char* command)
@@ -1034,6 +1050,7 @@ static void LS_InitGlobalTables(lua_State* state)
 			{ "noclip", LS_global_player_noclip },
 			{ "notarget", LS_global_player_notarget },
 			{ "setpos", LS_global_player_setpos },
+			{ "traceentity", LS_global_player_traceentity },
 			{ NULL, NULL }
 		};
 
@@ -1096,10 +1113,15 @@ static lua_State* LS_GetState(void)
 	lua_State* state = lua_newstate(LS_alloc, NULL);
 	assert(state);
 
+	lua_gc(state, LUA_GCSTOP);
+
 	LS_InitStandardLibraries(state);
 	LS_InitGlobalFunctions(state);
 	LS_InitGlobalTables(state);
 	LS_LoadEngineScripts(state);
+
+	lua_gc(state, LUA_GCRESTART);
+	lua_gc(state, LUA_GCCOLLECT);
 
 	ls_state = state;
 	return state;
@@ -1267,26 +1289,30 @@ qboolean LS_ConsoleCommand(void)
 	return result;
 }
 
-void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, const char* type))
+const char *LS_GetNextCommand(const char *command)
 {
-	size_t partlen = strlen(partial);
-
 	lua_State* state = LS_GetState();
 	assert(state);
 	assert(lua_gettop(state) == 0);
 
 	lua_getglobal(state, ls_console_name);
-	lua_pushnil(state);
+
+	if (command == NULL)
+		lua_pushnil(state);
+	else
+		lua_pushstring(state, command);
+
+	const char* result = NULL;
 
 	while (lua_next(state, -2) != 0)
 	{
 		if (lua_type(state, -1) == LUA_TFUNCTION && lua_type(state, -2) == LUA_TSTRING)
 		{
-			const char* name = lua_tostring(state, -2);
-			assert(name);
+			result = lua_tostring(state, -2);
+			assert(result);
 
-			if (Q_strncmp(partial, name, partlen) == 0)
-				addtolist(name, "command");
+			lua_pop(state, 2);  // remove name and value
+			break;
 		}
 
 		lua_pop(state, 1);  // remove value, keep name for next iteration
@@ -1294,6 +1320,8 @@ void LS_BuildTabList(const char* partial, void (*addtolist)(const char* name, co
 
 	lua_pop(state, 1);  // remove console namespace table
 	assert(lua_gettop(state) == 0);
+
+	return result;
 }
 
 const char *LS_GetNextCommand(const char *command)

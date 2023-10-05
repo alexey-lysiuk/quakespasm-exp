@@ -944,95 +944,113 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 typedef struct
 {
+	moveclip_t clip;
+	trace_t initialtrace;
 	vec3_t mins;
 	vec3_t maxs;
 	vec3_t start;
 	vec3_t end;
-} moveclip_storage_t;
+	vec3_t forward;
+} et_state_t;
 
-static void ET_InitEntityTrace(moveclip_t* clip, moveclip_storage_t* storage)
+static void ET_InitEntityTrace(et_state_t* state)
 {
-	VectorCopy(vec3_origin, storage->mins);
-	VectorCopy(vec3_origin, storage->maxs);
+	edict_t* player = state->clip.passedict;
+	const vec_t* angles = player->v.v_angle;
 
-	VectorCopy(sv_player->v.origin, storage->start);
-	storage->start[2] += 20;
-	VectorMA(storage->start, 2048, pr_global_struct->v_forward, storage->end);
+	vec_t angle = angles[YAW] * (M_PI * 2 / 360);
+	vec_t sy = sin(angle);
+	vec_t cy = cos(angle);
 
-	memset(clip, 0, sizeof *clip);
+	angle = angles[PITCH] * (M_PI*2 / 360);
+	vec_t sp = sin(angle);
+	vec_t cp = cos(angle);
+
+	state->forward[0] = cp * cy;
+	state->forward[1] = cp * sy;
+	state->forward[2] = -sp;
+
+	VectorCopy(vec3_origin, state->mins);
+	VectorCopy(vec3_origin, state->maxs);
+
+	VectorCopy(player->v.origin, state->start);
+	state->start[2] += 20;
+	VectorMA(state->start, 16 * 1024, state->forward, state->end);
 
 	// clip to world
-	clip->trace = SV_ClipMoveToEntity(sv.edicts, storage->start, storage->mins, storage->maxs, storage->end);
-	clip->start = storage->start;
-	clip->end = storage->end;
-	clip->mins = storage->mins;
-	clip->maxs = storage->maxs;
+	moveclip_t* clip = &state->clip;
+	clip->trace = SV_ClipMoveToEntity(sv.edicts, state->start, state->mins, state->maxs, state->end);
+	clip->start = state->start;
+	clip->end = state->end;
+	clip->mins = state->mins;
+	clip->maxs = state->maxs;
 	clip->type = 0;
-	clip->passedict = sv_player;
 
-	VectorCopy(storage->mins, clip->mins2);
-	VectorCopy(storage->maxs, clip->maxs2);
+	VectorCopy(state->mins, clip->mins2);
+	VectorCopy(state->maxs, clip->maxs2);
 
 	// create the bounding box of the entire move
-	SV_MoveBounds(storage->start, clip->mins2, clip->maxs2, storage->end, clip->boxmins, clip->boxmaxs);
+	SV_MoveBounds(state->start, clip->mins2, clip->maxs2, state->end, clip->boxmins, clip->boxmaxs);
 }
 
 // Mostly a copy of SV_ClipToLinks() but for trigger_edicts
 static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 {
-	link_t		*l, *next;
-	edict_t		*touch;
-	trace_t		trace;
-
-	// touch linked edicts
-	for (l = node->trigger_edicts.next ; l != &node->trigger_edicts ; l = next)
+	for (link_t* next, *current = node->trigger_edicts.next; current != &node->trigger_edicts; current = next)
 	{
-		next = l->next;
-		touch = EDICT_FROM_AREA(l);
+		next = current->next;
+
+		edict_t* touch = EDICT_FROM_AREA(current);
+
 		if (touch->v.solid == SOLID_NOT)
 			continue;
+
 		if (touch == clip->passedict)
 			continue;
 
 		if (clip->boxmins[0] > touch->v.absmax[0]
-		|| clip->boxmins[1] > touch->v.absmax[1]
-		|| clip->boxmins[2] > touch->v.absmax[2]
-		|| clip->boxmaxs[0] < touch->v.absmin[0]
-		|| clip->boxmaxs[1] < touch->v.absmin[1]
-		|| clip->boxmaxs[2] < touch->v.absmin[2] )
+			|| clip->boxmins[1] > touch->v.absmax[1]
+			|| clip->boxmins[2] > touch->v.absmax[2]
+			|| clip->boxmaxs[0] < touch->v.absmin[0]
+			|| clip->boxmaxs[1] < touch->v.absmin[1]
+			|| clip->boxmaxs[2] < touch->v.absmin[2])
 			continue;
 
 		// might intersect, so do an exact clip
 		if (clip->trace.allsolid)
 			return;
+
 		if (clip->passedict)
 		{
 			if (PROG_TO_EDICT(touch->v.owner) == clip->passedict)
 				continue;	// don't clip against own missiles
+
 			if (PROG_TO_EDICT(clip->passedict->v.owner) == touch)
 				continue;	// don't clip against owner
 		}
 
+		trace_t trace;
+
 		{
-			// Replacemet of SV_ClipMoveToEntity()
-			vec3_t offset;
-			vec3_t start_l, end_l;
-			hull_t *hull;
+			// Replacement of SV_ClipMoveToEntity()
 
 			// fill in a default trace
-			memset (&trace, 0, sizeof(trace_t));
+			memset(&trace, 0, sizeof(trace_t));
 			trace.fraction = 1;
 			trace.allsolid = true;
-			VectorCopy (clip->end, trace.endpos);
+			VectorCopy(clip->end, trace.endpos);
 
 			// get the clipping hull
+			hull_t* hull;
+			vec3_t offset;
+
 			{
 				// Replacemet of SV_HullForEntity() with adjustment for zero-sized triggers
 				// like lava balls (fireball quakec class)
 
 				vec3_t hullmins, hullmaxs;
-				VectorSubtract (touch->v.mins, clip->maxs, hullmins);
-				VectorSubtract (touch->v.maxs, clip->mins, hullmaxs);
+				VectorSubtract(touch->v.mins, clip->maxs, hullmins);
+				VectorSubtract(touch->v.maxs, clip->mins, hullmaxs);
 
 				if (VectorCompare(vec3_origin, hullmins) && VectorCompare(vec3_origin, hullmaxs))
 				{
@@ -1045,16 +1063,17 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 					hullmaxs[2] = 16.f;
 				}
 
-				hull = SV_HullForBox (hullmins, hullmaxs);
+				hull = SV_HullForBox(hullmins, hullmaxs);
 
-				VectorCopy (touch->v.origin, offset);
+				VectorCopy(touch->v.origin, offset);
 			}
 
-			VectorSubtract (clip->start, offset, start_l);
-			VectorSubtract (clip->end, offset, end_l);
+			vec3_t start, end;
+			VectorSubtract(clip->start, offset, start);
+			VectorSubtract(clip->end, offset, end);
 
 			// trace a line through the apropriate clipping hull
-			SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+			SV_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start, end, &trace);
 
 			// fix trace up by the offset
 			if (trace.fraction != 1)
@@ -1065,10 +1084,10 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 				trace.ent = touch;
 		}
 
-		if (trace.allsolid || trace.startsolid ||
-		trace.fraction < clip->trace.fraction)
+		if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
 		{
 			trace.ent = touch;
+
 			if (clip->trace.startsolid)
 			{
 				clip->trace = trace;
@@ -1085,50 +1104,163 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 	if (node->axis == -1)
 		return;
 
-	if ( clip->boxmaxs[node->axis] > node->dist )
-		ET_TraceTriger ( node->children[0], clip );
-	if ( clip->boxmins[node->axis] < node->dist )
-		ET_TraceTriger ( node->children[1], clip );
+	if (clip->boxmaxs[node->axis] > node->dist)
+		ET_TraceTriger(node->children[0], clip);
+	if (clip->boxmins[node->axis] < node->dist)
+		ET_TraceTriger(node->children[1], clip);
 }
 
-static inline void ET_MidPoint(edict_t *ed, vec3_t pos)
+const char* SV_GetEntityName(edict_t* entity)
 {
-	vec_t* min = ed->v.absmin;
-	vec_t* max = ed->v.absmax;
+	const char* name = PR_GetString(entity->v.classname);
+
+	if (name[0] == '\0')
+		name = PR_GetString(entity->v.netname);
+
+	if (name[0] == '\0')
+		name = PR_GetString(entity->v.model);
+
+	if (name[0] == '\0')
+	{
+		dfunction_t* function = pr_functions + entity->v.touch;
+		name = PR_GetString(function->s_name);
+	}
+
+	return name;
+}
+
+static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qboolean setend)
+{
+	vec3_t end;
 
 	for (int i = 0; i < 3; ++i)
-		pos[i] = min[i] + (max[i] - min[i]) * 0.5f;
+		end[i] = entity->v.origin[i] + 0.5 * (entity->v.mins[i] + entity->v.maxs[i]);
+
+	if (setend)
+		VectorCopy(end, storage->end);
+
+	vec3_t dir;
+	VectorSubtract(end, storage->start, dir);
+	VectorNormalize(dir);
+
+	return DotProduct(dir, storage->forward);
 }
 
-enum ET_TraceFlags
+edict_t* SV_TraceEntity(void)
 {
-	ET_CHECK_OWNER = 2,  // Use owner (if set) for entity without classname and model
-	ET_PREFER_SOLID = 4,  // If solid and trigger entities are picked, do not check distance to them, but choose solid one
-};
+	if (svs.clients == NULL || !svs.clients[0].active)
+		return NULL;
+
+	et_state_t state;
+	memset(&state, 0, sizeof state);
+
+	moveclip_t* clip = &state.clip;
+	edict_t* player = svs.clients[0].edict;
+	clip->passedict = player;
+
+	ET_InitEntityTrace(&state);
+	state.initialtrace = clip->trace;
+
+	// Trace solid entity
+	SV_ClipToLinks(sv_areanodes, clip);
+	edict_t* solid_ent = clip->trace.ent;
+
+	clip->trace = state.initialtrace;
+
+	// Trace trigger entity
+	ET_TraceTriger(sv_areanodes, clip);
+	edict_t* trigger_ent = clip->trace.ent;
+
+	// Choose entity, solid or trigger, depending on tracing results and proximity
+	edict_t* ent = NULL;
+
+	if (!solid_ent || solid_ent == sv.edicts)
+		ent = trigger_ent;
+	else if (!trigger_ent || trigger_ent == sv.edicts)
+		ent = solid_ent;
+	else
+	{
+		vec_t trigger_dist = ET_DistanceToEntity(&state, trigger_ent, /* setend = */ false);
+		vec_t solid_dist = ET_DistanceToEntity(&state, solid_ent, /* setend = */ false);
+
+		ent = trigger_dist > solid_dist ? trigger_ent : solid_ent;
+	}
+
+	// Nothing is traced yet, try all possible entities
+	if (ent == NULL || ent == sv.edicts)
+	{
+		float bestdist = 0;
+		edict_t* check = NEXT_EDICT(sv.edicts);
+
+		for (int i = 1; i < sv.num_edicts; i++, check = NEXT_EDICT(check) )
+		{
+			if (check == player)
+				continue;
+
+			if (check->v.solid == SOLID_NOT)
+				continue;
+
+			float dist = ET_DistanceToEntity(&state, check, /* setend = */ true);
+			if (dist < bestdist)
+				continue;	// to far to turn
+
+			clip->trace = state.initialtrace;
+
+			if (check->v.solid == SOLID_TRIGGER)
+				ET_TraceTriger(sv_areanodes, clip);
+			else
+				SV_ClipToLinks(sv_areanodes, clip);
+
+			if (clip->trace.ent == check)
+			{
+				bestdist = dist;
+				ent = check;
+			}
+		}
+	}
+
+	return ent == sv.edicts ? NULL : ent;
+}
 
 cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
-char sv_entityinfo[8][128];
+
+#define et_infosize 1024
+char sv_tracedentityinfo[et_infosize];
+static char* et_infoptr;
+
+static inline void entity_sprintf(const char* format, ...)
+{
+	// One character should reserved for terminating zero, i.e. additional '\0' after the last line's null terminator
+	size_t size = et_infosize - (et_infoptr - sv_tracedentityinfo) - 1;
+	if (size == 0)
+		return;
+
+	va_list argptr;
+	va_start(argptr, format);
+
+	et_infoptr += q_vsnprintf(et_infoptr, size, format, argptr);
+	et_infoptr++;  // set current position after null terminator
+
+	va_end(argptr);
+}
+
 
 static double et_timesinceupdate;
 
-void SV_ResetEntityTrace(cvar_t *var)
+void SV_ResetTracedEntityInfo(cvar_t *var)
 {
 	(void)var;
 
-	for (size_t i = 0; i < sizeof sv_entityinfo / sizeof sv_entityinfo[0]; ++i)
-		sv_entityinfo[i][0] = '\0';
-
+	sv_tracedentityinfo[0] = '\0';
 	et_timesinceupdate = 0;
 }
 
-void SV_TraceEntity(void)
+void SV_UpdateTracedEntityInfo(void)
 {
-	int tracemode = sv_traceentity.value;
-
-	if (tracemode < 1 || svs.maxclients != 1)
+	if (sv_traceentity.value == 0)
 		return;
 
-	if (sv_entityinfo[0][0] == '\0')
+	if (sv_tracedentityinfo[0] == '\0')
 		et_timesinceupdate = DBL_MAX;
 	else
 		et_timesinceupdate += host_frametime;
@@ -1136,96 +1268,52 @@ void SV_TraceEntity(void)
 	if (et_timesinceupdate < 0.1)
 		return;
 
-	SV_ResetEntityTrace(NULL);
+	SV_ResetTracedEntityInfo(NULL);
 
-	moveclip_t clip;
-	moveclip_storage_t storage;
-	ET_InitEntityTrace(&clip, &storage);
+	edict_t* ent = SV_TraceEntity();
 
-	trace_t trace = clip.trace;
+	if (ent == NULL)
+		return;
 
-	// clip to entities
-	SV_ClipToLinks(sv_areanodes, &clip);
-	edict_t* solid_ent = clip.trace.ent;
+	const char* name = SV_GetEntityName(ent);
 
-	clip.trace = trace;
+	vec_t* min = ent->v.absmin;
+	vec_t* max = ent->v.absmax;
 
-	ET_TraceTriger(sv_areanodes, &clip);
-	edict_t* trigger_ent = clip.trace.ent;
+	et_infoptr = sv_tracedentityinfo;
 
-	edict_t *ent = NULL;
+	entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
+	entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
+	entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
 
-	if (!solid_ent || solid_ent == sv.edicts)
-		ent = trigger_ent;
-	else if (!trigger_ent || trigger_ent == sv.edicts || (tracemode & ET_PREFER_SOLID))
-		ent = solid_ent;
-	else
 	{
-		// TODO: customize distance check, e.g. center-to-center, center-to-plane, ...
-
-		vec3_t solid_pos;
-		ET_MidPoint(solid_ent, solid_pos);
-		VectorSubtract(solid_pos, clip.start, solid_pos);
-
-		vec3_t trigger_pos;
-		ET_MidPoint(trigger_ent, trigger_pos);
-		VectorSubtract(trigger_pos, clip.start, trigger_pos);
-
-		vec_t solid_dist = DotProduct(solid_pos, solid_pos);
-		vec_t trigger_dist = DotProduct(trigger_pos, trigger_pos);
-
-		ent = trigger_dist > solid_dist ? solid_ent : trigger_ent;
+		float health = ent->v.health;
+		if (health != 0.f)
+			entity_sprintf("health: %.0f", health);
 	}
-	
-	while (ent && ent != sv.edicts)
 	{
-		const char* name = PR_GetString(ent->v.classname);
-
-		if (name[0] == '\0')
-			name = PR_GetString(ent->v.model);
-
-		if (name[0] == '\0')
-		{
-			if (tracemode & ET_CHECK_OWNER)
-			{
-				ent = PROG_TO_EDICT(ent->v.owner);
-				continue;
-			}
-
-			break; // Ignore edict without classname and model
-		}
-
-		vec_t* min = ent->v.absmin;
-		vec_t* max = ent->v.absmax;
-		int line = 0;
-
-#define entity_sprintf(format, ...) \
-	q_snprintf(sv_entityinfo[line++], sizeof(sv_entityinfo[0]), format, __VA_ARGS__)
-
-		entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
-		entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
-		entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
-
-		{
-			float health = ent->v.health;
-			if (health != 0.f)
-				entity_sprintf("health: %.0f", health);
-		}
-		{
-			const char *target = PR_GetString(ent->v.target);
-			if (target[0] != '\0')
-				entity_sprintf("target: %s", target);
-		}
-		{
-			const char *targetname = PR_GetString(ent->v.targetname);
-			if (targetname[0] != '\0')
-				entity_sprintf("targetname: %s", targetname);
-		}
-
-#undef entity_sprintf
-
-		break;
+		const char *target = PR_GetString(ent->v.target);
+		if (target[0] != '\0')
+			entity_sprintf("target: %s", target);
 	}
+	{
+		const char *targetname = PR_GetString(ent->v.targetname);
+		if (targetname[0] != '\0')
+			entity_sprintf("targetname: %s", targetname);
+	}
+	{
+		int spawnflags = ent->v.spawnflags;
+		if (spawnflags != 0)
+			entity_sprintf("spawnflags: 0x%X", spawnflags);
+	}
+	{
+		int flags = ent->v.flags;
+		if (flags != 0)
+			entity_sprintf("flags: 0x%X", flags);
+	}
+
+	// Terminating zero (additional '\0' after the last line's null terminator) designates end of info
+	et_infoptr[0] = '\0';
 }
 
 #ifndef NDEBUG
@@ -1250,7 +1338,7 @@ static void DumpAreaNodeEdicts(FILE* f, link_t *edlink, const char* name, int le
 		}
 
 		edict_t* ed = EDICT_FROM_AREA(current);
-		fprintf(f, "%*s- edict: %p\n", level * 2, "", ed);
+		fprintf(f, "%*s- edict: %i (%p)\n", level * 2, "", NUM_FOR_EDICT(ed), ed);
 		{
 			const char* classname = PR_GetString(ed->v.classname);
 			if (classname[0] != '\0')

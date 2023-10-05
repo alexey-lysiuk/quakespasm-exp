@@ -344,14 +344,15 @@ if(APPLE)
 			MACOSX_PACKAGE_LOCATION Resources
 		)
 	else()
+		set(PLATFORM_SOURCE
+			${PLATFORM_SOURCE}
+			Quake/noappbundle_main.c
+		)
 		set(OTHER_FILES
 			${OTHER_FILES}
 			${MACOS_BUNDLE_SOURCES}
 			${MACOS_RESOURCES}
 		)
-
-		# Workaround missing main function
-		target_link_libraries(${PROJECT_NAME} PRIVATE "-Wl,-alias -Wl,_SDL_main -Wl,_main")
 	endif()
 elseif(WIN32)
 	target_link_libraries(${PROJECT_NAME} PRIVATE Winmm Ws2_32)
