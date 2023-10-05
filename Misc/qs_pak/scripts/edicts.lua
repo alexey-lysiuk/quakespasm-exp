@@ -312,3 +312,110 @@ end
 function console.items(choice)
 	edicts.foreach(handleitem, choice)
 end
+
+
+---
+---
+---
+
+function console.lookat()
+	local edict = player.traceentity()
+
+	if edict then
+		for _, field in ipairs(edict) do
+			print(field.name .. ':', field.value)
+		end
+	end
+end
+
+function console.lookatrefs(choice)
+	local edict = player.traceentity()
+
+	if not edict then
+		return
+	end
+
+	local centerpos = vec3.mid(edict.absmin, edict.absmax)
+	choice = choice and math.tointeger(choice) or 0
+
+	if choice == 1 then
+		player.setpos(centerpos)
+		return
+	end
+
+	local target = edict.target
+	-- print('target', target)
+	local targetname = edict.targetname
+	-- print('targetname', targetname)
+
+	-- print(edict)
+
+	-- if target == '' and targetname == '' then
+	-- 	return
+	-- end
+
+	local referencedby = {}
+	local references = {}
+
+	local function collectrefs(probe)
+		-- if probe == edict then
+		-- 	return 1
+		-- end
+
+		if target ~= '' and target == probe.targetname then
+			-- print('target hit', target)
+			references[#references + 1] = probe
+		end
+
+		if targetname ~= '' and targetname == probe.target then
+			-- print('targetname hit', target)
+			referencedby[#references + 1] = probe
+		end
+
+		return 1
+	end
+
+	edicts.foreach(collectrefs)
+
+	local refbycount = #referencedby
+	local refscount = #references
+	local count = 1 + refbycount + refscount
+	
+	if choice > 1 and choice <= count then
+		if choice <= refbycount + 1 then
+			local ref = referencedby[choice - 1]
+			centerpos = vec3.mid(ref.absmin, ref.absmax)
+			player.setpos(centerpos)
+		else 
+			local ref = references[choice - refbycount - 1]
+			centerpos = vec3.mid(ref.absmin, ref.absmax)
+			player.setpos(centerpos)
+		end
+		return
+	end
+	
+	print('Look-at entity')
+	print('1:', edict.classname, 'at', centerpos)
+	
+	local index = 2
+
+	if refbycount > 0 then
+		print('Referenced by')
+
+		for _, edict in ipairs(referencedby) do
+			centerpos = vec3.mid(edict.absmin, edict.absmax)
+			print(index .. ':', edict.classname, 'at', centerpos)
+			index = index + 1
+		end
+	end
+	
+	if refscount > 0 then
+		print('References')
+
+		for _, edict in ipairs(references) do
+			centerpos = vec3.mid(edict.absmin, edict.absmax)
+			print(index .. ':', edict.classname, 'at', centerpos)
+			index = index + 1
+		end
+	end
+end
