@@ -288,8 +288,15 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 if(MSVC)
-	target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
-	set(CMAKE_C_FLAGS "/MP ${CMAKE_C_FLAGS}")
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	set(CMAKE_C_FLAGS "/MP /wd4996 ${CMAKE_C_FLAGS}")
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		# Disable the following warnings, Lua files only
+		# - warning C4244: 'function': conversion from '__int64' to 'lua_Integer', possible loss of data
+		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
+		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
+	endif()
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
@@ -305,6 +312,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR})
 if(APPLE)
 	if(NOT QUAKE_MACOS_MOUSE_ACCELERATION)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE MACOS_X_ACCELERATION_HACK)
+
+		# Disable a bunch of IOKit deprecation warnings
+		set(CMAKE_C_FLAGS "-Wno-deprecated-declarations ${CMAKE_C_FLAGS}")
 	endif()
 
 	target_compile_definitions(${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION)
