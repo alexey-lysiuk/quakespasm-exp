@@ -1144,6 +1144,71 @@ static void PR_PatchRereleaseBuiltins (void)
 	}
 }
 
+static void PR_PatchFishCountBug (void)
+{
+/*
+	Patch rotfish total monster count bug,
+	see https://quakewiki.org/wiki/Rotfish#Bugs.2FIssues
+	Official add-ons have this bug fixed, the original game should be patched.
+
+	Disassembly of swimmonster_start_go() from version 1.06:
+
+	8600: IFNOT      35(deathmatch)      0.0                         branch 4
+	8604: STORE_V    28                  4                           0
+	8604: CALL1      460                 0                           0
+	8604: RETURN     0                   0                           0
+	8604: ADDRESS    28(self)            163(takedamage).takedamage  5579(?)
+	8605: STOREP_F   252(DAMAGE_AIM)     2.0                         5579(?)
+	8606: ADD_F      40(total_monsters)  1.0                         5580(?)
+	8607: STORE_F    5580(?)             40(total_monsters)          0
+	8608: ADDRESS    28(self)entity      191(ideal_yaw).ideal_yaw    5581(?)
+	...
+
+	Instructions at 8606 and 8607 should be removed.
+	QuakeC doesn't have no-op instruction, replace the first instruction
+	with unconditional jump to skip the second one.
+*/
+
+	int funcindex, funcstart;
+	short totalmonsters;
+
+	if (pr_crc == 51103)  // version 1.01
+	{
+		funcindex = 374;
+		funcstart = 8399;
+		totalmonsters = 5464;
+	}
+	else if (pr_crc == 24778)  // version 1.06
+	{
+		funcindex = 373;
+		funcstart = 8600;
+		totalmonsters = 5580;
+	}
+	else
+		return;
+
+	if (progs->numfunctions <= funcindex ||
+		progs->numstatements <= funcstart ||
+		pr_functions[funcindex].first_statement != funcstart)
+		return;
+
+	// Check the second instruction
+	dstatement_t* st = &pr_statements[funcstart + 7];
+	if (st->op != OP_STORE_F || st->a != totalmonsters || st->b != 40 || st->c != 0)
+		return;
+
+	// Check the first instruction
+	st = &pr_statements[funcstart + 6];
+	if (st->op != OP_ADD_F || st->a != 40 || st->b != 214 || st->c != totalmonsters)
+		return;
+
+	// Replace the first instruction with goto to skip the second one
+	st->op = OP_GOTO;
+	st->a = 2;  // skip the current and the next instructions
+
+	Con_DPrintf("Patch for rotfish total monster count bug applied\n");
+}
+
 
 /*
 ===============
@@ -1252,6 +1317,8 @@ void PR_LoadProgs (void)
 
 	PR_PatchRereleaseBuiltins ();
 	pr_effects_mask = PR_FindSupportedEffects ();
+
+	PR_PatchFishCountBug ();
 }
 
 
