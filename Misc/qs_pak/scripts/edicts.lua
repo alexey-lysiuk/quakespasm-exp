@@ -315,61 +315,70 @@ end
 
 
 ---
+--- Gaze, entity player is looking at
 ---
----
 
-function console.lookat()
-	local edict = player.traceentity()
-
-	if edict then
-		for _, field in ipairs(edict) do
-			print(field.name .. ':', field.value)
-		end
-	end
-end
-
-function console.lookatrefs(choice)
+function console.gaze()
 	local edict = player.traceentity()
 
 	if not edict then
 		return
 	end
 
-	local centerpos = vec3.mid(edict.absmin, edict.absmax)
+	-- Build edict fields table, and calculate maximum length of field names
+	local fields = {}
+	local maxlen = 0
+
+	for i, field in ipairs(edict) do
+		local len = field.name:len()
+
+		if len > maxlen then
+			maxlen = len
+		end
+
+		fields[i] = field
+	end
+
+	-- Output formatted names and values of edict fields
+	local fieldformat = '%-' .. maxlen .. 's : %s'
+
+	for _, field in ipairs(fields) do
+		print(string.format(fieldformat, field.name, field.value))
+	end
+end
+
+function console.gazerefs(choice)
+	local edict = player.traceentity()
+
+	if not edict then
+		return
+	end
+
 	choice = choice and math.tointeger(choice) or 0
+	local pos = vec3.mid(edict.absmin, edict.absmax)
 
 	if choice == 1 then
-		player.setpos(centerpos)
+		player.setpos(pos)
 		return
 	end
 
 	local target = edict.target
-	-- print('target', target)
 	local targetname = edict.targetname
-	-- print('targetname', targetname)
 
-	-- print(edict)
-
-	-- if target == '' and targetname == '' then
-	-- 	return
-	-- end
+	if choice < 2 and target == '' and targetname == '' then
+		return
+	end
 
 	local referencedby = {}
 	local references = {}
 
 	local function collectrefs(probe)
-		-- if probe == edict then
-		-- 	return 1
-		-- end
-
 		if target ~= '' and target == probe.targetname then
-			-- print('target hit', target)
 			references[#references + 1] = probe
 		end
 
 		if targetname ~= '' and targetname == probe.target then
-			-- print('targetname hit', target)
-			referencedby[#references + 1] = probe
+			referencedby[#referencedby + 1] = probe
 		end
 
 		return 1
@@ -380,42 +389,41 @@ function console.lookatrefs(choice)
 	local refbycount = #referencedby
 	local refscount = #references
 	local count = 1 + refbycount + refscount
-	
+
 	if choice > 1 and choice <= count then
-		if choice <= refbycount + 1 then
-			local ref = referencedby[choice - 1]
-			centerpos = vec3.mid(ref.absmin, ref.absmax)
-			player.setpos(centerpos)
-		else 
-			local ref = references[choice - refbycount - 1]
-			centerpos = vec3.mid(ref.absmin, ref.absmax)
-			player.setpos(centerpos)
-		end
-		return
-	end
-	
-	print('Look-at entity')
-	print('1:', edict.classname, 'at', centerpos)
-	
-	local index = 2
+		-- skip gazed entity
+		choice = choice - 1
 
-	if refbycount > 0 then
-		print('Referenced by')
-
-		for _, edict in ipairs(referencedby) do
-			centerpos = vec3.mid(edict.absmin, edict.absmax)
-			print(index .. ':', edict.classname, 'at', centerpos)
-			index = index + 1
+		if choice > refbycount then
+			-- skip referenced-by entities
+			choice = choice - refbycount
 		end
-	end
-	
-	if refscount > 0 then
-		print('References')
 
-		for _, edict in ipairs(references) do
-			centerpos = vec3.mid(edict.absmin, edict.absmax)
-			print(index .. ':', edict.classname, 'at', centerpos)
-			index = index + 1
+		edict = referencedby[choice]
+		pos = vec3.mid(edict.absmin, edict.absmax)
+		player.setpos(pos)
+	else
+		print('\2Gazed entity')
+		print('1:', edict.classname, 'at', pos)
+
+		local index = 2
+
+		local function printrefs(header, refs)
+			if #refs == 0 then
+				return
+			end
+
+			print(header)
+
+			for _, edict in ipairs(refs) do
+				pos = vec3.mid(edict.absmin, edict.absmax)
+				print(index .. ':', edict.classname, 'at', pos)
+
+				index = index + 1
+			end
 		end
+
+		printrefs('\2Referenced by', referencedby)
+		printrefs('\2References', references)
 	end
 end
