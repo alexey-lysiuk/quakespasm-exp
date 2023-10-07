@@ -340,10 +340,17 @@ function console.gaze()
 	end
 
 	-- Output formatted names and values of edict fields
-	local fieldformat = '%-' .. maxlen .. 's : %s'
+	local fieldformat = '%s%-' .. maxlen .. 's : %s'
 
 	for _, field in ipairs(fields) do
-		print(string.format(fieldformat, field.name, field.value))
+		local name = field.name
+		local tint = ''
+
+		if name == 'target' or name == 'targetname' then
+			tint = '\2'
+		end
+
+		print(string.format(fieldformat, tint, name, field.value))
 	end
 end
 
@@ -387,19 +394,23 @@ function console.gazerefs(choice)
 	edicts.foreach(collectrefs)
 
 	local refbycount = #referencedby
-	local refscount = #references
-	local count = 1 + refbycount + refscount
+	local count = 1 + refbycount + #references
 
 	if choice > 1 and choice <= count then
 		-- skip gazed entity
 		choice = choice - 1
+		local reflist
 
 		if choice > refbycount then
+			reflist = references
+
 			-- skip referenced-by entities
 			choice = choice - refbycount
+		else
+			reflist = referencedby
 		end
 
-		edict = referencedby[choice]
+		edict = reflist[choice]
 		pos = vec3.mid(edict.absmin, edict.absmax)
 		player.setpos(pos)
 	else
