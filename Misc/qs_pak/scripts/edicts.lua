@@ -353,3 +353,88 @@ function console.gaze()
 		print(string.format(fieldformat, tint, name, field.value))
 	end
 end
+
+function console.gazerefs(choice)
+	local edict = player.traceentity()
+
+	if not edict then
+		return
+	end
+
+	choice = choice and math.tointeger(choice) or 0
+	local pos = vec3.mid(edict.absmin, edict.absmax)
+
+	if choice == 1 then
+		player.setpos(pos)
+		return
+	end
+
+	local target = edict.target
+	local targetname = edict.targetname
+
+	if choice < 2 and target == '' and targetname == '' then
+		return
+	end
+
+	local referencedby = {}
+	local references = {}
+
+	local function collectrefs(probe)
+		if target ~= '' and target == probe.targetname then
+			references[#references + 1] = probe
+		end
+
+		if targetname ~= '' and targetname == probe.target then
+			referencedby[#referencedby + 1] = probe
+		end
+
+		return 1
+	end
+
+	edicts.foreach(collectrefs)
+
+	local refbycount = #referencedby
+	local count = 1 + refbycount + #references
+
+	if choice > 1 and choice <= count then
+		-- skip gazed entity
+		choice = choice - 1
+		local reflist
+
+		if choice > refbycount then
+			reflist = references
+
+			-- skip referenced-by entities
+			choice = choice - refbycount
+		else
+			reflist = referencedby
+		end
+
+		edict = reflist[choice]
+		pos = vec3.mid(edict.absmin, edict.absmax)
+		player.setpos(pos)
+	else
+		print('\2Gazed entity')
+		print('1:', edict.classname, 'at', pos)
+
+		local index = 2
+
+		local function printrefs(header, refs)
+			if #refs == 0 then
+				return
+			end
+
+			print(header)
+
+			for _, edict in ipairs(refs) do
+				pos = vec3.mid(edict.absmin, edict.absmax)
+				print(index .. ':', edict.classname, 'at', pos)
+
+				index = index + 1
+			end
+		end
+
+		printrefs('\2Referenced by', referencedby)
+		printrefs('\2References', references)
+	end
+end
