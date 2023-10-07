@@ -136,6 +136,19 @@ local function handlemonster(edict, current, choice)
 		local ismonster = flags & FL_MONSTER ~= 0
 		local isalive = health > 0
 
+		if not ismonster then
+			local classname = edict.classname
+
+			if classname == 'monster_boss' then
+				-- Chthon
+				ismonster = true
+				isalive = health >= 0
+			elseif classname == 'monster_oldone' then
+				-- Shub-Niggurath
+				ismonster = true
+			end
+		end
+
 		if not ismonster or not isalive then
 			return current
 		end
@@ -144,7 +157,7 @@ local function handlemonster(edict, current, choice)
 			local classname = edict.classname
 
 			-- Remove classname prefix if present
-			if classname:find("monster_") == 1 then
+			if classname:find('monster_') == 1 then
 				classname = classname:sub(9)
 			end
 
