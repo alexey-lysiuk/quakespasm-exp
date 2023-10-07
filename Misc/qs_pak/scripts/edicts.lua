@@ -415,7 +415,7 @@ function console.gazerefs(choice)
 		player.setpos(pos)
 	else
 		print('\2Gazed entity')
-		print('1:', edict.classname, 'at', pos)
+		print('1:', edicts.getname(edict), 'at', pos)
 
 		local index = 2
 
@@ -428,7 +428,7 @@ function console.gazerefs(choice)
 
 			for _, edict in ipairs(refs) do
 				pos = vec3.mid(edict.absmin, edict.absmax)
-				print(index .. ':', edict.classname, 'at', pos)
+				print(index .. ':', edicts.getname(edict), 'at', pos)
 
 				index = index + 1
 			end
