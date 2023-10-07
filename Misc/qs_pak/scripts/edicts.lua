@@ -312,3 +312,44 @@ end
 function console.items(choice)
 	edicts.foreach(handleitem, choice)
 end
+
+
+---
+--- Gaze, entity player is looking at
+---
+
+function console.gaze()
+	local edict = player.traceentity()
+
+	if not edict then
+		return
+	end
+
+	-- Build edict fields table, and calculate maximum length of field names
+	local fields = {}
+	local maxlen = 0
+
+	for i, field in ipairs(edict) do
+		local len = field.name:len()
+
+		if len > maxlen then
+			maxlen = len
+		end
+
+		fields[i] = field
+	end
+
+	-- Output formatted names and values of edict fields
+	local fieldformat = '%s%-' .. maxlen .. 's : %s'
+
+	for _, field in ipairs(fields) do
+		local name = field.name
+		local tint = ''
+
+		if name == 'target' or name == 'targetname' then
+			tint = '\2'
+		end
+
+		print(string.format(fieldformat, tint, name, field.value))
+	end
+end
