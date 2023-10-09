@@ -70,6 +70,7 @@ local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 
 local foreach <const> = edicts.foreach
 local isclass <const> = edicts.isclass
+local getname <const> = edicts.getname
 
 
 local function titlecase(str)
@@ -426,7 +427,7 @@ function console.gazerefs(choice)
 		player.setpos(pos)
 	else
 		print('\2Gazed entity')
-		print('1:', edicts.getname(edict), 'at', pos)
+		print('1:', getname(edict), 'at', pos)
 
 		local index = 2
 
@@ -439,7 +440,7 @@ function console.gazerefs(choice)
 
 			for _, edict in ipairs(refs) do
 				pos = vec3.mid(edict.absmin, edict.absmax)
-				print(index .. ':', edicts.getname(edict), 'at', pos)
+				print(index .. ':', getname(edict), 'at', pos)
 
 				index = index + 1
 			end
