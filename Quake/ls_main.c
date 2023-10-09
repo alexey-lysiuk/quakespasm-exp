@@ -32,6 +32,7 @@
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
+const char* SV_GetEntityName(edict_t* entity);
 
 static lua_State* ls_state;
 static const char* ls_console_name = "console";
@@ -546,7 +547,6 @@ static int LS_value_edict_tostring(lua_State* state)
 		description = "<free>";
 	else
 	{
-		const char* SV_GetEntityName(edict_t* entity);
 		description = SV_GetEntityName(ed);
 
 		if (description[0] == '\0')
@@ -622,9 +622,9 @@ static int LS_global_edicts_len(lua_State* state)
 	return 1;
 }
 
-static int LS_global_edicts_isfree(lua_State* state)
+static edict_t* LS_GetEdictFromParameter(lua_State* state)
 {
-	qboolean isfree = true;
+	edict_t* edict = NULL;
 
 	if (sv.active)
 	{
@@ -636,24 +636,35 @@ static int LS_global_edicts_isfree(lua_State* state)
 			lua_Integer index = lua_tointeger(state, 1);
 
 			if (index > 0 && index <= sv.num_edicts)
-			{
-				edict_t* edict = EDICT_NUM(index - 1);  // on C side, indices start with zero
-				assert(edict);
-
-				isfree = edict->free;
-			}
+				return EDICT_NUM(index - 1);  // on C side, indices start with zero
 		}
 		else if (indextype == LUA_TUSERDATA)
-		{
-			edict_t* edict = LS_GetEdictFromUserData(state);
-			if (edict)
-				isfree = edict->free;
-		}
+			return LS_GetEdictFromUserData(state);
 		else
 			luaL_error(state, "Invalid type %s of edicts key", lua_typename(state, indextype));
 	}
 
-	lua_pushboolean(state, isfree);
+	return edict;
+}
+
+// Pushes boolean free state of edict passed index or by value
+static int LS_global_edicts_isfree(lua_State* state)
+{
+	edict_t* edict = LS_GetEdictFromParameter(state);
+	lua_pushboolean(state, edict ? edict->free : true);
+	return 1;
+}
+
+// Pushes user-frendly name of edict passed index or by value
+static int LS_global_edicts_getname(lua_State* state)
+{
+	edict_t* edict = LS_GetEdictFromParameter(state);
+
+	if (edict)
+		lua_pushstring(state, SV_GetEntityName(edict));
+	else
+		lua_pushnil(state);
+
 	return 1;
 }
 
@@ -1032,8 +1043,14 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_pushvalue(state, -1);  // copy for lua_setmetatable()
 		lua_setglobal(state, "edicts");
 
-		lua_pushcfunction(state, LS_global_edicts_isfree);
-		lua_setfield(state, -2, "isfree");
+		static const luaL_Reg edicts_functions[] =
+		{
+			{ "getname", LS_global_edicts_getname },
+			{ "isfree", LS_global_edicts_isfree },
+			{ NULL, NULL }
+		};
+
+		luaL_setfuncs(state, edicts_functions, 0);
 
 		luaL_newmetatable(state, "edicts");
 		luaL_setfuncs(state, edicts_metatable, 0);
