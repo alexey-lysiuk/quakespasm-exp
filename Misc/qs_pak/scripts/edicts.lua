@@ -60,13 +60,17 @@ function edicts.isclass(edict, ...)
 end
 
 
-local vec3origin = vec3.new()
-local vec3one = vec3.new(1, 1, 1)
-local vec3minusone = vec3.new(-1, -1, -1)
+local vec3origin <const> = vec3.new()
+local vec3one <const> = vec3.new(1, 1, 1)
+local vec3minusone <const> = vec3.new(-1, -1, -1)
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+
+local foreach <const> = edicts.foreach
+local isclass <const> = edicts.isclass
+local getname <const> = edicts.getname
 
 
 local function titlecase(str)
@@ -120,7 +124,7 @@ local function handlesecret(edict, current, choice)
 end
 
 function console.secrets(choice)
-	edicts.foreach(handlesecret, choice)
+	foreach(handlesecret, choice)
 end
 
 
@@ -174,7 +178,7 @@ local function handlemonster(edict, current, choice)
 end
 
 function console.monsters(choice)
-	edicts.foreach(handlemonster, choice)
+	foreach(handlemonster, choice)
 end
 
 
@@ -220,7 +224,7 @@ local function handleteleport(edict, current, choice)
 end
 
 function console.teleports(choice)
-	edicts.foreach(handleteleport, choice)
+	foreach(handleteleport, choice)
 end
 
 
@@ -244,7 +248,7 @@ end
 
 local function handledoor(edict, current, choice)
 	local door_secret_class = 'func_door_secret'
-	local classname = edicts.isclass(edict, 'door', 'func_door', door_secret_class)
+	local classname = isclass(edict, 'door', 'func_door', door_secret_class)
 	
 	if classname then
 		local pos = vec3.mid(edict.absmin, edict.absmax)
@@ -270,7 +274,7 @@ local function handledoor(edict, current, choice)
 end
 
 function console.doors(choice)
-	edicts.foreach(handledoor, choice)
+	foreach(handledoor, choice)
 end
 
 
@@ -323,7 +327,7 @@ local function handleitem(edict, current, choice)
 end
 
 function console.items(choice)
-	edicts.foreach(handleitem, choice)
+	foreach(handleitem, choice)
 end
 
 
@@ -399,7 +403,7 @@ function console.gazerefs(choice)
 		return 1
 	end
 
-	edicts.foreach(collectrefs)
+	foreach(collectrefs)
 
 	local refbycount = #referencedby
 	local count = 1 + refbycount + #references
@@ -423,7 +427,7 @@ function console.gazerefs(choice)
 		player.setpos(pos)
 	else
 		print('\2Gazed entity')
-		print('1:', edicts.getname(edict), 'at', pos)
+		print('1:', getname(edict), 'at', pos)
 
 		local index = 2
 
@@ -436,7 +440,7 @@ function console.gazerefs(choice)
 
 			for _, edict in ipairs(refs) do
 				pos = vec3.mid(edict.absmin, edict.absmax)
-				print(index .. ':', edicts.getname(edict), 'at', pos)
+				print(index .. ':', getname(edict), 'at', pos)
 
 				index = index + 1
 			end
