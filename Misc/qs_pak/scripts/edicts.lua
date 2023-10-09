@@ -371,11 +371,6 @@ function console.gazerefs(choice)
 
 	local target = edict.target
 	local targetname = edict.targetname
-
-	if choice < 2 and target == '' and targetname == '' then
-		return
-	end
-
 	local referencedby = {}
 	local references = {}
 
