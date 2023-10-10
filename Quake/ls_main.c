@@ -954,6 +954,20 @@ static int LS_global_printmemstats(lua_State* state)
 	return 0;
 }
 
+static int LS_global_dprint(lua_State* state)
+{
+	if (developer.value)
+	{
+		int argcount = lua_gettop(state);
+
+		lua_getglobal(state, "print");
+		lua_insert(state, 1);
+		lua_call(state, argcount, 0);
+	}
+
+	return 0;
+}
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -1005,6 +1019,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 
 		// Helper functions
 		{ "printmemstats", LS_global_printmemstats },
+		{ "dprint", LS_global_dprint },
 
 		{ NULL, NULL }
 	};
