@@ -1134,7 +1134,7 @@ static void LS_ResetState(void)
 #endif // !NDEBUG
 }
 
-static lua_State* LS_GetState(void)
+lua_State* LS_GetState(void)
 {
 	if (ls_state != NULL)
 		return ls_state;
@@ -1150,6 +1150,10 @@ static lua_State* LS_GetState(void)
 	LS_InitStandardLibraries(state);
 	LS_InitGlobalFunctions(state);
 	LS_InitGlobalTables(state);
+
+	void LS_InitMenuFunctions(lua_State* state);
+	LS_InitMenuFunctions(state);
+
 	LS_LoadEngineScripts(state);
 
 	lua_gc(state, LUA_GCRESTART);
