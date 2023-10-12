@@ -581,9 +581,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 // Expose sv.edicts as 'edicts' global table
 //
 
-// Pushes either
-// * edict userdata by its integer index, [1..num_edicts]
-// * method of 'edicts' userdata by its name
+// Pushes edict userdata by its integer index, [1..num_edicts]
 static int LS_global_edicts_index(lua_State* state)
 {
 	if (!sv.active)
