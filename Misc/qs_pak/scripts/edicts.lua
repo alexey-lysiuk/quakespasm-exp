@@ -74,7 +74,7 @@ local vec3one <const> = vec3.new(1, 1, 1)
 local vec3minusone <const> = vec3.new(-1, -1, -1)
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
-
+local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 
 local foreach <const> = edicts.foreach
@@ -294,7 +294,7 @@ end
 local function handleitem(edict, current, choice)
 	local classname = edict.classname
 
-	if classname:find('item_') == 1 then
+	if classname:find('item_') == 1 and edict.solid ~= SOLID_NOT then
 		if choice <= 0 then
 			local name = edict.netname
 
