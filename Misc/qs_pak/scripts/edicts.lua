@@ -20,6 +20,15 @@ edicts.flags =
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
 }
 
+edicts.solidstates = 
+{
+	SOLID_NOT         = 0,  -- no interaction with other objects
+	SOLID_TRIGGER     = 1,  -- touch on edge, but not blocking
+	SOLID_BBOX        = 2,  -- touch on edge, block
+	SOLID_SLIDEBOX    = 3,  -- touch on edge, but not an onground
+	SOLID_BSP         = 4,  -- bsp clip, touch on edge, block
+}
+
 edicts.spawnflags = 
 {
 	SUPER_SECRET      = 2,  -- Copper specific
