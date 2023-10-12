@@ -584,15 +584,9 @@ static void LS_SetEdictMetaTable(lua_State* state)
 // Pushes edict userdata by its integer index, [1..num_edicts]
 static int LS_global_edicts_index(lua_State* state)
 {
-	if (!sv.active)
-	{
-		lua_pushnil(state);
-		return 1;
-	}
+	qboolean badindex = true;
 
-	int indextype = lua_type(state, 2);
-
-	if (indextype == LUA_TNUMBER)
+	if (sv.active && lua_isnumber(state, 2))
 	{
 		// Check edict index, [1..num_edicts], for validity
 		lua_Integer index = lua_tointeger(state, 2);
@@ -603,12 +597,12 @@ static int LS_global_edicts_index(lua_State* state)
 			assert(indexptr);
 			*indexptr = index - 1;  // on C side, indices start with 0
 			LS_SetEdictMetaTable(state);
+			badindex = false;
 		}
-		else
-			lua_pushnil(state);
 	}
-	else
-		luaL_error(state, "Invalid type %s of edicts key", lua_typename(state, indextype));
+
+	if (badindex)
+		lua_pushnil(state);
 
 	return 1;
 }
