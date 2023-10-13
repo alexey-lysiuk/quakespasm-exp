@@ -151,12 +151,41 @@ static int LS_global_menu_poppage(lua_State* state)
 	return 0;
 }
 
+static int LS_MenuPrint(lua_State* state, void (*printfunc)(int x, int y, const char* text))
+{
+	luaL_checktype(state, 1, LUA_TNUMBER);
+	luaL_checktype(state, 2, LUA_TNUMBER);
+	luaL_checktype(state, 3, LUA_TSTRING);
+
+	int x = lua_tointeger(state, 1);
+	int y = lua_tointeger(state, 2);
+	const char* text = lua_tostring(state, 3);
+
+	printfunc(x, y, text);
+	return 0;
+}
+
+static int LS_global_menu_print(lua_State* state)
+{
+	return LS_MenuPrint(state, M_PrintWhite);
+	return 0;
+}
+
+static int LS_global_menu_tintprint(lua_State* state)
+{
+	return LS_MenuPrint(state, M_Print);
+	return 0;
+}
+
 void LS_InitMenuSystem(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
 		{ "pushpage", LS_global_menu_pushpage },
 		{ "poppage", LS_global_menu_poppage },
+
+		{ "print", LS_global_menu_print },
+		{ "tintprint", LS_global_menu_tintprint },
 		{ NULL, NULL }
 	};
 
