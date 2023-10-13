@@ -2,17 +2,14 @@
 function console.menu_test()
 	local testpage =
 	{
-		drawfunc = function(page)
+		ondraw = function(page)
 			
 		end,
-		
-		keyfunc = function(page, key)
-			
+
+		onkeypress = function(page, key)
+			menu.poppage()
 		end,
 	}
-
-	-- print('drawfunc =', testpage.drawfunc)
-	-- print('keyfunc =', testpage.keyfunc)
 
 	menu.pushpage(testpage)
 end

@@ -106,6 +106,8 @@ static void LS_CloseMenu(lua_State* state)
 
 static int LS_global_menu_pushpage(lua_State* state)
 {
+	luaL_checktype(state, 1, LUA_TTABLE);
+
 	if (LS_PushMenuPageStackTable(state))
 	{
 		lua_len(state, -1);
@@ -114,7 +116,7 @@ static int LS_global_menu_pushpage(lua_State* state)
 		assert(menustacktop >= 0);
 		lua_pop(state, 1);  // remove page stack size
 
-		lua_pushvalue(state, 1);
+		lua_insert(state, -2);  // swap new menu page with page stack table
 		lua_seti(state, -2, menustacktop + 1);
 	}
 
@@ -126,11 +128,25 @@ static int LS_global_menu_pushpage(lua_State* state)
 
 static int LS_global_menu_poppage(lua_State* state)
 {
-//	m_entersound = true;
-//	m_state = m_luascript;
-//
-//	IN_Deactivate(modestate == MS_WINDOWED);
-//	key_dest = key_menu;
+	int menustacktop = 0;
+
+	if (LS_PushMenuPageStackTable(state))
+	{
+		lua_len(state, -1);
+
+		menustacktop = lua_tointeger(state, -1);
+		assert(menustacktop >= 0);
+		lua_pop(state, 1);  // remove page stack size
+
+		if (menustacktop > 0)
+		{
+			lua_pushnil(state);
+			lua_seti(state, -2, menustacktop);
+		}
+	}
+
+	if (menustacktop == 1)
+		LS_CloseMenu(state);
 
 	return 0;
 }
@@ -156,8 +172,10 @@ void LS_ShutdownMenuSystem(lua_State* state)
 }
 
 
-void M_LuaScript_Draw(void)
+static void LS_CallMenuPageFunction(const char* funcname)
 {
+	assert(funcname != NULL);
+
 	lua_State* state = LS_GetState();
 	assert(lua_gettop(state) == 0);
 
@@ -165,7 +183,7 @@ void M_LuaScript_Draw(void)
 
 	if (LS_PushTopMenuPage(state))
 	{
-		if (lua_getfield(state, -1, "drawfunc") == LUA_TFUNCTION)
+		if (lua_getfield(state, -1, funcname) == LUA_TFUNCTION)
 		{
 			lua_insert(state, -2);  // swap top menu page with draw function
 			success = lua_pcall(state, 1, 0, 0) == LUA_OK;
@@ -173,7 +191,7 @@ void M_LuaScript_Draw(void)
 		else
 		{
 			lua_pop(state, 2);  // remove top menu page and incorrect draw function value
-			lua_pushstring(state, "menu page has no draw function");
+			lua_pushfstring(state, "menu page has no %s() function", funcname);
 		}
 	}
 
@@ -186,17 +204,14 @@ void M_LuaScript_Draw(void)
 	assert(lua_gettop(state) == 0);
 }
 
+void M_LuaScript_Draw(void)
+{
+	LS_CallMenuPageFunction("ondraw");
+}
+
 void M_LuaScript_Key(int key)
 {
-	switch (key)
-	{
-	case K_ESCAPE:
-	case K_BBUTTON:
-		LS_CloseMenu(LS_GetState());
-		break;
-
-		// TODO: lua script key
-	}
+	LS_CallMenuPageFunction("onkeypress");
 }
 
 #endif // USE_LUA_SCRIPTING
