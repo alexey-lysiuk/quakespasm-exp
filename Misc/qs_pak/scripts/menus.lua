@@ -1,6 +1,6 @@
 
 function console.menu_test()
-	testpage = 
+	local testpage =
 	{
 		drawfunc = function(page)
 			
