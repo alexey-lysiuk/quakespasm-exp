@@ -1092,6 +1092,7 @@ static void LS_LoadEngineScripts(lua_State* state)
 	static const char* scripts[] =
 	{
 		"scripts/edicts.lua",
+		"scripts/menus.lua",
 		NULL
 	};
 
@@ -1143,8 +1144,8 @@ lua_State* LS_GetState(void)
 	LS_InitGlobalFunctions(state);
 	LS_InitGlobalTables(state);
 
-	void LS_InitMenuFunctions(lua_State* state);
-	LS_InitMenuFunctions(state);
+	void LS_InitMenuSystem(lua_State* state);
+	LS_InitMenuSystem(state);
 
 	LS_LoadEngineScripts(state);
 
@@ -1275,7 +1276,13 @@ void LS_Init(void)
 
 void LS_Shutdown(void)
 {
-	LS_ResetState();
+	if (ls_state != NULL)
+	{
+		void LS_ShutdownMenuSystem(lua_State* state);
+		LS_ShutdownMenuSystem(LS_GetState());
+
+		LS_ResetState();
+	}
 
 	free(ls_memory);
 	ls_memory = NULL;

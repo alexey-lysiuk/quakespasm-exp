@@ -19,55 +19,203 @@
 
 #ifdef USE_LUA_SCRIPTING
 
+#include <assert.h>
+
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
 
 #include "quakedef.h"
 
+
 lua_State* LS_GetState(void);
 
-static int LS_global_openmenu(lua_State* state)
+static const char* ls_menu_name = "menusys";
+static const char* ls_menu_stack_name = "_stack";
+
+
+// // Pushes menu table if it exists and returns state, otherwise returns null
+//static lua_State* LS_PushMenuTable(void)
+//{
+//	lua_State* state = LS_GetState();
+//	assert(state);
+//	assert(lua_gettop(state) == 0);
+//
+//	lua_getglobal(state, ls_menu_name);
+//
+//	if (lua_istable(state, 1))
+//		return state;
+//
+//	lua_pop(state, 1);  // remove nil
+//	return NULL;
+//}
+
+static void LS_PopMenuTable(lua_State* state)
+{
+	lua_pop(state, 1);  // remove console namespace table
+	assert(lua_gettop(state) == 0);
+}
+
+static qboolean LS_PushMenuStackTable(lua_State* state)
+{
+	//lua_State* state = LS_PushMenuTable();
+
+	if (lua_getglobal(state, ls_menu_name) != LUA_TTABLE)
+	{
+		lua_pop(state, 1);  // remove incorrect value
+		return false;
+	}
+
+//	if (state == NULL)
+//		return false;
+
+	if (lua_getfield(state, -1, ls_menu_stack_name) != LUA_TTABLE)
+	{
+		lua_pop(state, 1);  // remove incorrect value
+		return false;
+	}
+
+	return true;
+}
+
+static void LS_OpenMenu(lua_State* state)
 {
 	m_entersound = true;
 	m_state = m_luascript;
 
 	IN_Deactivate(modestate == MS_WINDOWED);
 	key_dest = key_menu;
+}
+
+static int LS_global_menu_push(lua_State* state)
+{
+	if (LS_PushMenuStackTable(state))
+	{
+		lua_len(state, -1);
+
+		int menustacktop = lua_tointeger(state, -1);
+		assert(menustacktop >= 0);
+		lua_pop(state, 1);  // remove menu stack size
+
+		lua_seti(state, -1, menustacktop + 1);
+	}
+
+	if (m_state != m_luascript)
+		LS_OpenMenu(state);
 
 	return 0;
 }
 
-void LS_InitMenuFunctions(lua_State* state)
+static void LS_CloseMenu(lua_State* state)
 {
-	lua_pushglobaltable(state);
+	if (m_state != m_luascript)
+		return;
 
+	IN_Activate();
+	key_dest = key_game;
+	m_state = m_none;
+}
+
+static int LS_global_menu_pop(lua_State* state)
+{
+//	m_entersound = true;
+//	m_state = m_luascript;
+//
+//	IN_Deactivate(modestate == MS_WINDOWED);
+//	key_dest = key_menu;
+
+	return 0;
+}
+
+void LS_InitMenuSystem(lua_State* state)
+{
 	static const luaL_Reg functions[] =
 	{
-		{ "openmenu", LS_global_openmenu },
+		{ "push", LS_global_menu_push },
+		{ "pop", LS_global_menu_pop },
 		{ NULL, NULL }
 	};
 
-	luaL_setfuncs(state, functions, 0);
-	lua_pop(state, 1);  // remove global table
+	luaL_newlib(state, functions);
+	lua_newtable(state);
+	lua_setfield(state, -2, ls_menu_stack_name);
+	lua_setglobal(state, ls_menu_name);
 }
 
-void M_LuaScript_Draw (void)
+void LS_ShutdownMenuSystem(lua_State* state)
 {
-	M_Print(16, 4, "Lua script menu");
-
-	// TODO: lua script draw
+	LS_CloseMenu(state);
 }
 
-void M_LuaScript_Key (int key)
+
+void M_LuaScript_Draw(void)
+{
+//	lua_State* state = LS_PushMenuTable();
+//
+//	if (state == NULL)
+//	{
+//		LS_CloseMenu(LS_GetState());
+//		return;
+//	}
+//
+//	if (lua_getfield(state, -1, ls_menu_stack_name) != LUA_TTABLE)
+//	{
+//		LS_CloseMenu(LS_GetState());
+//		return;
+//	}
+
+	lua_State* state = LS_GetState();
+
+	if (!LS_PushMenuStackTable(state))
+	{
+		LS_CloseMenu(LS_GetState());
+		return;
+	}
+
+	lua_len(state, -1);
+
+	int menustacktop = lua_tointeger(state, -1);
+	assert(menustacktop >= 0);
+	lua_pop(state, 1);  // remove menu stack size
+
+	if (menustacktop == 0)
+	{
+		LS_CloseMenu(LS_GetState());
+		return;
+	}
+
+	if (lua_geti(state, -1, menustacktop) != LUA_TTABLE)
+	{
+		LS_CloseMenu(LS_GetState());
+		return;
+	}
+
+	if (lua_getfield(state, -1, "drawfunc") != LUA_TFUNCTION)
+	{
+		LS_CloseMenu(LS_GetState());
+		return;
+	}
+
+	lua_insert(state, 2);  // swap top menu with draw function
+
+	if (lua_pcall(state, 1, 0, 0) != LUA_OK)
+	{
+		// TODO: report error
+		//LS_ReportError(state);
+		LS_CloseMenu(LS_GetState());
+		return;
+	}
+
+	LS_PopMenuTable(state);
+}
+
+void M_LuaScript_Key(int key)
 {
 	switch (key)
 	{
 	case K_ESCAPE:
 	case K_BBUTTON:
-		IN_Activate();
-		key_dest = key_game;
-		m_state = m_none;
+		LS_CloseMenu(LS_GetState());
 		break;
 
 		// TODO: lua script key
