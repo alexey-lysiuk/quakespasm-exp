@@ -201,7 +201,7 @@ void LS_ShutdownMenuSystem(lua_State* state)
 }
 
 
-static void LS_CallMenuPageFunction(const char* funcname)
+static void LS_CallMenuPageFunction(const char* funcname, int arg)
 {
 	assert(funcname != NULL);
 
@@ -215,7 +215,8 @@ static void LS_CallMenuPageFunction(const char* funcname)
 		if (lua_getfield(state, -1, funcname) == LUA_TFUNCTION)
 		{
 			lua_insert(state, -2);  // swap top menu page with draw function
-			success = lua_pcall(state, 1, 0, 0) == LUA_OK;
+			lua_pushnumber(state, arg);
+			success = lua_pcall(state, 2, 0, 0) == LUA_OK;
 		}
 		else
 		{
@@ -235,12 +236,12 @@ static void LS_CallMenuPageFunction(const char* funcname)
 
 void M_LuaScript_Draw(void)
 {
-	LS_CallMenuPageFunction("ondraw");
+	LS_CallMenuPageFunction("ondraw", 0);
 }
 
 void M_LuaScript_Key(int key)
 {
-	LS_CallMenuPageFunction("onkeypress");
+	LS_CallMenuPageFunction("onkeypress", key);
 }
 
 #endif // USE_LUA_SCRIPTING
