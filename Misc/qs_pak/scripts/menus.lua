@@ -1,18 +1,18 @@
 
 function console.menu_test()
-	menu = 
+	testpage = 
 	{
-		drawfunc = function(menu)
+		drawfunc = function(page)
 			
 		end,
 		
-		keyfunc = function(menu, key)
+		keyfunc = function(page, key)
 			
 		end,
 	}
 
-	print('drawfunc =', menu.drawfunc)
-	print('keyfunc =', menu.keyfunc)
+	-- print('drawfunc =', testpage.drawfunc)
+	-- print('keyfunc =', testpage.keyfunc)
 
-	menusys.push(menu)
+	menu.pushpage(testpage)
 end

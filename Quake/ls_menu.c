@@ -30,8 +30,8 @@
 
 lua_State* LS_GetState(void);
 
-static const char* ls_menu_name = "menusys";
-static const char* ls_menu_stack_name = "_stack";
+static const char* ls_menu_name = "menu";
+static const char* ls_menu_pagestack_name = "pagestack";
 
 
 // // Pushes menu table if it exists and returns state, otherwise returns null
@@ -69,12 +69,13 @@ static qboolean LS_PushMenuStackTable(lua_State* state)
 //	if (state == NULL)
 //		return false;
 
-	if (lua_getfield(state, -1, ls_menu_stack_name) != LUA_TTABLE)
+	if (lua_getfield(state, -1, ls_menu_pagestack_name) != LUA_TTABLE)
 	{
 		lua_pop(state, 1);  // remove incorrect value
 		return false;
 	}
 
+	lua_remove(state, -2);  // remove menu table
 	return true;
 }
 
@@ -87,25 +88,6 @@ static void LS_OpenMenu(lua_State* state)
 	key_dest = key_menu;
 }
 
-static int LS_global_menu_push(lua_State* state)
-{
-	if (LS_PushMenuStackTable(state))
-	{
-		lua_len(state, -1);
-
-		int menustacktop = lua_tointeger(state, -1);
-		assert(menustacktop >= 0);
-		lua_pop(state, 1);  // remove menu stack size
-
-		lua_seti(state, -1, menustacktop + 1);
-	}
-
-	if (m_state != m_luascript)
-		LS_OpenMenu(state);
-
-	return 0;
-}
-
 static void LS_CloseMenu(lua_State* state)
 {
 	if (m_state != m_luascript)
@@ -116,7 +98,27 @@ static void LS_CloseMenu(lua_State* state)
 	m_state = m_none;
 }
 
-static int LS_global_menu_pop(lua_State* state)
+static int LS_global_menu_pushpage(lua_State* state)
+{
+	if (LS_PushMenuStackTable(state))
+	{
+		lua_len(state, -1);
+
+		int menustacktop = lua_tointeger(state, -1);
+		assert(menustacktop >= 0);
+		lua_pop(state, 1);  // remove page stack size
+
+		lua_pushvalue(state, 1);
+		lua_seti(state, -2, menustacktop + 1);
+	}
+
+	if (m_state != m_luascript)
+		LS_OpenMenu(state);
+
+	return 0;
+}
+
+static int LS_global_menu_poppage(lua_State* state)
 {
 //	m_entersound = true;
 //	m_state = m_luascript;
@@ -131,14 +133,14 @@ void LS_InitMenuSystem(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-		{ "push", LS_global_menu_push },
-		{ "pop", LS_global_menu_pop },
+		{ "pushpage", LS_global_menu_pushpage },
+		{ "poppage", LS_global_menu_poppage },
 		{ NULL, NULL }
 	};
 
 	luaL_newlib(state, functions);
 	lua_newtable(state);
-	lua_setfield(state, -2, ls_menu_stack_name);
+	lua_setfield(state, -2, ls_menu_pagestack_name);
 	lua_setglobal(state, ls_menu_name);
 }
 
@@ -150,20 +152,6 @@ void LS_ShutdownMenuSystem(lua_State* state)
 
 void M_LuaScript_Draw(void)
 {
-//	lua_State* state = LS_PushMenuTable();
-//
-//	if (state == NULL)
-//	{
-//		LS_CloseMenu(LS_GetState());
-//		return;
-//	}
-//
-//	if (lua_getfield(state, -1, ls_menu_stack_name) != LUA_TTABLE)
-//	{
-//		LS_CloseMenu(LS_GetState());
-//		return;
-//	}
-
 	lua_State* state = LS_GetState();
 
 	if (!LS_PushMenuStackTable(state))
