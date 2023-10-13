@@ -20,6 +20,15 @@ edicts.flags =
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
 }
 
+edicts.solidstates = 
+{
+	SOLID_NOT         = 0,  -- no interaction with other objects
+	SOLID_TRIGGER     = 1,  -- touch on edge, but not blocking
+	SOLID_BBOX        = 2,  -- touch on edge, block
+	SOLID_SLIDEBOX    = 3,  -- touch on edge, but not an onground
+	SOLID_BSP         = 4,  -- bsp clip, touch on edge, block
+}
+
 edicts.spawnflags = 
 {
 	SUPER_SECRET      = 2,  -- Copper specific
@@ -65,7 +74,7 @@ local vec3one <const> = vec3.new(1, 1, 1)
 local vec3minusone <const> = vec3.new(-1, -1, -1)
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
-
+local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 
 local foreach <const> = edicts.foreach
@@ -283,15 +292,28 @@ end
 --
 
 local function handleitem(edict, current, choice)
-	local classname = edict.classname
+	if edict.solid == SOLID_NOT then
+		-- Skip object if it's not interactible, e.g. if it's a picked up item
+		return current
+	end
 
-	if classname:find('item_') == 1 then
+	local classname = edict.classname
+	local prefixes = { 'item_', 'weapon_' }
+	local prefixlen
+
+	for _, prefix in ipairs(prefixes) do
+		if classname:find(prefix) == 1 then
+			prefixlen = prefix:len() + 1
+		end
+	end
+
+	if prefixlen then
 		if choice <= 0 then
 			local name = edict.netname
 
 			if name == '' then
 				-- use classname with prefix removed for entity without netname
-				name = classname:sub(6)
+				name = classname:sub(prefixlen)
 			end
 
 			if name == 'armor1' then
