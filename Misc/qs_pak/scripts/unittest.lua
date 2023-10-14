@@ -26,3 +26,29 @@ end
 function console.targets(choice)
 	edicts.foreach(handletarget, choice)
 end
+
+
+function console.menu_test()
+	local testpage =
+	{
+		ondraw = function(page)
+			if page.state == 0 then
+				menu.text(10, 10, 'Press any key')
+			else
+				menu.tintedtext(10, 10, 'Press again to close menu')
+			end
+		end,
+
+		onkeypress = function(page, keycode)
+			if page.state == 0 then
+				page.state = page.state + 1
+			else
+				menu.poppage()
+			end
+		end,
+
+		state = 0
+	}
+
+	menu.pushpage(testpage)
+end
