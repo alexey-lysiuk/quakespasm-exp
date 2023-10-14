@@ -239,9 +239,9 @@ void M_LuaScript_Draw(void)
 	LS_CallMenuPageFunction("ondraw", 0);
 }
 
-void M_LuaScript_Key(int key)
+void M_LuaScript_Key(int keycode)
 {
-	LS_CallMenuPageFunction("onkeypress", key);
+	LS_CallMenuPageFunction("onkeypress", keycode);
 }
 
 #endif // USE_LUA_SCRIPTING

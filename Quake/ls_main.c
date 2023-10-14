@@ -992,7 +992,6 @@ static void LS_InitGlobalFunctions(lua_State* state)
 {
 	lua_atpanic(state, LS_global_panic);
 	lua_setwarnf(state, LS_global_warning, NULL);
-	lua_sethook(state, LS_global_hook, LUA_MASKCOUNT, 1 * 1024 * 1024);
 
 	lua_pushglobaltable(state);
 
@@ -1129,31 +1128,33 @@ static void LS_ResetState(void)
 
 lua_State* LS_GetState(void)
 {
-	if (ls_state != NULL)
-		return ls_state;
+	if (ls_state == NULL)
+	{
+		if (ls_memory == NULL)
+			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
 
-	if (ls_memory == NULL)
-		ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
+		lua_State* state = lua_newstate(LS_alloc, NULL);
+		assert(state);
 
-	lua_State* state = lua_newstate(LS_alloc, NULL);
-	assert(state);
+		lua_gc(state, LUA_GCSTOP);
 
-	lua_gc(state, LUA_GCSTOP);
+		LS_InitStandardLibraries(state);
+		LS_InitGlobalFunctions(state);
+		LS_InitGlobalTables(state);
 
-	LS_InitStandardLibraries(state);
-	LS_InitGlobalFunctions(state);
-	LS_InitGlobalTables(state);
+		void LS_InitMenuSystem(lua_State* state);
+		LS_InitMenuSystem(state);
 
-	void LS_InitMenuSystem(lua_State* state);
-	LS_InitMenuSystem(state);
+		LS_LoadEngineScripts(state);
 
-	LS_LoadEngineScripts(state);
+		lua_gc(state, LUA_GCRESTART);
+		lua_gc(state, LUA_GCCOLLECT);
 
-	lua_gc(state, LUA_GCRESTART);
-	lua_gc(state, LUA_GCCOLLECT);
+		ls_state = state;
+	}
 
-	ls_state = state;
-	return state;
+	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, 1 * 1024 * 1024);
+	return ls_state;
 }
 
 typedef struct
