@@ -24,10 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <assert.h>
 
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-
+#include "ls_common.h"
 #include "quakedef.h"
 #include "tlsf.h"
 
@@ -886,7 +883,7 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 	luaL_error(state, "infinite loop detected, aborting");
 }
 
-static void LS_ReportError(lua_State* state)
+void LS_ReportError(lua_State* state)
 {
 	Con_SafePrintf("Error while executing Lua script\n");
 
@@ -1129,7 +1126,7 @@ static void LS_ResetState(void)
 #endif // !NDEBUG
 }
 
-static lua_State* LS_GetState(void)
+lua_State* LS_GetState(void)
 {
 	if (ls_state != NULL)
 		return ls_state;
