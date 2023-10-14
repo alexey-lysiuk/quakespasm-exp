@@ -1140,6 +1140,7 @@ lua_State* LS_GetState(void)
 		LS_InitStandardLibraries(state);
 		LS_InitGlobalFunctions(state);
 		LS_InitGlobalTables(state);
+		LS_InitMenuModule(state);
 		LS_LoadEngineScripts(state);
 
 		lua_gc(state, LUA_GCRESTART);
@@ -1272,7 +1273,11 @@ void LS_Init(void)
 
 void LS_Shutdown(void)
 {
-	LS_ResetState();
+	if (ls_state != NULL)
+	{
+		LS_ShutdownMenuModule(ls_state);
+		LS_ResetState();
+	}
 
 	free(ls_memory);
 	ls_memory = NULL;

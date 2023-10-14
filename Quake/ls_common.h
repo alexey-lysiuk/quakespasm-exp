@@ -31,4 +31,7 @@ lua_State* LS_GetState(void);
 // Report error with message on the top of the stack
 void LS_ReportError(lua_State* state);
 
+void LS_InitMenuModule(lua_State* state);
+void LS_ShutdownMenuModule(lua_State* state);
+
 #endif // USE_LUA_SCRIPTING

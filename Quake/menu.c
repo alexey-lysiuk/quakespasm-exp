@@ -2563,6 +2563,12 @@ void M_Init (void)
 }
 
 
+#ifdef USE_LUA_SCRIPTING
+void M_LuaScript_Draw (void);
+void M_LuaScript_Key (int key);
+#endif // USE_LUA_SCRIPTING
+
+
 void M_Draw (void)
 {
 	if (m_state == m_none || key_dest != key_menu)
@@ -2659,6 +2665,12 @@ void M_Draw (void)
 	case m_slist:
 		M_ServerList_Draw ();
 		break;
+
+#ifdef USE_LUA_SCRIPTING
+	case m_luascript:
+		M_LuaScript_Draw ();
+		break;
+#endif // USE_LUA_SCRIPTING
 	}
 
 	if (m_entersound)
@@ -2741,6 +2753,12 @@ void M_Keydown (int key)
 	case m_slist:
 		M_ServerList_Key (key);
 		return;
+
+#ifdef USE_LUA_SCRIPTING
+	case m_luascript:
+		M_LuaScript_Key (key);
+		return;
+#endif // USE_LUA_SCRIPTING
 	}
 }
 
