@@ -33,9 +33,9 @@ function console.menu_test()
 	{
 		ondraw = function(page)
 			if page.state == 0 then
-				menu.print(10, 10, 'Press any key')
+				menu.text(10, 10, 'Press any key')
 			else
-				menu.tintprint(10, 10, 'Press again to close menu')
+				menu.tintedtext(10, 10, 'Press again to close menu')
 			end
 		end,
 

@@ -13,7 +13,7 @@ keycodes =
 
 
 local function secretspage_draw(page)
-	menu.tintprint(10, 0, 'Secrets')
+	menu.tintedtext(15, 0, 'Secrets')
 
 	local secretscount = 0
 
@@ -25,7 +25,7 @@ local function secretspage_draw(page)
 		end
 
 		local entry = string.format('%i: %s %s', current, pos, extra)
-		menu.print(15, (current + 1) * 10, entry)
+		menu.text(15, (current + 1) * 10, entry)
 
 		secretscount = secretscount + 1
 		return current + 1
@@ -44,7 +44,7 @@ local function secretspage_draw(page)
 
 		page.cursor = cursor
 
-		menu.tintprint(0, (page.cursor + 1) * 10, '\13')
+		menu.tintedtext(0, (page.cursor + 1) * 10, '\13')
 	end
 
 	-- TODO: Action option
@@ -54,9 +54,24 @@ end
 local function secretspage_keypress(page, keycode)
 	local cursor = page.cursor
 
-	if keycode == keycodes.ESCAPE then
-		-- TODO: player.setpos
-		menu.poppage()
+	if keycode == keycodes.ENTER then
+		local function movetosecret(edict, current, choice)
+			local pos = edicts.issecret(edict)
+
+			if pos then
+				if current == choice then
+					player.setpos(pos)
+					menu.poppage()
+					return
+				else
+					return current + 1
+				end
+			end
+
+			return current
+		end
+
+		edicts.foreach(movetosecret, cursor)
 	elseif keycode == keycodes.ESCAPE then
 		menu.poppage()
 	elseif keycode == keycodes.UPARROW then
