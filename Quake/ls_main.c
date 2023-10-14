@@ -1091,6 +1091,7 @@ static void LS_LoadEngineScripts(lua_State* state)
 	static const char* scripts[] =
 	{
 		"scripts/edicts.lua",
+		"scripts/menus.lua",
 		NULL
 	};
 
