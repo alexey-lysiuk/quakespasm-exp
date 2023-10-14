@@ -94,42 +94,54 @@ end
 -- Secrets
 --
 
-local function handlesecret(edict, current, choice)
-	if edict.classname == 'trigger_secret' then
-		-- Try to handle Arcane Dimensions secret
-		local min = edict.absmin
-		local max = edict.absmax
-		local count, pos
-
-		if min == vec3minusone and max == vec3one then
-			count = edict.count
-		end
-
-		if not count then
-			-- Regular or Arcane Dimensions secret that was not revealed yet
-			pos = vec3.mid(min, max)
-		elseif count == 0 then
-			-- Revealed Arcane Dimensions secret, skip it
-			return current
-		else
-			-- Disabled or switched off Arcane Dimensions secret
-			-- Actual coodinates are stored in oldorigin member
-			pos = edict.oldorigin
-		end
-
-		if choice <= 0 then
-			local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
-			local extra = supersecret and '(super)' or ''
-			print(current .. ':', pos, extra)
-		elseif choice == current then
-			player.setpos(pos)
-			return nil
-		end
-
-		return current + 1
+function edicts.issecret(edict)
+	if edict.classname ~= 'trigger_secret' then
+		return
 	end
 
-	return current
+	-- Try to handle Arcane Dimensions secret
+	local min = edict.absmin
+	local max = edict.absmax
+	local count, pos
+
+	if min == vec3minusone and max == vec3one then
+		count = edict.count
+	end
+
+	if not count then
+		-- Regular or Arcane Dimensions secret that was not revealed yet
+		pos = vec3.mid(min, max)
+	elseif count == 0 then
+		-- Revealed Arcane Dimensions secret, skip it
+		return
+	else
+		-- Disabled or switched off Arcane Dimensions secret
+		-- Actual coodinates are stored in oldorigin member
+		pos = edict.oldorigin
+	end
+
+	local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
+	local extra = supersecret and 'supersecret' or ''
+	return pos, extra
+end
+
+local function handlesecret(edict, current, choice)
+	local pos, extra = edicts.issecret(edict)
+
+	if not pos then
+		return current
+	end
+
+	if choice <= 0 then
+		local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
+		local extra = supersecret and '(super)' or ''
+		print(current .. ':', pos, extra)
+	elseif choice == current then
+		player.setpos(pos)
+		return
+	end
+
+	return current + 1
 end
 
 function console.secrets(choice)
