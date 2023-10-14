@@ -148,18 +148,32 @@ static int LS_global_menu_poppage(lua_State* state)
 	return 0;
 }
 
-static int LS_MenuPrint(lua_State* state, void (*printfunc)(int x, int y, const char* text))
+static int LS_MenuText(lua_State* state, void (*printfunc)(int x, int y, const char* text))
 {
-	luaL_checktype(state, 1, LUA_TNUMBER);
-	luaL_checktype(state, 2, LUA_TNUMBER);
-	luaL_checktype(state, 3, LUA_TSTRING);
+	if (m_state == m_luascript)
+	{
+		luaL_checktype(state, 1, LUA_TNUMBER);
+		luaL_checktype(state, 2, LUA_TNUMBER);
+		luaL_checktype(state, 3, LUA_TSTRING);
 
-	int x = lua_tointeger(state, 1);
-	int y = lua_tointeger(state, 2);
-	const char* text = lua_tostring(state, 3);
+		int x = lua_tointeger(state, 1);
+		int y = lua_tointeger(state, 2);
+		const char* text = lua_tostring(state, 3);
 
-	printfunc(x, y, text);
+		printfunc(x, y, text);
+	}
+
 	return 0;
+}
+
+static int LS_global_menu_text(lua_State* state)
+{
+	return LS_MenuText(state, M_PrintWhite);
+}
+
+static int LS_global_menu_tintedtext(lua_State* state)
+{
+	return LS_MenuText(state, M_Print);
 }
 
 void LS_InitMenuModule(lua_State* state)
@@ -168,6 +182,9 @@ void LS_InitMenuModule(lua_State* state)
 	{
 		{ "pushpage", LS_global_menu_pushpage },
 		{ "poppage", LS_global_menu_poppage },
+
+		{ "text", LS_global_menu_text },
+		{ "tintedtext", LS_global_menu_tintedtext },
 		{ NULL, NULL }
 	};
 
