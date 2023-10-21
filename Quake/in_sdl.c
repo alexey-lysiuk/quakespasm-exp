@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SDL.h"
 #endif
 
-static qboolean windowhasfocus = true;	//just in case sdl fails to tell us...
+qboolean windowhasfocus = true;	//just in case sdl fails to tell us...
 static qboolean	textmode;
 
 static cvar_t in_debugkeys = {"in_debugkeys", "0", CVAR_NONE};

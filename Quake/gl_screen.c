@@ -1072,6 +1072,9 @@ void SCR_UpdateScreen (void)
 	if (!scr_initialized || !con_initialized)
 		return;				// not initialized yet
 
+	extern qboolean windowhasfocus;
+	if (!windowhasfocus)
+		return;
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 
