@@ -55,5 +55,6 @@ function console.menu_test()
 		end,
 	}
 
+	menu.clearpages()
 	menu.pushpage(testpage)
 end
