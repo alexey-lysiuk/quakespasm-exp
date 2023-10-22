@@ -148,6 +148,28 @@ static int LS_global_menu_poppage(lua_State* state)
 	return 0;
 }
 
+static int LS_global_menu_clearpages(lua_State* state)
+{
+	LS_CloseMenu(state);
+
+	if (LS_PushMenuPageStackTable(state))
+	{
+		lua_len(state, -1);
+
+		int pagecount = lua_tointeger(state, -1);
+		assert(pagecount >= 0);
+		lua_pop(state, 1);  // remove page stack size
+
+		for (int i = 0; i < pagecount; ++i)
+		{
+			lua_pushnil(state);
+			lua_seti(state, -2, i + 1);
+		}
+	}
+
+	return 0;
+}
+
 static int LS_MenuText(lua_State* state, void (*printfunc)(int x, int y, const char* text))
 {
 	if (m_state == m_luascript)
@@ -182,6 +204,7 @@ void LS_InitMenuModule(lua_State* state)
 	{
 		{ "pushpage", LS_global_menu_pushpage },
 		{ "poppage", LS_global_menu_poppage },
+		{ "clearpages", LS_global_menu_clearpages },
 
 		{ "text", LS_global_menu_text },
 		{ "tintedtext", LS_global_menu_tintedtext },
