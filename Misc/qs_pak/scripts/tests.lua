@@ -32,22 +32,27 @@ function console.menu_test()
 	local testpage =
 	{
 		ondraw = function(page)
-			if page.state == 0 then
-				menu.text(10, 10, 'Press any key')
-			else
-				menu.tintedtext(10, 10, 'Press again to close menu')
+			local x = 0
+			local y = 0
+			local ystep = 10
+
+			menu.tintedtext(x, y, string.format('%i:%i Title / Press ESC to close', x, y))
+			y = y + ystep
+
+			menu.text(x, y, string.format('%i:%i ... free space ...', x, y))
+			y = y + ystep
+
+			for i = 1, 20 do
+				menu.text(x, y, string.format('%i:%i [%i] 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', x, y, i))
+				y = y + ystep
 			end
 		end,
 
 		onkeypress = function(page, keycode)
-			if page.state == 0 then
-				page.state = page.state + 1
-			else
+			if keycode == keycodes.ESCAPE then
 				menu.poppage()
 			end
 		end,
-
-		state = 0
 	}
 
 	menu.pushpage(testpage)
