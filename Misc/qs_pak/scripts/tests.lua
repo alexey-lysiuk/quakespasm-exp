@@ -1,5 +1,5 @@
 ---
---- lua dofile('scripts/unittest.lua')
+--- lua dofile('scripts/tests.lua')
 ---
 
 local function handletarget(edict, current, choice)
