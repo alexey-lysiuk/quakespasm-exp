@@ -102,7 +102,7 @@ function edicts.issecret(edict)
 	-- Try to handle Arcane Dimensions secret
 	local min = edict.absmin
 	local max = edict.absmax
-	local count, pos
+	local count, location
 
 	if min == vec3minusone and max == vec3one then
 		count = edict.count
@@ -110,34 +110,33 @@ function edicts.issecret(edict)
 
 	if not count then
 		-- Regular or Arcane Dimensions secret that was not revealed yet
-		pos = vec3.mid(min, max)
+		location = vec3.mid(min, max)
 	elseif count == 0 then
 		-- Revealed Arcane Dimensions secret, skip it
 		return
 	else
 		-- Disabled or switched off Arcane Dimensions secret
 		-- Actual coodinates are stored in oldorigin member
-		pos = edict.oldorigin
+		location = edict.oldorigin
 	end
 
 	local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
-	local extra = supersecret and 'supersecret' or ''
-	return pos, extra
+	local description = supersecret and 'Supersecret' or 'Secret'
+
+	return description, location
 end
 
 local function handlesecret(edict, current, choice)
-	local pos, extra = edicts.issecret(edict)
+	local description, location = edicts.issecret(edict)
 
-	if not pos then
+	if not description then
 		return current
 	end
 
 	if choice <= 0 then
-		local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
-		local extra = supersecret and '(super)' or ''
-		print(current .. ':', pos, extra)
+		print(current .. ':', description, 'at', location)
 	elseif choice == current then
-		player.setpos(pos)
+		player.setpos(location)
 		return
 	end
 
