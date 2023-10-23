@@ -89,6 +89,23 @@ local function titlecase(str)
 		end)
 end
 
+local function handleedict(func, edict, current, choice)
+	local description, location, angles = func(edict)
+
+	if not description then
+		return current
+	end
+
+	if choice <= 0 then
+		print(current .. ':', description, 'at', location)
+	elseif choice == current then
+		player.setpos(location, angles)
+		return
+	end
+
+	return current + 1
+end
+
 
 --
 -- Secrets
@@ -126,25 +143,10 @@ function edicts.issecret(edict)
 	return description, location
 end
 
-local function handlesecret(edict, current, choice)
-	local description, location = edicts.issecret(edict)
-
-	if not description then
-		return current
-	end
-
-	if choice <= 0 then
-		print(current .. ':', description, 'at', location)
-	elseif choice == current then
-		player.setpos(location)
-		return
-	end
-
-	return current + 1
-end
+local issecret = edicts.issecret
 
 function console.secrets(choice)
-	foreach(handlesecret, choice)
+	foreach(function(...) return handleedict(issecret, ...) end, choice)
 end
 
 
