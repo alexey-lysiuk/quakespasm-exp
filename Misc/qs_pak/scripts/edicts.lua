@@ -343,7 +343,7 @@ local function handleitem(edict, current, choice)
 			end
 
 			local aflag = edict.aflag
-			if aflag ~= 0 then
+			if aflag and aflag ~= 0 then
 				name = string.format('%i %s', aflag, name)
 			end
 
