@@ -202,45 +202,41 @@ end
 -- Teleports
 --
 
-local function handleteleport(edict, current, choice)
-	if edict.classname == 'trigger_teleport' then
-		local pos = vec3.mid(edict.absmin, edict.absmax)
-
-		if choice <= 0 then
-			local teletarget = edict.target
-
-			if teletarget then
-				for _, testedict in ipairs(edicts) do
-					if teletarget == testedict.targetname then
-						-- Special case for Arcane Dimensions, ad_tears map in particular
-						-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
-						-- Some teleport destinations were missing despite their valid setup
-						-- Actual destination coordinates are stored in oldorigin member
-						if testedict.origin == vec3origin then
-							targetpos = testedict.oldorigin
-						else
-							targetpos = testedict.origin
-						end
-						break
-					end
-				end
-			end
-
-			local targetstr = targetpos and 'at ' .. targetpos or '(target not found)'
-			print(current .. ':', pos, '->', teletarget, targetstr)
-		elseif choice == current then
-			player.setpos(pos)
-			return nil
-		end
-
-		return current + 1
+function edicts.isteleport(edict)
+	if edict.classname ~= 'trigger_teleport' then
+		return
 	end
 
-	return current
+	local target = edict.target
+	local targetlocation
+
+	if target then
+		for _, testedict in ipairs(edicts) do
+			if target == testedict.targetname then
+				-- Special case for Arcane Dimensions, ad_tears map in particular
+				-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
+				-- Some teleport destinations were missing despite their valid setup
+				-- Actual destination coordinates are stored in oldorigin member
+				if testedict.origin == vec3origin then
+					targetlocation = testedict.oldorigin
+				else
+					targetlocation = testedict.origin
+				end
+				break
+			end
+		end
+	end
+
+	local description = string.format('Teleport to %s (%s)', target, targetlocation or 'target not found')
+	local location = vec3.mid(edict.absmin, edict.absmax)
+
+	return description, location
 end
 
+local isteleport = edicts.isteleport
+
 function console.teleports(choice)
-	foreach(handleteleport, choice)
+	foreach(function(...) return handleedict(isteleport, ...) end, choice)
 end
 
 
