@@ -99,6 +99,8 @@ local function handleedict(func, edict, current, choice)
 	if choice <= 0 then
 		print(current .. ':', description, 'at', location)
 	elseif choice == current then
+		player.god(true)
+		player.notarget(true)
 		player.setpos(location, angles)
 		return
 	end
