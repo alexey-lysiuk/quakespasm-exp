@@ -148,30 +148,54 @@ static int LS_global_menu_poppage(lua_State* state)
 	return 0;
 }
 
-static int LS_MenuPrint(lua_State* state, void (*printfunc)(int x, int y, const char* text))
+static int LS_global_menu_clearpages(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TNUMBER);
-	luaL_checktype(state, 2, LUA_TNUMBER);
-	luaL_checktype(state, 3, LUA_TSTRING);
+	LS_CloseMenu(state);
 
-	int x = lua_tointeger(state, 1);
-	int y = lua_tointeger(state, 2);
-	const char* text = lua_tostring(state, 3);
+	if (LS_PushMenuPageStackTable(state))
+	{
+		lua_len(state, -1);
 
-	printfunc(x, y, text);
+		int pagecount = lua_tointeger(state, -1);
+		assert(pagecount >= 0);
+		lua_pop(state, 1);  // remove page stack size
+
+		for (int i = 0; i < pagecount; ++i)
+		{
+			lua_pushnil(state);
+			lua_seti(state, -2, i + 1);
+		}
+	}
+
+	return 0;
+}
+
+static int LS_MenuText(lua_State* state, void (*printfunc)(int x, int y, const char* text))
+{
+	if (m_state == m_luascript)
+	{
+		luaL_checktype(state, 1, LUA_TNUMBER);
+		luaL_checktype(state, 2, LUA_TNUMBER);
+		luaL_checktype(state, 3, LUA_TSTRING);
+
+		int x = lua_tointeger(state, 1);
+		int y = lua_tointeger(state, 2);
+		const char* text = lua_tostring(state, 3);
+
+		printfunc(x, y, text);
+	}
+
 	return 0;
 }
 
 static int LS_global_menu_text(lua_State* state)
 {
-	return LS_MenuPrint(state, M_PrintWhite);
-	return 0;
+	return LS_MenuText(state, M_PrintWhite);
 }
 
 static int LS_global_menu_tintedtext(lua_State* state)
 {
-	return LS_MenuPrint(state, M_Print);
-	return 0;
+	return LS_MenuText(state, M_Print);
 }
 
 void LS_InitMenuModule(lua_State* state)
@@ -180,6 +204,7 @@ void LS_InitMenuModule(lua_State* state)
 	{
 		{ "pushpage", LS_global_menu_pushpage },
 		{ "poppage", LS_global_menu_poppage },
+		{ "clearpages", LS_global_menu_clearpages },
 
 		{ "text", LS_global_menu_text },
 		{ "tintedtext", LS_global_menu_tintedtext },

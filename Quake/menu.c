@@ -2757,7 +2757,7 @@ void M_Keydown (int key)
 #ifdef USE_LUA_SCRIPTING
 	case m_luascript:
 		M_LuaScript_Key (key);
-		break;
+		return;
 #endif // USE_LUA_SCRIPTING
 	}
 }

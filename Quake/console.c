@@ -488,6 +488,45 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
+
+static const char* Con_ToAscii(const char *message)
+{
+	static const char translate[] =
+		".\1\2.......\n.  .."
+		"[]0123456789.-=-"
+		" ! #$%&'()*+,-./"
+		"0123456789:;<=>?"
+		"@ABCDEFGHIJKLMNO"
+		"PQRSTUVWXYZ[\\]^_"
+		"`abcdefghijklmno"
+		"pqrstuvwxyz{|}~."
+		"-=-....... ....."
+		"[]0123456789.-=-"
+		" ! #$%&'()*+,-./"
+		"0123456789:;<=>?"
+		"@ABCDEFGHIJKLMNO"
+		"PQRSTUVWXYZ[\\]^_"
+		"`abcdefghijklmno"
+		"pqrstuvwxyz{|}~.";
+
+	static char ascii[MAXPRINTMSG];
+
+	for (size_t i = 0; i < MAXPRINTMSG; ++i)
+	{
+		unsigned char ch = message[i];
+
+		if (ch == '\0')
+		{
+			ascii[i] = '\0';
+			break;
+		}
+
+		ascii[i] = translate[ch];
+	}
+
+	return ascii;
+}
+
 void Con_Printf (const char *fmt, ...)
 {
 	va_list		argptr;
@@ -498,12 +537,14 @@ void Con_Printf (const char *fmt, ...)
 	q_vsnprintf (msg, sizeof(msg), fmt, argptr);
 	va_end (argptr);
 
+	const char *ascii = Con_ToAscii(msg);
+
 // also echo to debugging console
-	Sys_Printf ("%s", msg);
+	Sys_Printf ("%s", ascii);
 
 // log all messages to file
 	if (con_debuglog)
-		Con_DebugLog(msg);
+		Con_DebugLog(ascii);
 
 	if (!con_initialized)
 		return;
