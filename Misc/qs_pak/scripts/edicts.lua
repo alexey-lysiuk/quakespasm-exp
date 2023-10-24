@@ -251,42 +251,38 @@ local function getitemname(item)
 
 	for _, edict in ipairs(edicts) do
 		if edict.items == item and edict.classname:find('item_') == 1 then
-			return edict.netname
+			return titlecase(edict.netname)
 		end
 	end
 
 	return nil
 end
 
-local function handledoor(edict, current, choice)
+function edicts.isdoor(edict)
 	local door_secret_class = 'func_door_secret'
 	local classname = isclass(edict, 'door', 'func_door', door_secret_class)
 	
-	if classname then
-		local pos = vec3.mid(edict.absmin, edict.absmax)
-		local info = getitemname(edict.items)
-
-		if classname == door_secret_class or edict.touch == 'secret_touch()' then
-			info = info and info .. ', secret' or 'secret'
-		end
-
-		info = info and '(' .. info .. ')' or ''
-
-		if choice <= 0 then
-			print(current .. ':', pos, info)
-		elseif choice == current then
-			player.setpos(pos)
-			return nil
-		end
-
-		return current + 1
+	if not classname then
+		return
 	end
 
-	return current
+	local secret = ''
+
+	if classname == door_secret_class or edict.touch == 'secret_touch()' then
+		secret = 'Secret '
+	end
+
+	local item = getitemname(edict.items)
+	local description = string.format('%s%s%sDoor', secret, item or '', item and ' ' or '')
+	local location = vec3.mid(edict.absmin, edict.absmax)
+
+	return description, location
 end
 
+local isdoor = edicts.isdoor
+
 function console.doors(choice)
-	foreach(handledoor, choice)
+	foreach(function(...) return handleedict(isdoor, ...) end, choice)
 end
 
 
