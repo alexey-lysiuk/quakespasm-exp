@@ -261,19 +261,18 @@ end
 function edicts.isdoor(edict)
 	local door_secret_class = 'func_door_secret'
 	local classname = isclass(edict, 'door', 'func_door', door_secret_class)
-	
+
 	if not classname then
 		return
 	end
 
-	local secret = ''
+	local issecret = classname == door_secret_class or edict.touch == 'secret_touch()'
+	local secretprefix = issecret and 'Secret ' or ''
 
-	if classname == door_secret_class or edict.touch == 'secret_touch()' then
-		secret = 'Secret '
-	end
+	local itemname = getitemname(edict.items)
+	local itemprefix = itemname and itemname .. ' ' or ''
 
-	local item = getitemname(edict.items)
-	local description = string.format('%s%s%sDoor', secret, item or '', item and ' ' or '')
+	local description = string.format('%s%sDoor', secretprefix, itemprefix)
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
