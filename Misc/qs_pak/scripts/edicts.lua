@@ -156,53 +156,45 @@ end
 -- Monsters
 --
 
-local function handlemonster(edict, current, choice)
+function edicts.ismonster(edict)
 	local flags = edict.flags
 	local health = edict.health
 
-	if flags and health then
-		local ismonster = flags & FL_MONSTER ~= 0
-		local isalive = health > 0
+	if not flags or not health then
+		return
+	end
 
-		if not ismonster then
-			local classname = edict.classname
+	local ismonster = flags & FL_MONSTER ~= 0
+	local isalive = health > 0
+	local classname = edict.classname
 
-			if classname == 'monster_boss' then
-				-- Chthon
-				ismonster = true
-				isalive = health >= 0
-			elseif classname == 'monster_oldone' then
-				-- Shub-Niggurath
-				ismonster = true
-			end
-		end
-
-		if not ismonster or not isalive then
-			return current
-		end
-
-		if choice <= 0 then
-			local classname = edict.classname
-
-			-- Remove classname prefix if present
-			if classname:find('monster_') == 1 then
-				classname = classname:sub(9)
-			end
-
-			print(current .. ':', classname, 'at', edict.origin)
-		elseif choice == current then
-			player.god(true)
-			player.notarget(true)
-			player.setpos(edict.origin, edict.angles)
-			return nil
+	if not ismonster then
+		if classname == 'monster_boss' then
+			-- Chthon
+			ismonster = true
+			isalive = health >= 0
+		elseif classname == 'monster_oldone' then
+			-- Shub-Niggurath
+			ismonster = true
 		end
 	end
 
-	return current + 1
+	if not ismonster or not isalive then
+		return
+	end
+
+	-- Remove classname prefix if present
+	if classname:find('monster_') == 1 then
+		classname = classname:sub(9)
+	end
+
+	return classname, edict.origin, edict.angles
 end
 
+local ismonster = edicts.ismonster
+
 function console.monsters(choice)
-	foreach(handlemonster, choice)
+	foreach(function(...) return handleedict(ismonster, ...) end, choice)
 end
 
 
