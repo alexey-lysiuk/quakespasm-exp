@@ -20,7 +20,7 @@ edicts.flags =
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
 }
 
-edicts.solidstates = 
+edicts.solidstates =
 {
 	SOLID_NOT         = 0,  -- no interaction with other objects
 	SOLID_TRIGGER     = 1,  -- touch on edge, but not blocking
@@ -29,7 +29,7 @@ edicts.solidstates =
 	SOLID_BSP         = 4,  -- bsp clip, touch on edge, block
 }
 
-edicts.spawnflags = 
+edicts.spawnflags =
 {
 	SUPER_SECRET      = 2,  -- Copper specific
 
@@ -63,7 +63,7 @@ function edicts.isclass(edict, ...)
 		if edict.classname == classname then
 			return classname
 		end
-	end	
+	end
 
 	return nil
 end
@@ -83,9 +83,9 @@ local getname <const> = edicts.getname
 
 
 local function titlecase(str)
-	return str:gsub("(%a)([%w_']*)", 
-		function(head, tail) 
-			return head:upper()..tail:lower() 
+	return str:gsub("(%a)([%w_']*)",
+		function(head, tail)
+			return head:upper()..tail:lower()
 		end)
 end
 
@@ -101,7 +101,12 @@ local function handleedict(func, edict, current, choice)
 	elseif choice == current then
 		player.god(true)
 		player.notarget(true)
+
+		-- Adjust Z coordinate so player will appear slightly above the destination
+		local playerpos = location
+		playerpos.z = playerpos.z + 20
 		player.setpos(location, angles)
+
 		return
 	end
 
@@ -251,7 +256,17 @@ local function getitemname(item)
 
 	for _, edict in ipairs(edicts) do
 		if edict.items == item and edict.classname:find('item_') == 1 then
-			return titlecase(edict.netname)
+			local name = edict.netname
+
+			if not name or name == '' then
+				if item == 131072 then
+					return 'Silver Key'
+				elseif item == 262144 then
+					return 'Gold Key'
+				end
+			end
+
+			return titlecase(name)
 		end
 	end
 
@@ -329,14 +344,18 @@ function edicts.isitem(edict, current, choice)
 
 	-- Health
 	local healamount = edict.healamount
-	if healamount ~= 0 then
+	if healamount and healamount ~= 0 then
 		name = string.format('%i %s', healamount, name)
 	end
 
 	-- Ammo
-	local aflag = edict.aflag
-	if aflag and aflag ~= 0 then
-		name = string.format('%i %s', aflag, name)
+	local ammoamount = edict.aflag 
+		or classname == 'item_shells' and edict.ammo_shells
+		or classname == 'item_spikes' and edict.ammo_nails
+		or classname == 'item_rockets' and edict.ammo_rockets
+		or classname == 'item_cells' and edict.ammo_cells
+	if ammoamount and ammoamount ~= 0 then
+		name = string.format('%i %s', ammoamount, name)
 	end
 
 	return name, edict.origin
