@@ -62,3 +62,152 @@ keycodes =
 	MWHEELUP      = 239,
 	MWHEELDOWN    = 240,
 }
+
+
+local function secretspage_draw(page)
+	menu.tintedtext(10, 0, 'Secrets')
+
+	local secretscount = 0
+
+	local function addsecret(edict, current)
+		local pos, extra = edicts.issecret(edict)
+
+		if not pos then
+			return current
+		end
+
+		local entry = string.format('%i: %s %s', current, pos, extra)
+		menu.text(10, (current + 1) * 10, entry)
+
+		secretscount = secretscount + 1
+		return current + 1
+	end
+
+	edicts.foreach(addsecret)
+
+	if secretscount > 0 then
+		local cursor = page.cursor
+
+		if cursor == 0 then
+			cursor = secretscount
+		elseif cursor > secretscount then
+			cursor = 1
+		end
+
+		page.cursor = cursor
+
+		menu.tintedtext(0, (page.cursor + 1) * 10, '\13')
+	end
+
+	-- TODO: Action option
+	-- TODO: Back item
+end
+
+local function secretspage_keypress(page, keycode)
+	local cursor = page.cursor
+
+	if keycode == keycodes.ENTER then
+		local function movetosecret(edict, current, choice)
+			local pos = edicts.issecret(edict)
+
+			if pos then
+				if current == choice then
+					player.setpos(pos)
+					menu.poppage()
+					return
+				else
+					return current + 1
+				end
+			end
+
+			return current
+		end
+
+		edicts.foreach(movetosecret, cursor)
+	elseif keycode == keycodes.ESCAPE then
+		menu.poppage()
+	elseif keycode == keycodes.UPARROW then
+		cursor = cursor - 1
+	elseif keycode == keycodes.DOWNARROW then
+		cursor = cursor + 1
+	end
+
+	page.cursor = cursor
+end
+
+
+local function scrollablepage_draw(page)
+	menu.tintedtext(10, 0, page.title)
+
+	local entrycount = #page.entries
+	if entrycount == 0 then
+		return
+	end
+	
+	for i = 1, entrycount do
+		menu.text(10, (i + 1) * 10, page.entries[i].text)
+	end
+
+	local cursor = page.cursor
+
+	if cursor == 0 then
+		cursor = entrycount
+	elseif cursor > entrycount then
+		cursor = 1
+	end
+
+	page.cursor = cursor
+
+	menu.tintedtext(0, (cursor + 1) * 10, '\13')
+end
+
+local function scrollablepage_keypress(page, keycode)
+	local cursor = page.cursor
+
+	if keycode == keycodes.ESCAPE then
+		menu.poppage()
+	elseif keycode == keycodes.UPARROW then
+		cursor = cursor - 1
+	elseif keycode == keycodes.DOWNARROW then
+		cursor = cursor + 1
+	end
+
+	page.cursor = cursor
+end
+
+function menu.scrollablepage()
+	return
+	{
+		ondraw = scrollablepage_draw,
+		onkeypress = scrollablepage_keypress,
+
+		title = '',
+		entries = {},
+		cursor = 1,
+	}
+end
+
+
+function console.menu_secrets()
+	local secretspage = menu.scrollablepage()
+	secretspage.title = 'Secrets'
+
+	local function addsecret(edict, current)
+		local description, location = edicts.issecret(edict)
+
+		if not description then
+			return current
+		end
+
+		local text = string.format('%i: %s at %s', current, description, location)
+		local entry = { text = text, location = location }
+		secretspage.entries[#secretspage.entries + 1] = entry
+
+		return current + 1
+	end
+
+	edicts.foreach(addsecret)
+
+	menu.clearpages()
+	menu.pushpage(secretspage)
+end
