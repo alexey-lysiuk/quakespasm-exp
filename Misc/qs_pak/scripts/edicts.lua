@@ -101,7 +101,12 @@ local function handleedict(func, edict, current, choice)
 	elseif choice == current then
 		player.god(true)
 		player.notarget(true)
+
+		-- Adjust Z coordinate so player will appear slightly above the destination
+		local playerpos = location
+		playerpos.z = playerpos.z + 20
 		player.setpos(location, angles)
+
 		return
 	end
 
