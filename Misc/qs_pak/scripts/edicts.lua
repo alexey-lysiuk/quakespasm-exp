@@ -302,6 +302,7 @@ function edicts.isitem(edict, current, choice)
 	for _, prefix in ipairs(prefixes) do
 		if classname:find(prefix) == 1 then
 			prefixlen = prefix:len() + 1
+			break
 		end
 	end
 
