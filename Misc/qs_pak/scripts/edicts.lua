@@ -334,9 +334,13 @@ function edicts.isitem(edict, current, choice)
 	end
 
 	-- Ammo
-	local aflag = edict.aflag
-	if aflag and aflag ~= 0 then
-		name = string.format('%i %s', aflag, name)
+	local ammoamount = edict.aflag 
+		or classname == 'item_shells' and edict.ammo_shells
+		or classname == 'item_spikes' and edict.ammo_nails
+		or classname == 'item_rockets' and edict.ammo_rockets
+		or classname == 'item_cells' and edict.ammo_cells
+	if ammoamount and ammoamount ~= 0 then
+		name = string.format('%i %s', ammoamount, name)
 	end
 
 	return name, edict.origin
