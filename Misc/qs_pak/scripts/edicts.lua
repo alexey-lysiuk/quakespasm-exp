@@ -256,7 +256,17 @@ local function getitemname(item)
 
 	for _, edict in ipairs(edicts) do
 		if edict.items == item and edict.classname:find('item_') == 1 then
-			return titlecase(edict.netname)
+			local name = edict.netname
+
+			if not name or name == '' then
+				if item == 131072 then
+					return 'Silver Key'
+				elseif item == 262144 then
+					return 'Gold Key'
+				end
+			end
+
+			return titlecase(name)
 		end
 	end
 
