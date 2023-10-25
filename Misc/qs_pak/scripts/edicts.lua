@@ -289,7 +289,7 @@ end
 -- Items
 --
 
-local function handleitem(edict, current, choice)
+function edicts.isitem(edict, current, choice)
 	if edict.solid == SOLID_NOT then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
 		return current
@@ -305,49 +305,46 @@ local function handleitem(edict, current, choice)
 		end
 	end
 
-	if prefixlen then
-		if choice <= 0 then
-			local name = edict.netname
-
-			if name == '' then
-				-- use classname with prefix removed for entity without netname
-				name = classname:sub(prefixlen)
-			end
-
-			if name == 'armor1' then
-				name = 'Green Armor'
-			elseif name == 'armor2' then
-				name = 'Yellow Armor'
-			elseif name == 'armorInv' then
-				name = 'Red Armor'
-			end
-
-			name = titlecase(name)
-
-			local healamount = edict.healamount
-			if healamount ~= 0 then
-				name = string.format('%i %s', healamount, name)
-			end
-
-			local aflag = edict.aflag
-			if aflag and aflag ~= 0 then
-				name = string.format('%i %s', aflag, name)
-			end
-
-			print(current .. ':', name, 'at', edict.origin)
-		elseif choice == current then
-			player.setpos(edict.origin)
-			return nil
-		end
-
-		return current + 1
+	if not prefixlen then
+		return
 	end
 
-	return current
+	local name = edict.netname
+
+	if name == '' then
+		-- use classname with prefix removed for entity without netname
+		name = classname:sub(prefixlen)
+	end
+
+	if name == 'armor1' then
+		name = 'Green Armor'
+	elseif name == 'armor2' then
+		name = 'Yellow Armor'
+	elseif name == 'armorInv' then
+		name = 'Red Armor'
+	end
+
+	name = titlecase(name)
+
+	-- Health
+	local healamount = edict.healamount
+	if healamount ~= 0 then
+		name = string.format('%i %s', healamount, name)
+	end
+
+	-- Ammo
+	local aflag = edict.aflag
+	if aflag and aflag ~= 0 then
+		name = string.format('%i %s', aflag, name)
+	end
+
+	return name, edict.origin
 end
 
+local isitem = edicts.isitem
+
 function console.items(choice)
-	foreach(handleitem, choice)
+	foreach(function(...) return handleedict(isitem, ...) end, choice)
 end
 
 
