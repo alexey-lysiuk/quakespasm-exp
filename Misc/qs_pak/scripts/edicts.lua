@@ -329,7 +329,7 @@ function edicts.isitem(edict, current, choice)
 
 	-- Health
 	local healamount = edict.healamount
-	if healamount ~= 0 then
+	if healamount and healamount ~= 0 then
 		name = string.format('%i %s', healamount, name)
 	end
 
