@@ -133,7 +133,8 @@ function edicts.issecret(edict)
 
 	if not count then
 		-- Regular or Arcane Dimensions secret that was not revealed yet
-		location = vec3.mid(min, max)
+		local origin = edict.origin
+		location = origin == vec3origin and vec3.mid(min, max) or origin
 	elseif count == 0 then
 		-- Revealed Arcane Dimensions secret, skip it
 		return
