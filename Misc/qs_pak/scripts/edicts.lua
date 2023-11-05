@@ -319,18 +319,15 @@ local function getitemname(item)
 	end
 
 	for _, edict in ipairs(edicts) do
-		if edict.items == item and edict.classname:find('item_') == 1 then
+		if not isfree(edict) and edict.items == item and edict.classname:find('item_') == 1 then
 			local name = edict.netname
 
-			if not name or name == '' then
-				if item == itemflags.IT_KEY1 then
-					return 'Silver Key'
-				elseif item == itemflags.IT_KEY2 then
-					return 'Gold Key'
-				end
+			if name and name ~= '' then
+				return titlecase(name)
 			end
 
-			return titlecase(name)
+			name = itemnames[item]
+			return name or '???'
 		end
 	end
 
