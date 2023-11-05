@@ -72,6 +72,36 @@ edicts.itemflags =
 
 local itemflags <const> = edicts.itemflags
 
+edicts.itemnames =
+{
+	[itemflags.IT_SHOTGUN]          = 'Shotgun',
+	[itemflags.IT_SUPER_SHOTGUN]    = 'Double-Barrelled Shotgun',
+	[itemflags.IT_NAILGUN]          = 'Nailgun',
+	[itemflags.IT_SUPER_NAILGUN]    = 'Super Nailgun',
+	[itemflags.IT_GRENADE_LAUNCHER] = 'Grenade Launcher',
+	[itemflags.IT_ROCKET_LAUNCHER]  = 'Rocket Launcher',
+	[itemflags.IT_LIGHTNING]        = 'Thunderbolt',
+	[itemflags.IT_MJOLNIR]          = 'Mjolnir',
+	[itemflags.IT_SHELLS]           = 'Shells',
+	[itemflags.IT_NAILS]            = 'Nails',
+	[itemflags.IT_ROCKETS]          = 'Rockets',
+	[itemflags.IT_CELLS]            = 'Cells',
+	[itemflags.IT_AXE]              = 'Axe',
+	[itemflags.IT_ARMOR1]           = 'Green Armor',
+	[itemflags.IT_ARMOR2]           = 'Yellow Armor',
+	[itemflags.IT_ARMOR3]           = 'Red Armor',
+	[itemflags.IT_PROXIMITY_GUN]    = 'Proximity Gun',
+	[itemflags.IT_KEY1]             = 'Silver Key',
+	[itemflags.IT_KEY2]             = 'Gold Key',
+	[itemflags.IT_INVISIBILITY]     = 'Ring of Shadows',
+	[itemflags.IT_INVULNERABILITY]  = 'Pentagram of Protection',
+	[itemflags.IT_SUIT]             = 'Biosuit',
+	[itemflags.IT_QUAD]             = 'Quad Damage',
+	[itemflags.IT_LASER_CANNON]     = 'Laser Cannon',
+}
+
+local itemnames <const> = edicts.itemnames
+
 
 function edicts.foreach(func, choice)
 	choice = choice and math.tointeger(choice) or 0
