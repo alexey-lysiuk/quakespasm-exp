@@ -42,6 +42,36 @@ edicts.spawnflags =
 	NOT_DEATHMATCH    = 2048,
 }
 
+edicts.itemflags =
+{
+	IT_SHOTGUN          = 1,
+	IT_SUPER_SHOTGUN    = 2,
+	IT_NAILGUN          = 4,
+	IT_SUPER_NAILGUN    = 8,
+	IT_GRENADE_LAUNCHER = 16,
+	IT_ROCKET_LAUNCHER  = 32,
+	IT_LIGHTNING        = 64,
+	IT_MJOLNIR          = 128,
+	IT_SHELLS           = 256,
+	IT_NAILS            = 512,
+	IT_ROCKETS          = 1024,
+	IT_CELLS            = 2048,
+	IT_AXE              = 4096,
+	IT_ARMOR1           = 8192,
+	IT_ARMOR2           = 16384,
+	IT_ARMOR3           = 32768,
+	IT_PROXIMITY_GUN    = 65536,
+	IT_KEY1             = 131072,
+	IT_KEY2             = 262144,
+	IT_INVISIBILITY     = 524288,
+	IT_INVULNERABILITY  = 1048576,
+	IT_SUIT             = 2097152,
+	IT_QUAD             = 4194304,
+	IT_LASER_CANNON     = 8388608,
+}
+
+local itemflags <const> = edicts.itemflags
+
 
 function edicts.foreach(func, choice)
 	choice = choice and math.tointeger(choice) or 0
@@ -263,9 +293,9 @@ local function getitemname(item)
 			local name = edict.netname
 
 			if not name or name == '' then
-				if item == 131072 then
+				if item == itemflags.IT_KEY1 then
 					return 'Silver Key'
-				elseif item == 262144 then
+				elseif item == itemflags.IT_KEY2 then
 					return 'Gold Key'
 				end
 			end
