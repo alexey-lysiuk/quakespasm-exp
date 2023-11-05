@@ -79,6 +79,7 @@ local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 
 local foreach <const> = edicts.foreach
 local isclass <const> = edicts.isclass
+local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
@@ -119,7 +120,7 @@ end
 --
 
 function edicts.issecret(edict)
-	if edict.classname ~= 'trigger_secret' then
+	if not edict or isfree(edict) or edict.classname ~= 'trigger_secret' then
 		return
 	end
 
@@ -162,6 +163,10 @@ end
 --
 
 function edicts.ismonster(edict)
+	if not edict or isfree(edict) then
+		return
+	end
+
 	local flags = edict.flags
 	local health = edict.health
 
@@ -208,7 +213,7 @@ end
 --
 
 function edicts.isteleport(edict)
-	if edict.classname ~= 'trigger_teleport' then
+	if not edict or isfree(edict) or edict.classname ~= 'trigger_teleport' then
 		return
 	end
 
@@ -274,6 +279,10 @@ local function getitemname(item)
 end
 
 function edicts.isdoor(edict)
+	if not edict or isfree(edict) then
+		return
+	end
+
 	local door_secret_class = 'func_door_secret'
 	local classname = isclass(edict, 'door', 'func_door', door_secret_class)
 
@@ -305,6 +314,10 @@ end
 --
 
 function edicts.isitem(edict, current, choice)
+	if not edict or isfree(edict) then
+		return
+	end
+
 	if edict.solid == SOLID_NOT then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
 		return current
