@@ -396,7 +396,11 @@ function edicts.isitem(edict, current, choice)
 
 	local name = edict.netname
 
-	if name == '' then
+	if not name or name == '' then
+		name = itemnames[edict.items]
+	end
+
+	if not name then
 		-- use classname with prefix removed for entity without netname
 		name = classname:sub(prefixlen)
 	end
