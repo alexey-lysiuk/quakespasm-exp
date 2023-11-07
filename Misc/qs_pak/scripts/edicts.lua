@@ -402,11 +402,11 @@ function edicts.isitem(edict, current, choice)
 	end
 
 	if name == 'armor1' then
-		name = 'Green Armor'
+		name = itemnames[itemflags.IT_ARMOR1]
 	elseif name == 'armor2' then
-		name = 'Yellow Armor'
+		name = itemnames[itemflags.IT_ARMOR2]
 	elseif name == 'armorInv' then
-		name = 'Red Armor'
+		name = itemnames[itemflags.IT_ARMOR3]
 	end
 
 	name = titlecase(name)
