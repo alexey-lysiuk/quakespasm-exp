@@ -5,7 +5,7 @@
 }
 {
 "angle" "90"
-"origin" "256 64 -32"
+"origin" "256 64 -40"
 "classname" "info_player_start"
 }
 {
