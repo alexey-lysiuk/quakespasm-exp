@@ -2961,6 +2961,7 @@
 {
 "classname" "trigger_counter"
 "origin" "776 1240 -104"
+"spawnflags" "256"
 "target" "cellar"
 "targetname" "bob"
 }
@@ -4379,4 +4380,12 @@
 "light" "187"
 "origin" "1464 360 64"
 "wait" "5"
+}
+{
+"classname" "trigger_counter"
+"count" "1"
+"origin" "776 1240 -136"
+"spawnflags" "1536"
+"target" "cellar"
+"targetname" "bob"
 }
