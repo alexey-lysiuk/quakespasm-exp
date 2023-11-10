@@ -494,7 +494,7 @@ static const char* Con_ToAscii(const char *message)
 	static const char translate[] =
 		".\1\2.......\n.  .."
 		"[]0123456789.-=-"
-		" ! #$%&'()*+,-./"
+		" !\"#$%&'()*+,-./"
 		"0123456789:;<=>?"
 		"@ABCDEFGHIJKLMNO"
 		"PQRSTUVWXYZ[\\]^_"
@@ -502,7 +502,7 @@ static const char* Con_ToAscii(const char *message)
 		"pqrstuvwxyz{|}~."
 		"-=-....... ....."
 		"[]0123456789.-=-"
-		" ! #$%&'()*+,-./"
+		" !\"#$%&'()*+,-./"
 		"0123456789:;<=>?"
 		"@ABCDEFGHIJKLMNO"
 		"PQRSTUVWXYZ[\\]^_"
