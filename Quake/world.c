@@ -1146,9 +1146,19 @@ static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qbo
 	return DotProduct(dir, storage->forward);
 }
 
-edict_t* SV_TraceEntity(void)
+#define SV_TRACE_ENTITY_SOLID 1
+#define SV_TRACE_ENTITY_TRIGGER 2
+#define SV_TRACE_ENTITY_ALL (SV_TRACE_ENTITY_SOLID | SV_TRACE_ENTITY_TRIGGER)
+
+edict_t* SV_TraceEntity(int kind)
 {
 	if (svs.clients == NULL || !svs.clients[0].active)
+		return NULL;
+
+	qboolean trace_solid = kind & SV_TRACE_ENTITY_SOLID;
+	qboolean trace_trigger = kind & SV_TRACE_ENTITY_TRIGGER;
+
+	if (!trace_solid && !trace_trigger)
 		return NULL;
 
 	et_state_t state;
@@ -1162,14 +1172,24 @@ edict_t* SV_TraceEntity(void)
 	state.initialtrace = clip->trace;
 
 	// Trace solid entity
-	SV_ClipToLinks(sv_areanodes, clip);
-	edict_t* solid_ent = clip->trace.ent;
+	edict_t* solid_ent = NULL;
 
-	clip->trace = state.initialtrace;
+	if (trace_solid)
+	{
+		SV_ClipToLinks(sv_areanodes, clip);
+		solid_ent = clip->trace.ent;
+
+		clip->trace = state.initialtrace;
+	}
 
 	// Trace trigger entity
-	ET_TraceTriger(sv_areanodes, clip);
-	edict_t* trigger_ent = clip->trace.ent;
+	edict_t* trigger_ent = NULL;
+
+	if (trace_trigger)
+	{
+		ET_TraceTriger(sv_areanodes, clip);
+		trigger_ent = clip->trace.ent;
+	}
 
 	// Choose entity, solid or trigger, depending on tracing results and proximity
 	edict_t* ent = NULL;
@@ -1204,12 +1224,16 @@ edict_t* SV_TraceEntity(void)
 			if (dist < bestdist)
 				continue;	// to far to turn
 
-			clip->trace = state.initialtrace;
-
-			if (check->v.solid == SOLID_TRIGGER)
+			if (check->v.solid == SOLID_TRIGGER && trace_trigger)
+			{
+				clip->trace = state.initialtrace;
 				ET_TraceTriger(sv_areanodes, clip);
-			else
+			}
+			else if (trace_solid)
+			{
+				clip->trace = state.initialtrace;
 				SV_ClipToLinks(sv_areanodes, clip);
+			}
 
 			if (clip->trace.ent == check)
 			{
@@ -1270,7 +1294,7 @@ void SV_UpdateTracedEntityInfo(void)
 
 	SV_ResetTracedEntityInfo(NULL);
 
-	edict_t* ent = SV_TraceEntity();
+	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_ALL);
 
 	if (ent == NULL)
 		return;

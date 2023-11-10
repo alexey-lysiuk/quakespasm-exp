@@ -685,8 +685,7 @@ static int LS_global_player_setpos(lua_State* state)
 
 static int LS_global_player_traceentity(lua_State* state)
 {
-	edict_t* SV_TraceEntity(void);
-	edict_t* ed = SV_TraceEntity();
+	edict_t* ed = SV_TraceEntity(SV_TRACE_ENTITY_ALL);
 
 	if (ed == NULL)
 		lua_pushnil(state);
