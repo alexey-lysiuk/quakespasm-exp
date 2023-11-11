@@ -2302,21 +2302,36 @@ static void Host_MDK_f(void)
 		return;
 
 	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_SOLID);
+	if (!ent)
+		return;
 
-	if (ent && ent->v.health > 0.0f && ent->v.takedamage > 0.0f)
+	float health = ent->v.health;
+	if (health <= 0.0f && ent->v.takedamage <= 0.0f)
+		return;
+
+	int numfuncs = progs->numfunctions;
+	int damagefunc = 0;
+
+	for (; damagefunc < numfuncs; ++damagefunc)
 	{
-		eval_t* diefunc = GetEdictFieldValue(ent, "th_die");
+		int nameindex = pr_functions[damagefunc].s_name;
+		const char* name = PR_GetString(nameindex);
 
-		if (diefunc && diefunc->function)
-		{
-			ent->v.health = Cmd_Argc() > 1 ? -99.0f : -1.0f;
-			ent->v.think = diefunc->function;
-			ent->v.nextthink = 0.1f;
-
-			if ((int)ent->v.flags & FL_MONSTER)
-				MSG_WriteByte(&sv.reliable_datagram, svc_killedmonster);
-		}
+		if (strcmp(name, "T_Damage") == 0)
+			break;
 	}
+
+	if (damagefunc == numfuncs)
+		return;
+
+	// void T_Damage(entity target, entity inflictor, entity attacker, float damage)
+	int* globals_iptr = (int*)pr_globals;
+	globals_iptr[OFS_PARM0] = EDICT_TO_PROG(ent);                      // target
+	globals_iptr[OFS_PARM1] = EDICT_TO_PROG(svs.clients[0].edict);     // inflictor
+	globals_iptr[OFS_PARM2] = globals_iptr[OFS_PARM1];                 // attacker
+	pr_globals[OFS_PARM3] = health + (Cmd_Argc() > 1 ? 99.0f : 1.0f);  // damage
+
+	PR_ExecuteProgram(damagefunc);
 }
 
 //=============================================================================
