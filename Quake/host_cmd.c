@@ -2290,6 +2290,35 @@ void Host_Resetdemos (void)
 	cls.demonum = 0;
 }
 
+static void Host_MDK_f(void)
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (pr_global_struct->deathmatch)
+		return;
+
+	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_SOLID);
+
+	if (ent && ent->v.health > 0.0f && ent->v.takedamage > 0.0f)
+	{
+		eval_t* diefunc = GetEdictFieldValue(ent, "th_die");
+
+		if (diefunc && diefunc->function)
+		{
+			ent->v.health = Cmd_Argc() > 1 ? -99.0f : -1.0f;
+			ent->v.think = diefunc->function;
+			ent->v.nextthink = 0.1f;
+
+			if ((int)ent->v.flags & FL_MONSTER)
+				MSG_WriteByte(&sv.reliable_datagram, svc_killedmonster);
+		}
+	}
+}
+
 //=============================================================================
 
 /*
@@ -2318,6 +2347,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("name", Host_Name_f);
 	Cmd_AddCommand ("noclip", Host_Noclip_f);
 	Cmd_AddCommand ("setpos", Host_SetPos_f); //QuakeSpasm
+	Cmd_AddCommand ("mdk", Host_MDK_f);
 
 	Cmd_AddCommand ("say", Host_Say_f);
 	Cmd_AddCommand ("say_team", Host_Say_Team_f);
