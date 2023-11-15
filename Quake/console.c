@@ -491,8 +491,9 @@ Handles cursor positioning, line wrapping, etc
 
 static const char* Con_ToAscii(const char *message)
 {
+	// '\xFF' means skip this character
 	static const char translate[] =
-		".\1\2.......\n.  .."
+		"\0\xFF\xFF.......\n.  .."
 		"[]0123456789.-=-"
 		" !\"#$%&'()*+,-./"
 		"0123456789:;<=>?"
@@ -510,18 +511,24 @@ static const char* Con_ToAscii(const char *message)
 		"pqrstuvwxyz{|}~.";
 
 	static char ascii[MAXPRINTMSG];
+	char* asciiptr = ascii;
 
-	for (size_t i = 0; i < MAXPRINTMSG; ++i)
+	for (const char* ch = message; ; ++ch)
 	{
-		unsigned char ch = message[i];
+		if (asciiptr - ascii == MAXPRINTMSG - 1)
+			break;  // ascii array must remain null-terminated
 
-		if (ch == '\0')
-		{
-			ascii[i] = '\0';
+		unsigned char oldch = *ch;
+		char newch = translate[oldch];
+
+		if (newch == '\xFF')
+			continue;
+
+		*asciiptr = newch;
+		++asciiptr;
+
+		if (oldch == '\0')
 			break;
-		}
-
-		ascii[i] = translate[ch];
 	}
 
 	return ascii;
