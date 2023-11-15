@@ -85,7 +85,7 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 
 #define SV_TRACE_ENTITY_SOLID 1
 #define SV_TRACE_ENTITY_TRIGGER 2
-#define SV_TRACE_ENTITY_ALL (SV_TRACE_ENTITY_SOLID | SV_TRACE_ENTITY_TRIGGER)
+#define SV_TRACE_ENTITY_ANY (SV_TRACE_ENTITY_SOLID | SV_TRACE_ENTITY_TRIGGER)
 
 edict_t* SV_TraceEntity(int kind);
 

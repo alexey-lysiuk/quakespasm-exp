@@ -1148,7 +1148,7 @@ static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qbo
 
 #define SV_TRACE_ENTITY_SOLID 1
 #define SV_TRACE_ENTITY_TRIGGER 2
-#define SV_TRACE_ENTITY_ALL (SV_TRACE_ENTITY_SOLID | SV_TRACE_ENTITY_TRIGGER)
+#define SV_TRACE_ENTITY_ANY (SV_TRACE_ENTITY_SOLID | SV_TRACE_ENTITY_TRIGGER)
 
 edict_t* SV_TraceEntity(int kind)
 {
@@ -1294,7 +1294,7 @@ void SV_UpdateTracedEntityInfo(void)
 
 	SV_ResetTracedEntityInfo(NULL);
 
-	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_ALL);
+	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_ANY);
 
 	if (ent == NULL)
 		return;
