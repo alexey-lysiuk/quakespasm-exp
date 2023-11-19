@@ -103,6 +103,17 @@ edicts.itemnames =
 local itemnames <const> = edicts.itemnames
 
 
+function player.safemove(location)
+	player.god(true)
+	player.notarget(true)
+
+	-- Adjust Z coordinate so player will appear slightly above the destination
+	local playerpos = location
+	playerpos.z = playerpos.z + 20
+	player.setpos(location, angles)
+end
+
+
 function edicts.foreach(func, choice)
 	choice = choice and math.tointeger(choice) or 0
 	local current = 1
@@ -158,14 +169,7 @@ local function handleedict(func, edict, current, choice)
 	if choice <= 0 then
 		print(current .. ':', description, 'at', location)
 	elseif choice == current then
-		player.god(true)
-		player.notarget(true)
-
-		-- Adjust Z coordinate so player will appear slightly above the destination
-		local playerpos = location
-		playerpos.z = playerpos.z + 20
-		player.setpos(location, angles)
-
+		player.safemove(location)
 		return
 	end
 
