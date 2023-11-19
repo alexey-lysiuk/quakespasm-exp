@@ -125,7 +125,7 @@ local function listpage_keypress(page, keycode)
 		return
 	end
 
-print(cursor, topline)
+--print(cursor, topline)
 
 --	if cursor <= 0 then
 --		cursor = entrycount
@@ -149,16 +149,16 @@ print(cursor, topline)
 --	cursor = cursor < 1 and entrycount or cursor > entrycount and 1 or cursor
 --	topline = topline < 1 and 1 or topline > entrycount and entrycount or topline
 
---	-- Make sure line under cursor is visible
---	if cursor < topline then
---		topline = cursor
---	elseif cursor > topline + listpage_maxlines - 1 then
---		topline = cursor - listpage_maxlines + 1
---	end
+	-- Make sure line under cursor is visible
+	if cursor < topline then
+		topline = cursor
+	elseif cursor > topline + listpage_maxlines - 1 then
+		topline = cursor - listpage_maxlines + 1
+	end
 
---	if topline + listpage_maxlines > entrycount then
---		topline = entrycount - listpage_maxlines + 1
---	end
+	if topline + listpage_maxlines > entrycount then
+		topline = entrycount - listpage_maxlines + 1
+	end
 
 --	print(cursor, topline)
 	page.topline = topline
