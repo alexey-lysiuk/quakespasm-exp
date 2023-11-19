@@ -68,6 +68,10 @@ local key_enter <const> = keycodes.ENTER
 local key_escape <const> = keycodes.ESCAPE
 local key_up <const> = keycodes.UPARROW
 local key_down <const> = keycodes.DOWNARROW
+local key_pageup <const> = keycodes.PGUP
+local key_pagedown <const> = keycodes.PGDN
+
+local listpage_maxlines <const> = 20  -- for line interval of 9 pixels
 
 
 local function listpage_draw(page)
@@ -78,37 +82,86 @@ local function listpage_draw(page)
 		return
 	end
 
-	for i = 1, entrycount do
-		menu.text(10, (i + 1) * 10, page.entries[i].text)
+	local topline = page.topline
+
+	for i = 1, listpage_maxlines do
+--		local currentline = topline + i
+--
+--		if currentline > entrycount then
+--			break
+--		end
+
+		menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 	end
 
 	local cursor = page.cursor
 
 	if cursor > 0 then
-		menu.tintedtext(0, (cursor + 1) * 10, '\13')
+		menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
 	end
 end
 
 local function listpage_keypress(page, keycode)
+	local entrycount = #page.entries
 	local cursor = page.cursor
+	local topline = page.topline
 
 	if keycode == key_escape then
 		menu.poppage()
 		return
 	elseif keycode == key_up then
-		cursor = cursor - 1
+		cursor = cursor > 1 and cursor - 1 or entrycount
+--		topline = topline < cursor and cursor or topline
 	elseif keycode == key_down then
-		cursor = cursor + 1
+		cursor = cursor < entrycount and cursor + 1 or 1
+--		topline = cursor > topline + listpage_maxlines and cursor - listpage_maxlines or topline
+	elseif keycode == key_pageup then
+		cursor = cursor > listpage_maxlines and cursor - listpage_maxlines or 1
+		topline = topline > listpage_maxlines and topline - listpage_maxlines or 1
+	elseif keycode == key_pagedown then
+		cursor = cursor + listpage_maxlines < entrycount and cursor + listpage_maxlines or entrycount
+		topline = topline + listpage_maxlines < entrycount and topline + listpage_maxlines or entrycount
+	else
+		return
 	end
 
-	local entrycount = #page.entries
+print(cursor, topline)
 
-	if cursor == 0 then
-		cursor = entrycount
-	elseif cursor > entrycount then
-		cursor = 1
-	end
+--	if cursor <= 0 then
+--		cursor = entrycount
+--	elseif cursor >= entrycount then
+--		cursor = 1
+--	end
+--
+--	if topline <= 0 then
+--		cursor = entrycount
+--	elseif cursor >= entrycount then
+--		cursor = 1
+--	end
 
+--	local function wrap(value)
+--		return value < 1 and entrycount or value > entrycount and 1 or value
+--	end
+
+--	cursor = wrap(cursor)
+--	topline = wrap(topline)
+
+--	cursor = cursor < 1 and entrycount or cursor > entrycount and 1 or cursor
+--	topline = topline < 1 and 1 or topline > entrycount and entrycount or topline
+
+--	-- Make sure line under cursor is visible
+--	if cursor < topline then
+--		topline = cursor
+--	elseif cursor > topline + listpage_maxlines - 1 then
+--		topline = cursor - listpage_maxlines + 1
+--	end
+
+--	if topline + listpage_maxlines > entrycount then
+--		topline = entrycount - listpage_maxlines + 1
+--	end
+
+--	print(cursor, topline)
+	page.topline = topline
 	page.cursor = cursor
 end
 
@@ -118,6 +171,7 @@ function menu.listpage()
 		title = '',
 		entries = {},
 		cursor = 0,
+		topline = 1,
 
 		ondraw = listpage_draw,
 		onkeypress = listpage_keypress,
@@ -149,6 +203,8 @@ function menu.edictspage()
 	page.title = 'Edicts'
 	page.cursor = 1
 	page.onkeypress = edictspage_keypress
+
+print(#edicts)
 
 	local function addedict(edict, current)
 		local text, location
