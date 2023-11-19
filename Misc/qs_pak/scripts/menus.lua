@@ -62,3 +62,64 @@ keycodes =
 	MWHEELUP      = 239,
 	MWHEELDOWN    = 240,
 }
+
+
+local key_enter <const> = keycodes.ENTER
+local key_escape <const> = keycodes.ESCAPE
+local key_up <const> = keycodes.UPARROW
+local key_down <const> = keycodes.DOWNARROW
+
+
+local function listpage_draw(page)
+	menu.tintedtext(10, 0, page.title)
+
+	local entrycount = #page.entries
+	if entrycount == 0 then
+		return
+	end
+
+	for i = 1, entrycount do
+		menu.text(10, (i + 1) * 10, page.entries[i].text)
+	end
+
+	local cursor = page.cursor
+
+	if cursor > 0 then
+		menu.tintedtext(0, (cursor + 1) * 10, '\13')
+	end
+end
+
+local function listpage_keypress(page, keycode)
+	local cursor = page.cursor
+
+	if keycode == key_escape then
+		menu.poppage()
+		return
+	elseif keycode == key_up then
+		cursor = cursor - 1
+	elseif keycode == key_down then
+		cursor = cursor + 1
+	end
+
+	local entrycount = #page.entries
+
+	if cursor == 0 then
+		cursor = entrycount
+	elseif cursor > entrycount then
+		cursor = 1
+	end
+
+	page.cursor = cursor
+end
+
+function menu.listpage()
+	return
+	{
+		title = '',
+		entries = {},
+		cursor = 0,
+
+		ondraw = listpage_draw,
+		onkeypress = listpage_keypress,
+	}
+end
