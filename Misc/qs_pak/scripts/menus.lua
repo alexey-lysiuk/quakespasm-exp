@@ -105,65 +105,43 @@ local function textpage_keypress(page, keycode)
 	end
 end
 
-local function textpage_keyup(page)
---	page.topline = page.topline > 1 and page.topline - 1 or 1
-	page.topline = page.topline - 1
-end
-
-local function textpage_keydown(page)
---	local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
---	page.topline = page.topline < maxtopline and page.topline + 1 or maxtopline
-	page.topline = page.topline + 1
-end
-
-local function textpage_keypageup(page)
---	page.topline = page.topline > page.maxlines and page.topline - page.maxlines or 1
-	page.topline = page.topline - page.maxlines
-end
-
-local function textpage_keypagedown(page)
---	local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
---	page.topline = clamp(page.topline + page.maxlines, 1, maxtopline)
-----	page.topline = min(maxtopline, page.topline + page.maxlines)
-----	page.topline = page.topline < maxtopline and page.topline + 1 or maxtopline
-	page.topline = page.topline + page.maxlines
-end
-
-local function textpage_keyhome(page)
-	page.topline = 1
-end
-
-local function textpage_keyend(page)
-	page.topline = #page.text
-end
-
 function menu.textpage()
-	return
+	local page =
 	{
 		title = 'Title',
 		text = {},
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
-		actions =
-		{
-			[keycodes.ESCAPE] = function() menu.poppage() end,
-			[keycodes.UPARROW] = textpage_keyup,
-			[keycodes.DOWNARROW] = textpage_keydown,
-			[keycodes.PGUP] = textpage_keypageup,
-			[keycodes.PGDN] = textpage_keypagedown,
-			[keycodes.HOME] = textpage_keyhome,
-			[keycodes.END] = textpage_keyend,
-			[keycodes.KP_UPARROW] = textpage_keyup,
-			[keycodes.KP_DOWNARROW] = textpage_keydown,
-			[keycodes.KP_PGUP] = textpage_keypageup,
-			[keycodes.KP_PGDN] = textpage_keypagedown,
-			[keycodes.KP_HOME] = textpage_keyhome,
-			[keycodes.KP_END] = textpage_keyend,
-		},
 
 		ondraw = textpage_draw,
 		onkeypress = textpage_keypress,
 	}
+
+	local function keyup() page.topline = page.topline - 1 end
+	local function keydown() page.topline = page.topline + 1 end
+	local function keypageup() page.topline = page.topline - page.maxlines end
+	local function keypagedown() page.topline = page.topline + page.maxlines end
+	local function keyhome() page.topline = 1 end
+	local function keyend() page.topline = #page.text end
+
+	page.actions =
+	{
+		[keycodes.ESCAPE] = function() menu.poppage() end,
+		[keycodes.UPARROW] = keyup,
+		[keycodes.DOWNARROW] = keydown,
+		[keycodes.PGUP] = keypageup,
+		[keycodes.PGDN] = keypagedown,
+		[keycodes.HOME] = keyhome,
+		[keycodes.END] = keyend,
+		[keycodes.KP_UPARROW] = keyup,
+		[keycodes.KP_DOWNARROW] = keydown,
+		[keycodes.KP_PGUP] = keypageup,
+		[keycodes.KP_PGDN] = keypagedown,
+		[keycodes.KP_HOME] = keyhome,
+		[keycodes.KP_END] = keyend,
+	}
+
+	return page
 end
 
 
@@ -328,10 +306,15 @@ end
 local function edictspage_keyright(page)
 	local entry = page.entries[page.cursor]
 	local edict = entry.edict
---	print(edict)
 
 	if not edicts.isfree(edict) then
-		menu.pushpage(menu.edictinfopage(edict, entry.text))
+		local infopage = menu.edictinfopage(edict, entry.text)
+
+		local exitaction = infopage.actions[keycodes.ESCAPE]
+		infopage.actions[keycodes.LEFTARROW] = exitaction
+		infopage.actions[keycodes.KP_LEFTARROW] = exitaction
+
+		menu.pushpage(infopage)
 	end
 end
 
