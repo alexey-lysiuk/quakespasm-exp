@@ -104,7 +104,7 @@ end
 local function listpage_keypress(page, keycode)
 	local entrycount = #page.entries
 	local cursor = page.cursor
-	local topline = page.topline
+--	local topline = page.topline
 
 	if keycode == key_escape then
 		menu.poppage()
@@ -117,13 +117,15 @@ local function listpage_keypress(page, keycode)
 --		topline = cursor > topline + listpage_maxlines and cursor - listpage_maxlines or topline
 	elseif keycode == key_pageup then
 		cursor = cursor > listpage_maxlines and cursor - listpage_maxlines or 1
-		topline = topline > listpage_maxlines and topline - listpage_maxlines or 1
+--		topline = topline > listpage_maxlines and topline - listpage_maxlines or 1
 	elseif keycode == key_pagedown then
 		cursor = cursor + listpage_maxlines < entrycount and cursor + listpage_maxlines or entrycount
-		topline = topline + listpage_maxlines < entrycount and topline + listpage_maxlines or entrycount
+--		topline = topline + listpage_maxlines < entrycount and topline + listpage_maxlines or entrycount
 	else
 		return
 	end
+
+	page.cursor = cursor
 
 --print(cursor, topline)
 
@@ -149,20 +151,32 @@ local function listpage_keypress(page, keycode)
 --	cursor = cursor < 1 and entrycount or cursor > entrycount and 1 or cursor
 --	topline = topline < 1 and 1 or topline > entrycount and entrycount or topline
 
-	-- Make sure line under cursor is visible
-	if cursor < topline then
-		topline = cursor
-	elseif cursor > topline + listpage_maxlines - 1 then
-		topline = cursor - listpage_maxlines + 1
-	end
+	local function min(a, b) return a < b and a or b end
+	local function max(a, b) return a < b and b or a end
+	local function clamp(v, lo, up) return max(lo, min(up, v)) end
 
-	if topline + listpage_maxlines > entrycount then
-		topline = entrycount - listpage_maxlines + 1
-	end
+--	local topline = page.topline
+	local mintopline = max(cursor - listpage_maxlines + 1, 1)
+	local maxtopline = min(cursor + listpage_maxlines - 1, max(entrycount - listpage_maxlines + 1, 1))
+
+	page.topline = clamp(page.topline, mintopline, maxtopline)
+
+	print(cursor, page.topline, mintopline, maxtopline)
+
+--	-- Make sure line under cursor is visible
+--	if cursor < topline then
+--		topline = cursor
+--	elseif cursor > topline + listpage_maxlines - 1 then
+--		topline = cursor - listpage_maxlines + 1
+--	end
+--
+--	if topline + listpage_maxlines > entrycount then
+--		topline = entrycount - listpage_maxlines + 1
+--	end
 
 --	print(cursor, topline)
-	page.topline = topline
-	page.cursor = cursor
+--	page.topline = topline
+--	page.cursor = cursor
 end
 
 function menu.listpage()
