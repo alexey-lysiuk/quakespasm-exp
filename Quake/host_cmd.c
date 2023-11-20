@@ -2290,6 +2290,50 @@ void Host_Resetdemos (void)
 	cls.demonum = 0;
 }
 
+static void Host_MDK_f(void)
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (pr_global_struct->deathmatch)
+		return;
+
+	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_SOLID);
+	if (!ent)
+		return;
+
+	float health = ent->v.health;
+	if (health <= 0.0f && ent->v.takedamage <= 0.0f)
+		return;
+
+	int numfuncs = progs->numfunctions;
+	int damagefunc = 0;
+
+	for (; damagefunc < numfuncs; ++damagefunc)
+	{
+		int nameindex = pr_functions[damagefunc].s_name;
+		const char* name = PR_GetString(nameindex);
+
+		if (strcmp(name, "T_Damage") == 0)
+			break;
+	}
+
+	if (damagefunc == numfuncs)
+		return;
+
+	// void T_Damage(entity target, entity inflictor, entity attacker, float damage)
+	int* globals_iptr = (int*)pr_globals;
+	globals_iptr[OFS_PARM0] = EDICT_TO_PROG(ent);                      // target
+	globals_iptr[OFS_PARM1] = EDICT_TO_PROG(svs.clients[0].edict);     // inflictor
+	globals_iptr[OFS_PARM2] = globals_iptr[OFS_PARM1];                 // attacker
+	pr_globals[OFS_PARM3] = health + (Cmd_Argc() > 1 ? 99.0f : 1.0f);  // damage
+
+	PR_ExecuteProgram(damagefunc);
+}
+
 //=============================================================================
 
 /*
@@ -2318,6 +2362,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("name", Host_Name_f);
 	Cmd_AddCommand ("noclip", Host_Noclip_f);
 	Cmd_AddCommand ("setpos", Host_SetPos_f); //QuakeSpasm
+	Cmd_AddCommand ("mdk", Host_MDK_f);
 
 	Cmd_AddCommand ("say", Host_Say_f);
 	Cmd_AddCommand ("say_team", Host_Say_Team_f);
