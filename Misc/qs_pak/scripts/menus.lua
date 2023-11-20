@@ -64,8 +64,13 @@ keycodes =
 }
 
 
-local min = math.min
-local max = math.max
+local min <const> = math.min
+local max <const> = math.max
+
+local function clamp(v, lo, up)
+	return max(lo, min(up, v))
+end
+
 
 -- REMOVE
 function player.safemove(location)
@@ -78,6 +83,88 @@ function player.safemove(location)
 	player.setpos(location, angles)
 end
 -- REMOVE
+
+
+local function textpage_draw(page)
+	menu.tintedtext(2, 0, page.title)
+
+	for i = 1, min(page.maxlines, #page.text) do
+		menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
+	end
+end
+
+local function textpage_keypress(page, keycode)
+	local action = page.actions[keycode]
+
+	if action then
+		action(page)
+
+		-- Bound topline value
+		local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
+		page.topline = clamp(page.topline, 1, maxtopline)
+	end
+end
+
+local function textpage_keyup(page)
+--	page.topline = page.topline > 1 and page.topline - 1 or 1
+	page.topline = page.topline - 1
+end
+
+local function textpage_keydown(page)
+--	local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
+--	page.topline = page.topline < maxtopline and page.topline + 1 or maxtopline
+	page.topline = page.topline + 1
+end
+
+local function textpage_keypageup(page)
+--	page.topline = page.topline > page.maxlines and page.topline - page.maxlines or 1
+	page.topline = page.topline - page.maxlines
+end
+
+local function textpage_keypagedown(page)
+--	local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
+--	page.topline = clamp(page.topline + page.maxlines, 1, maxtopline)
+----	page.topline = min(maxtopline, page.topline + page.maxlines)
+----	page.topline = page.topline < maxtopline and page.topline + 1 or maxtopline
+	page.topline = page.topline + page.maxlines
+end
+
+local function textpage_keyhome(page)
+	page.topline = 1
+end
+
+local function textpage_keyend(page)
+	page.topline = #page.text
+end
+
+function menu.textpage()
+	return
+	{
+		title = 'Title',
+		text = {},
+		maxlines = 20,  -- for line interval of 9 pixels
+		topline = 1,
+		actions =
+		{
+			[keycodes.ESCAPE] = function() menu.poppage() end,
+			[keycodes.UPARROW] = textpage_keyup,
+			[keycodes.DOWNARROW] = textpage_keydown,
+			[keycodes.PGUP] = textpage_keypageup,
+			[keycodes.PGDN] = textpage_keypagedown,
+			[keycodes.HOME] = textpage_keyhome,
+			[keycodes.END] = textpage_keyend,
+			[keycodes.KP_UPARROW] = textpage_keyup,
+			[keycodes.KP_DOWNARROW] = textpage_keydown,
+			[keycodes.KP_PGUP] = textpage_keypageup,
+			[keycodes.KP_PGDN] = textpage_keypagedown,
+			[keycodes.KP_HOME] = textpage_keyhome,
+			[keycodes.KP_END] = textpage_keyend,
+		},
+
+		ondraw = textpage_draw,
+		onkeypress = textpage_keypress,
+	}
+end
 
 
 local function listpage_draw(page)
@@ -200,14 +287,15 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
-local function edictinfopage_draw(page)
-	menu.tintedtext(10, 0, 'Edict info')
+function menu.edictinfopage(edict, title)
+	local page = menu.textpage()
+	page.title = title
 
 	-- Build edict fields table, and calculate maximum length of field names
 	local fields = {}
 	local maxlen = 0
 
-	for i, field in ipairs(page.edict) do
+	for i, field in ipairs(edict) do
 		local len = field.name:len()
 
 		if len > maxlen then
@@ -220,13 +308,11 @@ local function edictinfopage_draw(page)
 	-- Output formatted names and values of edict fields
 	local fieldformat = '%-' .. maxlen .. 's : %s'
 
-	for i, field in ipairs(fields) do
-		menu.text(2, (i + 1) * 9, string.format(fieldformat, field.name, field.value))
+	for _, field in ipairs(fields) do
+		page.text[#page.text + 1] = string.format(fieldformat, field.name, field.value)
 	end
-end
 
-function menu.edictinfopage(edict)
-
+	return page
 end
 
 
@@ -239,11 +325,13 @@ local function edictspage_keyenter(page)
 	end
 end
 
-local function edictspage_keyleft(page)
-	local edict = page.edict
+local function edictspage_keyright(page)
+	local entry = page.entries[page.cursor]
+	local edict = entry.edict
+--	print(edict)
 
-	if not edicts.isfree() then
-		menu.pushpage(menu.edictinfopage(edict))
+	if not edicts.isfree(edict) then
+		menu.pushpage(menu.edictinfopage(edict, entry.text))
 	end
 end
 
@@ -253,8 +341,8 @@ function menu.edictspage()
 	page.cursor = 1
 	page.actions[keycodes.ENTER] = edictspage_keyenter
 	page.actions[keycodes.KP_ENTER] = edictspage_keyenter
-	page.actions[keycodes.LEFTARROW] = edictspage_keyleft
-	page.actions[keycodes.KP_LEFTARROW] = edictspage_keyleft
+	page.actions[keycodes.RIGHTARROW] = edictspage_keyright
+	page.actions[keycodes.KP_RIGHTARROW] = edictspage_keyright
 
 	local function addedict(edict, current)
 		local text, location
