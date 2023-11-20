@@ -200,12 +200,50 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
-local function edictspage_keyenter(page, keycode)
+local function edictinfopage_draw(page)
+	menu.tintedtext(10, 0, 'Edict info')
+
+	-- Build edict fields table, and calculate maximum length of field names
+	local fields = {}
+	local maxlen = 0
+
+	for i, field in ipairs(page.edict) do
+		local len = field.name:len()
+
+		if len > maxlen then
+			maxlen = len
+		end
+
+		fields[i] = field
+	end
+
+	-- Output formatted names and values of edict fields
+	local fieldformat = '%-' .. maxlen .. 's : %s'
+
+	for i, field in ipairs(fields) do
+		menu.text(2, (i + 1) * 9, string.format(fieldformat, field.name, field.value))
+	end
+end
+
+function menu.edictinfopage(edict)
+
+end
+
+
+local function edictspage_keyenter(page)
 	local location = page.entries[page.cursor].location
 
 	if location then
 		player.safemove(location)
 		menu.poppage()
+	end
+end
+
+local function edictspage_keyleft(page)
+	local edict = page.edict
+
+	if not edicts.isfree() then
+		menu.pushpage(menu.edictinfopage(edict))
 	end
 end
 
@@ -215,22 +253,24 @@ function menu.edictspage()
 	page.cursor = 1
 	page.actions[keycodes.ENTER] = edictspage_keyenter
 	page.actions[keycodes.KP_ENTER] = edictspage_keyenter
+	page.actions[keycodes.LEFTARROW] = edictspage_keyleft
+	page.actions[keycodes.KP_LEFTARROW] = edictspage_keyleft
 
 	local function addedict(edict, current)
 		local text, location
 
 		if isfree(edict) then
-			text = string.format('%i: <FREE>', current)
+			text = string.format('%i: <FREE>', current - 1)
 		else
 			local origin = edict.origin or vec3origin
 			local min = edict.absmin or vec3origin
 			local max = edict.absmax or vec3origin
 
 			location = origin == vec3origin and vec3.mid(min, max) or origin
-			text = string.format('%i: %s at %s', current, getname(edict), location)
+			text = string.format('%i: %s at %s', current - 1, getname(edict), location)
 		end
 
-		local entry = { text = text, location = location }
+		local entry = { edict = edict, text = text, location = location }
 		page.entries[#page.entries + 1] = entry
 
 		return current + 1
