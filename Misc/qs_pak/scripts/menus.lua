@@ -318,6 +318,21 @@ local function edictspage_keyright(page)
 	end
 end
 
+local function edictspage_help(page)
+	local helppage = menu.textpage()
+	helppage.title = page.title .. ' -- Help'
+	helppage.text =
+	{
+		'Up    - Select previous edict',
+		'Down  - Select next edict',
+		'Left  - Show all edict fields and their values',
+		'Right - Return to edicts list',
+		'Enter - Move player to selected edict'
+	}
+
+	menu.pushpage(helppage)
+end
+
 function menu.edictspage()
 	local page = menu.listpage()
 	page.title = 'Edicts'
@@ -326,6 +341,8 @@ function menu.edictspage()
 	page.actions[keycodes.KP_ENTER] = edictspage_keyenter
 	page.actions[keycodes.RIGHTARROW] = edictspage_keyright
 	page.actions[keycodes.KP_RIGHTARROW] = edictspage_keyright
+	page.actions[string.byte('H')] = edictspage_help
+	page.actions[string.byte('h')] = edictspage_help
 
 	local function addedict(edict, current)
 		local text, location
