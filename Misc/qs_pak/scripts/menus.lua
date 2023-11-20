@@ -83,18 +83,11 @@ local function listpage_draw(page)
 	end
 
 	local topline = page.topline
+	local cursor = page.cursor
 
 	for i = 1, listpage_maxlines do
---		local currentline = topline + i
---
---		if currentline > entrycount then
---			break
---		end
-
 		menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 	end
-
-	local cursor = page.cursor
 
 	if cursor > 0 then
 		menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
@@ -102,39 +95,72 @@ local function listpage_draw(page)
 end
 
 local function listpage_keypress(page, keycode)
-	local entrycount = #page.entries
+	local entrycount <const> = #page.entries
 	local cursor = page.cursor
---	local topline = page.topline
+	local topline = page.topline
+
+	local function min(a, b) return a < b and a or b end
+	local function max(a, b) return a < b and b or a end
+	local function clamp(v, lo, up) return max(lo, min(up, v)) end
 
 	if keycode == key_escape then
 		menu.poppage()
 		return
 	elseif keycode == key_up then
-		cursor = cursor > 1 and cursor - 1 or entrycount
+--		cursor = cursor > 1 and cursor - 1 or entrycount
 --		topline = topline < cursor and cursor or topline
+		if cursor > 1 then
+			cursor = cursor - 1
+			topline = cursor < topline and cursor or topline
+		else
+			cursor = entrycount
+			topline = max(entrycount - listpage_maxlines + 1, 1)
+--			topline = entrycount > listpage_maxlines and entrycount - listpage_maxlines or 1
+		end
 	elseif keycode == key_down then
-		cursor = cursor < entrycount and cursor + 1 or 1
+--		cursor = cursor < entrycount and cursor + 1 or 1
 --		topline = cursor > topline + listpage_maxlines and cursor - listpage_maxlines or topline
+		if cursor < entrycount then
+			cursor = cursor + 1
+			topline = topline + (cursor == topline + listpage_maxlines and 1 or 0)
+		else
+			cursor = 1
+			topline = 1
+		end
 	elseif keycode == key_pageup then
-		cursor = cursor > listpage_maxlines and cursor - listpage_maxlines or 1
+--		cursor = cursor > listpage_maxlines and cursor - listpage_maxlines or 1
 --		topline = topline > listpage_maxlines and topline - listpage_maxlines or 1
+		if cursor > listpage_maxlines then
+			cursor = cursor - listpage_maxlines
+			topline = max(topline - listpage_maxlines, 1)
+		else
+			cursor = 1
+			topline = 1
+		end
 	elseif keycode == key_pagedown then
-		cursor = cursor + listpage_maxlines < entrycount and cursor + listpage_maxlines or entrycount
+--		cursor = cursor + listpage_maxlines < entrycount and cursor + listpage_maxlines or entrycount
 --		topline = topline + listpage_maxlines < entrycount and topline + listpage_maxlines or entrycount
+		if cursor + listpage_maxlines < entrycount then
+			cursor = cursor + listpage_maxlines
+			topline = min(topline + listpage_maxlines, entrycount - listpage_maxlines + 1)
+		else
+			cursor = entrycount
+			topline = entrycount - listpage_maxlines + 1
+		end
 	else
 		return
 	end
 
-	page.cursor = cursor
+--	page.cursor = cursor
 
 --print(cursor, topline)
 
 --	if cursor <= 0 then
 --		cursor = entrycount
---	elseif cursor >= entrycount then
+--	elseif cursor > entrycount then
 --		cursor = 1
 --	end
---
+
 --	if topline <= 0 then
 --		cursor = entrycount
 --	elseif cursor >= entrycount then
@@ -151,17 +177,17 @@ local function listpage_keypress(page, keycode)
 --	cursor = cursor < 1 and entrycount or cursor > entrycount and 1 or cursor
 --	topline = topline < 1 and 1 or topline > entrycount and entrycount or topline
 
-	local function min(a, b) return a < b and a or b end
-	local function max(a, b) return a < b and b or a end
-	local function clamp(v, lo, up) return max(lo, min(up, v)) end
+--	local function min(a, b) return a < b and a or b end
+--	local function max(a, b) return a < b and b or a end
+--	local function clamp(v, lo, up) return max(lo, min(up, v)) end
 
---	local topline = page.topline
-	local mintopline = max(cursor - listpage_maxlines + 1, 1)
-	local maxtopline = min(cursor + listpage_maxlines - 1, max(entrycount - listpage_maxlines + 1, 1))
-
-	page.topline = clamp(page.topline, mintopline, maxtopline)
-
-	print(cursor, page.topline, mintopline, maxtopline)
+----	local topline = page.topline
+--	local mintopline = max(cursor - listpage_maxlines + 1, 1)
+--	local maxtopline = min(cursor + listpage_maxlines - 1, max(entrycount - listpage_maxlines + 1, 1))
+--
+--	page.topline = clamp(page.topline, mintopline, maxtopline)
+--
+--	print(cursor, page.topline, mintopline, maxtopline)
 
 --	-- Make sure line under cursor is visible
 --	if cursor < topline then
@@ -174,9 +200,9 @@ local function listpage_keypress(page, keycode)
 --		topline = entrycount - listpage_maxlines + 1
 --	end
 
---	print(cursor, topline)
---	page.topline = topline
---	page.cursor = cursor
+	print(cursor, topline)
+	page.topline = topline
+	page.cursor = cursor
 end
 
 function menu.listpage()
