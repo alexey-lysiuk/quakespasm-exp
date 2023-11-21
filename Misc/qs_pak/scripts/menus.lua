@@ -85,26 +85,6 @@ end
 -- REMOVE
 
 
-local function textpage_draw(page)
-	menu.tintedtext(2, 0, page.title)
-
-	for i = 1, min(page.maxlines, #page.text) do
-		menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
-	end
-end
-
-local function textpage_keypress(page, keycode)
-	local action = page.actions[keycode]
-
-	if action then
-		action(page)
-
-		-- Bound topline value
-		local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
-		page.topline = clamp(page.topline, 1, maxtopline)
-	end
-end
-
 function menu.textpage()
 	local page =
 	{
@@ -112,150 +92,165 @@ function menu.textpage()
 		text = {},
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
-
-		ondraw = textpage_draw,
-		onkeypress = textpage_keypress,
 	}
 
-	local function keyup() page.topline = page.topline - 1 end
-	local function keydown() page.topline = page.topline + 1 end
-	local function keypageup() page.topline = page.topline - page.maxlines end
-	local function keypagedown() page.topline = page.topline + page.maxlines end
-	local function keyhome() page.topline = 1 end
-	local function keyend() page.topline = #page.text end
+	local function lineup() page.topline = page.topline - 1 end
+	local function linedown() page.topline = page.topline + 1 end
+	local function scrollup() page.topline = page.topline - page.maxlines end
+	local function scrolldown() page.topline = page.topline + page.maxlines end
+	local function scrolltop() page.topline = 1 end
+	local function scrollend() page.topline = #page.text end
 
 	page.actions =
 	{
 		[keycodes.ESCAPE] = function() menu.poppage() end,
-		[keycodes.UPARROW] = keyup,
-		[keycodes.DOWNARROW] = keydown,
-		[keycodes.PGUP] = keypageup,
-		[keycodes.PGDN] = keypagedown,
-		[keycodes.HOME] = keyhome,
-		[keycodes.END] = keyend,
-		[keycodes.KP_UPARROW] = keyup,
-		[keycodes.KP_DOWNARROW] = keydown,
-		[keycodes.KP_PGUP] = keypageup,
-		[keycodes.KP_PGDN] = keypagedown,
-		[keycodes.KP_HOME] = keyhome,
-		[keycodes.KP_END] = keyend,
+		[keycodes.UPARROW] = lineup,
+		[keycodes.DOWNARROW] = linedown,
+		[keycodes.PGUP] = scrollup,
+		[keycodes.PGDN] = scrolldown,
+		[keycodes.HOME] = scrolltop,
+		[keycodes.END] = scrollend,
+		[keycodes.KP_UPARROW] = lineup,
+		[keycodes.KP_DOWNARROW] = linedown,
+		[keycodes.KP_PGUP] = scrollup,
+		[keycodes.KP_PGDN] = scrolldown,
+		[keycodes.KP_HOME] = scrolltop,
+		[keycodes.KP_END] = scrollend,
 	}
+
+	page.ondraw = function (page)
+		menu.tintedtext(2, 0, page.title)
+	
+		for i = 1, min(page.maxlines, #page.text) do
+			menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
+		end
+	end
+
+	page.onkeypress = function (page, keycode)
+		local action = page.actions[keycode]
+	
+		if action then
+			action(page)
+	
+			-- Bound topline value
+			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
+			page.topline = clamp(page.topline, 1, maxtopline)
+		end
+	end
 
 	return page
 end
 
 
-local function listpage_draw(page)
-	menu.tintedtext(10, 0, page.title)
-
-	local entrycount = #page.entries
-	if entrycount == 0 then
-		return
-	end
-
-	local topline = page.topline
-	local cursor = page.cursor
-
-	for i = 1, min(page.maxlines, entrycount) do
-		menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
-	end
-
-	if cursor > 0 then
-		menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
-	end
-end
-
-local function listpage_keypress(page, keycode)
-	local action = page.actions[keycode]
-
-	if action then
-		action(page)
-	end
-end
-
-local function listpage_keyup(page)
-	if page.cursor > 1 then
-		page.cursor = page.cursor - 1
-		page.topline = page.cursor < page.topline and page.cursor or page.topline
-	else
-		page.cursor = #page.entries
-		page.topline = max(#page.entries - page.maxlines + 1, 1)
-	end
-end
-
-local function listpage_keydown(page)
-	if page.cursor < #page.entries then
-		page.cursor = page.cursor + 1
-		page.topline = page.topline + (page.cursor == page.topline + page.maxlines and 1 or 0)
-	else
-		page.cursor = 1
-		page.topline = 1
-	end
-end
-
-local function listpage_keypageup(page)
-	if page.cursor > page.maxlines then
-		page.cursor = page.cursor - page.maxlines
-		page.topline = max(page.topline - page.maxlines, 1)
-	else
-		page.cursor = 1
-		page.topline = 1
-	end
-end
-
-local function listpage_keypagedown(page)
-	local entrycount <const> = #page.entries
-	local maxlines <const> = page.maxlines
-
-	if page.cursor + maxlines < entrycount then
-		page.cursor = page.cursor + maxlines
-		page.topline = min(page.topline + maxlines, entrycount - maxlines + 1)
-	else
-		page.cursor = entrycount
-		page.topline = max(entrycount - maxlines + 1, 1)
-	end
-end
-
-local function listpage_keyhome(page)
-	page.cursor = 1
-	page.topline = 1
-end
-
-local function listpage_keyend(page)
-	local entrycount <const> = #page.entries
-
-	page.cursor = entrycount
-	page.topline = max(entrycount - page.maxlines + 1, 1)
-end
-
 function menu.listpage()
-	return
+	local page = 
 	{
-		title = 'Menu',
+		title = 'Title',
 		entries = {},
 		cursor = 0,
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
-		actions =
-		{
-			[keycodes.ESCAPE] = function() menu.poppage() end,
-			[keycodes.UPARROW] = listpage_keyup,
-			[keycodes.DOWNARROW] = listpage_keydown,
-			[keycodes.PGUP] = listpage_keypageup,
-			[keycodes.PGDN] = listpage_keypagedown,
-			[keycodes.HOME] = listpage_keyhome,
-			[keycodes.END] = listpage_keyend,
-			[keycodes.KP_UPARROW] = listpage_keyup,
-			[keycodes.KP_DOWNARROW] = listpage_keydown,
-			[keycodes.KP_PGUP] = listpage_keypageup,
-			[keycodes.KP_PGDN] = listpage_keypagedown,
-			[keycodes.KP_HOME] = listpage_keyhome,
-			[keycodes.KP_END] = listpage_keyend,
-		},
-
-		ondraw = listpage_draw,
-		onkeypress = listpage_keypress,
 	}
+
+	local function scrolltop()
+		page.cursor = 1
+		page.topline = 1
+	end
+
+	local function lineup()
+		if page.cursor > 1 then
+			page.cursor = page.cursor - 1
+			page.topline = page.cursor < page.topline and page.cursor or page.topline
+		else
+			page.cursor = #page.entries
+			page.topline = max(#page.entries - page.maxlines + 1, 1)
+		end
+	end
+
+	local function linedown()
+		if page.cursor < #page.entries then
+			page.cursor = page.cursor + 1
+			page.topline = page.topline + (page.cursor == page.topline + page.maxlines and 1 or 0)
+		else
+			scrolltop()
+		end
+	end
+
+	local function scrollup()
+		if page.cursor > page.maxlines then
+			page.cursor = page.cursor - page.maxlines
+			page.topline = max(page.topline - page.maxlines, 1)
+		else
+			scrolltop()
+		end
+	end
+
+	local function scrolldown()
+		local entrycount <const> = #page.entries
+		local maxlines <const> = page.maxlines
+	
+		if page.cursor + maxlines < entrycount then
+			page.cursor = page.cursor + maxlines
+			page.topline = min(page.topline + maxlines, entrycount - maxlines + 1)
+		else
+			page.cursor = entrycount
+			page.topline = max(entrycount - maxlines + 1, 1)
+		end
+	end
+
+	local function scrollend()
+		local entrycount <const> = #page.entries
+	
+		page.cursor = entrycount
+		page.topline = max(entrycount - page.maxlines + 1, 1)
+	end
+
+	page.actions =
+	{
+		[keycodes.ESCAPE] = function() menu.poppage() end,
+		[keycodes.UPARROW] = lineup,
+		[keycodes.DOWNARROW] = linedown,
+		[keycodes.PGUP] = scrollup,
+		[keycodes.PGDN] = scrolldown,
+		[keycodes.HOME] = scrolltop,
+		[keycodes.END] = scrollend,
+		[keycodes.KP_UPARROW] = lineup,
+		[keycodes.KP_DOWNARROW] = linedown,
+		[keycodes.KP_PGUP] = scrollup,
+		[keycodes.KP_PGDN] = scrolldown,
+		[keycodes.KP_HOME] = scrolltop,
+		[keycodes.KP_END] = scrollend,
+	}
+
+	page.ondraw = function (page)
+		menu.tintedtext(10, 0, page.title)
+	
+		local entrycount = #page.entries
+		if entrycount == 0 then
+			return
+		end
+	
+		local topline = page.topline
+		local cursor = page.cursor
+	
+		for i = 1, min(page.maxlines, entrycount) do
+			menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
+		end
+	
+		if cursor > 0 then
+			menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
+		end
+	end
+
+	page.onkeypress = function (page, keycode)
+		local action = page.actions[keycode]
+	
+		if action then
+			action(page)
+		end
+	end
+
+	return page
 end
 
 
@@ -307,7 +302,7 @@ local function edictspage_keyright(page)
 	local entry = page.entries[page.cursor]
 	local edict = entry.edict
 
-	if not edicts.isfree(edict) then
+	if not isfree(edict) then
 		local infopage = menu.edictinfopage(edict, entry.text)
 
 		local exitaction = infopage.actions[keycodes.ESCAPE]
@@ -323,11 +318,16 @@ local function edictspage_help(page)
 	helppage.title = page.title .. ' -- Help'
 	helppage.text =
 	{
-		'Up    - Select previous edict',
-		'Down  - Select next edict',
-		'Left  - Show all edict fields and their values',
-		'Right - Return to edicts list',
-		'Enter - Move player to selected edict'
+		'Up        - Select previous edict',
+		'Down      - Select next edict',
+		'Left      - Show values of edict fields',
+		'Right     - Return to edicts list',
+		'Page Up   - Scroll up',
+		'Page Down - Scroll down',
+		'Home      - Scroll to top',
+		'End       - Scroll to end',
+		'Enter     - Move player to selected edict',
+		'Escape    - Exit or return to edicts list',
 	}
 
 	menu.pushpage(helppage)
