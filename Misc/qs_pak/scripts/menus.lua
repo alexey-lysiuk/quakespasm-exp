@@ -83,6 +83,8 @@ local key_kppageup <const> = keycodes.KP_PGUP
 local key_kppagedown <const> = keycodes.KP_PGDN
 local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
+local key_H <const> = string.byte('H')
+local key_h <const> = string.byte('h')
 
 local min <const> = math.min
 local max <const> = math.max
@@ -330,6 +332,32 @@ function menu.edictspage()
 		end
 	end
 
+	local function showhelp()
+		local helppage = menu.textpage()
+
+		helppage.title = page.title .. ' -- Help'
+		helppage.text =
+		{
+			'Up        - Select previous edict',
+			'Down      - Select next edict',
+			'Left      - Show values of edict fields',
+			'Right     - Return to edicts list',
+			'Page Up   - Scroll up',
+			'Page Down - Scroll down',
+			'Home      - Scroll to top',
+			'End       - Scroll to end',
+			'Enter     - Move player to selected edict',
+			'Escape    - Exit or return to edicts list',
+			'',
+			'< Press any key to close >'
+		}
+		helppage.onkeypress = function ()
+			menu.poppage()
+		end
+
+		menu.pushpage(helppage)
+	end
+
 	local function showinfo()
 		local entry = page.entries[page.cursor]
 		local edict = entry.edict
@@ -340,6 +368,8 @@ function menu.edictspage()
 
 			infopage.actions[key_left] = exit
 			infopage.actions[key_kpleft] = exit
+			infopage.actions[key_H] = showhelp
+			infopage.actions[key_h] = showhelp
 
 			menu.pushpage(infopage)
 		end
@@ -350,6 +380,8 @@ function menu.edictspage()
 	actions[key_kpenter] = moveto
 	actions[key_right] = showinfo
 	actions[key_kpright] = showinfo
+	actions[key_H] = showhelp
+	actions[key_h] = showhelp
 
 	return page
 end
