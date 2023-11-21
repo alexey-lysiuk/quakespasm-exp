@@ -129,6 +129,7 @@ function menu.textpage()
 
 	page.ondraw = function (page)
 		menu.tintedtext(2, 0, page.title)
+
 		for i = 1, min(page.maxlines, #page.text) do
 			menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
 		end
@@ -136,8 +137,10 @@ function menu.textpage()
 
 	page.onkeypress = function (page, keycode)
 		local action = page.actions[keycode]
+
 		if action then
 			action()
+
 			-- Bound topline value
 			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
 			page.topline = clamp(page.topline, 1, maxtopline)
@@ -194,6 +197,7 @@ function menu.listpage()
 	local function scrolldown()
 		local entrycount <const> = #page.entries
 		local maxlines <const> = page.maxlines
+
 		if page.cursor + maxlines < entrycount then
 			page.cursor = page.cursor + maxlines
 			page.topline = min(page.topline + maxlines, entrycount - maxlines + 1)
@@ -205,6 +209,7 @@ function menu.listpage()
 
 	local function scrollend()
 		local entrycount <const> = #page.entries
+
 		page.cursor = entrycount
 		page.topline = max(entrycount - page.maxlines + 1, 1)
 	end
@@ -228,15 +233,19 @@ function menu.listpage()
 
 	page.ondraw = function (page)
 		menu.tintedtext(10, 0, page.title)
+
 		local entrycount = #page.entries
 		if entrycount == 0 then
 			return
 		end
+
 		local topline = page.topline
 		local cursor = page.cursor
+
 		for i = 1, min(page.maxlines, entrycount) do
 			menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 		end
+
 		if cursor > 0 then
 			menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
 		end
@@ -244,6 +253,7 @@ function menu.listpage()
 
 	page.onkeypress = function (page, keycode)
 		local action = page.actions[keycode]
+
 		if action then
 			action()
 		end
