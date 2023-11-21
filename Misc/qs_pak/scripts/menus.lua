@@ -64,6 +64,28 @@ keycodes =
 }
 
 
+local key_enter <const> = keycodes.ENTER
+local key_escape <const> = keycodes.ESCAPE
+local key_up <const> = keycodes.UPARROW
+local key_down <const> = keycodes.DOWNARROW
+local key_left <const> = keycodes.LEFTARROW
+local key_right <const> = keycodes.RIGHTARROW
+local key_pageup <const> = keycodes.PGUP
+local key_pagedown <const> = keycodes.PGDN
+local key_home <const> = keycodes.HOME
+local key_end <const> = keycodes.END
+local key_kpenter <const> = keycodes.KP_ENTER
+local key_kpup <const> = keycodes.KP_UPARROW
+local key_kpleft <const> = keycodes.KP_LEFTARROW
+local key_kpright <const> = keycodes.KP_RIGHTARROW
+local key_kpdown <const> = keycodes.KP_DOWNARROW
+local key_kppageup <const> = keycodes.KP_PGUP
+local key_kppagedown <const> = keycodes.KP_PGDN
+local key_kphome <const> = keycodes.KP_HOME
+local key_kpend <const> = keycodes.KP_END
+local key_H <const> = string.byte('H')
+local key_h <const> = string.byte('h')
+
 local min <const> = math.min
 local max <const> = math.max
 
@@ -103,19 +125,19 @@ function menu.textpage()
 
 	page.actions =
 	{
-		[keycodes.ESCAPE] = function() menu.poppage() end,
-		[keycodes.UPARROW] = lineup,
-		[keycodes.DOWNARROW] = linedown,
-		[keycodes.PGUP] = scrollup,
-		[keycodes.PGDN] = scrolldown,
-		[keycodes.HOME] = scrolltop,
-		[keycodes.END] = scrollend,
-		[keycodes.KP_UPARROW] = lineup,
-		[keycodes.KP_DOWNARROW] = linedown,
-		[keycodes.KP_PGUP] = scrollup,
-		[keycodes.KP_PGDN] = scrolldown,
-		[keycodes.KP_HOME] = scrolltop,
-		[keycodes.KP_END] = scrollend,
+		[key_escape] = function() menu.poppage() end,
+		[key_up] = lineup,
+		[key_down] = linedown,
+		[key_pageup] = scrollup,
+		[key_pagedown] = scrolldown,
+		[key_home] = scrolltop,
+		[key_end] = scrollend,
+		[key_kpup] = lineup,
+		[key_kpdown] = linedown,
+		[key_kppageup] = scrollup,
+		[key_kppagedown] = scrolldown,
+		[key_kphome] = scrolltop,
+		[key_kpend] = scrollend,
 	}
 
 	page.ondraw = function (page)
@@ -130,7 +152,7 @@ function menu.textpage()
 		local action = page.actions[keycode]
 	
 		if action then
-			action(page)
+			action()
 	
 			-- Bound topline value
 			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
@@ -207,19 +229,19 @@ function menu.listpage()
 
 	page.actions =
 	{
-		[keycodes.ESCAPE] = function() menu.poppage() end,
-		[keycodes.UPARROW] = lineup,
-		[keycodes.DOWNARROW] = linedown,
-		[keycodes.PGUP] = scrollup,
-		[keycodes.PGDN] = scrolldown,
-		[keycodes.HOME] = scrolltop,
-		[keycodes.END] = scrollend,
-		[keycodes.KP_UPARROW] = lineup,
-		[keycodes.KP_DOWNARROW] = linedown,
-		[keycodes.KP_PGUP] = scrollup,
-		[keycodes.KP_PGDN] = scrolldown,
-		[keycodes.KP_HOME] = scrolltop,
-		[keycodes.KP_END] = scrollend,
+		[key_escape] = function() menu.poppage() end,
+		[key_up] = lineup,
+		[key_down] = linedown,
+		[key_pageup] = scrollup,
+		[key_pagedown] = scrolldown,
+		[key_home] = scrolltop,
+		[key_end] = scrollend,
+		[key_kpup] = lineup,
+		[key_kpdown] = linedown,
+		[key_kppageup] = scrollup,
+		[key_kppagedown] = scrolldown,
+		[key_kphome] = scrolltop,
+		[key_kpend] = scrollend,
 	}
 
 	page.ondraw = function (page)
@@ -246,7 +268,7 @@ function menu.listpage()
 		local action = page.actions[keycode]
 	
 		if action then
-			action(page)
+			action()
 		end
 	end
 
@@ -289,62 +311,12 @@ function menu.edictinfopage(edict, title)
 end
 
 
-local function edictspage_keyenter(page)
-	local location = page.entries[page.cursor].location
-
-	if location then
-		player.safemove(location)
-		menu.poppage()
-	end
-end
-
-local function edictspage_keyright(page)
-	local entry = page.entries[page.cursor]
-	local edict = entry.edict
-
-	if not isfree(edict) then
-		local infopage = menu.edictinfopage(edict, entry.text)
-
-		local exitaction = infopage.actions[keycodes.ESCAPE]
-		infopage.actions[keycodes.LEFTARROW] = exitaction
-		infopage.actions[keycodes.KP_LEFTARROW] = exitaction
-
-		menu.pushpage(infopage)
-	end
-end
-
-local function edictspage_help(page)
-	local helppage = menu.textpage()
-	helppage.title = page.title .. ' -- Help'
-	helppage.text =
-	{
-		'Up        - Select previous edict',
-		'Down      - Select next edict',
-		'Left      - Show values of edict fields',
-		'Right     - Return to edicts list',
-		'Page Up   - Scroll up',
-		'Page Down - Scroll down',
-		'Home      - Scroll to top',
-		'End       - Scroll to end',
-		'Enter     - Move player to selected edict',
-		'Escape    - Exit or return to edicts list',
-	}
-
-	menu.pushpage(helppage)
-end
-
 function menu.edictspage()
 	local page = menu.listpage()
 	page.title = 'Edicts'
 	page.cursor = 1
-	page.actions[keycodes.ENTER] = edictspage_keyenter
-	page.actions[keycodes.KP_ENTER] = edictspage_keyenter
-	page.actions[keycodes.RIGHTARROW] = edictspage_keyright
-	page.actions[keycodes.KP_RIGHTARROW] = edictspage_keyright
-	page.actions[string.byte('H')] = edictspage_help
-	page.actions[string.byte('h')] = edictspage_help
 
-	local function addedict(edict, current)
+	edicts.foreach(function (edict, current)
 		local text, location
 
 		if isfree(edict) then
@@ -362,9 +334,67 @@ function menu.edictspage()
 		page.entries[#page.entries + 1] = entry
 
 		return current + 1
+	end)
+
+	local function moveto()
+		local location = page.entries[page.cursor].location
+
+		if location then
+			player.safemove(location)
+			menu.poppage()
+		end
 	end
 
-	edicts.foreach(addedict)
+	local function showhelp()
+		local helppage = menu.textpage()
+
+		helppage.title = page.title .. ' -- Help'
+		helppage.text =
+		{
+			'Up        - Select previous edict',
+			'Down      - Select next edict',
+			'Left      - Show values of edict fields',
+			'Right     - Return to edicts list',
+			'Page Up   - Scroll up',
+			'Page Down - Scroll down',
+			'Home      - Scroll to top',
+			'End       - Scroll to end',
+			'Enter     - Move player to selected edict',
+			'Escape    - Exit or return to edicts list',
+			'',
+			'< Press any key to close >'
+		}
+		helppage.onkeypress = function ()
+			menu.poppage()
+		end
+
+		menu.pushpage(helppage)
+	end
+
+	local function showinfo()
+		local entry = page.entries[page.cursor]
+		local edict = entry.edict
+
+		if not isfree(edict) then
+			local infopage = menu.edictinfopage(edict, entry.text)
+			local exit = infopage.actions[key_escape]
+
+			infopage.actions[key_left] = exit
+			infopage.actions[key_kpleft] = exit
+			infopage.actions[key_H] = showhelp
+			infopage.actions[key_h] = showhelp
+
+			menu.pushpage(infopage)
+		end
+	end
+
+	local actions = page.actions
+	actions[key_enter] = moveto
+	actions[key_kpenter] = moveto
+	actions[key_right] = showinfo
+	actions[key_kpright] = showinfo
+	actions[key_H] = showhelp
+	actions[key_h] = showhelp
 
 	return page
 end
