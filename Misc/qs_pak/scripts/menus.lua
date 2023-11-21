@@ -437,3 +437,20 @@ function console.menu_edicts()
 
 	menu.pushpage(edictsmenu)
 end
+
+
+local secretsmenu
+
+function console.menu_secrets()
+	menu.clearpages()
+
+	if secretsmenu then
+		secretsmenu.needupdate = true
+	else
+		secretsmenu = menu.edictspage()
+		secretsmenu.title = 'Secrets'
+		secretsmenu.filter = edicts.issecret
+	end
+
+	menu.pushpage(secretsmenu)
+end
