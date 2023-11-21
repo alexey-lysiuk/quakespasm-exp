@@ -94,19 +94,6 @@ local function clamp(v, lo, up)
 end
 
 
--- REMOVE
-function player.safemove(location)
-	player.god(true)
-	player.notarget(true)
-
-	-- Adjust Z coordinate so player will appear slightly above the destination
-	local playerpos = location
-	playerpos.z = playerpos.z + 20
-	player.setpos(location, angles)
-end
--- REMOVE
-
-
 function menu.textpage()
 	local page =
 	{
@@ -142,7 +129,7 @@ function menu.textpage()
 
 	page.ondraw = function (page)
 		menu.tintedtext(2, 0, page.title)
-	
+
 		for i = 1, min(page.maxlines, #page.text) do
 			menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
 		end
@@ -150,10 +137,10 @@ function menu.textpage()
 
 	page.onkeypress = function (page, keycode)
 		local action = page.actions[keycode]
-	
+
 		if action then
 			action()
-	
+
 			-- Bound topline value
 			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
 			page.topline = clamp(page.topline, 1, maxtopline)
@@ -210,7 +197,7 @@ function menu.listpage()
 	local function scrolldown()
 		local entrycount <const> = #page.entries
 		local maxlines <const> = page.maxlines
-	
+
 		if page.cursor + maxlines < entrycount then
 			page.cursor = page.cursor + maxlines
 			page.topline = min(page.topline + maxlines, entrycount - maxlines + 1)
@@ -222,7 +209,7 @@ function menu.listpage()
 
 	local function scrollend()
 		local entrycount <const> = #page.entries
-	
+
 		page.cursor = entrycount
 		page.topline = max(entrycount - page.maxlines + 1, 1)
 	end
@@ -246,19 +233,19 @@ function menu.listpage()
 
 	page.ondraw = function (page)
 		menu.tintedtext(10, 0, page.title)
-	
+
 		local entrycount = #page.entries
 		if entrycount == 0 then
 			return
 		end
-	
+
 		local topline = page.topline
 		local cursor = page.cursor
-	
+
 		for i = 1, min(page.maxlines, entrycount) do
 			menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 		end
-	
+
 		if cursor > 0 then
 			menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
 		end
@@ -266,7 +253,7 @@ function menu.listpage()
 
 	page.onkeypress = function (page, keycode)
 		local action = page.actions[keycode]
-	
+
 		if action then
 			action()
 		end
@@ -314,27 +301,48 @@ end
 function menu.edictspage()
 	local page = menu.listpage()
 	page.title = 'Edicts'
-	page.cursor = 1
+	page.needupdate = true
 
-	edicts.foreach(function (edict, current)
-		local text, location
+	page.filter = function (edict)
+		local description, location
 
 		if isfree(edict) then
-			text = string.format('%i: <FREE>', current - 1)
+			description = '<FREE>'
 		else
+			description = getname(edict)
+
 			local origin = edict.origin or vec3origin
 			local min = edict.absmin or vec3origin
 			local max = edict.absmax or vec3origin
 
 			location = origin == vec3origin and vec3.mid(min, max) or origin
-			text = string.format('%i: %s at %s', current - 1, getname(edict), location)
 		end
 
-		local entry = { edict = edict, text = text, location = location }
-		page.entries[#page.entries + 1] = entry
+		return description, location
+	end
 
-		return current + 1
-	end)
+	page.update = function ()
+		page.entries = {}
+
+		edicts.foreach(function (edict, current)
+			local description, location, angles = page.filter(edict)
+
+			if not description then
+				return current
+			end
+
+			local text = location
+				and string.format('%i: %s at %s', current - 1, description, location)
+				or string.format('%i: %s', current - 1, description)
+			local entry = { edict = edict, text = text, location = location, angles = angles }
+			page.entries[#page.entries + 1] = entry
+
+			return current + 1
+		end)
+
+		page.cursor = clamp(page.cursor, 1, #page.entries)
+		page.topline = clamp(page.topline, 1, #page.entries - page.maxlines + 1)
+	end
 
 	local function moveto()
 		local location = page.entries[page.cursor].location
@@ -372,6 +380,10 @@ function menu.edictspage()
 	end
 
 	local function showinfo()
+		if #page.entries == 0 then
+			return
+		end
+
 		local entry = page.entries[page.cursor]
 		local edict = entry.edict
 
@@ -396,11 +408,49 @@ function menu.edictspage()
 	actions[key_H] = showhelp
 	actions[key_h] = showhelp
 
+	local super_ondraw = page.ondraw
+
+	page.ondraw = function (page)
+		if page.needupdate then
+			page.update()
+			page.needupdate = false
+		end
+
+		super_ondraw(page)
+		menu.text(180, 0, 'Press \200 for help')
+	end
+
 	return page
 end
 
 
+local edictsmenu
+
 function console.menu_edicts()
 	menu.clearpages()
-	menu.pushpage(menu.edictspage())
+
+	if edictsmenu then
+		edictsmenu.needupdate = true
+	else
+		edictsmenu = menu.edictspage()
+	end
+
+	menu.pushpage(edictsmenu)
+end
+
+
+local secretsmenu
+
+function console.menu_secrets()
+	menu.clearpages()
+
+	if secretsmenu then
+		secretsmenu.needupdate = true
+	else
+		secretsmenu = menu.edictspage()
+		secretsmenu.title = 'Secrets'
+		secretsmenu.filter = edicts.issecret
+	end
+
+	menu.pushpage(secretsmenu)
 end
