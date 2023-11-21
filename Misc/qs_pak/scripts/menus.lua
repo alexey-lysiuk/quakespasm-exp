@@ -383,6 +383,13 @@ function menu.edictspage()
 	actions[key_H] = showhelp
 	actions[key_h] = showhelp
 
+	local super_ondraw = page.ondraw
+
+	page.ondraw = function (page)
+		super_ondraw(page)
+		menu.text(180, 0, 'Press \200 for help')
+	end
+
 	return page
 end
 
