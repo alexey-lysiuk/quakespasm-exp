@@ -380,6 +380,10 @@ function menu.edictspage()
 	end
 
 	local function showinfo()
+		if #page.entries == 0 then
+			return
+		end
+
 		local entry = page.entries[page.cursor]
 		local edict = entry.edict
 
