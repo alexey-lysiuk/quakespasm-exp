@@ -83,6 +83,67 @@ local key_kpend <const> = keycodes.KP_END
 local min <const> = math.min
 local max <const> = math.max
 
+local function clamp(v, lo, up)
+	return max(lo, min(up, v))
+end
+
+
+function menu.textpage()
+	local page =
+	{
+		title = 'Title',
+		text = {},
+		maxlines = 20,  -- for line interval of 9 pixels
+		topline = 1,
+	}
+
+	local function lineup() page.topline = page.topline - 1 end
+	local function linedown() page.topline = page.topline + 1 end
+	local function scrollup() page.topline = page.topline - page.maxlines end
+	local function scrolldown() page.topline = page.topline + page.maxlines end
+	local function scrolltop() page.topline = 1 end
+	local function scrollend() page.topline = #page.text end
+
+	page.actions =
+	{
+		[key_escape] = function() menu.poppage() end,
+		[key_up] = lineup,
+		[key_down] = linedown,
+		[key_pageup] = scrollup,
+		[key_pagedown] = scrolldown,
+		[key_home] = scrolltop,
+		[key_end] = scrollend,
+		[key_kpup] = lineup,
+		[key_kpdown] = linedown,
+		[key_kppageup] = scrollup,
+		[key_kppagedown] = scrolldown,
+		[key_kphome] = scrolltop,
+		[key_kpend] = scrollend,
+	}
+
+	page.ondraw = function (page)
+		menu.tintedtext(2, 0, page.title)
+	
+		for i = 1, min(page.maxlines, #page.text) do
+			menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
+		end
+	end
+
+	page.onkeypress = function (page, keycode)
+		local action = page.actions[keycode]
+	
+		if action then
+			action()
+	
+			-- Bound topline value
+			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
+			page.topline = clamp(page.topline, 1, maxtopline)
+		end
+	end
+
+	return page
+end
+
 
 function menu.listpage()
 	local page = 
