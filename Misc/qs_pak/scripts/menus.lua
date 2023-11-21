@@ -301,34 +301,48 @@ end
 function menu.edictspage()
 	local page = menu.listpage()
 	page.title = 'Edicts'
-	page.cursor = 1
+	page.needupdate = true
 
-	local function addedict(edict, current)
-		local text, location
+	page.filter = function (edict)
+		local description, location
 
 		if isfree(edict) then
-			text = string.format('%i: <FREE>', current - 1)
+			description = '<FREE>'
 		else
+			description = getname(edict)
+
 			local origin = edict.origin or vec3origin
 			local min = edict.absmin or vec3origin
 			local max = edict.absmax or vec3origin
 
 			location = origin == vec3origin and vec3.mid(min, max) or origin
-			text = string.format('%i: %s at %s', current - 1, getname(edict), location)
 		end
 
-		local entry = { edict = edict, text = text, location = location }
-		page.entries[#page.entries + 1] = entry
-
-		return current + 1
+		return description, location
 	end
 
-	page.updatelist = function ()
+	page.update = function ()
 		page.entries = {}
-		edicts.foreach(addedict)
-	end
 
-	page.updatelist()
+		edicts.foreach(function (edict, current)
+			local description, location, angles = page.filter(edict)
+
+			if not description then
+				return current
+			end
+
+			local text = location
+				and string.format('%i: %s at %s', current - 1, description, location)
+				or string.format('%i: %s', current - 1, description)
+			local entry = { edict = edict, text = text, location = location, angles = angles }
+			page.entries[#page.entries + 1] = entry
+
+			return current + 1
+		end)
+
+		page.cursor = clamp(page.cursor, 1, #page.entries)
+		page.topline = clamp(page.topline, 1, #page.entries - page.maxlines + 1)
+	end
 
 	local function moveto()
 		local location = page.entries[page.cursor].location
@@ -393,6 +407,11 @@ function menu.edictspage()
 	local super_ondraw = page.ondraw
 
 	page.ondraw = function (page)
+		if page.needupdate then
+			page.update()
+			page.needupdate = false
+		end
+
 		super_ondraw(page)
 		menu.text(180, 0, 'Press \200 for help')
 	end
@@ -407,9 +426,7 @@ function console.menu_edicts()
 	menu.clearpages()
 
 	if edictsmenu then
-		edictsmenu.updatelist()
-		edictsmenu.cursor = clamp(edictsmenu.cursor, 1, #edictsmenu.entries)
-		edictsmenu.topline = clamp(edictsmenu.topline, 1, #edictsmenu.entries - edictsmenu.maxlines + 1)
+		edictsmenu.needupdate = true
 	else
 		edictsmenu = menu.edictspage()
 	end
