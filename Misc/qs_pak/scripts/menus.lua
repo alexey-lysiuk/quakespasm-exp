@@ -303,7 +303,7 @@ function menu.edictspage()
 	page.title = 'Edicts'
 	page.cursor = 1
 
-	edicts.foreach(function (edict, current)
+	local function addedict(edict, current)
 		local text, location
 
 		if isfree(edict) then
@@ -321,7 +321,14 @@ function menu.edictspage()
 		page.entries[#page.entries + 1] = entry
 
 		return current + 1
-	end)
+	end
+
+	page.updatelist = function ()
+		page.entries = {}
+		edicts.foreach(addedict)
+	end
+
+	page.updatelist()
 
 	local function moveto()
 		local location = page.entries[page.cursor].location
@@ -394,7 +401,18 @@ function menu.edictspage()
 end
 
 
+local edictsmenu
+
 function console.menu_edicts()
 	menu.clearpages()
-	menu.pushpage(menu.edictspage())
+
+	if edictsmenu then
+		edictsmenu.updatelist()
+		edictsmenu.cursor = clamp(edictsmenu.cursor, 1, #edictsmenu.entries)
+		edictsmenu.topline = clamp(edictsmenu.topline, 1, #edictsmenu.entries - edictsmenu.maxlines + 1)
+	else
+		edictsmenu = menu.edictspage()
+	end
+
+	menu.pushpage(edictsmenu)
 end
