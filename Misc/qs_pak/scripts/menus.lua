@@ -202,47 +202,43 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
-local function edictspage_keypress(page, keycode)
-	if keycode == key_enter then
-		local location = page.entries[page.cursor].location
-
-		if location ~= vec3origin then
-			player.safemove(location)
-			menu.poppage()
-		end
-	else
-		listpage_keypress(page, keycode)
-	end
-end
-
 function menu.edictspage()
 	local page = menu.listpage()
 	page.title = 'Edicts'
 	page.cursor = 1
-	page.onkeypress = edictspage_keypress
 
-	local function addedict(edict, current)
+	edicts.foreach(function (edict, current)
 		local text, location
 
 		if isfree(edict) then
-			text = string.format('%i: <FREE>', current)
-			location = vec3origin
+			text = string.format('%i: <FREE>', current - 1)
 		else
 			local origin = edict.origin or vec3origin
 			local min = edict.absmin or vec3origin
 			local max = edict.absmax or vec3origin
 
 			location = origin == vec3origin and vec3.mid(min, max) or origin
-			text = string.format('%i: %s at %s', current, getname(edict), location)
+			text = string.format('%i: %s at %s', current - 1, getname(edict), location)
 		end
 
 		local entry = { text = text, location = location }
 		page.entries[#page.entries + 1] = entry
 
 		return current + 1
+	end)
+
+	local function moveto()
+		local location = page.entries[page.cursor].location
+
+		if location then
+			player.safemove(location)
+			menu.poppage()
+		end
 	end
 
-	edicts.foreach(addedict)
+	local actions = page.actions
+	actions[key_enter] = moveto
+	actions[key_kpenter] = moveto
 
 	return page
 end
