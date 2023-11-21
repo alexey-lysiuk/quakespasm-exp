@@ -332,9 +332,10 @@ function menu.edictspage()
 				return current
 			end
 
+			local index = current - (filter == any and 1 or 0)
 			local text = location
-				and string.format('%i: %s at %s', current - 1, description, location)
-				or string.format('%i: %s', current - 1, description)
+				and string.format('%i: %s at %s', index, description, location)
+				or string.format('%i: %s', index, description)
 			local entry = { edict = edict, text = text, location = location, angles = angles }
 			page.entries[#page.entries + 1] = entry
 
@@ -453,5 +454,6 @@ end
 addedictsmenu('Edicts')
 addedictsmenu('Secrets', edicts.issecret)
 addedictsmenu('Monsters', edicts.ismonster)
+addedictsmenu('Teleports', edicts.isteleport)
 addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
