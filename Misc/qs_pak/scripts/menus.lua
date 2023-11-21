@@ -68,12 +68,16 @@ local key_enter <const> = keycodes.ENTER
 local key_escape <const> = keycodes.ESCAPE
 local key_up <const> = keycodes.UPARROW
 local key_down <const> = keycodes.DOWNARROW
+local key_left <const> = keycodes.LEFTARROW
+local key_right <const> = keycodes.RIGHTARROW
 local key_pageup <const> = keycodes.PGUP
 local key_pagedown <const> = keycodes.PGDN
 local key_home <const> = keycodes.HOME
 local key_end <const> = keycodes.END
 local key_kpenter <const> = keycodes.KP_ENTER
 local key_kpup <const> = keycodes.KP_UPARROW
+local key_kpleft <const> = keycodes.KP_LEFTARROW
+local key_kpright <const> = keycodes.KP_RIGHTARROW
 local key_kpdown <const> = keycodes.KP_DOWNARROW
 local key_kppageup <const> = keycodes.KP_PGUP
 local key_kppagedown <const> = keycodes.KP_PGDN
@@ -263,6 +267,35 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
+function menu.edictinfopage(edict, title)
+	local page = menu.textpage()
+	page.title = title
+
+	-- Build edict fields table, and calculate maximum length of field names
+	local fields = {}
+	local maxlen = 0
+
+	for i, field in ipairs(edict) do
+		local len = field.name:len()
+
+		if len > maxlen then
+			maxlen = len
+		end
+
+		fields[i] = field
+	end
+
+	-- Output formatted names and values of edict fields
+	local fieldformat = '%-' .. maxlen .. 's : %s'
+
+	for _, field in ipairs(fields) do
+		page.text[#page.text + 1] = string.format(fieldformat, field.name, field.value)
+	end
+
+	return page
+end
+
+
 function menu.edictspage()
 	local page = menu.listpage()
 	page.title = 'Edicts'
@@ -282,7 +315,7 @@ function menu.edictspage()
 			text = string.format('%i: %s at %s', current - 1, getname(edict), location)
 		end
 
-		local entry = { text = text, location = location }
+		local entry = { edict = edict, text = text, location = location }
 		page.entries[#page.entries + 1] = entry
 
 		return current + 1
@@ -297,9 +330,26 @@ function menu.edictspage()
 		end
 	end
 
+	local function showinfo()
+		local entry = page.entries[page.cursor]
+		local edict = entry.edict
+
+		if not isfree(edict) then
+			local infopage = menu.edictinfopage(edict, entry.text)
+			local exit = infopage.actions[key_escape]
+
+			infopage.actions[key_left] = exit
+			infopage.actions[key_kpleft] = exit
+
+			menu.pushpage(infopage)
+		end
+	end
+
 	local actions = page.actions
 	actions[key_enter] = moveto
 	actions[key_kpenter] = moveto
+	actions[key_right] = showinfo
+	actions[key_kpright] = showinfo
 
 	return page
 end
