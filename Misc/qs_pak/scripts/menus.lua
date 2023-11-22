@@ -452,3 +452,7 @@ end
 
 addedictsmenu('Edicts')
 addedictsmenu('Secrets', edicts.issecret)
+addedictsmenu('Monsters', edicts.ismonster)
+addedictsmenu('Teleports', edicts.isteleport)
+addedictsmenu('Doors', edicts.isdoor)
+addedictsmenu('Items', edicts.isitem)
