@@ -300,10 +300,9 @@ end
 
 function menu.edictspage()
 	local page = menu.listpage()
-	page.title = 'Edicts'
 	page.needupdate = true
 
-	page.filter = function (edict)
+	local function any(edict)
 		local description, location
 
 		if isfree(edict) then
@@ -324,8 +323,10 @@ function menu.edictspage()
 	page.update = function ()
 		page.entries = {}
 
+		local filter = page.filter or any
+
 		edicts.foreach(function (edict, current)
-			local description, location, angles = page.filter(edict)
+			local description, location, angles = filter(edict)
 
 			if not description then
 				return current
@@ -424,33 +425,30 @@ function menu.edictspage()
 end
 
 
-local edictsmenu
+local edictsmenus = {}
 
-function console.menu_edicts()
-	menu.clearpages()
+local function addedictsmenu(title, filter)
+	local name = string.lower(title)
+	local command = 'menu_' .. name
 
-	if edictsmenu then
-		edictsmenu.needupdate = true
-	else
-		edictsmenu = menu.edictspage()
+	console[command] = function ()
+		menu.clearpages()
+
+		local mainpage = edictsmenus[name]
+
+		if mainpage then
+			mainpage.needupdate = true
+		else
+			mainpage = menu.edictspage()
+			mainpage.title = title
+			mainpage.filter = filter
+
+			edictsmenus[name] = mainpage
+		end
+
+		menu.pushpage(mainpage)
 	end
-
-	menu.pushpage(edictsmenu)
 end
 
-
-local secretsmenu
-
-function console.menu_secrets()
-	menu.clearpages()
-
-	if secretsmenu then
-		secretsmenu.needupdate = true
-	else
-		secretsmenu = menu.edictspage()
-		secretsmenu.title = 'Secrets'
-		secretsmenu.filter = edicts.issecret
-	end
-
-	menu.pushpage(secretsmenu)
-end
+addedictsmenu('Edicts')
+addedictsmenu('Secrets', edicts.issecret)
