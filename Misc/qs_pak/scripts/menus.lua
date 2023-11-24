@@ -1,69 +1,4 @@
 
-keycodes =
-{
-	TAB           = 9,
-	ENTER         = 13,
-	ESCAPE        = 27,
-	SPACE         = 32,
-
-	BACKSPACE     = 127,
-	UPARROW       = 128,
-	DOWNARROW     = 129,
-	LEFTARROW     = 130,
-	RIGHTARROW    = 131,
-
-	COMMAND       = 170,
-	ALT           = 132,
-	CTRL          = 133,
-	SHIFT         = 134,
-	F1            = 135,
-	F2            = 136,
-	F3            = 137,
-	F4            = 138,
-	F5            = 139,
-	F6            = 140,
-	F7            = 141,
-	F8            = 142,
-	F9            = 143,
-	F10           = 144,
-	F11           = 145,
-	F12           = 146,
-	INS           = 147,
-	DEL           = 148,
-	PGDN          = 149,
-	PGUP          = 150,
-	HOME          = 151,
-	END           = 152,
-	PAUSE         = 255,
-
-	KP_NUMLOCK    = 153,
-	KP_SLASH      = 154,
-	KP_STAR       = 155,
-	KP_MINUS      = 156,
-	KP_HOME       = 157,
-	KP_UPARROW    = 158,
-	KP_PGUP       = 159,
-	KP_PLUS       = 160,
-	KP_LEFTARROW  = 161,
-	KP_5          = 162,
-	KP_RIGHTARROW = 163,
-	KP_END        = 164,
-	KP_DOWNARROW  = 165,
-	KP_PGDN       = 166,
-	KP_ENTER      = 167,
-	KP_INS        = 168,
-	KP_DEL        = 169,
-
-	MOUSE1        = 200,
-	MOUSE2        = 201,
-	MOUSE3        = 202,
-	MOUSE4        = 241,
-	MOUSE5        = 242,
-	MWHEELUP      = 239,
-	MWHEELDOWN    = 240,
-}
-
-
 local key_enter <const> = keycodes.ENTER
 local key_escape <const> = keycodes.ESCAPE
 local key_up <const> = keycodes.UPARROW
@@ -85,6 +20,8 @@ local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
 local key_H <const> = string.byte('H')
 local key_h <const> = string.byte('h')
+local key_abutton <const> = keycodes.ABUTTON
+local key_bbutton <const> = keycodes.BBUTTON
 
 local min <const> = math.min
 local max <const> = math.max
@@ -92,6 +29,9 @@ local max <const> = math.max
 local function clamp(v, lo, up)
 	return max(lo, min(up, v))
 end
+
+local pushpage <const> = menu.pushpage
+local poppage <const> = menu.poppage
 
 
 function menu.textpage()
@@ -112,7 +52,8 @@ function menu.textpage()
 
 	page.actions =
 	{
-		[key_escape] = function() menu.poppage() end,
+		[key_escape] = poppage,
+		[key_bbutton] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
@@ -216,7 +157,8 @@ function menu.listpage()
 
 	page.actions =
 	{
-		[key_escape] = function() menu.poppage() end,
+		[key_escape] = poppage,
+		[key_bbutton] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
@@ -351,7 +293,7 @@ function menu.edictspage()
 
 		if location then
 			player.safemove(location)
-			menu.poppage()
+			poppage()
 		end
 	end
 
@@ -375,10 +317,10 @@ function menu.edictspage()
 			'< Press any key to close >'
 		}
 		helppage.onkeypress = function ()
-			menu.poppage()
+			poppage()
 		end
 
-		menu.pushpage(helppage)
+		pushpage(helppage)
 	end
 
 	local function showinfo()
@@ -391,20 +333,22 @@ function menu.edictspage()
 
 		if not isfree(edict) then
 			local infopage = menu.edictinfopage(edict, entry.text)
-			local exit = infopage.actions[key_escape]
+			local actions = infopage.actions
 
-			infopage.actions[key_left] = exit
-			infopage.actions[key_kpleft] = exit
-			infopage.actions[key_H] = showhelp
-			infopage.actions[key_h] = showhelp
+			actions[key_bbutton] = poppage
+			actions[key_left] = poppage
+			actions[key_kpleft] = poppage
+			actions[key_H] = showhelp
+			actions[key_h] = showhelp
 
-			menu.pushpage(infopage)
+			pushpage(infopage)
 		end
 	end
 
 	local actions = page.actions
 	actions[key_enter] = moveto
 	actions[key_kpenter] = moveto
+	actions[key_abutton] = moveto
 	actions[key_right] = showinfo
 	actions[key_kpright] = showinfo
 	actions[key_H] = showhelp
@@ -447,7 +391,7 @@ local function addedictsmenu(title, filter)
 			edictsmenus[name] = mainpage
 		end
 
-		menu.pushpage(mainpage)
+		pushpage(mainpage)
 	end
 end
 
