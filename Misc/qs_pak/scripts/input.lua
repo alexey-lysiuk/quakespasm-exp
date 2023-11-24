@@ -54,6 +54,8 @@ keycodes =
 	KP_INS        = 168,
 	KP_DEL        = 169,
 
+	COMMAND       = 170,
+
 	MOUSE1        = 200,
 	MOUSE2        = 201,
 	MOUSE3        = 202,
@@ -61,4 +63,24 @@ keycodes =
 	MOUSE5        = 242,
 	MWHEELUP      = 239,
 	MWHEELDOWN    = 240,
+
+	JOY1          = 203,
+	JOY2          = 204,
+	JOY3          = 205,
+	JOY4          = 206,
+
+	LTHUMB        = 243,
+	RTHUMB        = 244,
+	LSHOULDER     = 245,
+	RSHOULDER     = 246,
+	ABUTTON       = 247,
+	BBUTTON       = 248,
+	XBUTTON       = 249,
+	YBUTTON       = 250,
+	LTRIGGER      = 251,
+	RTRIGGER      = 252,
+
+	PAUSE         = 255,
+
+	MAX_KEYS      = 256
 }
