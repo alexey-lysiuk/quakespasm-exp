@@ -28,6 +28,9 @@ local function clamp(v, lo, up)
 	return max(lo, min(up, v))
 end
 
+local pushpage <const> = menu.pushpage
+local poppage <const> = menu.poppage
+
 
 function menu.textpage()
 	local page =
@@ -47,7 +50,7 @@ function menu.textpage()
 
 	page.actions =
 	{
-		[key_escape] = function() menu.poppage() end,
+		[key_escape] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
@@ -151,7 +154,7 @@ function menu.listpage()
 
 	page.actions =
 	{
-		[key_escape] = function() menu.poppage() end,
+		[key_escape] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
@@ -286,7 +289,7 @@ function menu.edictspage()
 
 		if location then
 			player.safemove(location)
-			menu.poppage()
+			poppage()
 		end
 	end
 
@@ -310,10 +313,10 @@ function menu.edictspage()
 			'< Press any key to close >'
 		}
 		helppage.onkeypress = function ()
-			menu.poppage()
+			poppage()
 		end
 
-		menu.pushpage(helppage)
+		pushpage(helppage)
 	end
 
 	local function showinfo()
@@ -326,14 +329,14 @@ function menu.edictspage()
 
 		if not isfree(edict) then
 			local infopage = menu.edictinfopage(edict, entry.text)
-			local exit = infopage.actions[key_escape]
+			local actions = infopage.actions
 
-			infopage.actions[key_left] = exit
-			infopage.actions[key_kpleft] = exit
-			infopage.actions[key_H] = showhelp
-			infopage.actions[key_h] = showhelp
+			actions[key_left] = poppage
+			actions[key_kpleft] = poppage
+			actions[key_H] = showhelp
+			actions[key_h] = showhelp
 
-			menu.pushpage(infopage)
+			pushpage(infopage)
 		end
 	end
 
@@ -382,7 +385,7 @@ local function addedictsmenu(title, filter)
 			edictsmenus[name] = mainpage
 		end
 
-		menu.pushpage(mainpage)
+		pushpage(mainpage)
 	end
 end
 
