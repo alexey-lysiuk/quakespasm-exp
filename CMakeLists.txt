@@ -564,6 +564,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/sm100_zwiffle@c897.ent
 		maps/sm212_naitelveni@a835.ent
 		scripts/edicts.lua
+		scripts/input.lua
 		scripts/menus.lua
 		default.cfg
 	)
