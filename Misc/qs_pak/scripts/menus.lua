@@ -20,6 +20,8 @@ local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
 local key_H <const> = string.byte('H')
 local key_h <const> = string.byte('h')
+local key_abutton <const> = keycodes.ABUTTON
+local key_bbutton <const> = keycodes.BBUTTON
 
 local min <const> = math.min
 local max <const> = math.max
@@ -51,6 +53,7 @@ function menu.textpage()
 	page.actions =
 	{
 		[key_escape] = poppage,
+		[key_bbutton] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
@@ -155,6 +158,7 @@ function menu.listpage()
 	page.actions =
 	{
 		[key_escape] = poppage,
+		[key_bbutton] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
@@ -331,6 +335,7 @@ function menu.edictspage()
 			local infopage = menu.edictinfopage(edict, entry.text)
 			local actions = infopage.actions
 
+			actions[key_bbutton] = poppage
 			actions[key_left] = poppage
 			actions[key_kpleft] = poppage
 			actions[key_H] = showhelp
@@ -343,6 +348,7 @@ function menu.edictspage()
 	local actions = page.actions
 	actions[key_enter] = moveto
 	actions[key_kpenter] = moveto
+	actions[key_abutton] = moveto
 	actions[key_right] = showinfo
 	actions[key_kpright] = showinfo
 	actions[key_H] = showhelp
