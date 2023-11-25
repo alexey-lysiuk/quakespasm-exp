@@ -959,6 +959,15 @@ static int LS_global_dprint(lua_State* state)
 	return 0;
 }
 
+static int LS_global_localized(lua_State* state)
+{
+	const char* key = luaL_checkstring(state, 1);
+	const char* value = LOC_GetString(key);
+
+	lua_pushstring(state, value);
+	return 1;
+}
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -1010,6 +1019,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		// Helper functions
 		{ "printmemstats", LS_global_printmemstats },
 		{ "dprint", LS_global_dprint },
+		{ "localized", LS_global_localized },
 
 		{ NULL, NULL }
 	};
