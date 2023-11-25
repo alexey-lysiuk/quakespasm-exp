@@ -318,6 +318,10 @@ function menu.edictspage()
 	end
 
 	local function moveto()
+		if #page.entries == 0 then
+			return
+		end
+
 		local entry = page.entries[page.cursor]
 		local location = entry.location
 
