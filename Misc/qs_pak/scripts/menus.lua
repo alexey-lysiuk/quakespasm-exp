@@ -18,7 +18,6 @@ local key_kppageup <const> = keycodes.KP_PGUP
 local key_kppagedown <const> = keycodes.KP_PGDN
 local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
-local key_H <const> = string.byte('H')
 local key_h <const> = string.byte('h')
 local key_abutton <const> = keycodes.ABUTTON
 local key_bbutton <const> = keycodes.BBUTTON
@@ -34,6 +33,55 @@ local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
 
 
+local defaultkeyremap <const> = 
+{
+	[key_enter] = { key_kpenter, key_abutton },
+	[key_escape] = { key_bbutton },
+	[key_up] = { key_kpup },
+	[key_down] = { key_kpdown },
+	[key_left] = { key_kpleft },
+	[key_right] = { key_kpright },
+	[key_pageup] = { key_kppageup },
+	[key_pagedown] = { key_kpdown },
+	[key_home] = { key_kphome },
+	[key_end] = { key_kpend },
+}
+
+function menu.extendkeymap(actions)
+	local addedactions = {}
+
+	for key, func in pairs(actions) do
+		local remap = defaultkeyremap[key]
+
+		if remap then
+			for _, newkey in ipairs(remap) do
+				if not actions[newkey] then
+					addedactions[newkey] = func
+				end
+			end
+		elseif key > 0x40 and key < 0x5B then  -- 'A'..'Z'
+			local newkey = key + 0x20
+
+			if not actions[newkey] then
+				addedactions[newkey] = func
+			end
+		elseif key > 0x60 and key < 0x7B then  -- 'a'..'z'
+			local newkey = key - 0x20
+
+			if not actions[newkey] then
+				addedactions[newkey] = func
+			end
+		end
+	end
+
+	for key, func in pairs(addedactions) do
+		actions[key] = func
+	end
+end
+
+local extendkeymap = menu.extendkeymap
+
+
 function menu.textpage()
 	local page =
 	{
@@ -43,30 +91,17 @@ function menu.textpage()
 		topline = 1,
 	}
 
-	local function lineup() page.topline = page.topline - 1 end
-	local function linedown() page.topline = page.topline + 1 end
-	local function scrollup() page.topline = page.topline - page.maxlines end
-	local function scrolldown() page.topline = page.topline + page.maxlines end
-	local function scrolltop() page.topline = 1 end
-	local function scrollend() page.topline = #page.text end
-
 	page.actions =
 	{
 		[key_escape] = poppage,
-		[key_bbutton] = poppage,
-		[key_up] = lineup,
-		[key_down] = linedown,
-		[key_pageup] = scrollup,
-		[key_pagedown] = scrolldown,
-		[key_home] = scrolltop,
-		[key_end] = scrollend,
-		[key_kpup] = lineup,
-		[key_kpdown] = linedown,
-		[key_kppageup] = scrollup,
-		[key_kppagedown] = scrolldown,
-		[key_kphome] = scrolltop,
-		[key_kpend] = scrollend,
+		[key_up] = function () page.topline = page.topline - 1 end,
+		[key_down] = function () page.topline = page.topline + 1 end,
+		[key_pageup] = function () page.topline = page.topline - page.maxlines end,
+		[key_pagedown] = function () page.topline = page.topline + page.maxlines end,
+		[key_home] = function () page.topline = 1  end,
+		[key_end] = function () page.topline = #page.text end,
 	}
+	extendkeymap(page.actions)
 
 	page.ondraw = function (page)
 		menu.tintedtext(2, 0, page.title)
@@ -158,20 +193,14 @@ function menu.listpage()
 	page.actions =
 	{
 		[key_escape] = poppage,
-		[key_bbutton] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
 		[key_pageup] = scrollup,
 		[key_pagedown] = scrolldown,
 		[key_home] = scrolltop,
 		[key_end] = scrollend,
-		[key_kpup] = lineup,
-		[key_kpdown] = linedown,
-		[key_kppageup] = scrollup,
-		[key_kppagedown] = scrolldown,
-		[key_kphome] = scrolltop,
-		[key_kpend] = scrollend,
 	}
+	extendkeymap(page.actions)
 
 	page.ondraw = function (page)
 		menu.tintedtext(10, 0, page.title)
@@ -333,13 +362,11 @@ function menu.edictspage()
 
 		if not isfree(edict) then
 			local infopage = menu.edictinfopage(edict, entry.text)
-			local actions = infopage.actions
 
-			actions[key_bbutton] = poppage
+			local actions = infopage.actions
 			actions[key_left] = poppage
-			actions[key_kpleft] = poppage
-			actions[key_H] = showhelp
 			actions[key_h] = showhelp
+			extendkeymap(actions)
 
 			pushpage(infopage)
 		end
@@ -347,12 +374,9 @@ function menu.edictspage()
 
 	local actions = page.actions
 	actions[key_enter] = moveto
-	actions[key_kpenter] = moveto
-	actions[key_abutton] = moveto
 	actions[key_right] = showinfo
-	actions[key_kpright] = showinfo
-	actions[key_H] = showhelp
 	actions[key_h] = showhelp
+	extendkeymap(actions)
 
 	local super_ondraw = page.ondraw
 
