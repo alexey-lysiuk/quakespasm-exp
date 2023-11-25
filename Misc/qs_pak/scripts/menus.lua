@@ -318,10 +318,11 @@ function menu.edictspage()
 	end
 
 	local function moveto()
-		local location = page.entries[page.cursor].location
+		local entry = page.entries[page.cursor]
+		local location = entry.location
 
 		if location then
-			player.safemove(location)
+			player.safemove(location, entry.angles)
 			poppage()
 		end
 	end

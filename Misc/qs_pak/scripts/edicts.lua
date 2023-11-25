@@ -103,7 +103,7 @@ edicts.itemnames =
 local itemnames <const> = edicts.itemnames
 
 
-function player.safemove(location)
+function player.safemove(location, angles)
 	player.god(true)
 	player.notarget(true)
 
@@ -169,7 +169,7 @@ local function handleedict(func, edict, current, choice)
 	if choice <= 0 then
 		print(current .. ':', description, 'at', location)
 	elseif choice == current then
-		player.safemove(location)
+		player.safemove(location, angles)
 		return
 	end
 
