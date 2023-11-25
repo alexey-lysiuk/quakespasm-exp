@@ -1115,7 +1115,7 @@ const char* SV_GetEntityName(edict_t* entity)
 	const char* name = PR_GetString(entity->v.classname);
 
 	if (name[0] == '\0')
-		name = PR_GetString(entity->v.netname);
+		name = LOC_GetString(PR_GetString(entity->v.netname));
 
 	if (name[0] == '\0')
 		name = PR_GetString(entity->v.model);

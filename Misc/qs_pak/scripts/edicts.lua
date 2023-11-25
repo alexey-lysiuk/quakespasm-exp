@@ -176,6 +176,24 @@ local function handleedict(func, edict, current, choice)
 	return current + 1
 end
 
+local function localizednetname(edict)
+	local name = edict.netname
+
+	if name and name ~= '' then
+		name = localized(name)
+
+		if name:find('the ') == 1 then
+			name = name:sub(5)
+		end
+
+		name = titlecase(name)
+	else
+		name = itemnames[edict.items]
+	end
+
+	return name
+end
+
 
 --
 -- Secrets
@@ -319,23 +337,16 @@ end
 
 local function getitemname(item)
 	if not item or item == 0 then
-		return nil
+		return
 	end
 
 	for _, edict in ipairs(edicts) do
 		if not isfree(edict) and edict.items == item and edict.classname:find('item_') == 1 then
-			local name = edict.netname
-
-			if name and name ~= '' then
-				return titlecase(name)
-			end
-
-			name = itemnames[item]
-			return name or '???'
+			return localizednetname(edict) or '???'
 		end
 	end
 
-	return nil
+	return
 end
 
 function edicts.isdoor(edict)
@@ -398,11 +409,7 @@ function edicts.isitem(edict, current, choice)
 		return
 	end
 
-	local name = edict.netname
-
-	if not name or name == '' then
-		name = itemnames[edict.items]
-	end
+	local name = localizednetname(edict)
 
 	if not name then
 		-- use classname with prefix removed for entity without netname
