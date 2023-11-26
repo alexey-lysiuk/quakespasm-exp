@@ -732,6 +732,20 @@ static int LS_global_player_noclip(lua_State* state)
 }
 
 
+//
+// Expose 'sound' global table with related functions
+//
+
+static int LS_global_sound_playlocal(lua_State* state)
+{
+	const char* filename = luaL_checkstring(state, 1);
+	assert(filename);
+
+	S_LocalSound(filename);
+	return 0;
+}
+
+
 static void LS_InitStandardLibraries(lua_State* state)
 {
 	// Available standard libraries
@@ -1088,6 +1102,18 @@ static void LS_InitGlobalTables(lua_State* state)
 
 		luaL_newlib(state, functions);
 		lua_setglobal(state, "player");
+	}
+
+	// Create and register 'sound' table
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "playlocal", LS_global_sound_playlocal },
+			{ NULL, NULL }
+		};
+
+		luaL_newlib(state, functions);
+		lua_setglobal(state, "sound");
 	}
 
 	// Register namespace for console commands
