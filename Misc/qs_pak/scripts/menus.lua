@@ -32,6 +32,7 @@ end
 
 local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
+local clearpages <const> = menu.clearpages
 
 
 local defaultkeyremap <const> = 
@@ -328,7 +329,7 @@ function menu.edictspage()
 
 		if location then
 			player.safemove(location, entry.angles)
-			poppage()
+			clearpages()
 		end
 	end
 
@@ -387,7 +388,7 @@ function menu.edictspage()
 		local edict = entry.edict
 
 		if not isfree(edict) then
-			local refspage = menu.edictreferencespage(edict, entry.text)
+			local refspage = menu.edictreferencespage(edict)
 			pushpage(refspage)
 		end
 	end
@@ -408,16 +409,19 @@ function menu.edictspage()
 		end
 
 		super_ondraw(page)
-		menu.text(180, 9, 'Press \200 for help')
+
+		if #page.title < 20 then
+			menu.text(180, 0, 'Press \200 for help')
+		end
 	end
 
 	return page
 end
 
 
-function menu.edictreferencespage(edict, title)
+function menu.edictreferencespage(edict)
 	local page = menu.edictspage()
-	page.title = title
+	page.title = tostring(edict)
 
 	local target = edict.target or ''
 	local targetname = edict.targetname or ''
@@ -455,7 +459,7 @@ local function addedictsmenu(title, filter)
 	local command = 'menu_' .. name
 
 	console[command] = function ()
-		menu.clearpages()
+		clearpages()
 
 		local mainpage = edictsmenus[name]
 
