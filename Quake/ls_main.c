@@ -408,7 +408,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		{
 			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
 			assert(indexptr);
-			*indexptr = NUM_FOR_EDICT(PROG_TO_EDICT(value->edict) + 1);
+			*indexptr = NUM_FOR_EDICT(PROG_TO_EDICT(value->edict));
 			LS_SetEdictMetaTable(state);
 		}
 		break;

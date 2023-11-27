@@ -18,8 +18,13 @@ local key_kppageup <const> = keycodes.KP_PGUP
 local key_kppagedown <const> = keycodes.KP_PGDN
 local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
-local key_h <const> = string.byte('h')
-local key_r <const> = string.byte('r')
+local key_h <const> = keycodes.LH
+local key_i <const> = keycodes.LI
+local key_r <const> = keycodes.LR
+local key_ua <const> = keycodes.UA
+local key_uz <const> = keycodes.UZ
+local key_la <const> = keycodes.LA
+local key_lz <const> = keycodes.LZ
 local key_abutton <const> = keycodes.ABUTTON
 local key_bbutton <const> = keycodes.BBUTTON
 
@@ -61,13 +66,13 @@ function menu.extendkeymap(actions)
 					addedactions[newkey] = func
 				end
 			end
-		elseif key > 0x40 and key < 0x5B then  -- 'A'..'Z'
+		elseif key >= key_ua and key <= key_uz then
 			local newkey = key + 0x20
 
 			if not actions[newkey] then
 				addedactions[newkey] = func
 			end
-		elseif key > 0x60 and key < 0x7B then  -- 'a'..'z'
+		elseif key >= key_la and key <= key_lz then
 			local newkey = key - 0x20
 
 			if not actions[newkey] then
@@ -242,9 +247,9 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
-function menu.edictinfopage(edict, title)
+function menu.edictinfopage(edict)
 	local page = menu.textpage()
-	page.title = title
+	page.title = tostring(edict)
 
 	-- Build edict fields table, and calculate maximum length of field names
 	local fields = {}
@@ -341,14 +346,14 @@ function menu.edictspage()
 		{
 			'Up        - Select previous edict',
 			'Down      - Select next edict',
-			'Left      - Show values of edict fields',
-			'Right     - Return to edicts list',
 			'Page Up   - Scroll up',
 			'Page Down - Scroll down',
 			'Home      - Scroll to top',
 			'End       - Scroll to end',
 			'Enter     - Move player to selected edict',
-			'Escape    - Exit or return to edicts list',
+			'Escape    - Exit or return to previous page',
+			'I         - Show values of edict fields',
+			'R         - Show edict references',
 			'',
 			'< Press any key to close >'
 		}
@@ -368,10 +373,9 @@ function menu.edictspage()
 		local edict = entry.edict
 
 		if not isfree(edict) then
-			local infopage = menu.edictinfopage(edict, entry.text)
+			local infopage = menu.edictinfopage(edict)
 
 			local actions = infopage.actions
-			actions[key_left] = poppage
 			actions[key_h] = showhelp
 			extendkeymap(actions)
 
@@ -395,8 +399,8 @@ function menu.edictspage()
 
 	local actions = page.actions
 	actions[key_enter] = moveto
-	actions[key_right] = showinfo
 	actions[key_h] = showhelp
+	actions[key_i] = showinfo
 	actions[key_r] = showreferences
 	extendkeymap(actions)
 
