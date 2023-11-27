@@ -396,7 +396,10 @@ function menu.edictspage()
 		end
 
 		super_ondraw(page)
-		menu.text(180, 0, 'Press \200 for help')
+
+		if #page.title < 20 then
+			menu.text(180, 0, 'Press \200 for help')
+		end
 	end
 
 	return page
