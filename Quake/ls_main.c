@@ -375,6 +375,8 @@ static int LS_global_vec3_dot(lua_State* state)
 // Expose edict_t as 'edict' userdata
 //
 
+static void LS_SetEdictMetaTable(lua_State* state);
+
 // Pushes field value by its type and name
 static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
@@ -400,7 +402,15 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_entity:
-		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+		if (value->edict == 0)
+			lua_pushnil(state);
+		else
+		{
+			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+			assert(indexptr);
+			*indexptr = NUM_FOR_EDICT(PROG_TO_EDICT(value->edict));
+			LS_SetEdictMetaTable(state);
+		}
 		break;
 
 	case ev_field:
