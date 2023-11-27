@@ -245,9 +245,9 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
 
-function menu.edictinfopage(edict, title)
+function menu.edictinfopage(edict)
 	local page = menu.textpage()
-	page.title = title
+	page.title = tostring(edict)
 
 	-- Build edict fields table, and calculate maximum length of field names
 	local fields = {}
@@ -371,7 +371,7 @@ function menu.edictspage()
 		local edict = entry.edict
 
 		if not isfree(edict) then
-			local infopage = menu.edictinfopage(edict, entry.text)
+			local infopage = menu.edictinfopage(edict)
 
 			local actions = infopage.actions
 			actions[key_left] = poppage
