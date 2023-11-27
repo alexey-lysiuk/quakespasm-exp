@@ -88,6 +88,25 @@ end
 
 local extendkeymap = menu.extendkeymap
 
+local function playsound(index)
+	if index then
+		sound.playlocal(string.format('misc/menu%d.wav', index))
+	end
+end
+
+local function defaultsounds()
+	return
+	{
+		[key_escape] = 2,
+		[key_up] = 1,
+		[key_down] = 1,
+		[key_pageup] = 1,
+		[key_pagedown] = 1,
+		[key_home] = 1,
+		[key_end] = 1,
+	}
+end
+
 
 function menu.textpage()
 	local page =
@@ -110,6 +129,8 @@ function menu.textpage()
 	}
 	extendkeymap(page.actions)
 
+	page.sounds = defaultsounds()
+
 	page.ondraw = function (page)
 		menu.tintedtext(2, 0, page.title)
 
@@ -128,6 +149,8 @@ function menu.textpage()
 			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
 			page.topline = clamp(page.topline, 1, maxtopline)
 		end
+
+		playsound(page.sounds[keycode])
 	end
 
 	return page
@@ -209,6 +232,8 @@ function menu.listpage()
 	}
 	extendkeymap(page.actions)
 
+	page.sounds = defaultsounds()
+
 	page.ondraw = function (page)
 		menu.tintedtext(10, 0, page.title)
 
@@ -235,6 +260,8 @@ function menu.listpage()
 		if action then
 			action()
 		end
+
+		playsound(page.sounds[keycode])
 	end
 
 	return page
@@ -355,8 +382,9 @@ function menu.edictspage()
 			'Page Down - Scroll down',
 			'Home      - Scroll to top',
 			'End       - Scroll to end',
-			'Enter     - Move player to selected edict',
-			'Escape    - Exit or return to previous page',
+			'Enter     - Move player to edict',
+			'Escape    - Exit or back',
+			'H         - Show this help',
 			'I         - Show values of edict fields',
 			'R         - Show edict references',
 			'',
@@ -364,6 +392,7 @@ function menu.edictspage()
 		}
 		helppage.onkeypress = function ()
 			poppage()
+			playsound(2)
 		end
 
 		pushpage(helppage)
@@ -379,6 +408,7 @@ function menu.edictspage()
 
 		if not isfree(edict) then
 			local infopage = menu.edictinfopage(edict)
+			infopage.sounds[key_h] = 2
 
 			local actions = infopage.actions
 			actions[key_h] = showhelp
@@ -408,6 +438,11 @@ function menu.edictspage()
 	actions[key_i] = showinfo
 	actions[key_r] = showreferences
 	extendkeymap(actions)
+
+	local sounds = page.sounds
+	sounds[key_h] = 2
+	sounds[key_i] = 2
+	sounds[key_r] = 2
 
 	local super_ondraw = page.ondraw
 
