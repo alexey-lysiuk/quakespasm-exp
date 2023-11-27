@@ -553,9 +553,7 @@ static int LS_value_edict_tostring(lua_State* state)
 			description = "<unnamed>";
 	}
 
-	int index = NUM_FOR_EDICT(ed) + 1;  // on Lua side, indices start with 1
-	lua_pushfstring(state, "edict %d: %s", index, description);
-
+	lua_pushfstring(state, "edict %d: %s", NUM_FOR_EDICT(ed), description);
 	return 1;
 }
 
