@@ -35,6 +35,7 @@ end
 
 local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
+local clearpages <const> = menu.clearpages
 
 
 local defaultkeyremap <const> = 
@@ -331,7 +332,7 @@ function menu.edictspage()
 
 		if location then
 			player.safemove(location, entry.angles)
-			poppage()
+			clearpages()
 		end
 	end
 
@@ -413,7 +414,7 @@ local function addedictsmenu(title, filter)
 	local command = 'menu_' .. name
 
 	console[command] = function ()
-		menu.clearpages()
+		clearpages()
 
 		local mainpage = edictsmenus[name]
 
