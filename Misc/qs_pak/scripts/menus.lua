@@ -276,32 +276,37 @@ function menu.edictinfopage(edict)
 end
 
 
+local function describe(edict)
+	local description, location, angles
+
+	if isfree(edict) then
+		description = '<FREE>'
+	else
+		description = getname(edict)
+		location = vec3.mid(edict.absmin, edict.absmax)
+		angles = edict.angles
+
+		if location == vec3origin then
+			location = edict.origin or vec3origin
+		end
+
+		if angles and angles == vec3origin then
+			angles = nil
+		end
+	end
+
+	return description, location, angles
+end
+
+
 function menu.edictspage()
 	local page = menu.listpage()
 	page.needupdate = true
 
-	local function any(edict)
-		local description, location
-
-		if isfree(edict) then
-			description = '<FREE>'
-		else
-			description = getname(edict)
-
-			local origin = edict.origin or vec3origin
-			local min = edict.absmin or vec3origin
-			local max = edict.absmax or vec3origin
-
-			location = origin == vec3origin and vec3.mid(min, max) or origin
-		end
-
-		return description, location
-	end
-
 	page.update = function ()
 		page.entries = {}
 
-		local filter = page.filter or any
+		local filter = page.filter or describe
 
 		edicts.foreach(function (edict, current)
 			local description, location, angles = filter(edict)
@@ -310,7 +315,7 @@ function menu.edictspage()
 				return current
 			end
 
-			local index = current - (filter == any and 1 or 0)
+			local index = current - (filter == describe and 1 or 0)
 			local text = location
 				and string.format('%i: %s at %s', index, description, location)
 				or string.format('%i: %s', index, description)
@@ -444,12 +449,7 @@ function menu.edictreferencespage(edict)
 			return
 		end
 
-		local origin = edict.origin or vec3origin
-		local min = edict.absmin or vec3origin
-		local max = edict.absmax or vec3origin
-		local location = origin == vec3origin and vec3.mid(min, max) or origin
-
-		return getname(edict), location
+		return describe(edict)
 	end
 
 	return page
