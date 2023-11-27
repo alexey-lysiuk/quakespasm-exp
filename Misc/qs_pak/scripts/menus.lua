@@ -18,7 +18,11 @@ local key_kppageup <const> = keycodes.KP_PGUP
 local key_kppagedown <const> = keycodes.KP_PGDN
 local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
-local key_h <const> = string.byte('h')
+local key_h <const> = keycodes.LH
+local key_ua <const> = keycodes.UA
+local key_uz <const> = keycodes.UZ
+local key_la <const> = keycodes.LA
+local key_lz <const> = keycodes.LZ
 local key_abutton <const> = keycodes.ABUTTON
 local key_bbutton <const> = keycodes.BBUTTON
 
@@ -59,13 +63,13 @@ function menu.extendkeymap(actions)
 					addedactions[newkey] = func
 				end
 			end
-		elseif key > 0x40 and key < 0x5B then  -- 'A'..'Z'
+		elseif key >= key_ua and key <= key_uz then
 			local newkey = key + 0x20
 
 			if not actions[newkey] then
 				addedactions[newkey] = func
 			end
-		elseif key > 0x60 and key < 0x7B then  -- 'a'..'z'
+		elseif key >= key_la and key <= key_lz then
 			local newkey = key - 0x20
 
 			if not actions[newkey] then
