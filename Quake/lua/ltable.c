@@ -1,4 +1,5 @@
 /*
+/*
 ** $Id: ltable.c $
 ** Lua tables (hash)
 ** See Copyright Notice in lua.h

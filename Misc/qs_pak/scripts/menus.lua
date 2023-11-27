@@ -19,6 +19,7 @@ local key_kppagedown <const> = keycodes.KP_PGDN
 local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
 local key_h <const> = string.byte('h')
+local key_r <const> = string.byte('r')
 local key_abutton <const> = keycodes.ABUTTON
 local key_bbutton <const> = keycodes.BBUTTON
 
@@ -377,10 +378,25 @@ function menu.edictspage()
 		end
 	end
 
+	local function showreferences()
+			if #page.entries == 0 then
+			return
+		end
+
+		local entry = page.entries[page.cursor]
+		local edict = entry.edict
+
+		if not isfree(edict) then
+			local refspage = menu.edictreferencespage(edict, entry.text)
+			pushpage(refspage)
+		end
+	end
+
 	local actions = page.actions
 	actions[key_enter] = moveto
 	actions[key_right] = showinfo
 	actions[key_h] = showhelp
+	actions[key_r] = showreferences
 	extendkeymap(actions)
 
 	local super_ondraw = page.ondraw
@@ -392,7 +408,40 @@ function menu.edictspage()
 		end
 
 		super_ondraw(page)
-		menu.text(180, 0, 'Press \200 for help')
+		menu.text(180, 9, 'Press \200 for help')
+	end
+
+	return page
+end
+
+
+function menu.edictreferencespage(edict, title)
+	local page = menu.edictspage()
+	page.title = title
+
+	local target = edict.target or ''
+	local targetname = edict.targetname or ''
+	local owner = edict.owner
+
+	page.filter = function (edict)
+		if isfree(edict) then
+			return
+		end
+
+		local isreference = owner == edict
+			or target ~= '' and target == edict.targetname
+			or targetname ~= '' and targetname == edict.target
+
+		if not isreference then
+			return
+		end
+
+		local origin = edict.origin or vec3origin
+		local min = edict.absmin or vec3origin
+		local max = edict.absmax or vec3origin
+		local location = origin == vec3origin and vec3.mid(min, max) or origin
+
+		return getname(edict), location
 	end
 
 	return page

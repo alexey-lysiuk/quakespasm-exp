@@ -375,6 +375,8 @@ static int LS_global_vec3_dot(lua_State* state)
 // Expose edict_t as 'edict' userdata
 //
 
+static void LS_SetEdictMetaTable(lua_State* state);
+
 // Pushes field value by its type and name
 static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
@@ -400,7 +402,15 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_entity:
-		lua_pushfstring(state, "entity %d", NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+		if (value->edict == 0)
+			lua_pushnil(state);
+		else
+		{
+			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+			assert(indexptr);
+			*indexptr = NUM_FOR_EDICT(PROG_TO_EDICT(value->edict) + 1);
+			LS_SetEdictMetaTable(state);
+		}
 		break;
 
 	case ev_field:
@@ -430,6 +440,19 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 
 	int index = *indexptr;
 	return (index >= 0 && index < sv.num_edicts) ? EDICT_NUM(index) : NULL;
+}
+
+// Pushes result of comparison for equality of two edict values
+static int LS_value_edict_eq(lua_State* state)
+{
+	int* left = LS_GetValueFromTypedUserData(state, 1, ls_edict_type);
+	assert(left);
+
+	int* right = LS_GetValueFromTypedUserData(state, 2, ls_edict_type);
+	assert(right);
+
+	lua_pushboolean(state, *left == *right);
+	return 1;
 }
 
 // Pushes value of edict field by its name
@@ -553,9 +576,7 @@ static int LS_value_edict_tostring(lua_State* state)
 			description = "<unnamed>";
 	}
 
-	int index = NUM_FOR_EDICT(ed) + 1;  // on Lua side, indices start with 1
-	lua_pushfstring(state, "edict %d: %s", index, description);
-
+	lua_pushfstring(state, "edict %d: %s", NUM_FOR_EDICT(ed), description);
 	return 1;
 }
 
@@ -564,6 +585,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "__eq", LS_value_edict_eq },
 		{ "__index", LS_value_edict_index },
 		{ "__pairs", LS_value_edict_pairs },
 		{ "__tostring", LS_value_edict_tostring },
