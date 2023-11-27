@@ -432,6 +432,19 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 	return (index >= 0 && index < sv.num_edicts) ? EDICT_NUM(index) : NULL;
 }
 
+// Pushes result of comparison for equality of two edict values
+static int LS_value_edict_eq(lua_State* state)
+{
+	int* left = LS_GetValueFromTypedUserData(state, 1, ls_edict_type);
+	assert(left);
+
+	int* right = LS_GetValueFromTypedUserData(state, 2, ls_edict_type);
+	assert(right);
+
+	lua_pushboolean(state, *left == *right);
+	return 1;
+}
+
 // Pushes value of edict field by its name
 // or pushes a table with name, type, value by field's numerical index
 static int LS_value_edict_index(lua_State* state)
@@ -562,6 +575,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "__eq", LS_value_edict_eq },
 		{ "__index", LS_value_edict_index },
 		{ "__pairs", LS_value_edict_pairs },
 		{ "__tostring", LS_value_edict_tostring },
