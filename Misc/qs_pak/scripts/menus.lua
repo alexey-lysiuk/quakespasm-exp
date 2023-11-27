@@ -19,6 +19,7 @@ local key_kppagedown <const> = keycodes.KP_PGDN
 local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
 local key_h <const> = keycodes.LH
+local key_i <const> = keycodes.LI
 local key_ua <const> = keycodes.UA
 local key_uz <const> = keycodes.UZ
 local key_la <const> = keycodes.LA
@@ -344,14 +345,13 @@ function menu.edictspage()
 		{
 			'Up        - Select previous edict',
 			'Down      - Select next edict',
-			'Left      - Show values of edict fields',
-			'Right     - Return to edicts list',
 			'Page Up   - Scroll up',
 			'Page Down - Scroll down',
 			'Home      - Scroll to top',
 			'End       - Scroll to end',
 			'Enter     - Move player to selected edict',
 			'Escape    - Exit or return to edicts list',
+			'I         - Show values of edict fields',
 			'',
 			'< Press any key to close >'
 		}
@@ -374,7 +374,6 @@ function menu.edictspage()
 			local infopage = menu.edictinfopage(edict)
 
 			local actions = infopage.actions
-			actions[key_left] = poppage
 			actions[key_h] = showhelp
 			extendkeymap(actions)
 
@@ -384,8 +383,8 @@ function menu.edictspage()
 
 	local actions = page.actions
 	actions[key_enter] = moveto
-	actions[key_right] = showinfo
 	actions[key_h] = showhelp
+	actions[key_i] = showinfo
 	extendkeymap(actions)
 
 	local super_ondraw = page.ondraw
