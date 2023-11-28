@@ -298,8 +298,8 @@ function menu.edictinfopage(edict)
 	for _, field in ipairs(fields) do
 --		page.text[#page.text + 1] = string.format(fieldformat, field.name, field.value)
 		local line = fieldformat:format(field.name, field.value)
-		if #line > 39 then
-			line = string.format('%.36s...', line)
+		if #line > 40 then
+			line = string.format('%.37s\143\143\143', line)
 		end
 		table.insert(page.text, line)
 	end
