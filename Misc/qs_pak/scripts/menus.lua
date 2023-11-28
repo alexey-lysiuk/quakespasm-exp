@@ -383,7 +383,7 @@ function menu.edictspage()
 			'Home      - Scroll to top',
 			'End       - Scroll to end',
 			'Enter     - Move player to edict',
-			'Escape    - Exit or back',
+			'Escape    - Close current page',
 			'H         - Show this help',
 			'I         - Show values of edict fields',
 			'R         - Show edict references',
@@ -480,11 +480,9 @@ function menu.edictreferencespage(edict)
 			or target ~= '' and target == edict.targetname
 			or targetname ~= '' and targetname == edict.target
 
-		if not isreference then
-			return
+		if isreference then
+			return describe(edict)
 		end
-
-		return describe(edict)
 	end
 
 	return page
