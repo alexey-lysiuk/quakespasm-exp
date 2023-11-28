@@ -111,8 +111,8 @@ function menu.elide(string, x)
 	local width = 640 - (x or 0)
 
 	if #string * 16 > width then
-		local maxlen = math.floor(width / 16 - 2)
-		local elideformat = '%.' .. maxlen .. 's\133\133'
+		local maxlen = math.floor(width / 16) - 1
+		local elideformat = '%.' .. maxlen .. 's\133'
 		return elideformat:format(string, line)
 	end
 
@@ -307,7 +307,7 @@ function menu.edictinfopage(edict)
 	end
 
 	-- Output formatted names and values of edict fields
-	local fieldformat = '%-' .. maxlen .. 's : %s'
+	local fieldformat = '%-' .. maxlen .. 's: %s'
 
 	for _, field in ipairs(fields) do
 		local line = fieldformat:format(field.name, field.value)
