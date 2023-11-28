@@ -35,10 +35,11 @@ const char* ED_GetFieldNameByOffset(int offset);
 const char* SV_GetEntityName(edict_t* entity);
 
 static lua_State* ls_state;
+static size_t ls_quota;
 static const char* ls_console_name = "console";
 
 static tlsf_t ls_memory;
-static size_t ls_memorysize = 2 * 1024 * 1024;
+static size_t ls_memorysize;
 
 typedef struct
 {
@@ -1184,21 +1185,32 @@ static void LS_ResetState(void)
 #endif // !NDEBUG
 }
 
+static size_t LS_CheckSizeArgument(const char* argname)
+{
+	int argindex = COM_CheckParm(argname);
+	size_t result = 0;
+
+	if (argindex && argindex < com_argc - 1)
+	{
+		const char* sizearg = com_argv[argindex + 1];
+		assert(sizearg);
+
+		result = Q_atoi(sizearg);
+	}
+
+	return result;
+}
+
 lua_State* LS_GetState(void)
 {
 	if (ls_state == NULL)
 	{
 		if (ls_memory == NULL)
 		{
-			int heaparg = COM_CheckParm("-luaheapsize");
-
-			if (heaparg && heaparg < com_argc - 1)
+			if (ls_memorysize == 0)
 			{
-				const char* sizearg = com_argv[heaparg + 1];
-				assert(sizearg);
-
-				size_t heapsize = Q_atoi(sizearg) * 1024;  // from kB to bytes
-				ls_memorysize = CLAMP(1024 * 1024, heapsize, 64 * 1024 * 1024);
+				size_t heapsize = LS_CheckSizeArgument("-luaheapsize") * 1024;  // from kB to bytes
+				ls_memorysize = CLAMP(2 * 1024 * 1024, heapsize, 64 * 1024 * 1024);
 			}
 
 			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
@@ -1221,7 +1233,13 @@ lua_State* LS_GetState(void)
 		ls_state = state;
 	}
 
-	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, 1 * 1024 * 1024);
+	if (ls_quota == 0)
+	{
+		size_t quota = LS_CheckSizeArgument("-luaquota") * 1024;  // from kiloops to ops
+		ls_quota = CLAMP(1024 * 1024, quota, 64 * 1024 * 1024);
+	}
+
+	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, ls_quota);
 	return ls_state;
 }
 
