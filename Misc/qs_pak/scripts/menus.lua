@@ -20,6 +20,7 @@ local key_kphome <const> = keycodes.KP_HOME
 local key_kpend <const> = keycodes.KP_END
 local key_h <const> = keycodes.LH
 local key_i <const> = keycodes.LI
+local key_r <const> = keycodes.LR
 local key_ua <const> = keycodes.UA
 local key_uz <const> = keycodes.UZ
 local key_la <const> = keycodes.LA
@@ -275,32 +276,37 @@ function menu.edictinfopage(edict)
 end
 
 
+local function describe(edict)
+	local description, location, angles
+
+	if isfree(edict) then
+		description = '<FREE>'
+	else
+		description = getname(edict)
+		location = vec3.mid(edict.absmin, edict.absmax)
+		angles = edict.angles
+
+		if location == vec3origin then
+			location = edict.origin or vec3origin
+		end
+
+		if angles and angles == vec3origin then
+			angles = nil
+		end
+	end
+
+	return description, location, angles
+end
+
+
 function menu.edictspage()
 	local page = menu.listpage()
 	page.needupdate = true
 
-	local function any(edict)
-		local description, location
-
-		if isfree(edict) then
-			description = '<FREE>'
-		else
-			description = getname(edict)
-
-			local origin = edict.origin or vec3origin
-			local min = edict.absmin or vec3origin
-			local max = edict.absmax or vec3origin
-
-			location = origin == vec3origin and vec3.mid(min, max) or origin
-		end
-
-		return description, location
-	end
-
 	page.update = function ()
 		page.entries = {}
 
-		local filter = page.filter or any
+		local filter = page.filter or describe
 
 		edicts.foreach(function (edict, current)
 			local description, location, angles = filter(edict)
@@ -309,7 +315,7 @@ function menu.edictspage()
 				return current
 			end
 
-			local index = current - (filter == any and 1 or 0)
+			local index = current - (filter == describe and 1 or 0)
 			local text = location
 				and string.format('%i: %s at %s', index, description, location)
 				or string.format('%i: %s', index, description)
@@ -350,8 +356,9 @@ function menu.edictspage()
 			'Home      - Scroll to top',
 			'End       - Scroll to end',
 			'Enter     - Move player to selected edict',
-			'Escape    - Exit or return to edicts list',
+			'Escape    - Exit or return to previous page',
 			'I         - Show values of edict fields',
+			'R         - Show edict references',
 			'',
 			'< Press any key to close >'
 		}
@@ -381,10 +388,25 @@ function menu.edictspage()
 		end
 	end
 
+	local function showreferences()
+			if #page.entries == 0 then
+			return
+		end
+
+		local entry = page.entries[page.cursor]
+		local edict = entry.edict
+
+		if not isfree(edict) then
+			local refspage = menu.edictreferencespage(edict)
+			pushpage(refspage)
+		end
+	end
+
 	local actions = page.actions
 	actions[key_enter] = moveto
 	actions[key_h] = showhelp
 	actions[key_i] = showinfo
+	actions[key_r] = showreferences
 	extendkeymap(actions)
 
 	local super_ondraw = page.ondraw
@@ -399,6 +421,32 @@ function menu.edictspage()
 
 		if #page.title < 20 then
 			menu.text(180, 0, 'Press \200 for help')
+		end
+	end
+
+	return page
+end
+
+
+function menu.edictreferencespage(edict)
+	local page = menu.edictspage()
+	page.title = tostring(edict)
+
+	local target = edict.target or ''
+	local targetname = edict.targetname or ''
+	local owner = edict.owner
+
+	page.filter = function (edict)
+		if isfree(edict) then
+			return
+		end
+
+		local isreference = owner == edict
+			or target ~= '' and target == edict.targetname
+			or targetname ~= '' and targetname == edict.target
+
+		if isreference then
+			return describe(edict)
 		end
 	end
 
