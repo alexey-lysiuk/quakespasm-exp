@@ -296,7 +296,12 @@ function menu.edictinfopage(edict)
 	local fieldformat = '%-' .. maxlen .. 's : %s'
 
 	for _, field in ipairs(fields) do
-		page.text[#page.text + 1] = string.format(fieldformat, field.name, field.value)
+--		page.text[#page.text + 1] = string.format(fieldformat, field.name, field.value)
+		local line = fieldformat:format(field.name, field.value)
+		if #line > 39 then
+			line = string.format('%.36s...', line)
+		end
+		table.insert(page.text, line)
 	end
 
 	return page
