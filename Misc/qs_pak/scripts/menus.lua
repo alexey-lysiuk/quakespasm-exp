@@ -107,6 +107,20 @@ local function defaultsounds()
 	}
 end
 
+function menu.elide(string, x)
+	local width = 640 - (x or 0)
+
+	if #string * 16 > width then
+		local maxlen = math.floor(width / 16 - 2)
+		local elideformat = '%.' .. maxlen .. 's\133\133'
+		return elideformat:format(string, line)
+	end
+
+	return string
+end
+
+local elide = menu.elide
+
 
 function menu.textpage()
 	local page =
@@ -296,12 +310,8 @@ function menu.edictinfopage(edict)
 	local fieldformat = '%-' .. maxlen .. 's : %s'
 
 	for _, field in ipairs(fields) do
---		page.text[#page.text + 1] = string.format(fieldformat, field.name, field.value)
 		local line = fieldformat:format(field.name, field.value)
-		if #line > 40 then
-			line = string.format('%.37s\143\143\143', line)
-		end
-		table.insert(page.text, line)
+		table.insert(page.text, elide(line))
 	end
 
 	return page
@@ -351,8 +361,8 @@ function menu.edictspage()
 			local text = location
 				and string.format('%i: %s at %s', index, description, location)
 				or string.format('%i: %s', index, description)
-			local entry = { edict = edict, text = text, location = location, angles = angles }
-			page.entries[#page.entries + 1] = entry
+			local entry = { edict = edict, text = elide(text, 10), location = location, angles = angles }
+			table.insert(page.entries, entry)
 
 			return current + 1
 		end)
