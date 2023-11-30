@@ -535,3 +535,30 @@ addedictsmenu('Monsters', edicts.ismonster)
 addedictsmenu('Teleports', edicts.isteleport)
 addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
+
+
+local function deniedsound()
+	sound.playlocal('doors/basetry.wav')
+end
+
+function console.menu_gaze()
+	local edict = player.traceentity()
+
+	if edict then
+		clearpages()
+		pushpage(menu.edictinfopage(edict))
+	else
+		deniedsound()
+	end
+end
+
+function console.menu_gazerefs()
+	local edict = player.traceentity()
+
+	if edict then
+		clearpages()
+		pushpage(menu.edictreferencespage(edict))
+	else
+		deniedsound()
+	end
+end

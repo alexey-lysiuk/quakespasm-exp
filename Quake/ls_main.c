@@ -723,6 +723,30 @@ static int LS_global_player_traceentity(lua_State* state)
 	return 1;
 }
 
+static int LS_global_player_traceentities(lua_State* state)
+{
+	edict_t* entities[16];
+	size_t count = Q_COUNTOF(entities);
+
+	size_t SV_TraceEntities(edict_t** entities, size_t size);
+	count = SV_TraceEntities(entities, count);
+	assert(count < LUA_MINSTACK);
+
+	//lua_createtable(state, count, 0);
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+		assert(indexptr);
+		*indexptr = NUM_FOR_EDICT(entities[i]);
+		LS_SetEdictMetaTable(state);
+
+		//lua_seti(state, -2, i);
+	}
+
+	return count;
+}
+
 static int LS_PlayerCheatCommand(lua_State* state, const char* command)
 {
 	const char* argstr = "";
@@ -1120,6 +1144,7 @@ static void LS_InitGlobalTables(lua_State* state)
 			{ "notarget", LS_global_player_notarget },
 			{ "setpos", LS_global_player_setpos },
 			{ "traceentity", LS_global_player_traceentity },
+			{ "traceentities", LS_global_player_traceentities },
 			{ NULL, NULL }
 		};
 

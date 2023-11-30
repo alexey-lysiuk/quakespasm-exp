@@ -1246,6 +1246,57 @@ edict_t* SV_TraceEntity(int kind)
 	return ent == sv.edicts ? NULL : ent;
 }
 
+size_t SV_TraceEntities(edict_t** entities, size_t size)
+{
+	if (svs.clients == NULL || !svs.clients[0].active)
+		return NULL;
+
+	et_state_t state;
+	memset(&state, 0, sizeof state);
+
+	moveclip_t* clip = &state.clip;
+	edict_t* player = svs.clients[0].edict;
+	clip->passedict = player;
+
+	ET_InitEntityTrace(&state);
+	state.initialtrace = clip->trace;
+
+	edict_t* entity = NEXT_EDICT(sv.edicts);
+	size_t count = 0;
+
+	for (int i = 1, e = sv.num_edicts; i < e && count < size; ++i, entity = NEXT_EDICT(entity))
+	{
+		if (entity == player || entity->v.solid == SOLID_NOT)
+			continue;
+		else if (entity->v.solid == SOLID_TRIGGER)
+		{
+			clip->trace = state.initialtrace;
+			ET_TraceTriger(sv_areanodes, clip);
+		}
+		else
+		{
+			clip->trace = state.initialtrace;
+			SV_ClipToLinks(sv_areanodes, clip);
+		}
+
+		if (entity == clip->trace.ent)
+			entities[count++] = entity;
+		else
+		{
+			for (size_t j = 0; j < count; ++j)
+			{
+				if (entities[j] == clip->trace.ent)
+				{
+					entities[count++] = entity;
+					break;
+				}
+			}
+		}
+	}
+
+	return count;
+}
+
 cvar_t sv_traceentity = { "sv_traceentity", "0", CVAR_NONE };
 
 #define et_infosize 1024
