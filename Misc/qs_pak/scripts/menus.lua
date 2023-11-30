@@ -307,7 +307,7 @@ function menu.edictinfopage(edict)
 	end
 
 	-- Output formatted names and values of edict fields
-	local fieldformat = '%-' .. maxlen .. 's : %s'
+	local fieldformat = '%-' .. maxlen .. 's: %s'
 
 	for _, field in ipairs(fields) do
 		local line = fieldformat:format(field.name, field.value)
