@@ -38,7 +38,7 @@ static lua_State* ls_state;
 static const char* ls_console_name = "console";
 
 static tlsf_t ls_memory;
-static const size_t ls_memorysize = 1024 * 1024;
+static size_t ls_memorysize;
 
 typedef struct
 {
@@ -1184,12 +1184,36 @@ static void LS_ResetState(void)
 #endif // !NDEBUG
 }
 
+static size_t LS_CheckSizeArgument(const char* argname)
+{
+	int argindex = COM_CheckParm(argname);
+	size_t result = 0;
+
+	if (argindex && argindex < com_argc - 1)
+	{
+		const char* sizearg = com_argv[argindex + 1];
+		assert(sizearg);
+
+		result = Q_atoi(sizearg);
+	}
+
+	return result;
+}
+
 lua_State* LS_GetState(void)
 {
 	if (ls_state == NULL)
 	{
 		if (ls_memory == NULL)
+		{
+			if (ls_memorysize == 0)
+			{
+				size_t heapsize = LS_CheckSizeArgument("-luaheapsize");  // in kB
+				ls_memorysize = CLAMP(1024, heapsize, 64 * 1024) * 1024;
+			}
+
 			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
+		}
 
 		lua_State* state = lua_newstate(LS_alloc, NULL);
 		assert(state);
