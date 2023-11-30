@@ -35,6 +35,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 const char* SV_GetEntityName(edict_t* entity);
 
 static lua_State* ls_state;
+static size_t ls_quota;
 static const char* ls_console_name = "console";
 
 static tlsf_t ls_memory;
@@ -1232,7 +1233,13 @@ lua_State* LS_GetState(void)
 		ls_state = state;
 	}
 
-	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, 1 * 1024 * 1024);
+	if (ls_quota == 0)
+	{
+		size_t quota = LS_CheckSizeArgument("-luaexecquota");  // in kilo-ops
+		ls_quota = CLAMP(1024, quota, 64 * 1024) * 1024;
+	}
+
+	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, ls_quota);
 	return ls_state;
 }
 
