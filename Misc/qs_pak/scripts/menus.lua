@@ -543,3 +543,20 @@ addedictsmenu('Monsters', edicts.ismonster)
 addedictsmenu('Teleports', edicts.isteleport)
 addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
+
+
+local function addgazemenu(suffix, pagefunc)
+	console['menu_' .. suffix] = function ()
+		local edict = player.traceentity()
+
+		if edict then
+			clearpages()
+			pushpage(pagefunc(edict))
+		else
+			deniedsound()
+		end
+	end
+end
+
+addgazemenu('gaze', menu.edictinfopage)
+addgazemenu('gazerefs', menu.edictreferencespage)
