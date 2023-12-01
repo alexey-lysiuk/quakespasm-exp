@@ -35,9 +35,13 @@ local function clamp(v, lo, up)
 	return max(lo, min(up, v))
 end
 
+local format <const> = string.format
+local insert <const> = table.insert
+
 local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
 local clearpages <const> = menu.clearpages
+local playlocal <const> = sound.playlocal
 
 
 local defaultkeyremap <const> = 
@@ -90,7 +94,7 @@ local extendkeymap = menu.extendkeymap
 
 local function playsound(index)
 	if index then
-		sound.playlocal(string.format('misc/menu%d.wav', index))
+		playlocal(format('misc/menu%d.wav', index))
 	end
 end
 
@@ -311,7 +315,7 @@ function menu.edictinfopage(edict)
 
 	for _, field in ipairs(fields) do
 		local line = fieldformat:format(field.name, field.value)
-		table.insert(page.text, elide(line))
+		insert(page.text, elide(line))
 	end
 
 	return page
@@ -359,10 +363,10 @@ function menu.edictspage()
 
 			local index = current - (filter == describe and 1 or 0)
 			local text = location
-				and string.format('%i: %s at %s', index, description, location)
-				or string.format('%i: %s', index, description)
+				and format('%i: %s at %s', index, description, location)
+				or format('%i: %s', index, description)
 			local entry = { edict = edict, text = elide(text, 10), location = location, angles = angles }
-			table.insert(page.entries, entry)
+			insert(page.entries, entry)
 
 			return current + 1
 		end)
