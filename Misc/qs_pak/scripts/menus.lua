@@ -38,6 +38,7 @@ end
 local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
 local clearpages <const> = menu.clearpages
+local playlocal <const> = sound.playlocal
 
 
 local defaultkeyremap <const> = 
@@ -88,10 +89,14 @@ end
 
 local extendkeymap = menu.extendkeymap
 
-local function playsound(index)
+local function menusound(index)
 	if index then
-		sound.playlocal(string.format('misc/menu%d.wav', index))
+		playlocal(string.format('misc/menu%d.wav', index))
 	end
+end
+
+local function deniedsound()
+	playlocal('doors/basetry.wav')
 end
 
 local function defaultsounds()
@@ -164,7 +169,7 @@ function menu.textpage()
 			page.topline = clamp(page.topline, 1, maxtopline)
 		end
 
-		playsound(page.sounds[keycode])
+		menusound(page.sounds[keycode])
 	end
 
 	return page
@@ -275,7 +280,7 @@ function menu.listpage()
 			action()
 		end
 
-		playsound(page.sounds[keycode])
+		menusound(page.sounds[keycode])
 	end
 
 	return page
@@ -407,7 +412,7 @@ function menu.edictspage()
 		}
 		helppage.onkeypress = function ()
 			poppage()
-			playsound(2)
+			menusound(2)
 		end
 
 		pushpage(helppage)
@@ -536,10 +541,6 @@ addedictsmenu('Teleports', edicts.isteleport)
 addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
 
-
-local function deniedsound()
-	sound.playlocal('doors/basetry.wav')
-end
 
 function console.menu_gaze()
 	local edict = player.traceentity()
