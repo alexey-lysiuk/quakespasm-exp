@@ -106,10 +106,6 @@ local itemnames <const> = edicts.itemnames
 function player.safemove(location, angles)
 	player.god(true)
 	player.notarget(true)
-
-	-- Adjust Z coordinate so player will appear slightly above the destination
-	local playerpos = location
-	playerpos.z = playerpos.z + 20
 	player.setpos(location, angles)
 end
 
@@ -171,6 +167,11 @@ local function handleedict(func, edict, current, choice)
 	if choice <= 0 then
 		print(current .. ':', description, 'at', location)
 	elseif choice == current then
+		if edicts.isitem(edict) then
+			-- Adjust Z coordinate so player will appear slightly above destination
+			location.z = location.z + 20
+		end
+
 		player.safemove(location, angles)
 		return
 	end

@@ -388,6 +388,12 @@ function menu.edictspage()
 		local location = entry.location
 
 		if location then
+			if edicts.isitem(entry.edict) then
+				-- Adjust Z coordinate so player will appear slightly above destination
+				location = vec3.copy(location)
+				location.z = location.z + 20
+			end
+
 			player.safemove(location, entry.angles)
 			clearpages()
 		end
