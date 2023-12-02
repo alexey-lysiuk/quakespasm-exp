@@ -346,6 +346,14 @@ static int LS_global_vec3_mid(lua_State* state)
 	return 1;
 }
 
+// Pushes new 'vec3' userdata which value is a copy of its argument
+static int LS_global_vec3_copy(lua_State* state)
+{
+	vec_t* result = LS_Vec3GetValue(state, 1);
+	LS_PushVec3Value(state, result);
+	return 1;
+}
+
 // Pushes new 'vec3' userdata which value is a cross product of functions arguments
 static int LS_global_vec3_cross(lua_State* state)
 {
@@ -1095,6 +1103,7 @@ static void LS_InitGlobalTables(lua_State* state)
 	{
 		static const luaL_Reg functions[] =
 		{
+			{ "copy", LS_global_vec3_copy },
 			{ "cross", LS_global_vec3_cross },
 			{ "dot", LS_global_vec3_dot },
 			{ "mid", LS_global_vec3_mid },
