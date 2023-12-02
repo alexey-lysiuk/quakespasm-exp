@@ -996,7 +996,7 @@ static int LS_global_dprint(lua_State* state)
 	return 0;
 }
 
-static int LS_global_localized(lua_State* state)
+static int LS_global_text_localize(lua_State* state)
 {
 	const char* key = luaL_checkstring(state, 1);
 	const char* value = LOC_GetString(key);
@@ -1056,7 +1056,6 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		// Helper functions
 		{ "printmemstats", LS_global_printmemstats },
 		{ "dprint", LS_global_dprint },
-		{ "localized", LS_global_localized },
 
 		{ NULL, NULL }
 	};
@@ -1138,6 +1137,19 @@ static void LS_InitGlobalTables(lua_State* state)
 		luaL_newlib(state, functions);
 		lua_setglobal(state, "sound");
 	}
+
+	// Create and register 'text' table
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "localize", LS_global_text_localize },
+			{ NULL, NULL }
+		};
+
+		luaL_newlib(state, functions);
+		lua_setglobal(state, "text");
+	}
+
 
 	// Register namespace for console commands
 	lua_createtable(state, 0, 16);

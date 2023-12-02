@@ -138,6 +138,8 @@ function edicts.isclass(edict, ...)
 end
 
 
+local localize <const> = text.localize
+
 local vec3origin <const> = vec3.new()
 local vec3one <const> = vec3.new(1, 1, 1)
 local vec3minusone <const> = vec3.new(-1, -1, -1)
@@ -180,7 +182,7 @@ local function localizednetname(edict)
 	local name = edict.netname
 
 	if name and name ~= '' then
-		name = localized(name)
+		name = localize(name)
 
 		if name:find('the ') == 1 then
 			name = name:sub(5)
