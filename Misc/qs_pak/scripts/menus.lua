@@ -519,6 +519,11 @@ local function addedictsmenu(title, filter)
 	local command = 'menu_' .. name
 
 	console[command] = function ()
+		if #edicts == 0 then
+			deniedsound()
+			return
+		end
+
 		clearpages()
 
 		local mainpage = edictsmenus[name]
