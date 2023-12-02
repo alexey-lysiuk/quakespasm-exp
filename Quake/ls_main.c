@@ -1005,6 +1005,31 @@ static int LS_global_text_localize(lua_State* state)
 	return 1;
 }
 
+static int LS_global_text_tint(lua_State* state)
+{
+	const char* string = luaL_checkstring(state, 1);
+	size_t length = strlen(string);
+	char* result = tlsf_malloc(ls_memory, length + 1);
+
+	for (size_t i = 0; i < length; ++i)
+	{
+		unsigned char ch = string[i];
+
+		if (ch > 0x20 && ch < 0x80)
+			ch = ch | 0x80;
+		else if (ch > 0xA0)
+			ch = ch & ~0x80;
+
+		result[i] = ch;
+	}
+	result[length] = 0;
+
+	lua_pushstring(state, result);
+	tlsf_free(ls_memory, result);
+
+	return 1;
+}
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -1143,6 +1168,7 @@ static void LS_InitGlobalTables(lua_State* state)
 		static const luaL_Reg functions[] =
 		{
 			{ "localize", LS_global_text_localize },
+			{ "tint", LS_global_text_tint },
 			{ NULL, NULL }
 		};
 
