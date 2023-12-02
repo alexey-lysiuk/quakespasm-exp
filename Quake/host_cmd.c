@@ -671,6 +671,10 @@ static void Host_SetPos_f(void)
 		sv_player->v.fixangle = 1;
 	}
 	
+	vec3_t forward, right, up;
+	AngleVectors(sv_player->v.angles, forward, right, up);
+	S_Update(sv_player->v.origin, forward, right, up);
+
 	SV_LinkEdict (sv_player, false);
 }
 
