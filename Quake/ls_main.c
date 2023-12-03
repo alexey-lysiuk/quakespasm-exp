@@ -50,50 +50,50 @@ typedef struct
 } LS_MemoryStats;
 
 
-typedef union
+typedef struct
 {
-	struct { char ch[4]; };
-	int fourcc;
+	union
+	{
+		struct { char ch[4]; };
+		int fourcc;
+	};
+	size_t size;
 } LS_UserDataType;
 
-static const LS_UserDataType ls_edict_type = { {{'e', 'd', 'c', 't'}} };
-static const LS_UserDataType ls_vec3_type = { {{'v', 'e', 'c', '3'}} };
-
-static void* LS_CreateTypedUserData(lua_State* state, LS_UserDataType type)
+static const LS_UserDataType ls_edict_type =
 {
-	size_t size;
+	{{'e', 'd', 'c', 't'}},
+	sizeof(int) /* fourcc */ + sizeof(int) /* edict index */
+};
+static const LS_UserDataType ls_vec3_type =
+{
+	{{'v', 'e', 'c', '3'}},
+	sizeof(int) /* fourcc */ + sizeof(vec3_t)
+};
 
-	if (type.fourcc == ls_edict_type.fourcc)
-		size = sizeof(int);  // edict index
-	else if (type.fourcc == ls_vec3_type.fourcc)
-		size = sizeof(vec3_t);
-	else
-	{
-		assert(false);
-		size = 0;
-	}
-
-	int* result = lua_newuserdatauv(state, sizeof type + size, 0);
+static void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
+{
+	int* result = lua_newuserdatauv(state, type->size, 0);
 	assert(result);
 
-	*result = type.fourcc;
+	*result = type->fourcc;
 	result += 1;
 
 	return result;
 }
 
-static void* LS_GetValueFromTypedUserData(lua_State* state, int index, LS_UserDataType type)
+static void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type)
 {
 	luaL_checktype(state, index, LUA_TUSERDATA);
 
 	int* result = lua_touserdata(state, index);
 	assert(result);
 
-	if (type.fourcc != *result)
+	if (type->fourcc != *result)
 	{
 		char expected[5], actual[5];
 
-		memcpy(expected, &type, 4);
+		memcpy(expected, type, 4);
 		expected[4] = '\0';
 		memcpy(actual, result, 4);
 		actual[4] = '\0';
@@ -148,7 +148,7 @@ static int LS_Vec3GetComponent(lua_State* state, int index)
 // Get value of 'vec3' from userdata at given index
 static vec_t* LS_Vec3GetValue(lua_State* state, int index)
 {
-	vec3_t* value = LS_GetValueFromTypedUserData(state, index, ls_vec3_type);
+	vec3_t* value = LS_GetValueFromTypedUserData(state, index, &ls_vec3_type);
 	assert(value);
 
 	return *value;
@@ -284,7 +284,7 @@ static int LS_value_vec3_tostring(lua_State* state)
 // Creates and pushes 'vec3' userdata built from vec3_t value
 static void LS_PushVec3Value(lua_State* state, const vec_t* value)
 {
-	vec3_t* valueptr = LS_CreateTypedUserData(state, ls_vec3_type);
+	vec3_t* valueptr = LS_CreateTypedUserData(state, &ls_vec3_type);
 	assert(valueptr);
 
 	VectorCopy(value, *valueptr);
@@ -415,7 +415,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 			lua_pushnil(state);
 		else
 		{
-			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+			int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
 			assert(indexptr);
 			*indexptr = NUM_FOR_EDICT(PROG_TO_EDICT(value->edict));
 			LS_SetEdictMetaTable(state);
@@ -444,7 +444,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 // Gets pointer to edict_t from 'edict' userdata
 static edict_t* LS_GetEdictFromUserData(lua_State* state)
 {
-	int* indexptr = LS_GetValueFromTypedUserData(state, 1, ls_edict_type);
+	int* indexptr = LS_GetValueFromTypedUserData(state, 1, &ls_edict_type);
 	assert(indexptr);
 
 	int index = *indexptr;
@@ -454,10 +454,10 @@ static edict_t* LS_GetEdictFromUserData(lua_State* state)
 // Pushes result of comparison for equality of two edict values
 static int LS_value_edict_eq(lua_State* state)
 {
-	int* left = LS_GetValueFromTypedUserData(state, 1, ls_edict_type);
+	int* left = LS_GetValueFromTypedUserData(state, 1, &ls_edict_type);
 	assert(left);
 
-	int* right = LS_GetValueFromTypedUserData(state, 2, ls_edict_type);
+	int* right = LS_GetValueFromTypedUserData(state, 2, &ls_edict_type);
 	assert(right);
 
 	lua_pushboolean(state, *left == *right);
@@ -624,7 +624,7 @@ static int LS_global_edicts_index(lua_State* state)
 
 		if (index > 0 && index <= sv.num_edicts)
 		{
-			int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+			int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
 			assert(indexptr);
 			*indexptr = index - 1;  // on C side, indices start with 0
 			LS_SetEdictMetaTable(state);
@@ -722,7 +722,7 @@ static int LS_global_player_traceentity(lua_State* state)
 		lua_pushnil(state);
 	else
 	{
-		int* indexptr = LS_CreateTypedUserData(state, ls_edict_type);
+		int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
 		assert(indexptr);
 		*indexptr = NUM_FOR_EDICT(ed);
 		LS_SetEdictMetaTable(state);
