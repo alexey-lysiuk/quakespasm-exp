@@ -36,7 +36,7 @@ const char* SV_GetEntityName(edict_t* entity);
 
 static const LS_UserDataType ls_edict_type =
 {
-	{{'e', 'd', 'c', 't'}},
+	{ {{'e', 'd', 'c', 't'}} },
 	sizeof(int) /* fourcc */ + sizeof(int) /* edict index */
 };
 

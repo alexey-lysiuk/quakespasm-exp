@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static const LS_UserDataType ls_vec3_type =
 {
-	{{'v', 'e', 'c', '3'}},
+	{ {{'v', 'e', 'c', '3'}} },
 	sizeof(int) /* fourcc */ + sizeof(vec3_t)
 };
 
