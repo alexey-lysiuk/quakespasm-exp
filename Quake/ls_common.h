@@ -44,6 +44,11 @@ typedef struct
 void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type);
 void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type);
 
+typedef float vec_t;
+void LS_InitVec3Type(lua_State* state);
+void LS_PushVec3Value(lua_State* state, const vec_t* value);
+vec_t* LS_GetVec3Value(lua_State* state, int index);
+
 void LS_InitMenuModule(lua_State* state);
 void LS_ShutdownMenuModule(lua_State* state);
 
