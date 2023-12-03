@@ -1110,23 +1110,67 @@ static void ET_TraceTriger(areanode_t* node, moveclip_t* clip)
 		ET_TraceTriger(node->children[1], clip);
 }
 
+static const char *EN_GetClassName(const edict_t *entity)
+{
+	return PR_GetString(entity->v.classname);
+}
+
+static const char *EN_GetNetName(const edict_t *entity)
+{
+	return LOC_GetString(PR_GetString(entity->v.netname));
+}
+
+static const char *EN_GetModel(const edict_t *entity)
+{
+	return PR_GetString(entity->v.model);
+}
+
+static const char *EN_GetFuncName(const edict_t *entity, func_t func)
+{
+	dfunction_t* function = pr_functions + func;
+	return PR_GetString(function->s_name);
+}
+
+static const char *EN_GetThinkFunc(const edict_t *entity)
+{
+	return EN_GetFuncName(entity, entity->v.think);
+}
+
+static const char *EN_GetTouchFunc(const edict_t *entity)
+{
+	return EN_GetFuncName(entity, entity->v.touch);
+}
+
+static const char *EN_GetUseFunc(const edict_t *entity)
+{
+	return EN_GetFuncName(entity, entity->v.use);
+}
+
+typedef const char *(*entitynamefunc_t)(const edict_t *entity);
+
+static const entitynamefunc_t en_functions[] =
+{
+	EN_GetClassName,
+	EN_GetNetName,
+	EN_GetModel,
+	EN_GetThinkFunc,
+	EN_GetTouchFunc,
+	EN_GetUseFunc,
+};
+
 const char* SV_GetEntityName(edict_t* entity)
 {
-	const char* name = PR_GetString(entity->v.classname);
+	if (entity->free)
+		return "<free>";
 
-	if (name[0] == '\0')
-		name = LOC_GetString(PR_GetString(entity->v.netname));
-
-	if (name[0] == '\0')
-		name = PR_GetString(entity->v.model);
-
-	if (name[0] == '\0')
+	for (size_t i = 0; i < Q_COUNTOF(en_functions); ++i)
 	{
-		dfunction_t* function = pr_functions + entity->v.touch;
-		name = PR_GetString(function->s_name);
+		const char *name = en_functions[i](entity);
+		if (name[0] != '\0')
+			return name;
 	}
 
-	return name;
+	return "<unnamed>";
 }
 
 static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qboolean setend)
