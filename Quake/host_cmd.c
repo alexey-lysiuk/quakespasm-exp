@@ -2294,6 +2294,38 @@ void Host_Resetdemos (void)
 	cls.demonum = 0;
 }
 
+static int Host_GetDamageFunction(void)
+{
+	if (pr_global_struct->deathmatch)
+		return -1;
+
+	for (int i = 0, e = progs->numfunctions; i < e; ++i)
+	{
+		const char* name = PR_GetString(pr_functions[i].s_name);
+
+		if (strcmp(name, "T_Damage") == 0)
+			return i;
+	}
+
+	return -1;
+}
+
+static void Host_DoDamage(int function, edict_t* target, qboolean gib)
+{
+	float health = target->v.health;
+	if (health <= 0.0f && target->v.takedamage <= 0.0f)
+		return;
+
+	// void T_Damage(entity target, entity inflictor, entity attacker, float damage)
+	int* globals_iptr = (int*)pr_globals;
+	globals_iptr[OFS_PARM0] = EDICT_TO_PROG(target);                // target
+	globals_iptr[OFS_PARM1] = EDICT_TO_PROG(svs.clients[0].edict);  // inflictor
+	globals_iptr[OFS_PARM2] = globals_iptr[OFS_PARM1];              // attacker
+	pr_globals[OFS_PARM3] = health + (gib ? 99.0f : 1.0f);          // damage
+
+	PR_ExecuteProgram(function);
+}
+
 static void Host_MDK_f(void)
 {
 	if (cmd_source == src_command)
@@ -2302,40 +2334,39 @@ static void Host_MDK_f(void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	int func = Host_GetDamageFunction();
+	if (func == -1)
 		return;
 
 	edict_t* ent = SV_TraceEntity(SV_TRACE_ENTITY_SOLID);
 	if (!ent)
 		return;
 
-	float health = ent->v.health;
-	if (health <= 0.0f && ent->v.takedamage <= 0.0f)
-		return;
+	Host_DoDamage(func, ent, Cmd_Argc() > 1);
+}
 
-	int numfuncs = progs->numfunctions;
-	int damagefunc = 0;
-
-	for (; damagefunc < numfuncs; ++damagefunc)
+static void Host_Massacre_f(void)
+{
+	if (cmd_source == src_command)
 	{
-		int nameindex = pr_functions[damagefunc].s_name;
-		const char* name = PR_GetString(nameindex);
-
-		if (strcmp(name, "T_Damage") == 0)
-			break;
+		Cmd_ForwardToServer();
+		return;
 	}
 
-	if (damagefunc == numfuncs)
+	int func = Host_GetDamageFunction();
+	if (func == -1)
 		return;
 
-	// void T_Damage(entity target, entity inflictor, entity attacker, float damage)
-	int* globals_iptr = (int*)pr_globals;
-	globals_iptr[OFS_PARM0] = EDICT_TO_PROG(ent);                      // target
-	globals_iptr[OFS_PARM1] = EDICT_TO_PROG(svs.clients[0].edict);     // inflictor
-	globals_iptr[OFS_PARM2] = globals_iptr[OFS_PARM1];                 // attacker
-	pr_globals[OFS_PARM3] = health + (Cmd_Argc() > 1 ? 99.0f : 1.0f);  // damage
+	qboolean gib = Cmd_Argc() > 1;
 
-	PR_ExecuteProgram(damagefunc);
+	for (int i = 1, e = sv.num_edicts; i < e; ++i)
+	{
+		edict_t* ent = EDICT_NUM(i);
+		if (ent->free || !((int)ent->v.flags & FL_MONSTER))
+			continue;
+
+		Host_DoDamage(func, ent, gib);
+	}
 }
 
 //=============================================================================
@@ -2367,6 +2398,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("noclip", Host_Noclip_f);
 	Cmd_AddCommand ("setpos", Host_SetPos_f); //QuakeSpasm
 	Cmd_AddCommand ("mdk", Host_MDK_f);
+	Cmd_AddCommand ("massacre", Host_Massacre_f);
 
 	Cmd_AddCommand ("say", Host_Say_f);
 	Cmd_AddCommand ("say_team", Host_Say_Team_f);
