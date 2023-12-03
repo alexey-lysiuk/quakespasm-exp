@@ -50,16 +50,6 @@ typedef struct
 } LS_MemoryStats;
 
 
-typedef struct
-{
-	union
-	{
-		struct { char ch[4]; };
-		int fourcc;
-	};
-	size_t size;
-} LS_UserDataType;
-
 static const LS_UserDataType ls_edict_type =
 {
 	{{'e', 'd', 'c', 't'}},
@@ -71,7 +61,7 @@ static const LS_UserDataType ls_vec3_type =
 	sizeof(int) /* fourcc */ + sizeof(vec3_t)
 };
 
-static void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
+void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
 {
 	int* result = lua_newuserdatauv(state, type->size, 0);
 	assert(result);
@@ -82,7 +72,7 @@ static void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* typ
 	return result;
 }
 
-static void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type)
+void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type)
 {
 	luaL_checktype(state, index, LUA_TUSERDATA);
 
