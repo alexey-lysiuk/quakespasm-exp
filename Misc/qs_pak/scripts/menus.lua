@@ -327,12 +327,10 @@ end
 
 
 local function describe(edict)
-	local description, location, angles
+	local description = getname(edict)
+	local location, angles
 
-	if isfree(edict) then
-		description = '<FREE>'
-	else
-		description = getname(edict)
+	if not isfree(edict) then
 		location = vec3.mid(edict.absmin, edict.absmax)
 		angles = edict.angles
 
