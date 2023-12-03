@@ -408,11 +408,19 @@ function edicts.isitem(edict, current, choice)
 		end
 	end
 
+	local name
+
 	if not prefixlen then
-		return
+		if edict.model and edict.model:find('backpack') then
+			name = 'Backpack'
+		else
+			return
+		end
 	end
 
-	local name = localizednetname(edict)
+	if not name then
+		name = localizednetname(edict)
+	end
 
 	if not name then
 		-- use classname with prefix removed for entity without netname
