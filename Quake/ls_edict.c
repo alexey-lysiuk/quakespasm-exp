@@ -241,19 +241,7 @@ static int LS_value_edict_tostring(lua_State* state)
 		return 1;
 	}
 
-	const char* description;
-
-	if (ed->free)
-		description = "<free>";
-	else
-	{
-		description = SV_GetEntityName(ed);
-
-		if (description[0] == '\0')
-			description = "<unnamed>";
-	}
-
-	lua_pushfstring(state, "edict %d: %s", NUM_FOR_EDICT(ed), description);
+	lua_pushfstring(state, "edict %d: %s", NUM_FOR_EDICT(ed), SV_GetEntityName(ed));
 	return 1;
 }
 
