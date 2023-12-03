@@ -386,6 +386,15 @@ static int LS_global_vec3_dot(lua_State* state)
 
 static void LS_SetEdictMetaTable(lua_State* state);
 
+// Creates and pushes 'edict' userdata by edict index, [0..sv.num_edicts)
+static void LS_PushEdictValue(lua_State* state, int edictindex)
+{
+	int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
+	assert(indexptr);
+	*indexptr = edictindex;
+	LS_SetEdictMetaTable(state);
+}
+
 // Pushes field value by its type and name
 static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
@@ -414,12 +423,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		if (value->edict == 0)
 			lua_pushnil(state);
 		else
-		{
-			int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
-			assert(indexptr);
-			*indexptr = NUM_FOR_EDICT(PROG_TO_EDICT(value->edict));
-			LS_SetEdictMetaTable(state);
-		}
+			LS_PushEdictValue(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
 		break;
 
 	case ev_field:
@@ -441,26 +445,29 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 	}
 }
 
+// Get edict index from 'edict' userdata at given index
+static int LS_GetEdictIndex(lua_State* state, int index)
+{
+	int* indexptr = LS_GetValueFromTypedUserData(state, index, &ls_edict_type);
+	assert(indexptr);
+
+	return *indexptr;
+}
+
 // Gets pointer to edict_t from 'edict' userdata
 static edict_t* LS_GetEdictFromUserData(lua_State* state)
 {
-	int* indexptr = LS_GetValueFromTypedUserData(state, 1, &ls_edict_type);
-	assert(indexptr);
-
-	int index = *indexptr;
+	int index = LS_GetEdictIndex(state, 1);
 	return (index >= 0 && index < sv.num_edicts) ? EDICT_NUM(index) : NULL;
 }
 
 // Pushes result of comparison for equality of two edict values
 static int LS_value_edict_eq(lua_State* state)
 {
-	int* left = LS_GetValueFromTypedUserData(state, 1, &ls_edict_type);
-	assert(left);
+	int left = LS_GetEdictIndex(state, 1);
+	int right = LS_GetEdictIndex(state, 2);
 
-	int* right = LS_GetValueFromTypedUserData(state, 2, &ls_edict_type);
-	assert(right);
-
-	lua_pushboolean(state, *left == *right);
+	lua_pushboolean(state, left == right);
 	return 1;
 }
 
@@ -624,10 +631,7 @@ static int LS_global_edicts_index(lua_State* state)
 
 		if (index > 0 && index <= sv.num_edicts)
 		{
-			int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
-			assert(indexptr);
-			*indexptr = index - 1;  // on C side, indices start with 0
-			LS_SetEdictMetaTable(state);
+			LS_PushEdictValue(state, index - 1);  // on C side, indices start with 0
 			badindex = false;
 		}
 	}
@@ -721,12 +725,7 @@ static int LS_global_player_traceentity(lua_State* state)
 	if (ed == NULL)
 		lua_pushnil(state);
 	else
-	{
-		int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
-		assert(indexptr);
-		*indexptr = NUM_FOR_EDICT(ed);
-		LS_SetEdictMetaTable(state);
-	}
+		LS_PushEdictValue(state, NUM_FOR_EDICT(ed));
 
 	return 1;
 }
