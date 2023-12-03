@@ -178,7 +178,7 @@ static int LS_value_edict_index(lua_State* state)
 
 				if (fieldindex == fieldswithvalues)
 				{
-					lua_createtable(state, 0, 2);
+					lua_createtable(state, 0, 3);
 
 					lua_pushstring(state, name);
 					lua_setfield(state, -2, "name");
