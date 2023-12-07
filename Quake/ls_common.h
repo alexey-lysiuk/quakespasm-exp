@@ -31,6 +31,27 @@ lua_State* LS_GetState(void);
 // Report error with message on the top of the stack
 void LS_ReportError(lua_State* state);
 
+typedef struct
+{
+	union
+	{
+		struct { char ch[4]; };
+		int fourcc;
+	};
+	size_t size;
+} LS_UserDataType;
+
+void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type);
+void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type);
+
+typedef float vec_t;
+void LS_InitVec3Type(lua_State* state);
+void LS_PushVec3Value(lua_State* state, const vec_t* value);
+vec_t* LS_GetVec3Value(lua_State* state, int index);
+
+void LS_InitEdictType(lua_State* state);
+void LS_PushEdictValue(lua_State* state, int edictindex);
+
 void LS_InitMenuModule(lua_State* state);
 void LS_ShutdownMenuModule(lua_State* state);
 

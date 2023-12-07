@@ -59,8 +59,10 @@ set(COMMON_SOURCES
 	Quake/keys.h
 	Quake/lodepng.h
 	Quake/ls_common.h
+	Quake/ls_edict.c
 	Quake/ls_main.c
 	Quake/ls_menu.c
+	Quake/ls_vec3.c
 	Quake/main_sdl.c
 	Quake/mathlib.c
 	Quake/mathlib.h

@@ -106,10 +106,6 @@ local itemnames <const> = edicts.itemnames
 function player.safemove(location, angles)
 	player.god(true)
 	player.notarget(true)
-
-	-- Adjust Z coordinate so player will appear slightly above the destination
-	local playerpos = location
-	playerpos.z = playerpos.z + 20
 	player.setpos(location, angles)
 end
 
@@ -137,6 +133,8 @@ function edicts.isclass(edict, ...)
 	return nil
 end
 
+
+local localize <const> = text.localize
 
 local vec3origin <const> = vec3.new()
 local vec3one <const> = vec3.new(1, 1, 1)
@@ -169,6 +167,11 @@ local function handleedict(func, edict, current, choice)
 	if choice <= 0 then
 		print(current .. ':', description, 'at', location)
 	elseif choice == current then
+		if edicts.isitem(edict) then
+			-- Adjust Z coordinate so player will appear slightly above destination
+			location.z = location.z + 20
+		end
+
 		player.safemove(location, angles)
 		return
 	end
@@ -180,7 +183,7 @@ local function localizednetname(edict)
 	local name = edict.netname
 
 	if name and name ~= '' then
-		name = localized(name)
+		name = localize(name)
 
 		if name:find('the ') == 1 then
 			name = name:sub(5)
@@ -405,11 +408,19 @@ function edicts.isitem(edict, current, choice)
 		end
 	end
 
+	local name
+
 	if not prefixlen then
-		return
+		if edict.model and edict.model:find('backpack') then
+			name = 'Backpack'
+		else
+			return
+		end
 	end
 
-	local name = localizednetname(edict)
+	if not name then
+		name = localizednetname(edict)
+	end
 
 	if not name then
 		-- use classname with prefix removed for entity without netname

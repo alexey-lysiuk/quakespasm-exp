@@ -327,12 +327,10 @@ end
 
 
 local function describe(edict)
-	local description, location, angles
+	local description = getname(edict)
+	local location, angles
 
-	if isfree(edict) then
-		description = '<FREE>'
-	else
-		description = getname(edict)
+	if not isfree(edict) then
 		location = vec3.mid(edict.absmin, edict.absmax)
 		angles = edict.angles
 
@@ -388,6 +386,12 @@ function menu.edictspage()
 		local location = entry.location
 
 		if location then
+			if edicts.isitem(entry.edict) then
+				-- Adjust Z coordinate so player will appear slightly above destination
+				location = vec3.copy(location)
+				location.z = location.z + 20
+			end
+
 			player.safemove(location, entry.angles)
 			clearpages()
 		end
@@ -519,6 +523,11 @@ local function addedictsmenu(title, filter)
 	local command = 'menu_' .. name
 
 	console[command] = function ()
+		if #edicts == 0 then
+			deniedsound()
+			return
+		end
+
 		clearpages()
 
 		local mainpage = edictsmenus[name]
@@ -545,24 +554,18 @@ addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
 
 
-function console.menu_gaze()
-	local edict = player.traceentity()
+local function addgazemenu(suffix, pagefunc)
+	console['menu_' .. suffix] = function ()
+		local edict = player.traceentity()
 
-	if edict then
-		clearpages()
-		pushpage(menu.edictinfopage(edict))
-	else
-		deniedsound()
+		if edict then
+			clearpages()
+			pushpage(pagefunc(edict))
+		else
+			deniedsound()
+		end
 	end
 end
 
-function console.menu_gazerefs()
-	local edict = player.traceentity()
-
-	if edict then
-		clearpages()
-		pushpage(menu.edictreferencespage(edict))
-	else
-		deniedsound()
-	end
-end
+addgazemenu('gaze', menu.edictinfopage)
+addgazemenu('gazerefs', menu.edictreferencespage)
