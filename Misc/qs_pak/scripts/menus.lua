@@ -205,8 +205,6 @@ function menu.listpage()
 			page.cursor = #page.entries
 			page.topline = max(#page.entries - page.maxlines + 1, 1)
 		end
-
-		page.blinktime = realtime()
 	end
 
 	local function linedown()
@@ -216,8 +214,6 @@ function menu.listpage()
 		else
 			scrolltop()
 		end
-
-		page.blinktime = realtime()
 	end
 
 	local function scrollup()
@@ -227,8 +223,6 @@ function menu.listpage()
 		else
 			scrolltop()
 		end
-
-		page.blinktime = realtime()
 	end
 
 	local function scrolldown()
@@ -242,8 +236,6 @@ function menu.listpage()
 			page.cursor = entrycount
 			page.topline = max(entrycount - maxlines + 1, 1)
 		end
-
-		page.blinktime = realtime()
 	end
 
 	local function scrollend()
@@ -251,8 +243,6 @@ function menu.listpage()
 
 		page.cursor = entrycount
 		page.topline = max(entrycount - page.maxlines + 1, 1)
-
-		page.blinktime = realtime()
 	end
 
 	page.actions =
@@ -293,6 +283,7 @@ function menu.listpage()
 		local action = page.actions[keycode]
 
 		if action then
+			page.blinktime = realtime()
 			action()
 		end
 
