@@ -35,6 +35,7 @@ local function clamp(v, lo, up)
 	return max(lo, min(up, v))
 end
 
+local floor <const> = math.floor
 local format <const> = string.format
 local insert <const> = table.insert
 
@@ -42,6 +43,7 @@ local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
 local clearpages <const> = menu.clearpages
 local playlocal <const> = sound.playlocal
+local realtime <const> = host.realtime
 
 
 local defaultkeyremap <const> = 
@@ -271,7 +273,7 @@ function menu.listpage()
 			menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 		end
 
-		if cursor > 0 then
+		if cursor > 0 and floor(realtime() * 4) & 1 == 1 then
 			menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
 		end
 	end
