@@ -161,6 +161,29 @@ static int LS_global_sound_playlocal(lua_State* state)
 }
 
 
+//
+// Expose 'host' global table with related functions
+//
+
+static int LS_global_host_framecount(lua_State* state)
+{
+	lua_pushinteger(state, host_framecount);
+	return 1;
+}
+
+static int LS_global_host_frametime(lua_State* state)
+{
+	lua_pushnumber(state, host_frametime);
+	return 1;
+}
+
+static int LS_global_host_realtime(lua_State* state)
+{
+	lua_pushnumber(state, realtime);
+	return 1;
+}
+
+
 static void LS_InitStandardLibraries(lua_State* state)
 {
 	// Available standard libraries
@@ -527,6 +550,19 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_setglobal(state, "text");
 	}
 
+	// Create and register 'host' table
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "framecount", LS_global_host_framecount },
+			{ "frametime", LS_global_host_frametime },
+			{ "realtime", LS_global_host_realtime },
+			{ NULL, NULL }
+		};
+
+		luaL_newlib(state, functions);
+		lua_setglobal(state, "host");
+	}
 
 	// Register namespace for console commands
 	lua_createtable(state, 0, 16);
