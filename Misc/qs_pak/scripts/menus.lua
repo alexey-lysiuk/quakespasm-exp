@@ -187,6 +187,7 @@ function menu.listpage()
 		title = 'Title',
 		entries = {},
 		cursor = 0,
+		blinktime = 0,
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
 	}
@@ -204,6 +205,8 @@ function menu.listpage()
 			page.cursor = #page.entries
 			page.topline = max(#page.entries - page.maxlines + 1, 1)
 		end
+
+		page.blinktime = realtime()
 	end
 
 	local function linedown()
@@ -213,6 +216,8 @@ function menu.listpage()
 		else
 			scrolltop()
 		end
+
+		page.blinktime = realtime()
 	end
 
 	local function scrollup()
@@ -222,6 +227,8 @@ function menu.listpage()
 		else
 			scrolltop()
 		end
+
+		page.blinktime = realtime()
 	end
 
 	local function scrolldown()
@@ -235,6 +242,8 @@ function menu.listpage()
 			page.cursor = entrycount
 			page.topline = max(entrycount - maxlines + 1, 1)
 		end
+
+		page.blinktime = realtime()
 	end
 
 	local function scrollend()
@@ -242,6 +251,8 @@ function menu.listpage()
 
 		page.cursor = entrycount
 		page.topline = max(entrycount - page.maxlines + 1, 1)
+
+		page.blinktime = realtime()
 	end
 
 	page.actions =
@@ -273,7 +284,7 @@ function menu.listpage()
 			menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 		end
 
-		if cursor > 0 and floor(realtime() * 4) & 1 == 1 then
+		if cursor > 0 and floor((realtime() - page.blinktime) * 4) & 1 == 0 then
 			menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
 		end
 	end
@@ -377,6 +388,8 @@ function menu.edictspage()
 
 		page.cursor = clamp(page.cursor, 1, #page.entries)
 		page.topline = clamp(page.topline, 1, #page.entries - page.maxlines + 1)
+
+		page.blinktime = realtime()
 	end
 
 	local function moveto()
