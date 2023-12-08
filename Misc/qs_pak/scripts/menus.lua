@@ -44,6 +44,8 @@ local poppage <const> = menu.poppage
 local clearpages <const> = menu.clearpages
 local playlocal <const> = sound.playlocal
 local realtime <const> = host.realtime
+local tint <const> = text.tint
+local text <const> = menu.text
 
 
 local defaultkeyremap <const> = 
@@ -156,10 +158,10 @@ function menu.textpage()
 	page.sounds = defaultsounds()
 
 	page.ondraw = function (page)
-		menu.tintedtext(2, 0, page.title)
+		text(2, 0, page.title)
 
 		for i = 1, min(page.maxlines, #page.text) do
-			menu.text(2, (i + 1) * 9, page.text[page.topline + i - 1])
+			text(2, (i + 1) * 9, page.text[page.topline + i - 1])
 		end
 	end
 
@@ -260,7 +262,7 @@ function menu.listpage()
 	page.sounds = defaultsounds()
 
 	page.ondraw = function (page)
-		menu.tintedtext(10, 0, page.title)
+		text(10, 0, page.title)
 
 		local entrycount = #page.entries
 		if entrycount == 0 then
@@ -271,11 +273,11 @@ function menu.listpage()
 		local cursor = page.cursor
 
 		for i = 1, min(page.maxlines, entrycount) do
-			menu.text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
+			text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
 		end
 
 		if cursor > 0 and floor((realtime() - page.blinktime) * 4) & 1 == 0 then
-			menu.tintedtext(0, (cursor - topline + 2) * 9, '\13')
+			text(0, (cursor - topline + 2) * 9, '\13')
 		end
 	end
 
@@ -302,7 +304,7 @@ local getname <const> = edicts.getname
 
 function menu.edictinfopage(edict)
 	local page = menu.textpage()
-	page.title = tostring(edict)
+	page.title = tint(tostring(edict))
 
 	-- Build edict fields table, and calculate maximum length of field names
 	local fields = {}
@@ -488,7 +490,7 @@ function menu.edictspage()
 		super_ondraw(page)
 
 		if #page.title < 20 then
-			menu.text(180, 0, 'Press \200 for help')
+			text(180, 0, 'Press \200 for help')
 		end
 	end
 
@@ -498,7 +500,7 @@ end
 
 function menu.edictreferencespage(edict)
 	local page = menu.edictspage()
-	page.title = tostring(edict)
+	page.title = tint(tostring(edict))
 
 	local target = edict.target or ''
 	local targetname = edict.targetname or ''
@@ -542,7 +544,7 @@ local function addedictsmenu(title, filter)
 			mainpage.needupdate = true
 		else
 			mainpage = menu.edictspage()
-			mainpage.title = title
+			mainpage.title = tint(title)
 			mainpage.filter = filter
 
 			edictsmenus[name] = mainpage
