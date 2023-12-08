@@ -193,11 +193,6 @@ static int LS_global_menu_text(lua_State* state)
 	return LS_MenuText(state, M_PrintWhite);
 }
 
-static int LS_global_menu_tintedtext(lua_State* state)
-{
-	return LS_MenuText(state, M_Print);
-}
-
 void LS_InitMenuModule(lua_State* state)
 {
 	static const luaL_Reg functions[] =
@@ -205,9 +200,7 @@ void LS_InitMenuModule(lua_State* state)
 		{ "pushpage", LS_global_menu_pushpage },
 		{ "poppage", LS_global_menu_poppage },
 		{ "clearpages", LS_global_menu_clearpages },
-
 		{ "text", LS_global_menu_text },
-		{ "tintedtext", LS_global_menu_tintedtext },
 		{ NULL, NULL }
 	};
 
