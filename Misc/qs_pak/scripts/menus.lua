@@ -327,7 +327,24 @@ function menu.edictinfopage(edict)
 	for _, field in ipairs(fields) do
 		local value = field.type == float and format('%.1f', field.value) or field.value
 		local line = fieldformat:format(field.name, value)
-		insert(page.text, elide(line))
+		local length = #line
+
+		while length > 40 do
+			_, e = line:find(' ', 41, true)
+			print(e)
+			if e then
+				insert(page.text, line:sub(1, e))
+				e = max(e, 40)
+			else
+				insert(page.text, line:sub(1, 39) .. '-')
+				e = 40
+			end
+			line = '  ' .. line:sub(e)
+			print(line)
+			length = length - e
+		end
+
+		insert(page.text, line)
 	end
 
 	return page
