@@ -26,35 +26,3 @@ end
 function console.targets(choice)
 	edicts.foreach(handletarget, choice)
 end
-
-
-function console.menu_test()
-	local testpage =
-	{
-		ondraw = function(page)
-			local x = 0
-			local y = 0
-			local ystep = 10
-
-			menu.tintedtext(x, y, string.format('%i:%i Title / Press ESC to close', x, y))
-			y = y + ystep
-
-			menu.text(x, y, string.format('%i:%i ... free space ...', x, y))
-			y = y + ystep
-
-			for i = 1, 20 do
-				menu.text(x, y, string.format('%i:%i [%i] 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', x, y, i))
-				y = y + ystep
-			end
-		end,
-
-		onkeypress = function(page, keycode)
-			if keycode == keycodes.ESCAPE then
-				menu.poppage()
-			end
-		end,
-	}
-
-	menu.clearpages()
-	menu.pushpage(testpage)
-end

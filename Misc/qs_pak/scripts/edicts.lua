@@ -103,6 +103,20 @@ edicts.itemnames =
 local itemnames <const> = edicts.itemnames
 
 
+edicts.valuetypes =
+{
+	bad      = -1,
+	void     = 0,
+	string   = 1,
+	float    = 2,
+	vector   = 3,
+	entity   = 4,
+	field    = 5,
+	functn   = 6,
+	pointer  = 7,
+}
+
+
 function player.safemove(location, angles)
 	player.god(true)
 	player.notarget(true)
@@ -134,6 +148,8 @@ function edicts.isclass(edict, ...)
 end
 
 
+local format <const> = string.format
+
 local localize <const> = text.localize
 
 local vec3origin <const> = vec3.new()
@@ -143,6 +159,7 @@ local vec3minusone <const> = vec3.new(-1, -1, -1)
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local float <const> = edicts.valuetypes.float
 
 local foreach <const> = edicts.foreach
 local isclass <const> = edicts.isclass
@@ -321,7 +338,7 @@ function edicts.isteleport(edict)
 		end
 	end
 
-	local description = string.format('Teleport to %s (%s)', target, targetlocation or 'target not found')
+	local description = format('Teleport to %s (%s)', target, targetlocation or 'target not found')
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -370,7 +387,7 @@ function edicts.isdoor(edict)
 	local itemname = getitemname(edict.items)
 	local itemprefix = itemname and itemname .. ' ' or ''
 
-	local description = string.format('%s%sDoor', secretprefix, itemprefix)
+	local description = format('%s%sDoor', secretprefix, itemprefix)
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -440,7 +457,7 @@ function edicts.isitem(edict, current, choice)
 	-- Health
 	local healamount = edict.healamount
 	if healamount and healamount ~= 0 then
-		name = string.format('%i %s', healamount, name)
+		name = format('%i %s', healamount, name)
 	end
 
 	-- Ammo
@@ -450,7 +467,7 @@ function edicts.isitem(edict, current, choice)
 		or classname == 'item_rockets' and edict.ammo_rockets
 		or classname == 'item_cells' and edict.ammo_cells
 	if ammoamount and ammoamount ~= 0 then
-		name = string.format('%i %s', ammoamount, name)
+		name = format('%i %s', ammoamount, name)
 	end
 
 	return name, edict.origin
@@ -489,17 +506,11 @@ function console.gaze()
 	end
 
 	-- Output formatted names and values of edict fields
-	local fieldformat = '%s%-' .. maxlen .. 's : %s'
+	local fieldformat = '%-' .. maxlen .. 's: %s'
 
 	for _, field in ipairs(fields) do
-		local name = field.name
-		local tint = ''
-
-		if name == 'target' or name == 'targetname' then
-			tint = '\2'
-		end
-
-		print(string.format(fieldformat, tint, name, field.value))
+		local value = field.type == float and format('%.1f', field.value) or field.value
+		print(format(fieldformat, field.name, value))
 	end
 end
 
