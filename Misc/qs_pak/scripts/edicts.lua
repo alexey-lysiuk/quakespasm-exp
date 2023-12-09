@@ -148,6 +148,8 @@ function edicts.isclass(edict, ...)
 end
 
 
+local format <const> = string.format
+
 local localize <const> = text.localize
 
 local vec3origin <const> = vec3.new()
@@ -335,7 +337,7 @@ function edicts.isteleport(edict)
 		end
 	end
 
-	local description = string.format('Teleport to %s (%s)', target, targetlocation or 'target not found')
+	local description = format('Teleport to %s (%s)', target, targetlocation or 'target not found')
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -384,7 +386,7 @@ function edicts.isdoor(edict)
 	local itemname = getitemname(edict.items)
 	local itemprefix = itemname and itemname .. ' ' or ''
 
-	local description = string.format('%s%sDoor', secretprefix, itemprefix)
+	local description = format('%s%sDoor', secretprefix, itemprefix)
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -454,7 +456,7 @@ function edicts.isitem(edict, current, choice)
 	-- Health
 	local healamount = edict.healamount
 	if healamount and healamount ~= 0 then
-		name = string.format('%i %s', healamount, name)
+		name = format('%i %s', healamount, name)
 	end
 
 	-- Ammo
@@ -464,7 +466,7 @@ function edicts.isitem(edict, current, choice)
 		or classname == 'item_rockets' and edict.ammo_rockets
 		or classname == 'item_cells' and edict.ammo_cells
 	if ammoamount and ammoamount ~= 0 then
-		name = string.format('%i %s', ammoamount, name)
+		name = format('%i %s', ammoamount, name)
 	end
 
 	return name, edict.origin
@@ -513,7 +515,7 @@ function console.gaze()
 			tint = '\2'
 		end
 
-		print(string.format(fieldformat, tint, name, field.value))
+		print(format(fieldformat, tint, name, field.value))
 	end
 end
 
