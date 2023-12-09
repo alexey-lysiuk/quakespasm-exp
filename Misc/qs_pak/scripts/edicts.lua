@@ -505,17 +505,10 @@ function console.gaze()
 	end
 
 	-- Output formatted names and values of edict fields
-	local fieldformat = '%s%-' .. maxlen .. 's : %s'
+	local fieldformat = '%-' .. maxlen .. 's: %s'
 
 	for _, field in ipairs(fields) do
-		local name = field.name
-		local tint = ''
-
-		if name == 'target' or name == 'targetname' then
-			tint = '\2'
-		end
-
-		print(format(fieldformat, tint, name, field.value))
+		print(format(fieldformat, field.name, field.value))
 	end
 end
 
