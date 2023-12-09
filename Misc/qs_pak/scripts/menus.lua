@@ -46,6 +46,7 @@ local playlocal <const> = sound.playlocal
 local realtime <const> = host.realtime
 local tint <const> = text.tint
 local text <const> = menu.text
+local float <const> = edicts.valuetypes.float
 
 
 local defaultkeyremap <const> = 
@@ -324,7 +325,8 @@ function menu.edictinfopage(edict)
 	local fieldformat = '%-' .. maxlen .. 's: %s'
 
 	for _, field in ipairs(fields) do
-		local line = fieldformat:format(field.name, field.value)
+		local value = field.type == float and format('%.1f', field.value) or field.value
+		local line = fieldformat:format(field.name, value)
 		insert(page.text, elide(line))
 	end
 

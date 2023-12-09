@@ -159,6 +159,7 @@ local vec3minusone <const> = vec3.new(-1, -1, -1)
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local float <const> = edicts.valuetypes.float
 
 local foreach <const> = edicts.foreach
 local isclass <const> = edicts.isclass
@@ -508,7 +509,8 @@ function console.gaze()
 	local fieldformat = '%-' .. maxlen .. 's: %s'
 
 	for _, field in ipairs(fields) do
-		print(format(fieldformat, field.name, field.value))
+		local value = field.type == float and format('%.1f', field.value) or field.value
+		print(format(fieldformat, field.name, value))
 	end
 end
 
