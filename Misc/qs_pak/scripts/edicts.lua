@@ -103,6 +103,20 @@ edicts.itemnames =
 local itemnames <const> = edicts.itemnames
 
 
+edicts.valuetypes =
+{
+	bad      = -1,
+	void     = 0,
+	string   = 1,
+	float    = 2,
+	vector   = 3,
+	entity   = 4,
+	field    = 5,
+	functn   = 6,
+	pointer  = 7,
+}
+
+
 function player.safemove(location, angles)
 	player.god(true)
 	player.notarget(true)
