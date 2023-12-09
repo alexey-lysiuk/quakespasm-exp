@@ -480,6 +480,28 @@ function console.items(choice)
 end
 
 
+--
+-- Buttons
+--
+
+function edicts.isbutton(edict, current, choice)
+	if not edict or isfree(edict) or edict.classname ~= 'func_button' then
+		return
+	end
+
+	local description = 'Button' -- TODO
+	local location = vec3.mid(edict.absmin, edict.absmax)
+
+	return description, location
+end
+
+local isbutton = edicts.isbutton
+
+function console.buttons(choice)
+	foreach(function(...) return handleedict(isbutton, ...) end, choice)
+end
+
+
 ---
 --- Gaze, entity player is looking at
 ---
