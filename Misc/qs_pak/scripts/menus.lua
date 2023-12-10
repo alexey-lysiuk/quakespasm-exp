@@ -410,7 +410,7 @@ function menu.edictspage()
 	local function showhelp()
 		local helppage = menu.textpage()
 
-		helppage.title = page.title .. ' -- Help'
+		helppage.title = page.title .. tint(' -- Help')
 		helppage.lines =
 		{
 			'Up        - Select previous edict',
