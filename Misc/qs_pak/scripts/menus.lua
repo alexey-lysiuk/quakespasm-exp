@@ -562,6 +562,7 @@ addedictsmenu('Monsters', edicts.ismonster)
 addedictsmenu('Teleports', edicts.isteleport)
 addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
+addedictsmenu('Buttons', edicts.isbutton)
 
 
 local function addgazemenu(suffix, pagefunc)
