@@ -139,7 +139,7 @@ function menu.textpage()
 	local page =
 	{
 		title = 'Title',
-		text = {},
+		lines = {},
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
 	}
@@ -152,7 +152,7 @@ function menu.textpage()
 		[key_pageup] = function () page.topline = page.topline - page.maxlines end,
 		[key_pagedown] = function () page.topline = page.topline + page.maxlines end,
 		[key_home] = function () page.topline = 1  end,
-		[key_end] = function () page.topline = #page.text end,
+		[key_end] = function () page.topline = #page.lines end,
 	}
 	extendkeymap(page.actions)
 
@@ -161,8 +161,8 @@ function menu.textpage()
 	page.ondraw = function (page)
 		text(2, 0, page.title)
 
-		for i = 1, min(page.maxlines, #page.text) do
-			text(2, (i + 1) * 9, page.text[page.topline + i - 1])
+		for i = 1, min(page.maxlines, #page.lines) do
+			text(2, (i + 1) * 9, page.lines[page.topline + i - 1])
 		end
 	end
 
@@ -173,7 +173,7 @@ function menu.textpage()
 			action()
 
 			-- Bound topline value
-			local maxtopline <const> = max(#page.text - page.maxlines + 1, 1)
+			local maxtopline <const> = max(#page.lines - page.maxlines + 1, 1)
 			page.topline = clamp(page.topline, 1, maxtopline)
 		end
 
@@ -327,7 +327,7 @@ function menu.edictinfopage(edict)
 	for _, field in ipairs(fields) do
 		local value = field.type == float and format('%.1f', field.value) or field.value
 		local line = fieldformat:format(field.name, value)
-		insert(page.text, elide(line))
+		insert(page.lines, elide(line))
 	end
 
 	return page
@@ -411,7 +411,7 @@ function menu.edictspage()
 		local helppage = menu.textpage()
 
 		helppage.title = page.title .. ' -- Help'
-		helppage.text =
+		helppage.lines =
 		{
 			'Up        - Select previous edict',
 			'Down      - Select next edict',
