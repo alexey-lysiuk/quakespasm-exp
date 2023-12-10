@@ -202,7 +202,7 @@ local function localizednetname(edict)
 	if name and name ~= '' then
 		name = localize(name)
 
-		if name:find('the ') == 1 then
+		if name:find('the ', 1, true) == 1 then
 			name = name:sub(5)
 		end
 
@@ -295,7 +295,7 @@ function edicts.ismonster(edict)
 	end
 
 	-- Remove classname prefix if present
-	if classname:find('monster_') == 1 then
+	if classname:find('monster_', 1, true) == 1 then
 		classname = classname:sub(9)
 	end
 
@@ -361,7 +361,7 @@ local function getitemname(item)
 	end
 
 	for _, edict in ipairs(edicts) do
-		if not isfree(edict) and edict.items == item and edict.classname:find('item_') == 1 then
+		if not isfree(edict) and edict.items == item and edict.classname:find('item_', 1, true) == 1 then
 			return localizednetname(edict) or '???'
 		end
 	end
@@ -419,7 +419,7 @@ function edicts.isitem(edict, current, choice)
 	local prefixlen
 
 	for _, prefix in ipairs(prefixes) do
-		if classname:find(prefix) == 1 then
+		if classname:find(prefix, 1, true) == 1 then
 			prefixlen = prefix:len() + 1
 			break
 		end
@@ -428,7 +428,7 @@ function edicts.isitem(edict, current, choice)
 	local name
 
 	if not prefixlen then
-		if edict.model and edict.model:find('backpack') then
+		if edict.model and edict.model:find('backpack', 1, true) then
 			name = 'Backpack'
 		else
 			return
