@@ -174,28 +174,6 @@ local function titlecase(str)
 		end)
 end
 
-local function handleedict(func, edict, current, choice)
-	local description, location, angles = func(edict)
-
-	if not description then
-		return current
-	end
-
-	if choice <= 0 then
-		print(current .. ':', description, 'at', location)
-	elseif choice == current then
-		if edicts.isitem(edict) then
-			-- Adjust Z coordinate so player will appear slightly above destination
-			location.z = location.z + 20
-		end
-
-		player.safemove(location, angles)
-		return
-	end
-
-	return current + 1
-end
-
 local function localizednetname(edict)
 	local name = edict.netname
 
@@ -252,12 +230,6 @@ function edicts.issecret(edict)
 	return description, location
 end
 
-local issecret = edicts.issecret
-
-function console.secrets(choice)
-	foreach(function(...) return handleedict(issecret, ...) end, choice)
-end
-
 
 --
 -- Monsters
@@ -302,12 +274,6 @@ function edicts.ismonster(edict)
 	return classname, edict.origin, edict.angles
 end
 
-local ismonster = edicts.ismonster
-
-function console.monsters(choice)
-	foreach(function(...) return handleedict(ismonster, ...) end, choice)
-end
-
 
 --
 -- Teleports
@@ -342,12 +308,6 @@ function edicts.isteleport(edict)
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
-end
-
-local isteleport = edicts.isteleport
-
-function console.teleports(choice)
-	foreach(function(...) return handleedict(isteleport, ...) end, choice)
 end
 
 
@@ -391,12 +351,6 @@ function edicts.isdoor(edict)
 	local location = vec3.mid(edict.absmin, edict.absmax)
 
 	return description, location
-end
-
-local isdoor = edicts.isdoor
-
-function console.doors(choice)
-	foreach(function(...) return handleedict(isdoor, ...) end, choice)
 end
 
 
@@ -473,12 +427,6 @@ function edicts.isitem(edict, current, choice)
 	return name, edict.origin
 end
 
-local isitem = edicts.isitem
-
-function console.items(choice)
-	foreach(function(...) return handleedict(isitem, ...) end, choice)
-end
-
 
 --
 -- Buttons
@@ -495,11 +443,47 @@ function edicts.isbutton(edict, current, choice)
 	return description, location
 end
 
-local isbutton = edicts.isbutton
 
-function console.buttons(choice)
-	foreach(function(...) return handleedict(isbutton, ...) end, choice)
+--
+-- Edicts console commands
+--
+
+local isitem <const> = edicts.isitem
+
+local function handleedict(func, edict, current, choice)
+	local description, location, angles = func(edict)
+
+	if not description then
+		return current
+	end
+
+	if choice <= 0 then
+		print(current .. ':', description, 'at', location)
+	elseif choice == current then
+		if isitem(edict) then
+			-- Adjust Z coordinate so player will appear slightly above destination
+			location.z = location.z + 20
+		end
+
+		player.safemove(location, angles)
+		return
+	end
+
+	return current + 1
 end
+
+local function addedictscommand(name, func)
+	console[name] = function(choice)
+		foreach(function(...) return handleedict(func, ...) end, choice)
+	end
+end
+
+addedictscommand('secrets', edicts.issecret)
+addedictscommand('monsters', edicts.ismonster)
+addedictscommand('teleports', edicts.isteleport)
+addedictscommand('doors', edicts.isdoor)
+addedictscommand('items', isitem)
+addedictscommand('buttons', edicts.isbutton)
 
 
 ---
