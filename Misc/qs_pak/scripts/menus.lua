@@ -125,9 +125,10 @@ function menu.elide(string, x)
 	local length = #string
 
 	if length * 16 > width then
-		local visiblelength = floor(width / 16) - 1
-		local elideformat = '%.' .. visiblelength .. 's\133'
-		return elideformat:format(string, line), '\133' .. string:sub(length - visiblelength + 1)
+		local visiblelength = floor(width / 16) - 1  -- without elision character
+		local elidedright = string:sub(1, visiblelength) .. '\133'
+		local elidedleft = '\133' .. string:sub(length - visiblelength + 1)
+		return elidedright, elidedleft
 	end
 
 	return string

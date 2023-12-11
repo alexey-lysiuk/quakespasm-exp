@@ -1169,6 +1169,9 @@ static void PR_PatchFishCountBug (void)
 	with unconditional jump to skip the second one.
 */
 
+	if (strcmp(sv.name, "sm175_scampie") == 0)
+		return;
+
 	int funcindex, funcstart;
 	short totalmonsters;
 
