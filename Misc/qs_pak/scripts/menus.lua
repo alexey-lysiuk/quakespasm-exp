@@ -432,6 +432,8 @@ function menu.edictspage()
 		{
 			'Up        - Select previous edict',
 			'Down      - Select next edict',
+			'Left      - Scroll left',
+			'Right     - Scroll right',
 			'Page Up   - Scroll up',
 			'Page Down - Scroll down',
 			'Home      - Scroll to top',
