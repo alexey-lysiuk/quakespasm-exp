@@ -122,11 +122,12 @@ end
 
 function menu.elide(string, x)
 	local width = 640 - (x or 0)
+	local length = #string
 
-	if #string * 16 > width then
-		local maxlen = math.floor(width / 16) - 1
-		local elideformat = '%.' .. maxlen .. 's\133'
-		return elideformat:format(string, line)
+	if length * 16 > width then
+		local visiblelength = floor(width / 16) - 1
+		local elideformat = '%.' .. visiblelength .. 's\133'
+		return elideformat:format(string, line), '\133' .. string:sub(length - visiblelength + 1)
 	end
 
 	return string
@@ -193,6 +194,7 @@ function menu.listpage()
 		blinktime = 0,
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
+		showalttext = false,
 	}
 
 	local function scrolltop()
@@ -253,6 +255,8 @@ function menu.listpage()
 		[key_escape] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
+		[key_left] = function () page.showalttext = false end,
+		[key_right] = function () page.showalttext = true end,
 		[key_pageup] = scrollup,
 		[key_pagedown] = scrolldown,
 		[key_home] = scrolltop,
@@ -260,7 +264,10 @@ function menu.listpage()
 	}
 	extendkeymap(page.actions)
 
-	page.sounds = defaultsounds()
+	local sounds = defaultsounds()
+	sounds[key_left] = 3
+	sounds[key_right] = 3
+	page.sounds = sounds
 
 	page.ondraw = function (page)
 		text(10, 0, page.title)
@@ -274,7 +281,8 @@ function menu.listpage()
 		local cursor = page.cursor
 
 		for i = 1, min(page.maxlines, entrycount) do
-			text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
+			local entry = page.entries[topline + i - 1]
+			text(10, (i + 1) * 9, page.showalttext and entry.alttext or entry.text)
 		end
 
 		if cursor > 0 and floor((realtime() - page.blinktime) * 4) & 1 == 0 then
@@ -383,7 +391,8 @@ function menu.edictspage()
 			local text = location
 				and format('%i: %s at %s', index, description, location)
 				or format('%i: %s', index, description)
-			local entry = { edict = edict, text = elide(text, 10), location = location, angles = angles }
+			local text, alttext = elide(text, 10)
+			local entry = { edict = edict, text = text, alttext = alttext, location = location, angles = angles }
 			insert(page.entries, entry)
 
 			return current + 1
@@ -391,8 +400,8 @@ function menu.edictspage()
 
 		page.cursor = clamp(page.cursor, 1, #page.entries)
 		page.topline = clamp(page.topline, 1, #page.entries - page.maxlines + 1)
-
 		page.blinktime = realtime()
+		page.showalttext = false
 	end
 
 	local function moveto()
