@@ -565,7 +565,7 @@ static void LS_InitGlobalTables(lua_State* state)
 	}
 
 	// Register namespace for console commands
-	lua_createtable(state, 0, 16);
+	lua_createtable(state, 0, 64);
 	lua_setglobal(state, ls_console_name);
 }
 

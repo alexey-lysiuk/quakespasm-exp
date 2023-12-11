@@ -174,35 +174,13 @@ local function titlecase(str)
 		end)
 end
 
-local function handleedict(func, edict, current, choice)
-	local description, location, angles = func(edict)
-
-	if not description then
-		return current
-	end
-
-	if choice <= 0 then
-		print(current .. ':', description, 'at', location)
-	elseif choice == current then
-		if edicts.isitem(edict) then
-			-- Adjust Z coordinate so player will appear slightly above destination
-			location.z = location.z + 20
-		end
-
-		player.safemove(location, angles)
-		return
-	end
-
-	return current + 1
-end
-
 local function localizednetname(edict)
 	local name = edict.netname
 
 	if name and name ~= '' then
 		name = localize(name)
 
-		if name:find('the ') == 1 then
+		if name:find('the ', 1, true) == 1 then
 			name = name:sub(5)
 		end
 
@@ -252,12 +230,6 @@ function edicts.issecret(edict)
 	return description, location
 end
 
-local issecret = edicts.issecret
-
-function console.secrets(choice)
-	foreach(function(...) return handleedict(issecret, ...) end, choice)
-end
-
 
 --
 -- Monsters
@@ -295,17 +267,11 @@ function edicts.ismonster(edict)
 	end
 
 	-- Remove classname prefix if present
-	if classname:find('monster_') == 1 then
+	if classname:find('monster_', 1, true) == 1 then
 		classname = classname:sub(9)
 	end
 
 	return classname, edict.origin, edict.angles
-end
-
-local ismonster = edicts.ismonster
-
-function console.monsters(choice)
-	foreach(function(...) return handleedict(ismonster, ...) end, choice)
 end
 
 
@@ -344,12 +310,6 @@ function edicts.isteleport(edict)
 	return description, location
 end
 
-local isteleport = edicts.isteleport
-
-function console.teleports(choice)
-	foreach(function(...) return handleedict(isteleport, ...) end, choice)
-end
-
 
 --
 -- Doors
@@ -361,7 +321,7 @@ local function getitemname(item)
 	end
 
 	for _, edict in ipairs(edicts) do
-		if not isfree(edict) and edict.items == item and edict.classname:find('item_') == 1 then
+		if not isfree(edict) and edict.items == item and edict.classname:find('item_', 1, true) == 1 then
 			return localizednetname(edict) or '???'
 		end
 	end
@@ -393,12 +353,6 @@ function edicts.isdoor(edict)
 	return description, location
 end
 
-local isdoor = edicts.isdoor
-
-function console.doors(choice)
-	foreach(function(...) return handleedict(isdoor, ...) end, choice)
-end
-
 
 --
 -- Items
@@ -419,7 +373,7 @@ function edicts.isitem(edict, current, choice)
 	local prefixlen
 
 	for _, prefix in ipairs(prefixes) do
-		if classname:find(prefix) == 1 then
+		if classname:find(prefix, 1, true) == 1 then
 			prefixlen = prefix:len() + 1
 			break
 		end
@@ -428,7 +382,7 @@ function edicts.isitem(edict, current, choice)
 	local name
 
 	if not prefixlen then
-		if edict.model and edict.model:find('backpack') then
+		if edict.model and edict.model:find('backpack', 1, true) then
 			name = 'Backpack'
 		else
 			return
@@ -473,12 +427,6 @@ function edicts.isitem(edict, current, choice)
 	return name, edict.origin
 end
 
-local isitem = edicts.isitem
-
-function console.items(choice)
-	foreach(function(...) return handleedict(isitem, ...) end, choice)
-end
-
 
 --
 -- Buttons
@@ -495,11 +443,47 @@ function edicts.isbutton(edict, current, choice)
 	return description, location
 end
 
-local isbutton = edicts.isbutton
 
-function console.buttons(choice)
-	foreach(function(...) return handleedict(isbutton, ...) end, choice)
+--
+-- Edicts console commands
+--
+
+local isitem <const> = edicts.isitem
+
+local function handleedict(func, edict, current, choice)
+	local description, location, angles = func(edict)
+
+	if not description then
+		return current
+	end
+
+	if choice <= 0 then
+		print(current .. ':', description, 'at', location)
+	elseif choice == current then
+		if isitem(edict) then
+			-- Adjust Z coordinate so player will appear slightly above destination
+			location.z = location.z + 20
+		end
+
+		player.safemove(location, angles)
+		return
+	end
+
+	return current + 1
 end
+
+local function addedictscommand(name, func)
+	console[name] = function(choice)
+		foreach(function(...) return handleedict(func, ...) end, choice)
+	end
+end
+
+addedictscommand('secrets', edicts.issecret)
+addedictscommand('monsters', edicts.ismonster)
+addedictscommand('teleports', edicts.isteleport)
+addedictscommand('doors', edicts.isdoor)
+addedictscommand('items', isitem)
+addedictscommand('buttons', edicts.isbutton)
 
 
 ---
