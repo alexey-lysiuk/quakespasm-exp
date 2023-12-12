@@ -358,7 +358,7 @@ end
 -- Items
 --
 
-function edicts.isitem(edict, current, choice)
+function edicts.isitem(edict, current)
 	if not edict or isfree(edict) then
 		return
 	end
@@ -432,7 +432,7 @@ end
 -- Buttons
 --
 
-function edicts.isbutton(edict, current, choice)
+function edicts.isbutton(edict, current)
 	if not edict or isfree(edict) or edict.classname ~= 'func_button' then
 		return
 	end
