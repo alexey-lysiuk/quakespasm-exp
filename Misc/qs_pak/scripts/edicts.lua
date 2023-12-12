@@ -445,6 +445,23 @@ end
 
 
 --
+-- Level exits
+--
+
+function edicts.isexit(edict, current)
+	if not edict or isfree(edict) or edict.classname ~= 'trigger_changelevel' then
+		return
+	end
+
+	local mapname = edict.map or '???'
+	local description = 'Exit to ' .. (mapname == '' and '???' or mapname)
+	local location = vec3.mid(edict.absmin, edict.absmax)
+
+	return description, location
+end
+
+
+--
 -- Edicts console commands
 --
 
@@ -484,6 +501,7 @@ addedictscommand('teleports', edicts.isteleport)
 addedictscommand('doors', edicts.isdoor)
 addedictscommand('items', isitem)
 addedictscommand('buttons', edicts.isbutton)
+addedictscommand('exits', edicts.isexit)
 
 
 ---
