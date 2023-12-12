@@ -195,6 +195,7 @@ function menu.listpage()
 		blinktime = 0,
 		maxlines = 20,  -- for line interval of 9 pixels
 		topline = 1,
+		showalttext = false,
 	}
 
 	local function scrolltop()
@@ -255,6 +256,8 @@ function menu.listpage()
 		[key_escape] = poppage,
 		[key_up] = lineup,
 		[key_down] = linedown,
+		[key_left] = function () page.showalttext = false end,
+		[key_right] = function () page.showalttext = true end,
 		[key_pageup] = scrollup,
 		[key_pagedown] = scrolldown,
 		[key_home] = scrolltop,
@@ -262,7 +265,10 @@ function menu.listpage()
 	}
 	extendkeymap(page.actions)
 
-	page.sounds = defaultsounds()
+	local sounds = defaultsounds()
+	sounds[key_left] = 3
+	sounds[key_right] = 3
+	page.sounds = sounds
 
 	page.ondraw = function (page)
 		text(10, 0, page.title)
@@ -276,7 +282,8 @@ function menu.listpage()
 		local cursor = page.cursor
 
 		for i = 1, min(page.maxlines, entrycount) do
-			text(10, (i + 1) * 9, page.entries[topline + i - 1].text)
+			local entry = page.entries[topline + i - 1]
+			text(10, (i + 1) * 9, page.showalttext and entry.alttext or entry.text)
 		end
 
 		if cursor > 0 and floor((realtime() - page.blinktime) * 4) & 1 == 0 then
