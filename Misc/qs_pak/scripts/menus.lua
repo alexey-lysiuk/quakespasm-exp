@@ -392,7 +392,8 @@ function menu.edictspage()
 			local text = location
 				and format('%i: %s at %s', index, description, location)
 				or format('%i: %s', index, description)
-			local entry = { edict = edict, text = elide(text, 10), location = location, angles = angles }
+			local text, alttext = elide(text, 10)
+			local entry = { edict = edict, text = text, alttext = alttext, location = location, angles = angles }
 			insert(page.entries, entry)
 
 			return current + 1
@@ -400,8 +401,8 @@ function menu.edictspage()
 
 		page.cursor = clamp(page.cursor, 1, #page.entries)
 		page.topline = clamp(page.topline, 1, #page.entries - page.maxlines + 1)
-
 		page.blinktime = realtime()
+		page.showalttext = false
 	end
 
 	local function moveto()
@@ -432,6 +433,8 @@ function menu.edictspage()
 		{
 			'Up        - Select previous edict',
 			'Down      - Select next edict',
+			'Left      - Scroll left',
+			'Right     - Scroll right',
 			'Page Up   - Scroll up',
 			'Page Down - Scroll down',
 			'Home      - Scroll to top',
