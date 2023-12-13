@@ -25,6 +25,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#ifdef USE_LUA_SCRIPTING
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
+#include "cimgui_impl.h"
+#endif // USE_LUA_SCRIPTING
+
 /*
 
 background clear
@@ -1138,6 +1144,19 @@ void SCR_UpdateScreen (void)
 	V_UpdateBlend (); //johnfitz -- V_UpdatePalette cleaned up and renamed
 
 	GLSLGamma_GammaCorrect ();
+
+#ifdef USE_LUA_SCRIPTING
+	extern qboolean isimguiframe;
+	if (isimguiframe)
+	{
+		extern bool imguishowdemo;
+		if (imguishowdemo)
+			igShowDemoWindow(&imguishowdemo);
+		igRender();
+		ImGui_ImplOpenGL2_RenderDrawData(igGetDrawData());
+		isimguiframe = false;
+	}
+#endif // USE_LUA_SCRIPTING
 
 	GL_EndRendering ();
 }

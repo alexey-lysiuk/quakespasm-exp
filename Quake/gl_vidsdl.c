@@ -36,6 +36,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SDL.h"
 #endif
 
+#ifdef USE_LUA_SCRIPTING
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
+#include "cimgui_impl.h"
+#endif // USE_LUA_SCRIPTING
+
 //ericw -- for putting the driver into multithreaded mode
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
@@ -638,6 +644,10 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 		if (!draw_context)
 			Sys_Error ("Couldn't create window");
 
+#ifdef USE_LUA_SCRIPTING
+		igCreateContext(NULL);
+#endif // USE_LUA_SCRIPTING
+
 		previous_display = -1;
 	}
 	else
@@ -678,6 +688,11 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 		gl_context = SDL_GL_CreateContext(draw_context);
 		if (!gl_context)
 			Sys_Error("Couldn't create GL context");
+
+#ifdef USE_LUA_SCRIPTING
+		ImGui_ImplSDL2_InitForOpenGL(draw_context, gl_context);
+		ImGui_ImplOpenGL2_Init();
+#endif // USE_LUA_SCRIPTING
 	}
 
 	gl_swap_control = true;
@@ -1434,6 +1449,13 @@ void	VID_Shutdown (void)
 	if (vid_initialized)
 	{
 		VID_Gamma_Shutdown (); //johnfitz
+
+#ifdef USE_LUA_SCRIPTING
+		ImGui_ImplOpenGL2_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		igDestroyContext(NULL);
+#endif // USE_LUA_SCRIPTING
+
 #if defined(USE_SDL2)
 		SDL_GL_DeleteContext(gl_context);
 		gl_context = NULL;

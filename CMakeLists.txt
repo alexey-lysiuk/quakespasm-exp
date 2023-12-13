@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(quakespasm-exp LANGUAGES C)
+project(quakespasm-exp LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 11)
 
 set(COMMON_SOURCES
 	Quake/anorm_dots.h
@@ -209,6 +211,33 @@ set(LUA_SOURCES
 
 source_group("Source Files\\Lua" FILES ${LUA_SOURCES})
 
+set(CIMGUI_DIR Quake/cimgui)
+set(IMGUI_DIR ${CIMGUI_DIR}/imgui)
+set(IMGUI_BACKENDS_DIR ${IMGUI_DIR}/backends)
+
+set(CIMGUI_SOURCES
+	${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp
+	${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.h
+	${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.cpp
+	${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.h
+	${IMGUI_DIR}/imconfig.h
+	${IMGUI_DIR}/imgui.cpp
+	${IMGUI_DIR}/imgui.h
+	${IMGUI_DIR}/imgui_demo.cpp
+	${IMGUI_DIR}/imgui_draw.cpp
+	${IMGUI_DIR}/imgui_internal.h
+	${IMGUI_DIR}/imstb_rectpack.h
+	${IMGUI_DIR}/imgui_tables.cpp
+	${IMGUI_DIR}/imstb_textedit.h
+	${IMGUI_DIR}/imstb_truetype.h
+	${IMGUI_DIR}/imgui_widgets.cpp
+	${CIMGUI_DIR}/cimgui.cpp
+	${CIMGUI_DIR}/cimgui.h
+	${CIMGUI_DIR}/cimgui_impl.h
+)
+
+source_group("Source Files\\cimgui" FILES ${CIMGUI_SOURCES})
+
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
@@ -289,6 +318,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_CODEC_UMX
 	USE_CODEC_WAVE
 	USE_LUA_SCRIPTING
+	CIMGUI_USE_OPENGL2
+	CIMGUI_USE_SDL2
+	IMGUI_DISABLE_OBSOLETE_FUNCTIONS=1
+	"IMGUI_IMPL_API=extern \"C\""
 )
 
 if(MSVC)
@@ -311,7 +344,7 @@ else()
 	set(CMAKE_C_FLAGS "-Wall -Wno-trigraphs ${CMAKE_C_FLAGS}")
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${CIMGUI_DIR} ${IMGUI_DIR})
 
 if(APPLE)
 	if(NOT QUAKE_MACOS_MOUSE_ACCELERATION)
@@ -397,6 +430,7 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE
 	${COMMON_SOURCES}
 	${LUA_SOURCES}
+	${CIMGUI_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
 )

@@ -23,6 +23,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "bgmusic.h"
 
+#ifdef USE_LUA_SCRIPTING
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
+//#include "cimgui_impl.h"
+#endif
+
 void (*vid_menucmdfn)(void); //johnfitz
 void (*vid_menudrawfn)(void);
 void (*vid_menukeyfn)(int key);
@@ -2541,6 +2547,15 @@ void M_Menu_Credits_f (void)
 {
 }
 
+#ifdef USE_LUA_SCRIPTING
+bool imguishowdemo;
+void M_Menu_ImGuiDemo_f (void)
+{
+	//igShowDemoWindow(NULL);
+	imguishowdemo = true;
+}
+#endif // USE_LUA_SCRIPTING
+
 //=============================================================================
 /* Menu Subsystem */
 
@@ -2560,6 +2575,10 @@ void M_Init (void)
 	Cmd_AddCommand ("help", M_Menu_Help_f);
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 	Cmd_AddCommand ("menu_credits", M_Menu_Credits_f); // needed by the 2021 re-release
+
+#ifdef USE_LUA_SCRIPTING
+	Cmd_AddCommand ("menu_imguidemo", M_Menu_ImGuiDemo_f);
+#endif // USE_LUA_SCRIPTING
 }
 
 

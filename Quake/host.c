@@ -26,6 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bgmusic.h"
 #include <setjmp.h>
 
+#ifdef USE_LUA_SCRIPTING
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
+#include "cimgui_impl.h"
+#endif // USE_LUA_SCRIPTING
+
 /*
 
 A server can allways be started, even if the system started out as a client
@@ -676,6 +682,10 @@ Host_Frame
 Runs all active servers
 ==================
 */
+#ifdef USE_LUA_SCRIPTING
+qboolean isimguiframe;
+#endif // USE_LUA_SCRIPTING
+
 void _Host_Frame (float time)
 {
 	static double		time1 = 0;
@@ -692,6 +702,16 @@ void _Host_Frame (float time)
 // decide the simulation time
 	if (!Host_FilterTime (time))
 		return;			// don't run too fast, or packets will flood out
+
+#ifdef USE_LUA_SCRIPTING
+	if (!isimguiframe)
+	{
+		ImGui_ImplOpenGL2_NewFrame();
+		ImGui_ImplSDL2_NewFrame();
+		igNewFrame();
+		isimguiframe = true;
+	}
+#endif // USE_LUA_SCRIPTING
 
 // get new key events
 	Key_UpdateForDest ();
@@ -741,6 +761,10 @@ void _Host_Frame (float time)
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
 
+//#ifdef USE_LUA_SCRIPTING
+//	igEndFrame();
+//#endif // USE_LUA_SCRIPTING
+
 	SCR_UpdateScreen ();
 
 	CL_RunParticles (); //johnfitz -- seperated from rendering
@@ -771,7 +795,6 @@ void _Host_Frame (float time)
 	}
 
 	host_framecount++;
-
 }
 
 void Host_Frame (float time)

@@ -32,6 +32,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SDL.h"
 #endif
 
+#ifdef USE_LUA_SCRIPTING
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
+#include "cimgui_impl.h"
+#endif // USE_LUA_SCRIPTING
+
 qboolean windowhasfocus = true;	//just in case sdl fails to tell us...
 static qboolean	textmode;
 
@@ -1008,6 +1014,10 @@ void IN_SendKeyEvents (void)
 
 	while (SDL_PollEvent(&event))
 	{
+#ifdef USE_LUA_SCRIPTING
+		ImGui_ImplSDL2_ProcessEvent(&event);
+#endif // USE_LUA_SCRIPTING
+
 		switch (event.type)
 		{
 #if defined(USE_SDL2)
