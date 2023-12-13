@@ -1152,6 +1152,7 @@ void SCR_UpdateScreen (void)
 		extern bool imguishowdemo;
 		if (imguishowdemo)
 			igShowDemoWindow(&imguishowdemo);
+		GL_ClearBufferBindings();
 		igRender();
 		ImGui_ImplOpenGL2_RenderDrawData(igGetDrawData());
 		isimguiframe = false;
