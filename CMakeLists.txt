@@ -327,7 +327,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-	set(CMAKE_C_FLAGS "/MP /wd4996 ${CMAKE_C_FLAGS}")
+	set_target_properties(${PROJECT_NAME} COMPILE_FLAGS "/MP /wd4996")
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		# Disable the following warnings, Lua files only
@@ -341,8 +341,8 @@ else()
 	if(QUAKE_SEARCH_USERDIRS)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
-	
-	set(CMAKE_C_FLAGS "-Wall -Wno-trigraphs ${CMAKE_C_FLAGS}")
+
+	set_target_properties(${PROJECT_NAME} COMPILE_FLAGS "-Wall -Wno-trigraphs")
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${CIMGUI_DIR} ${IMGUI_DIR})
@@ -352,7 +352,7 @@ if(APPLE)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE MACOS_X_ACCELERATION_HACK)
 
 		# Disable a bunch of IOKit deprecation warnings
-		set(CMAKE_C_FLAGS "-Wno-deprecated-declarations ${CMAKE_C_FLAGS}")
+		set_target_properties(${PROJECT_NAME} COMPILE_FLAGS "-Wno-deprecated-declarations")
 	endif()
 
 	target_compile_definitions(${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION)
@@ -362,7 +362,7 @@ if(APPLE)
 	)
 
 	if(${CMAKE_GENERATOR} STREQUAL Xcode)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-shorten-64-to-32")
+		set_target_properties(${PROJECT_NAME} COMPILE_FLAGS "-Wno-shorten-64-to-32")
 	endif()
 
 	set(PLATFORM_SOURCE
@@ -390,6 +390,9 @@ if(APPLE)
 		)
 		set_source_files_properties(${MACOS_RESOURCES} PROPERTIES 
 			MACOSX_PACKAGE_LOCATION Resources
+		)
+		set_source_files_properties(${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp PROPERTIES
+			COMPILE_DEFINITIONS GL_SILENCE_DEPRECATION
 		)
 	else()
 		set(PLATFORM_SOURCE

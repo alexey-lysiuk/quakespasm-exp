@@ -2690,6 +2690,12 @@ void M_Draw (void)
 		M_LuaScript_Draw ();
 		break;
 #endif // USE_LUA_SCRIPTING
+
+#ifdef USE_IMGUI
+	case m_imgui:
+		// TODO
+		break;
+#endif // USE_IMGUI
 	}
 
 	if (m_entersound)
@@ -2778,6 +2784,12 @@ void M_Keydown (int key)
 		M_LuaScript_Key (key);
 		return;
 #endif // USE_LUA_SCRIPTING
+
+#ifdef USE_IMGUI
+	case m_imgui:
+		// TODO
+		return;
+#endif // USE_IMGUI
 	}
 }
 
