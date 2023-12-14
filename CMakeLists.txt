@@ -361,6 +361,11 @@ if(APPLE)
 		"-framework IOKit"
 	)
 
+	# Disable macro redefinition warning
+	set_source_files_properties(${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp PROPERTIES
+		COMPILE_FLAGS -UGL_SILENCE_DEPRECATION
+	)
+
 	if(${CMAKE_GENERATOR} STREQUAL Xcode)
 		set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wno-shorten-64-to-32")
 	endif()
@@ -390,9 +395,6 @@ if(APPLE)
 		)
 		set_source_files_properties(${MACOS_RESOURCES} PROPERTIES 
 			MACOSX_PACKAGE_LOCATION Resources
-		)
-		set_source_files_properties(${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp PROPERTIES
-			COMPILE_DEFINITIONS GL_SILENCE_DEPRECATION
 		)
 	else()
 		set(PLATFORM_SOURCE
