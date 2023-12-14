@@ -1015,8 +1015,7 @@ void IN_SendKeyEvents (void)
 	while (SDL_PollEvent(&event))
 	{
 #ifdef USE_IMGUI
-		if (ImGui_ImplSDL2_ProcessEvent(&event))
-			continue;
+		ImGui_ImplSDL2_ProcessEvent(&event);
 #endif // USE_IMGUI
 
 		switch (event.type)
