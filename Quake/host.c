@@ -26,11 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bgmusic.h"
 #include <setjmp.h>
 
-#ifdef USE_LUA_SCRIPTING
+#ifdef USE_IMGUI
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #include "cimgui.h"
 #include "cimgui_impl.h"
-#endif // USE_LUA_SCRIPTING
+#endif // USE_IMGUI
 
 /*
 
@@ -682,9 +682,9 @@ Host_Frame
 Runs all active servers
 ==================
 */
-#ifdef USE_LUA_SCRIPTING
+#ifdef USE_IMGUI
 qboolean isimguiframe;
-#endif // USE_LUA_SCRIPTING
+#endif // USE_IMGUI
 
 void _Host_Frame (float time)
 {
@@ -703,7 +703,7 @@ void _Host_Frame (float time)
 	if (!Host_FilterTime (time))
 		return;			// don't run too fast, or packets will flood out
 
-#ifdef USE_LUA_SCRIPTING
+#ifdef USE_IMGUI
 	if (!isimguiframe)
 	{
 		ImGui_ImplOpenGL2_NewFrame();
@@ -711,7 +711,7 @@ void _Host_Frame (float time)
 		igNewFrame();
 		isimguiframe = true;
 	}
-#endif // USE_LUA_SCRIPTING
+#endif // USE_IMGUI
 
 // get new key events
 	Key_UpdateForDest ();
@@ -760,10 +760,6 @@ void _Host_Frame (float time)
 // update video
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
-
-//#ifdef USE_LUA_SCRIPTING
-//	igEndFrame();
-//#endif // USE_LUA_SCRIPTING
 
 	SCR_UpdateScreen ();
 

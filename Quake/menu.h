@@ -44,6 +44,9 @@ enum m_state_e {
 #ifdef USE_LUA_SCRIPTING
 	m_luascript,
 #endif // USE_LUA_SCRIPTING
+#ifdef USE_IMGUI
+	m_imgui,
+#endif // USE_IMGUI
 };
 
 extern enum m_state_e m_state;
