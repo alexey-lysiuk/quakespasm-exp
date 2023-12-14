@@ -32,11 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SDL.h"
 #endif
 
-#ifdef USE_IMGUI
-#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-#include "cimgui.h"
-#include "cimgui_impl.h"
-#endif // USE_IMGUI
+#include "q_imgui.h"
 
 qboolean windowhasfocus = true;	//just in case sdl fails to tell us...
 static qboolean	textmode;

@@ -23,11 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "bgmusic.h"
 
-#ifdef USE_IMGUI
-#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-#include "cimgui.h"
-//#include "cimgui_impl.h"
-#endif // USE_IMGUI
+#include "q_imgui.h"
 
 void (*vid_menucmdfn)(void); //johnfitz
 void (*vid_menudrawfn)(void);

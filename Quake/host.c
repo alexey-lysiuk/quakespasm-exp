@@ -26,11 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bgmusic.h"
 #include <setjmp.h>
 
-#ifdef USE_IMGUI
-#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-#include "cimgui.h"
-#include "cimgui_impl.h"
-#endif // USE_IMGUI
+#include "q_imgui.h"
 
 /*
 

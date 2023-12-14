@@ -88,6 +88,7 @@ set(COMMON_SOURCES
 	Quake/progs.h
 	Quake/protocol.h
 	Quake/q_ctype.h
+	Quake/q_imgui.h
 	Quake/q_sound.h
 	Quake/q_stdinc.h
 	Quake/qs_bmp.h
