@@ -53,6 +53,7 @@ set(COMMON_SOURCES
 	Quake/glquake.h
 	Quake/host.c
 	Quake/host_cmd.c
+	Quake/ig_main.cpp
 	Quake/image.c
 	Quake/image.h
 	Quake/in_sdl.c
@@ -88,7 +89,6 @@ set(COMMON_SOURCES
 	Quake/progs.h
 	Quake/protocol.h
 	Quake/q_ctype.h
-	Quake/q_imgui.h
 	Quake/q_sound.h
 	Quake/q_stdinc.h
 	Quake/qs_bmp.h
@@ -212,8 +212,7 @@ set(LUA_SOURCES
 
 source_group("Source Files\\Lua" FILES ${LUA_SOURCES})
 
-set(CIMGUI_DIR Quake/cimgui)
-set(IMGUI_DIR ${CIMGUI_DIR}/imgui)
+set(IMGUI_DIR Quake/imgui)
 set(IMGUI_BACKENDS_DIR ${IMGUI_DIR}/backends)
 
 set(CIMGUI_SOURCES
@@ -232,12 +231,9 @@ set(CIMGUI_SOURCES
 	${IMGUI_DIR}/imstb_textedit.h
 	${IMGUI_DIR}/imstb_truetype.h
 	${IMGUI_DIR}/imgui_widgets.cpp
-	${CIMGUI_DIR}/cimgui.cpp
-	${CIMGUI_DIR}/cimgui.h
-	${CIMGUI_DIR}/cimgui_impl.h
 )
 
-source_group("Source Files\\cimgui" FILES ${CIMGUI_SOURCES})
+source_group("Source Files\\ImGui" FILES ${CIMGUI_SOURCES})
 
 set(POSIX_SOURCES
 	Quake/net_bsd.c
@@ -346,7 +342,7 @@ else()
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wall -Wno-trigraphs")
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${CIMGUI_DIR} ${IMGUI_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
 
 if(APPLE)
 	if(NOT QUAKE_MACOS_MOUSE_ACCELERATION)

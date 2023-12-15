@@ -656,28 +656,28 @@ void SCR_DrawCrosshair (void)
 }
 
 
-extern char sv_tracedentityinfo[1024];
-
-static void SCR_DrawEdictInfo (void)
-{
-	GL_SetCanvas (CANVAS_CROSSHAIR);
-
-	const char *info = sv_tracedentityinfo;
-	char buffer[sizeof sv_tracedentityinfo];
-	int lineindex = 0;
-
-	while (info[0] != '\0')
-	{
-		const char *nextzero = info + 1;
-		for (; nextzero[0] != '\0'; ++nextzero) {}
-
-		strcpy(buffer, info);
-		info = nextzero + 1;
-
-		Draw_String (30, 20 + lineindex * 10, buffer);
-		lineindex++;
-	}
-}
+//extern char sv_tracedentityinfo[1024];
+//
+//static void SCR_DrawEdictInfo (void)
+//{
+//	GL_SetCanvas (CANVAS_CROSSHAIR);
+//
+//	const char *info = sv_tracedentityinfo;
+//	char buffer[sizeof sv_tracedentityinfo];
+//	int lineindex = 0;
+//
+//	while (info[0] != '\0')
+//	{
+//		const char *nextzero = info + 1;
+//		for (; nextzero[0] != '\0'; ++nextzero) {}
+//
+//		strcpy(buffer, info);
+//		info = nextzero + 1;
+//
+//		Draw_String (30, 20 + lineindex * 10, buffer);
+//		lineindex++;
+//	}
+//}
 
 
 
@@ -1093,6 +1093,11 @@ void SCR_UpdateScreen (void)
 
 	V_RenderView ();
 
+#ifdef USE_IMGUI
+	void IG_Render(void);
+	IG_Render();
+#endif // USE_IMGUI
+
 	GL_Set2D ();
 
 	//FIXME: only call this when needed
@@ -1124,7 +1129,7 @@ void SCR_UpdateScreen (void)
 	else
 	{
 		SCR_DrawCrosshair (); //johnfitz
-		SCR_DrawEdictInfo ();
+		//SCR_DrawEdictInfo ();
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
@@ -1140,20 +1145,6 @@ void SCR_UpdateScreen (void)
 	V_UpdateBlend (); //johnfitz -- V_UpdatePalette cleaned up and renamed
 
 	GLSLGamma_GammaCorrect ();
-
-#ifdef USE_IMGUI
-	extern qboolean isimguiframe;
-	if (isimguiframe)
-	{
-		extern bool imguishowdemo;
-		if (imguishowdemo)
-			igShowDemoWindow(&imguishowdemo);
-		GL_ClearBufferBindings();
-		igRender();
-		ImGui_ImplOpenGL2_RenderDrawData(igGetDrawData());
-		isimguiframe = false;
-	}
-#endif // USE_IMGUI
 
 	GL_EndRendering ();
 }

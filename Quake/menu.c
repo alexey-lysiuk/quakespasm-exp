@@ -2543,14 +2543,6 @@ void M_Menu_Credits_f (void)
 {
 }
 
-#ifdef USE_IMGUI
-bool imguishowdemo;
-void M_Menu_ImGuiDemo_f (void)
-{
-	//igShowDemoWindow(NULL);
-	imguishowdemo = true;
-}
-#endif // USE_IMGUI
 
 //=============================================================================
 /* Menu Subsystem */
@@ -2571,10 +2563,6 @@ void M_Init (void)
 	Cmd_AddCommand ("help", M_Menu_Help_f);
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 	Cmd_AddCommand ("menu_credits", M_Menu_Credits_f); // needed by the 2021 re-release
-
-#ifdef USE_IMGUI
-	Cmd_AddCommand ("menu_imguidemo", M_Menu_ImGuiDemo_f);
-#endif // USE_IMGUI
 }
 
 
@@ -2686,12 +2674,6 @@ void M_Draw (void)
 		M_LuaScript_Draw ();
 		break;
 #endif // USE_LUA_SCRIPTING
-
-#ifdef USE_IMGUI
-	case m_imgui:
-		// TODO
-		break;
-#endif // USE_IMGUI
 	}
 
 	if (m_entersound)
@@ -2780,12 +2762,6 @@ void M_Keydown (int key)
 		M_LuaScript_Key (key);
 		return;
 #endif // USE_LUA_SCRIPTING
-
-#ifdef USE_IMGUI
-	case m_imgui:
-		// TODO
-		return;
-#endif // USE_IMGUI
 	}
 }
 
