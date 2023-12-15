@@ -565,6 +565,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/eoem7@3ea8.ent
 		maps/sm100_zwiffle@c897.ent
 		maps/sm212_naitelveni@a835.ent
+		maps/sm27_bear@92ba.ent
 		scripts/edicts.lua
 		scripts/input.lua
 		scripts/menus.lua

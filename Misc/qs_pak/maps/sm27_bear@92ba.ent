@@ -383,7 +383,7 @@
 "target" "fiender"
 }
 {
-"origin" "464 256 40"
+"origin" "448 256 40"
 "classname" "monster_zombie"
 }
 {
