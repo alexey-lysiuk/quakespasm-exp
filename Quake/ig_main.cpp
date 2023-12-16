@@ -90,7 +90,12 @@ void IG_Update()
 	ImGui::NewFrame();
 
 	if (ig_active)
-		ImGui::Text("Press ESC to exit ImGui mode");
+	{
+		ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always, ImVec2(0.f, 0.f));
+		ImGui::Begin("Close Hint", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
+		ImGui::End();
+	}
 
 	ig_framestarted = true;
 }
