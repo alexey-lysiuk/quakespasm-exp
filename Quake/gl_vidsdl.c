@@ -36,8 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SDL.h"
 #endif
 
-#include "q_imgui.h"
-
 //ericw -- for putting the driver into multithreaded mode
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
@@ -640,10 +638,6 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 		if (!draw_context)
 			Sys_Error ("Couldn't create window");
 
-#ifdef USE_IMGUI
-		igCreateContext(NULL);
-#endif // USE_IMGUI
-
 		previous_display = -1;
 	}
 	else
@@ -686,8 +680,8 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 			Sys_Error("Couldn't create GL context");
 
 #ifdef USE_IMGUI
-		ImGui_ImplSDL2_InitForOpenGL(draw_context, gl_context);
-		ImGui_ImplOpenGL2_Init();
+		void IG_Init(SDL_Window* window, SDL_GLContext context);
+		IG_Init(draw_context, gl_context);
 #endif // USE_IMGUI
 	}
 
@@ -1447,9 +1441,8 @@ void	VID_Shutdown (void)
 		VID_Gamma_Shutdown (); //johnfitz
 
 #ifdef USE_IMGUI
-		ImGui_ImplOpenGL2_Shutdown();
-		ImGui_ImplSDL2_Shutdown();
-		igDestroyContext(NULL);
+		void IG_Shutdown(void);
+		IG_Shutdown();
 #endif // USE_IMGUI
 
 #if defined(USE_SDL2)

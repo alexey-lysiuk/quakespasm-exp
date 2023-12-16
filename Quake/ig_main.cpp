@@ -23,11 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef USE_IMGUI
 
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
-#if defined(USE_SDL2)
 #include <SDL2/SDL.h>
-#else
-#include <SDL/SDL.h>
-#endif
 #else
 #include "SDL.h"
 #endif
@@ -35,11 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "backends/imgui_impl_opengl2.h"
 #include "backends/imgui_impl_sdl2.h"
 
-#include "quakedef.h"
-
-
 extern "C"
 {
+
+#include "quakedef.h"
+
 
 static bool ig_showdemo;
 
@@ -48,20 +44,31 @@ static void IG_ShowDemo()
 	ig_showdemo = true;
 }
 
-void IG_Init()
+void IG_Init(SDL_Window* window, SDL_GLContext context)
 {
+	ImGui::CreateContext();
+
+	ImGui_ImplSDL2_InitForOpenGL(window, context);
+	ImGui_ImplOpenGL2_Init();
+
 	Cmd_AddCommand("ig_showdemo", IG_ShowDemo);
 }
 
 void IG_Shutdown()
 {
-	
+	ImGui_ImplOpenGL2_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+
+	ImGui::DestroyContext();
 }
 
 static qboolean ig_framestarted;
 
 void IG_Update()
 {
+	if (ig_framestarted)
+		return;
+
 	ImGui_ImplOpenGL2_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 
@@ -76,7 +83,7 @@ void IG_Render()
 		return;
 
 	if (ig_showdemo)
-		igShowDemoWindow(&ig_showdemo);
+		ImGui::ShowDemoWindow(&ig_showdemo);
 
 	GL_ClearBufferBindings();
 
@@ -89,7 +96,7 @@ void IG_Render()
 
 void IG_ProcessEvent(const SDL_Event* event)
 {
-	ImGui_ImplSDL2_ProcessEvent(&event);
+	ImGui_ImplSDL2_ProcessEvent(event);
 }
 
 }

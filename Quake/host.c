@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bgmusic.h"
 #include <setjmp.h>
 
-#include "q_imgui.h"
-
 /*
 
 A server can allways be started, even if the system started out as a client
@@ -678,10 +676,6 @@ Host_Frame
 Runs all active servers
 ==================
 */
-#ifdef USE_IMGUI
-qboolean isimguiframe;
-#endif // USE_IMGUI
-
 void _Host_Frame (float time)
 {
 	static double		time1 = 0;
@@ -698,16 +692,6 @@ void _Host_Frame (float time)
 // decide the simulation time
 	if (!Host_FilterTime (time))
 		return;			// don't run too fast, or packets will flood out
-
-#ifdef USE_IMGUI
-	if (!isimguiframe)
-	{
-		ImGui_ImplOpenGL2_NewFrame();
-		ImGui_ImplSDL2_NewFrame();
-		igNewFrame();
-		isimguiframe = true;
-	}
-#endif // USE_IMGUI
 
 // get new key events
 	Key_UpdateForDest ();
@@ -756,6 +740,11 @@ void _Host_Frame (float time)
 // update video
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
+
+#ifdef USE_IMGUI
+	void IG_Update(void);
+	IG_Update();
+#endif // USE_IMGUI
 
 	SCR_UpdateScreen ();
 

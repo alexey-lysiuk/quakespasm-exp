@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <time.h>
 
-#include "q_imgui.h"
-
 /*
 
 entities never clip against themselves, or their owner
