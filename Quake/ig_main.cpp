@@ -36,12 +36,20 @@ extern "C"
 
 #include "quakedef.h"
 
+#ifndef NDEBUG
+static cvar_t ig_showdemo = {"imgui_showdemo", "0", CVAR_NONE};
+#endif // !NDEBUG
 
-static bool ig_showdemo;
+qboolean ig_active;
 
-static void IG_ShowDemo()
+static void IG_Activate()
 {
-	ig_showdemo = true;
+	ig_active = true;
+
+	if (key_dest == key_console && cls.state == ca_connected)
+		Con_ToggleConsole_f();
+
+	IN_Deactivate(true);
 }
 
 void IG_Init(SDL_Window* window, SDL_GLContext context)
@@ -51,7 +59,11 @@ void IG_Init(SDL_Window* window, SDL_GLContext context)
 	ImGui_ImplSDL2_InitForOpenGL(window, context);
 	ImGui_ImplOpenGL2_Init();
 
-	Cmd_AddCommand("ig_showdemo", IG_ShowDemo);
+	Cmd_AddCommand("imgui_activate", IG_Activate);
+
+#ifndef NDEBUG
+	Cvar_RegisterVariable(&ig_showdemo);
+#endif // !NDEBUG
 }
 
 void IG_Shutdown()
@@ -82,8 +94,17 @@ void IG_Render()
 	if (!ig_framestarted)
 		return;
 
-	if (ig_showdemo)
-		ImGui::ShowDemoWindow(&ig_showdemo);
+#ifndef NDEBUG
+	if (ig_showdemo.value)
+	{
+		bool showdemo = true;
+
+		ImGui::ShowDemoWindow(&showdemo);
+
+		if (!showdemo)
+			Cvar_SetQuick(&ig_showdemo, "0");
+	}
+#endif // !NDEBUG
 
 	GL_ClearBufferBindings();
 
@@ -94,9 +115,9 @@ void IG_Render()
 	ig_framestarted = false;
 }
 
-void IG_ProcessEvent(const SDL_Event* event)
+qboolean IG_ProcessEvent(const SDL_Event* event)
 {
-	ImGui_ImplSDL2_ProcessEvent(event);
+	return ImGui_ImplSDL2_ProcessEvent(event);
 }
 
 }

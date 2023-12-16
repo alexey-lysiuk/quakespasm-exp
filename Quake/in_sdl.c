@@ -1009,8 +1009,21 @@ void IN_SendKeyEvents (void)
 	while (SDL_PollEvent(&event))
 	{
 #ifdef USE_IMGUI
-		void IG_ProcessEvent(const SDL_Event* event);
-		IG_ProcessEvent(&event);
+		extern qboolean ig_active;
+
+		if (ig_active)
+		{
+			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
+			{
+				ig_active = false;
+				continue;
+			}
+
+			qboolean IG_ProcessEvent(const SDL_Event* event);
+
+			if (IG_ProcessEvent(&event))
+				continue;
+		}
 #endif // USE_IMGUI
 
 		switch (event.type)
