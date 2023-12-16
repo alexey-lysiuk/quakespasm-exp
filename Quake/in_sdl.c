@@ -1015,6 +1015,8 @@ void IN_SendKeyEvents (void)
 		{
 			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
 			{
+				IN_Activate();
+
 				ig_active = false;
 				continue;
 			}

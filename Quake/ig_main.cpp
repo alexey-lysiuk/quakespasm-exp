@@ -44,9 +44,12 @@ qboolean ig_active;
 
 static void IG_Activate()
 {
+	if (cls.state != ca_connected)
+		return;
+
 	ig_active = true;
 
-	if (key_dest == key_console && cls.state == ca_connected)
+	if (key_dest == key_console)
 		Con_ToggleConsole_f();
 
 	IN_Deactivate(true);
@@ -85,6 +88,9 @@ void IG_Update()
 	ImGui_ImplSDL2_NewFrame();
 
 	ImGui::NewFrame();
+
+	if (ig_active)
+		ImGui::Text("Press ESC to exit ImGui mode");
 
 	ig_framestarted = true;
 }
