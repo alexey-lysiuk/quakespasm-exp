@@ -1009,15 +1009,15 @@ void IN_SendKeyEvents (void)
 	while (SDL_PollEvent(&event))
 	{
 #ifdef USE_IMGUI
-		extern qboolean ig_active;
+		qboolean IG_IsActive(void);
 
-		if (ig_active)
+		if (IG_IsActive())
 		{
 			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
 			{
-				IN_Activate();
+				void IG_Deactivate(void);
+				IG_Deactivate();
 
-				ig_active = false;
 				continue;
 			}
 

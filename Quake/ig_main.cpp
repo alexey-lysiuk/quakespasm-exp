@@ -40,11 +40,16 @@ extern "C"
 static cvar_t ig_showdemo = {"imgui_showdemo", "0", CVAR_NONE};
 #endif // !NDEBUG
 
-qboolean ig_active;
+static qboolean ig_active;
+
+qboolean IG_IsActive()
+{
+	return ig_active;
+}
 
 static void IG_Activate()
 {
-	if (cls.state != ca_connected)
+	if (ig_active || cls.state != ca_connected)
 		return;
 
 	ig_active = true;
@@ -53,6 +58,24 @@ static void IG_Activate()
 		Con_ToggleConsole_f();
 
 	IN_Deactivate(true);
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.WantCaptureMouse = true;
+	io.WantCaptureKeyboard = true;
+}
+
+void IG_Deactivate()
+{
+	if (!ig_active)
+		return;
+
+	IN_Activate();
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.WantCaptureMouse = false;
+	io.WantCaptureKeyboard = false;
+
+	ig_active = false;
 }
 
 void IG_Init(SDL_Window* window, SDL_GLContext context)
