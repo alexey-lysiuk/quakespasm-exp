@@ -321,7 +321,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "/MP /wd4996")
+	target_compile_options(${PROJECT_NAME} PRIVATE /MP /wd4996)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		# Disable the following warnings, Lua files only
@@ -336,7 +336,7 @@ else()
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
 
-	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wall -Wno-trigraphs")
+	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
@@ -346,7 +346,7 @@ if(APPLE)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE MACOS_X_ACCELERATION_HACK)
 
 		# Disable a bunch of IOKit deprecation warnings
-		set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations")
+		target_compile_options(${PROJECT_NAME} PRIVATE -Wno-deprecated-declarations)
 	endif()
 
 	target_compile_definitions(${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION)
@@ -361,7 +361,7 @@ if(APPLE)
 	)
 
 	if(${CMAKE_GENERATOR} STREQUAL Xcode)
-		set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wno-shorten-64-to-32")
+		target_compile_options(${PROJECT_NAME} PRIVATE -Wno-shorten-64-to-32)
 	endif()
 
 	set(PLATFORM_SOURCE

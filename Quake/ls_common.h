@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#ifndef QUAKE_LUA_SCRIPTING_COMMON_H
+#define QUAKE_LUA_SCRIPTING_COMMON_H
+
 #ifdef USE_LUA_SCRIPTING
 
 #include "lua.h"
@@ -56,3 +59,5 @@ void LS_InitMenuModule(lua_State* state);
 void LS_ShutdownMenuModule(lua_State* state);
 
 #endif // USE_LUA_SCRIPTING
+
+#endif // QUAKE_LUA_SCRIPTING_COMMON_H
