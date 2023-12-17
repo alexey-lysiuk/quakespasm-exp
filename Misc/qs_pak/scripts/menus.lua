@@ -583,6 +583,7 @@ addedictsmenu('Teleports', edicts.isteleport)
 addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
 addedictsmenu('Buttons', edicts.isbutton)
+addedictsmenu('Exits', edicts.isexit)
 
 
 local function addgazemenu(suffix, pagefunc)
