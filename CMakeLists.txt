@@ -215,7 +215,7 @@ source_group("Source Files\\Lua" FILES ${LUA_SOURCES})
 set(IMGUI_DIR Quake/imgui)
 set(IMGUI_BACKENDS_DIR ${IMGUI_DIR}/backends)
 
-set(CIMGUI_SOURCES
+set(IMGUI_SOURCES
 	${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp
 	${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.h
 	${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.cpp
@@ -233,7 +233,7 @@ set(CIMGUI_SOURCES
 	${IMGUI_DIR}/imgui_widgets.cpp
 )
 
-source_group("Source Files\\ImGui" FILES ${CIMGUI_SOURCES})
+source_group("Source Files\\ImGui" FILES ${IMGUI_SOURCES})
 
 set(POSIX_SOURCES
 	Quake/net_bsd.c
@@ -430,7 +430,7 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE
 	${COMMON_SOURCES}
 	${LUA_SOURCES}
-	${CIMGUI_SOURCES}
+	${IMGUI_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
 )

@@ -686,58 +686,58 @@ void _Host_Frame (float time)
 	if (setjmp (host_abortserver) )
 		return;			// something bad happened, or the server disconnected
 
-// keep the random time dependent
+	// keep the random time dependent
 	rand ();
 
-// decide the simulation time
+	// decide the simulation time
 	if (!Host_FilterTime (time))
 		return;			// don't run too fast, or packets will flood out
 
-// get new key events
+	// get new key events
 	Key_UpdateForDest ();
 	IN_UpdateInputMode ();
 	Sys_SendKeyEvents ();
 
-// allow mice or other external controllers to add commands
+	// allow mice or other external controllers to add commands
 	IN_Commands ();
 
-// process console commands
+	// process console commands
 	Cbuf_Execute ();
 
 	NET_Poll();
 
-// if running the server locally, make intentions now
+	// if running the server locally, make intentions now
 	if (sv.active)
 		CL_SendCmd ();
 
-//-------------------
-//
-// server operations
-//
-//-------------------
+	//-------------------
+	//
+	// server operations
+	//
+	//-------------------
 
-// check for commands typed to the host
+	// check for commands typed to the host
 	Host_GetConsoleCommands ();
 
 	if (sv.active)
 		Host_ServerFrame ();
 
-//-------------------
-//
-// client operations
-//
-//-------------------
+	//-------------------
+	//
+	// client operations
+	//
+	//-------------------
 
-// if running the server remotely, send intentions now after
-// the incoming messages have been read
+	// if running the server remotely, send intentions now after
+	// the incoming messages have been read
 	if (!sv.active)
 		CL_SendCmd ();
 
-// fetch results from server
+	// fetch results from server
 	if (cls.state == ca_connected)
 		CL_ReadFromServer ();
 
-// update video
+	// update video
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
 
@@ -753,7 +753,7 @@ void _Host_Frame (float time)
 	if (host_speeds.value)
 		time2 = Sys_DoubleTime ();
 
-// update audio
+	// update audio
 	BGM_Update();	// adds music raw samples and/or advances midi driver
 	if (cls.signon == SIGNONS)
 	{
@@ -776,6 +776,7 @@ void _Host_Frame (float time)
 	}
 
 	host_framecount++;
+
 }
 
 void Host_Frame (float time)
