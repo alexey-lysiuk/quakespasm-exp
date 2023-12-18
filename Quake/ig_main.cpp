@@ -42,7 +42,12 @@ extern "C"
 static cvar_t ig_showdemo = {"imgui_showdemo", "0", CVAR_NONE};
 #endif // !NDEBUG
 
-static qboolean ig_active;
+static bool ig_active;
+static char ig_justactived;
+static bool ig_framestarted;
+
+static SDL_EventFilter ig_eventfilter;
+static void* ig_eventuserdata;
 
 static void IG_Activate()
 {
@@ -50,11 +55,15 @@ static void IG_Activate()
 		return;
 
 	ig_active = true;
+	ig_justactived = 2;
 
 	if (key_dest == key_console)
 		Con_ToggleConsole_f();
 
 	IN_Deactivate(true);
+
+	SDL_GetEventFilter(&ig_eventfilter, &ig_eventuserdata);
+	SDL_SetEventFilter(nullptr, nullptr);
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 }
@@ -65,6 +74,9 @@ static void IG_Deactivate()
 		return;
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
+
+	SDL_StopTextInput();
+	SDL_SetEventFilter(ig_eventfilter, ig_eventuserdata);
 
 	IN_Activate();
 
@@ -94,8 +106,6 @@ void IG_Shutdown()
 	ImGui::DestroyContext();
 }
 
-static qboolean ig_framestarted;
-
 void IG_Update()
 {
 	if (ig_framestarted)
@@ -112,6 +122,14 @@ void IG_Update()
 		ImGui::Begin("Close Hint", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
 		ImGui::End();
+	}
+
+	if (ig_justactived > 0)
+	{
+		--ig_justactived;
+
+		if (ig_justactived == 0)
+			SDL_StartTextInput();
 	}
 
 	ig_framestarted = true;
