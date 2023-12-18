@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_IMGUI
 
+#include <assert.h>
+
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #include <SDL2/SDL.h>
 #else
@@ -42,11 +44,6 @@ static cvar_t ig_showdemo = {"imgui_showdemo", "0", CVAR_NONE};
 
 static qboolean ig_active;
 
-qboolean IG_IsActive()
-{
-	return ig_active;
-}
-
 static void IG_Activate()
 {
 	if (ig_active || cls.state != ca_connected)
@@ -59,21 +56,17 @@ static void IG_Activate()
 
 	IN_Deactivate(true);
 
-	ImGuiIO& io = ImGui::GetIO();
-	io.WantCaptureMouse = true;
-	io.WantCaptureKeyboard = true;
+	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 }
 
-void IG_Deactivate()
+static void IG_Deactivate()
 {
 	if (!ig_active)
 		return;
 
-	IN_Activate();
+	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
 
-	ImGuiIO& io = ImGui::GetIO();
-	io.WantCaptureMouse = false;
-	io.WantCaptureKeyboard = false;
+	IN_Activate();
 
 	ig_active = false;
 }
@@ -81,6 +74,7 @@ void IG_Deactivate()
 void IG_Init(SDL_Window* window, SDL_GLContext context)
 {
 	ImGui::CreateContext();
+	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
 
 	ImGui_ImplSDL2_InitForOpenGL(window, context);
 	ImGui_ImplOpenGL2_Init();
@@ -151,6 +145,17 @@ void IG_Render()
 
 qboolean IG_ProcessEvent(const SDL_Event* event)
 {
+	if (!ig_active)
+		return false;
+
+	assert(event);
+
+	if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
+	{
+		IG_Deactivate();
+		return true;
+	}
+
 	return ImGui_ImplSDL2_ProcessEvent(event);
 }
 
