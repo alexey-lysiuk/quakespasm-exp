@@ -155,6 +155,7 @@ local localize <const> = text.localize
 local vec3origin <const> = vec3.new()
 local vec3one <const> = vec3.new(1, 1, 1)
 local vec3minusone <const> = vec3.new(-1, -1, -1)
+local vec3mid <const> = vec3.mid
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
@@ -214,7 +215,7 @@ function edicts.issecret(edict)
 	if not count then
 		-- Regular or Arcane Dimensions secret that was not revealed yet
 		local origin = edict.origin
-		location = origin == vec3origin and vec3.mid(min, max) or origin
+		location = origin == vec3origin and vec3mid(min, max) or origin
 	elseif count == 0 then
 		-- Revealed Arcane Dimensions secret, skip it
 		return
@@ -305,7 +306,7 @@ function edicts.isteleport(edict)
 	end
 
 	local description = format('Teleport to %s (%s)', target, targetlocation or 'target not found')
-	local location = vec3.mid(edict.absmin, edict.absmax)
+	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
 end
@@ -348,7 +349,7 @@ function edicts.isdoor(edict)
 	local itemprefix = itemname and itemname .. ' ' or ''
 
 	local description = format('%s%sDoor', secretprefix, itemprefix)
-	local location = vec3.mid(edict.absmin, edict.absmax)
+	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
 end
@@ -438,7 +439,7 @@ function edicts.isbutton(edict, current)
 	end
 
 	local description = (edict.health > 0 and 'Shoot' or 'Touch') .. ' button'
-	local location = vec3.mid(edict.absmin, edict.absmax)
+	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
 end
@@ -455,7 +456,7 @@ function edicts.isexit(edict, current)
 
 	local mapname = edict.map or '???'
 	local description = 'Exit to ' .. (mapname == '' and '???' or mapname)
-	local location = vec3.mid(edict.absmin, edict.absmax)
+	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
 end
@@ -477,7 +478,7 @@ function edicts.ismessage(edict)
 	end
 
 	local description = '"' .. message .. '"'
-	local location = vec3.mid(edict.absmin, edict.absmax)
+	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
 end
@@ -569,7 +570,7 @@ function console.gazerefs(choice)
 	end
 
 	choice = choice and math.tointeger(choice) or 0
-	local pos = vec3.mid(edict.absmin, edict.absmax)
+	local pos = vec3mid(edict.absmin, edict.absmax)
 
 	if choice == 1 then
 		player.setpos(pos)
@@ -613,7 +614,7 @@ function console.gazerefs(choice)
 		end
 
 		edict = reflist[choice]
-		pos = vec3.mid(edict.absmin, edict.absmax)
+		pos = vec3mid(edict.absmin, edict.absmax)
 		player.setpos(pos)
 	else
 		print('\2Gazed entity')
@@ -629,7 +630,7 @@ function console.gazerefs(choice)
 			print(header)
 
 			for _, edict in ipairs(refs) do
-				pos = vec3.mid(edict.absmin, edict.absmax)
+				pos = vec3mid(edict.absmin, edict.absmax)
 				print(index .. ':', getname(edict), 'at', pos)
 
 				index = index + 1
