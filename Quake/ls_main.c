@@ -661,7 +661,7 @@ lua_State* LS_GetState(void)
 	if (ls_quota == 0)
 	{
 		size_t quota = LS_CheckSizeArgument("-luaexecquota");  // in kilo-ops
-		ls_quota = CLAMP(1024, quota, 64 * 1024) * 1024;
+		ls_quota = CLAMP(4 * 1024, quota, 64 * 1024) * 1024;
 	}
 
 	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, ls_quota);
