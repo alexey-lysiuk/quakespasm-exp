@@ -267,6 +267,13 @@ function edicts.ismonster(edict)
 		return
 	end
 
+	-- Check flag specific to Arcane Dimensions
+	local nomonstercount = edict.nomonstercount
+
+	if nomonstercount and nomonstercount ~= 0 then
+		return
+	end
+
 	-- Remove classname prefix if present
 	if classname:find('monster_', 1, true) == 1 then
 		classname = classname:sub(9)
