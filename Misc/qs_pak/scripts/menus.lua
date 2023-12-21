@@ -584,6 +584,7 @@ addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
 addedictsmenu('Buttons', edicts.isbutton)
 addedictsmenu('Exits', edicts.isexit)
+addedictsmenu('Messages', edicts.ismessage)
 
 
 local function addgazemenu(suffix, pagefunc)

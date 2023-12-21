@@ -462,6 +462,28 @@ end
 
 
 --
+-- Edicts with messages
+--
+
+function edicts.ismessage(edict)
+	if not edict or isfree(edict) then
+		return
+	end
+
+	local message = edict.message
+
+	if not message or #message == 0 then
+		return
+	end
+
+	local description = '"' .. message .. '"'
+	local location = vec3.mid(edict.absmin, edict.absmax)
+
+	return description, location
+end
+
+
+--
 -- Edicts console commands
 --
 
@@ -502,6 +524,7 @@ addedictscommand('doors', edicts.isdoor)
 addedictscommand('items', isitem)
 addedictscommand('buttons', edicts.isbutton)
 addedictscommand('exits', edicts.isexit)
+addedictscommand('messages', edicts.ismessage)
 
 
 ---
