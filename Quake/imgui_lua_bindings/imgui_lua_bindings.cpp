@@ -1,7 +1,7 @@
-#include <stdio.h>
+//#include <stdio.h>
 #include <imgui.h>
-#include <deque>
-#include <vector>
+//#include <deque>
+//#include <vector>
 
 extern "C" {
   #include "lua.h"
@@ -625,7 +625,7 @@ static void PushImguiEnums(lua_State* lState, const char* tableName) {
 };
 
 
-void LoadImguiBindings() {
+extern "C" void LoadImguiBindings() {
     if (!lState) {
         fprintf(stderr, "You didn't assign the global lState, either assign that or refactor LoadImguiBindings and RunString\n");
     }
@@ -635,11 +635,11 @@ void LoadImguiBindings() {
     lua_setglobal(lState, "imgui");
 }
 
-std::vector<int> drawList;
-
-int imgui_draw(lua_State *L){
-    lua_pushvalue(L, 1);
-    auto ref = luaL_ref(L, LUA_REGISTRYINDEX);
-    drawList.push_back(ref);
-    return 1;
-}
+//std::vector<int> drawList;
+//
+//int imgui_draw(lua_State *L){
+//    lua_pushvalue(L, 1);
+//    auto ref = luaL_ref(L, LUA_REGISTRYINDEX);
+//    drawList.push_back(ref);
+//    return 1;
+//}
