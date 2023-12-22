@@ -457,7 +457,13 @@ end
 --
 
 function edicts.isexit(edict)
-	if not edict or isfree(edict) or edict.classname ~= 'trigger_changelevel' then
+	if not edict or isfree(edict) then
+		return
+	end
+
+	if edict.classname ~= 'trigger_changelevel'
+		and edict.touch ~= 'changelevel_touch()' 
+		and edict.use ~= 'trigger_changelevel()' then
 		return
 	end
 
