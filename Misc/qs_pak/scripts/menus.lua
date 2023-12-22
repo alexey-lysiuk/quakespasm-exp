@@ -39,6 +39,7 @@ local floor <const> = math.floor
 local format <const> = string.format
 local insert <const> = table.insert
 
+local vec3mid <const> = vec3.mid
 local pushpage <const> = menu.pushpage
 local poppage <const> = menu.poppage
 local clearpages <const> = menu.clearpages
@@ -356,7 +357,7 @@ local function describe(edict)
 	local location, angles
 
 	if not isfree(edict) then
-		location = vec3.mid(edict.absmin, edict.absmax)
+		location = vec3mid(edict.absmin, edict.absmax)
 		angles = edict.angles
 
 		if location == vec3origin then
@@ -584,6 +585,7 @@ addedictsmenu('Doors', edicts.isdoor)
 addedictsmenu('Items', edicts.isitem)
 addedictsmenu('Buttons', edicts.isbutton)
 addedictsmenu('Exits', edicts.isexit)
+addedictsmenu('Messages', edicts.ismessage)
 
 
 local function addgazemenu(suffix, pagefunc)

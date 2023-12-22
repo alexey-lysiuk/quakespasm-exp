@@ -635,7 +635,7 @@ lua_State* LS_GetState(void)
 			if (ls_memorysize == 0)
 			{
 				size_t heapsize = LS_CheckSizeArgument("-luaheapsize");  // in kB
-				ls_memorysize = CLAMP(2 * 1024, heapsize, 64 * 1024) * 1024;
+				ls_memorysize = CLAMP(8 * 1024, heapsize, 64 * 1024) * 1024;
 			}
 
 			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
@@ -661,7 +661,7 @@ lua_State* LS_GetState(void)
 	if (ls_quota == 0)
 	{
 		size_t quota = LS_CheckSizeArgument("-luaexecquota");  // in kilo-ops
-		ls_quota = CLAMP(1024, quota, 64 * 1024) * 1024;
+		ls_quota = CLAMP(4 * 1024, quota, 64 * 1024) * 1024;
 	}
 
 	lua_sethook(ls_state, LS_global_hook, LUA_MASKCOUNT, ls_quota);
