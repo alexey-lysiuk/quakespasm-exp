@@ -2314,44 +2314,46 @@ IMGUI_FUNCTION(ColorConvertRGBtoHSV)
 NUMBER_ARG(r)
 NUMBER_ARG(g)
 NUMBER_ARG(b)
-FLOAT_ARG(out_h)
-FLOAT_ARG(out_s)
-FLOAT_ARG(out_v)
-CALL_FUNCTION_NO_RET(ColorConvertRGBtoHSV, r, g, b, out_h, out_s, out_v)
+FLOAT_ARRAY_DEF(hsv,3)
+CALL_FUNCTION_NO_RET(ColorConvertRGBtoHSV, r, g, b, hsv[0], hsv[1], hsv[2])
+PUSH_NUMBER(hsv[0])
+PUSH_NUMBER(hsv[1])
+PUSH_NUMBER(hsv[2])
 END_IMGUI_FUNC
 //    IMGUI_API void          ColorConvertHSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float& out_b);
 IMGUI_FUNCTION(ColorConvertHSVtoRGB)
 NUMBER_ARG(h)
 NUMBER_ARG(s)
 NUMBER_ARG(v)
-FLOAT_ARG(out_r)
-FLOAT_ARG(out_g)
-FLOAT_ARG(out_b)
-CALL_FUNCTION_NO_RET(ColorConvertHSVtoRGB, h, s, v, out_r, out_g, out_b)
+FLOAT_ARRAY_DEF(rgb,3)
+CALL_FUNCTION_NO_RET(ColorConvertHSVtoRGB, h, s, v, rgb[0], rgb[1], rgb[2])
+PUSH_NUMBER(rgb[0])
+PUSH_NUMBER(rgb[1])
+PUSH_NUMBER(rgb[2])
 END_IMGUI_FUNC
 //    IMGUI_API int           GetKeyIndex(ImGuiKey imgui_key);                                    // map ImGuiKey_* values into user's key index. == io.KeyMap[key]
 IMGUI_FUNCTION(GetKeyIndex)
 INT_ARG(imgui_key)
-CALL_FUNCTION(GetKeyIndex, int, imgui_key)
+CALL_FUNCTION(GetKeyIndex, int, (ImGuiKey)imgui_key)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyDown(int user_key_index);                                      // is key being held. == io.KeysDown[user_key_index].
 IMGUI_FUNCTION(IsKeyDown)
 INT_ARG(user_key_index)
-CALL_FUNCTION(IsKeyDown, bool, user_key_index)
+CALL_FUNCTION(IsKeyDown, bool, (ImGuiKey)user_key_index)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyPressed(int user_key_index, bool repeat = true);               // was key pressed (went from !Down to Down)? if repeat=true, uses io.KeyRepeatDelay / KeyRepeatRate
 IMGUI_FUNCTION(IsKeyPressed)
 INT_ARG(user_key_index)
 OPTIONAL_BOOL_ARG(repeat, true)
-CALL_FUNCTION(IsKeyPressed, bool, user_key_index, repeat)
+CALL_FUNCTION(IsKeyPressed, bool, (ImGuiKey)user_key_index, repeat)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyReleased(int user_key_index);                                  // was key released (went from Down to !Down)?
 IMGUI_FUNCTION(IsKeyReleased)
 INT_ARG(user_key_index)
-CALL_FUNCTION(IsKeyReleased, bool, user_key_index)
+CALL_FUNCTION(IsKeyReleased, bool, (ImGuiKey)user_key_index)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API int           GetKeyPressedAmount(int key_index, float repeat_delay, float rate); // uses provided repeat rate/delay. return a count, most often 0 or 1 but might be >1 if RepeatRate is small enough that DeltaTime > RepeatRate
@@ -2359,7 +2361,7 @@ IMGUI_FUNCTION(GetKeyPressedAmount)
 INT_ARG(key_index)
 NUMBER_ARG(repeat_delay)
 NUMBER_ARG(rate)
-CALL_FUNCTION(GetKeyPressedAmount, int, key_index, repeat_delay, rate)
+CALL_FUNCTION(GetKeyPressedAmount, int, (ImGuiKey)key_index, repeat_delay, rate)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          CaptureKeyboardFromApp(bool want_capture_keyboard_value = true);    // attention: misleading name! manually override io.WantCaptureKeyboard flag next frame (said flag is entirely left for your application to handle). e.g. force capture keyboard when your widget is being hovered. This is equivalent to setting "io.WantCaptureKeyboard = want_capture_keyboard_value"; after the next NewFrame() call.
@@ -3098,15 +3100,15 @@ END_ENUM(Key)
 
 START_ENUM(KeyModFlags)
 //    ImGuiKeyModFlags_None       = 0,
-MAKE_ENUM(ImGuiKeyModFlags_None,None)
+MAKE_ENUM(ImGuiModFlags_None,None)
 //    ImGuiKeyModFlags_Ctrl       = 1 << 0,
-MAKE_ENUM(ImGuiKeyModFlags_Ctrl,Ctrl)
+MAKE_ENUM(ImGuiModFlags_Ctrl,Ctrl)
 //    ImGuiKeyModFlags_Shift      = 1 << 1,
-MAKE_ENUM(ImGuiKeyModFlags_Shift,Shift)
+MAKE_ENUM(ImGuiModFlags_Shift,Shift)
 //    ImGuiKeyModFlags_Alt        = 1 << 2,
-MAKE_ENUM(ImGuiKeyModFlags_Alt,Alt)
+MAKE_ENUM(ImGuiModFlags_Alt,Alt)
 //    ImGuiKeyModFlags_Super      = 1 << 3
-MAKE_ENUM(ImGuiKeyModFlags_Super,Super)
+MAKE_ENUM(ImGuiModFlags_Super,Super)
 END_ENUM(KeyModFlags)
 //enum ImGuiNavInput_
 
