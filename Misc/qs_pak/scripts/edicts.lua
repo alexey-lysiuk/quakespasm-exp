@@ -366,7 +366,7 @@ end
 -- Items
 --
 
-function edicts.isitem(edict, current)
+function edicts.isitem(edict)
 	if not edict or isfree(edict) then
 		return
 	end
@@ -440,7 +440,7 @@ end
 -- Buttons
 --
 
-function edicts.isbutton(edict, current)
+function edicts.isbutton(edict)
 	if not edict or isfree(edict) or edict.classname ~= 'func_button' then
 		return
 	end
@@ -456,7 +456,7 @@ end
 -- Level exits
 --
 
-function edicts.isexit(edict, current)
+function edicts.isexit(edict)
 	if not edict or isfree(edict) or edict.classname ~= 'trigger_changelevel' then
 		return
 	end
