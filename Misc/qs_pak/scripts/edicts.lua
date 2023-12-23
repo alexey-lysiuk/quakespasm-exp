@@ -149,6 +149,7 @@ end
 
 
 local format <const> = string.format
+local gsub <const> = string.gsub
 
 local localize <const> = text.localize
 
@@ -490,7 +491,7 @@ function edicts.ismessage(edict)
 		return
 	end
 
-	local description = '"' .. message .. '"'
+	local description = '"' .. gsub(message, '\n+', ' ') .. '"'
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
