@@ -689,15 +689,20 @@ static void PR_DisassembleFunction(dfunction_t* func)
 	const char* name = PR_GetString(func->s_name);
 	Con_SafePrintf("%s(", name);
 
-	for (int pb = func->parm_start, pe = pb + func->numparms, p = pb; p < pe; ++p)
+	int begin = func->first_statement;
+
+	if (begin > 0)
 	{
-		ddef_t* pdef = PR_GetDefinition(p);
-		Con_SafePrintf("%s%s %s", p == pb ? "" : ", ", PR_TypeToString(pdef), PR_GetString(pdef->s_name));
+		for (int pb = func->parm_start, pe = pb + func->numparms, p = pb; p < pe; ++p)
+		{
+			ddef_t* pdef = PR_GetDefinition(p);
+			Con_SafePrintf("%s%s %s", p == pb ? "" : ", ", PR_TypeToString(pdef), PR_GetString(pdef->s_name));
+		}
 	}
+	else
+		Con_SafePrintf("<%i parameters>", func->numparms);
 
 	Con_SafePrintf("): // %s\n", PR_GetString(func->s_file));
-
-	int begin = func->first_statement;
 
 	if (begin > 0)
 	{
@@ -727,7 +732,7 @@ void PR_Disassemble_f(void)
 
 	if (strcmp(name, "*") == 0)
 	{
-		for (int f = 0; f < numfuncs; ++f)
+		for (int f = 1; f < numfuncs; ++f)
 		{
 			PR_DisassembleFunction(&pr_functions[f]);
 			Con_SafePrintf("\n");
@@ -737,7 +742,7 @@ void PR_Disassemble_f(void)
 	{
 		qboolean found = false;
 
-		for (int f = 0; f < numfuncs; ++f)
+		for (int f = 1; f < numfuncs; ++f)
 		{
 			dfunction_t* func = &pr_functions[f];
 
