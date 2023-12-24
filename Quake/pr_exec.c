@@ -684,33 +684,57 @@ static const char* PR_TypeToString(const ddef_t* defition)
 	}
 }
 
-static void PR_DisassembleFunction(dfunction_t* func)
+static void PR_DisassembleFunction(const dfunction_t* func)
 {
+	int first_statement = func->first_statement;
+
+	if (first_statement > 0)
+	{
+		const char* rettype = "void";
+
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			if (statement->op == OP_RETURN)
+			{
+				ddef_t* def = PR_GetDefinition(statement->a);
+				rettype = def ? PR_TypeToString(def) : "???";   // TODO: ???
+				break;
+			}
+			else if (statement->op == OP_DONE)
+				break;
+		}
+
+		Con_SafePrintf("%s ", rettype);
+	}
+
 	const char* name = PR_GetString(func->s_name);
 	Con_SafePrintf("%s(", name);
 
-	int begin = func->first_statement;
-
-	if (begin > 0)
+	if (first_statement > 0)
 	{
-		for (int pb = func->parm_start, pe = pb + func->numparms, p = pb; p < pe; ++p)
+		for (int ib = func->parm_start, ie = ib + func->numparms, i = ib; i < ie; ++i)
 		{
-			ddef_t* pdef = PR_GetDefinition(p);
-			Con_SafePrintf("%s%s %s", p == pb ? "" : ", ", PR_TypeToString(pdef), PR_GetString(pdef->s_name));
+			ddef_t* def = PR_GetDefinition(i);
+			Con_SafePrintf("%s%s %s", i == ib ? "" : ", ", PR_TypeToString(def), PR_GetString(def->s_name));
 		}
 	}
 	else
-		Con_SafePrintf("<%i parameters>", func->numparms);
+		Con_SafePrintf("<%i parameters>", func->numparms);  // TODO: ???
 
 	Con_SafePrintf("): // %s\n", PR_GetString(func->s_file));
 
-	if (begin > 0)
+	if (first_statement > 0)
 	{
-		qboolean lastfunc = func - pr_functions == progs->numfunctions - 1;
-		int end = lastfunc ? progs->numstatements : (func + 1)->first_statement;
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+			PR_PrintStatement(statement);
 
-		for (int s = begin; s < end; ++s)
-			PR_PrintStatement(&pr_statements[s]);
+			if (statement->op == OP_DONE)
+				break;
+		}
 	}
 	else
 		Con_SafePrintf("<built-in>\n");
@@ -732,9 +756,9 @@ void PR_Disassemble_f(void)
 
 	if (strcmp(name, "*") == 0)
 	{
-		for (int f = 1; f < numfuncs; ++f)
+		for (int i = 1; i < numfuncs; ++i)
 		{
-			PR_DisassembleFunction(&pr_functions[f]);
+			PR_DisassembleFunction(&pr_functions[i]);
 			Con_SafePrintf("\n");
 		}
 	}
@@ -742,9 +766,9 @@ void PR_Disassemble_f(void)
 	{
 		qboolean found = false;
 
-		for (int f = 1; f < numfuncs; ++f)
+		for (int i = 1; i < numfuncs; ++i)
 		{
-			dfunction_t* func = &pr_functions[f];
+			dfunction_t* func = &pr_functions[i];
 
 			if (strcmp(PR_GetString(func->s_name), name) == 0)
 			{
@@ -756,6 +780,6 @@ void PR_Disassemble_f(void)
 		}
 
 		if (!found)
-			Con_SafePrintf("ERROR: Could not find %s function\n", name);
+			Con_SafePrintf("ERROR: Could not find function \"%s\"\n", name);
 	}
 }
