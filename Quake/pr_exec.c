@@ -692,9 +692,42 @@ void PR_Disassemble_f(void)
 			continue;
 		}
 
-		int end = (f == numfuncs - 1) ? progs->numstatements : (func + 1)->first_statement;
+		Con_SafePrintf("%s(", curname);
 
-		Con_SafePrintf("%s():\n", curname);  // TODO: parms
+		for (int pb = func->parm_start, pe = pb + func->numparms, p = pb; p < pe; ++p)
+		{
+			ddef_t* ED_GlobalAtOfs(int ofs);
+			ddef_t* parmdef = ED_GlobalAtOfs(p);
+//			void* val = (void *)&pr_globals[p];
+
+			const char* ptype;
+
+//			if (p != pb)
+//				Con_SafePrintf(", ");
+
+			switch (parmdef->type)
+			{
+				case ev_void: ptype = "void"; break;
+				case ev_string: ptype = "string"; break;
+				case ev_float: ptype = "float"; break;
+				case ev_vector: ptype = "vector"; break;
+				case ev_entity: ptype = "entity"; break;
+				case ev_field: ptype = "field"; break;
+				case ev_function: ptype = "function"; break;
+				case ev_pointer: ptype = "pointer"; break;
+				default: ptype = "???"; break;
+			}
+
+			Con_SafePrintf("%s%s %s", p == pb ? "" : ", ", ptype, PR_GetString(parmdef->s_name));
+//			Con_SafePrintf("%s", PR_GetString(parmdef->s_name));
+
+//			const char* parm = PR_GlobalString(p);
+//			Con_SafePrintf("%s%s", p == pb ? "" : ", ", parm);
+		}
+
+		Con_SafePrintf("):\n");
+
+		int end = (f == numfuncs - 1) ? progs->numstatements : (func + 1)->first_statement;
 
 		for (int s = begin; s < end; ++s)
 			PR_PrintStatement(&pr_statements[s]);
