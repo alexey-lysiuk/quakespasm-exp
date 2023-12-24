@@ -174,8 +174,7 @@ void ED_Free (edict_t *ed)
 ED_GlobalAtOfs
 ============
 */
-//static
-ddef_t *ED_GlobalAtOfs (int ofs)
+static ddef_t *ED_GlobalAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;

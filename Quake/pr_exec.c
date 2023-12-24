@@ -652,6 +652,65 @@ void PR_ExecuteProgram (func_t fnum)
 #undef OPB
 #undef OPC
 
+
+static ddef_t* PR_GetDefinition(int offset)
+{
+	ddef_t* globaldefs = (ddef_t*)((byte*)progs + progs->ofs_globaldefs);
+
+	for (int i = 0; i < progs->numglobaldefs; ++i)
+	{
+		ddef_t* defition = &globaldefs[i];
+
+		if (defition->ofs == offset)
+			return defition;
+	}
+
+	return NULL;
+}
+
+static const char* PR_TypeToString(const ddef_t* defition)
+{
+	switch (defition->type)
+	{
+		case ev_void:     return "void";     break;
+		case ev_string:   return "string";   break;
+		case ev_float:    return "float";    break;
+		case ev_vector:   return "vector";   break;
+		case ev_entity:   return "entity";   break;
+		case ev_field:    return "field";    break;
+		case ev_function: return "function"; break;
+		case ev_pointer:  return "pointer";  break;
+		default:          return "???";      break;
+	}
+}
+
+static void PR_DisassembleFunction(dfunction_t* func)
+{
+	const char* name = PR_GetString(func->s_name);
+	Con_SafePrintf("%s(", name);
+
+	for (int pb = func->parm_start, pe = pb + func->numparms, p = pb; p < pe; ++p)
+	{
+		ddef_t* pdef = PR_GetDefinition(p);
+		Con_SafePrintf("%s%s %s", p == pb ? "" : ", ", PR_TypeToString(pdef), PR_GetString(pdef->s_name));
+	}
+
+	Con_SafePrintf("): // %s\n", PR_GetString(func->s_file));
+
+	int begin = func->first_statement;
+
+	if (begin > 0)
+	{
+		qboolean lastfunc = func - pr_functions == progs->numfunctions - 1;
+		int end = lastfunc ? progs->numstatements : (func + 1)->first_statement;
+
+		for (int s = begin; s < end; ++s)
+			PR_PrintStatement(&pr_statements[s]);
+	}
+	else
+		Con_SafePrintf("<built-in>\n");
+}
+
 void PR_Disassemble_f(void)
 {
 	if (!progs)
@@ -665,79 +724,33 @@ void PR_Disassemble_f(void)
 
 	int numfuncs = progs->numfunctions;
 	const char* name = Cmd_Argv(1);
-	qboolean found = false;
 
 	if (strcmp(name, "*") == 0)
-		name = NULL;
-
-	for (int f = 0; f < numfuncs; ++f)
 	{
-		dfunction_t* func = &pr_functions[f];
-		const char* curname = PR_GetString(func->s_name);
-
-		if (name && strcmp(name, curname) != 0)
-			continue;
-
-		found = true;
-
-		int begin = func->first_statement;
-
-		if (begin <= 0)
+		for (int f = 0; f < numfuncs; ++f)
 		{
-			if (name)
+			PR_DisassembleFunction(&pr_functions[f]);
+			Con_SafePrintf("\n");
+		}
+	}
+	else
+	{
+		qboolean found = false;
+
+		for (int f = 0; f < numfuncs; ++f)
+		{
+			dfunction_t* func = &pr_functions[f];
+
+			if (strcmp(PR_GetString(func->s_name), name) == 0)
 			{
-				Con_SafePrintf("%s() is a built-in function\n", name);
+				PR_DisassembleFunction(func);
+
+				found = true;
 				break;
 			}
-			continue;
 		}
 
-		Con_SafePrintf("%s(", curname);
-
-		for (int pb = func->parm_start, pe = pb + func->numparms, p = pb; p < pe; ++p)
-		{
-			ddef_t* ED_GlobalAtOfs(int ofs);
-			ddef_t* parmdef = ED_GlobalAtOfs(p);
-//			void* val = (void *)&pr_globals[p];
-
-			const char* ptype;
-
-//			if (p != pb)
-//				Con_SafePrintf(", ");
-
-			switch (parmdef->type)
-			{
-				case ev_void: ptype = "void"; break;
-				case ev_string: ptype = "string"; break;
-				case ev_float: ptype = "float"; break;
-				case ev_vector: ptype = "vector"; break;
-				case ev_entity: ptype = "entity"; break;
-				case ev_field: ptype = "field"; break;
-				case ev_function: ptype = "function"; break;
-				case ev_pointer: ptype = "pointer"; break;
-				default: ptype = "???"; break;
-			}
-
-			Con_SafePrintf("%s%s %s", p == pb ? "" : ", ", ptype, PR_GetString(parmdef->s_name));
-//			Con_SafePrintf("%s", PR_GetString(parmdef->s_name));
-
-//			const char* parm = PR_GlobalString(p);
-//			Con_SafePrintf("%s%s", p == pb ? "" : ", ", parm);
-		}
-
-		Con_SafePrintf("):\n");
-
-		int end = (f == numfuncs - 1) ? progs->numstatements : (func + 1)->first_statement;
-
-		for (int s = begin; s < end; ++s)
-			PR_PrintStatement(&pr_statements[s]);
-
-		if (name)
-			break;
-		else
-			Con_SafePrintf("\n");
+		if (!found)
+			Con_SafePrintf("ERROR: Could not find %s function\n", name);
 	}
-
-	if (!found && name)
-		Con_SafePrintf("ERROR: Could not find %s function\n", name);
 }
