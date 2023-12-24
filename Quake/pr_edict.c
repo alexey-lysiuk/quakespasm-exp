@@ -313,7 +313,7 @@ Returns a string describing *data in a type specific manner
 */
 static const char *PR_ValueString (int type, eval_t *val)
 {
-	static char	line[512];
+	static char	line[4096];
 	ddef_t		*def;
 	dfunction_t	*f;
 
@@ -415,9 +415,9 @@ padded to 20 field width
 */
 const char *PR_GlobalString (int ofs)
 {
-	static char	line[512];
+	static char	line[4096];
 	const char	*s;
-	int		i;
+	size_t		i;
 	ddef_t		*def;
 	void		*val;
 
@@ -434,15 +434,16 @@ const char *PR_GlobalString (int ofs)
 	i = strlen(line);
 	for ( ; i < 20; i++)
 		strcat (line, " ");
-	strcat (line, " ");
+	if (i < Q_COUNTOF(line) - 1)
+		strcat (line, " ");
 
 	return line;
 }
 
 const char *PR_GlobalStringNoContents (int ofs)
 {
-	static char	line[512];
-	int		i;
+	static char	line[4096];
+	size_t		i;
 	ddef_t		*def;
 
 	def = ED_GlobalAtOfs(ofs);
@@ -454,7 +455,8 @@ const char *PR_GlobalStringNoContents (int ofs)
 	i = strlen(line);
 	for ( ; i < 20; i++)
 		strcat (line, " ");
-	strcat (line, " ");
+	if (i < Q_COUNTOF(line) - 1)
+		strcat (line, " ");
 
 	return line;
 }
@@ -1336,6 +1338,10 @@ void PR_Init (void)
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
+
+	void PR_Disassemble_f (void);
+	Cmd_AddCommand ("disassemble", PR_Disassemble_f);
+
 	Cvar_RegisterVariable (&nomonsters);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);

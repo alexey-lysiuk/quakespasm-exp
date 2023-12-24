@@ -651,3 +651,60 @@ void PR_ExecuteProgram (func_t fnum)
 #undef OPA
 #undef OPB
 #undef OPC
+
+void PR_Disassemble_f(void)
+{
+	if (!progs)
+		return;
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_SafePrintf("disassemble <function|*>");
+		return;
+	}
+
+	int numfuncs = progs->numfunctions;
+	const char* name = Cmd_Argv(1);
+	qboolean found = false;
+
+	if (strcmp(name, "*") == 0)
+		name = NULL;
+
+	for (int f = 0; f < numfuncs; ++f)
+	{
+		dfunction_t* func = &pr_functions[f];
+		const char* curname = PR_GetString(func->s_name);
+
+		if (name && strcmp(name, curname) != 0)
+			continue;
+
+		found = true;
+
+		int begin = func->first_statement;
+
+		if (begin <= 0)
+		{
+			if (name)
+			{
+				Con_SafePrintf("%s() is a built-in function\n", name);
+				break;
+			}
+			continue;
+		}
+
+		int end = (f == numfuncs - 1) ? progs->numstatements : (func + 1)->first_statement;
+
+		Con_SafePrintf("%s():\n", curname);  // TODO: parms
+
+		for (int s = begin; s < end; ++s)
+			PR_PrintStatement(&pr_statements[s]);
+
+		if (name)
+			break;
+		else
+			Con_SafePrintf("\n");
+	}
+
+	if (!found && name)
+		Con_SafePrintf("ERROR: Could not find %s function\n", name);
+}
