@@ -1335,13 +1335,54 @@ void PR_LoadProgs (void)
 }
 
 
+static const char* PR_GetTypeString(unsigned short type)
+{
+	switch (type & ~DEF_SAVEGLOBAL)
+	{
+		case ev_void:     return "void";     break;
+		case ev_string:   return "string";   break;
+		case ev_float:    return "float";    break;
+		case ev_vector:   return "vector";   break;
+		case ev_entity:   return "entity";   break;
+		case ev_field:    return "field";    break;
+		case ev_function: return "function"; break;
+		case ev_pointer:  return "pointer";  break;
+		default:          return "???";      break;
+	}
+}
+
 static void PR_DisassembleFunction(const dfunction_t* func)
 {
 	int first_statement = func->first_statement;
 
-	int funcname = func->s_name;
-	Con_SafePrintf("%s():\n", funcname != 0 ? PR_GetString(funcname) : "???");
+	// Return value
+	unsigned short rettype;
 
+	if (first_statement > 0)
+	{
+		rettype = ev_void;
+
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			if (statement->op == OP_RETURN)
+			{
+				const ddef_t* def = ED_GlobalAtOfs(statement->a);
+				rettype = def ? def->type : ev_bad;
+				break;
+			}
+			else if (statement->op == OP_DONE)
+				break;
+		}
+	}
+	else
+		rettype = ev_bad;
+
+	int funcname = func->s_name;
+	Con_SafePrintf("%s %s():\n", PR_GetTypeString(rettype), funcname != 0 ? PR_GetString(funcname) : "???");
+
+	// Code disassembly
 	if (first_statement > 0)
 	{
 		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
