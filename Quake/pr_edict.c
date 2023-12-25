@@ -1380,7 +1380,49 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 		rettype = ev_bad;
 
 	int funcname = func->s_name;
-	Con_SafePrintf("%s %s():\n", PR_GetTypeString(rettype), funcname != 0 ? PR_GetString(funcname) : "???");
+	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), funcname != 0 ? PR_GetString(funcname) : "???");
+
+	// Parameters
+	int numparms = q_min(func->numparms, MAX_PARMS);
+	typedef struct
+	{
+		int name;
+		unsigned short type;
+	} Parameter;
+	Parameter parameters[MAX_PARMS];
+
+	for (int i = 0; i < numparms; ++i)
+	{
+		Parameter param;
+
+		if (first_statement > 0)
+		{
+			const ddef_t* def = ED_GlobalAtOfs(func->parm_start + i);
+			param.name = def ? def->s_name : 0;
+			param.type = def ? def->type : (func->parm_size[i] > 1 ? ev_vector : ev_bad);
+		}
+		else
+		{
+			param.name = 0 /* no name */;
+			param.type = func->parm_size[i] > 1 ? ev_vector : ev_bad;
+		}
+
+		parameters[i] = param;
+	}
+
+	for (int i = 0; i < numparms; ++i)
+	{
+		const char* prefix = i == 0 ? "" : ", ";
+		const char* name = PR_GetString(parameters[i].name);
+		const char* type = PR_GetTypeString(parameters[i].type);
+
+		if (name[0] == '\0')
+			Con_SafePrintf("%s%s", prefix, type);
+		else
+			Con_SafePrintf("%s%s %s", prefix, type, name);
+	}
+
+	Con_SafePrintf("):\n");
 
 	// Code disassembly
 	if (first_statement > 0)
