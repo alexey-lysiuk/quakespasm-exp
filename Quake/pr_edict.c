@@ -1468,6 +1468,11 @@ int PR_AllocString (int size, char **ptr)
 }
 
 
+const ddef_t* PR_GetDefinition(int offset)
+{
+	return ED_GlobalAtOfs(offset);
+}
+
 #ifdef USE_LUA_SCRIPTING
 
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)

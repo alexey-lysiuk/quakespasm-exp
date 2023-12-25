@@ -653,33 +653,17 @@ void PR_ExecuteProgram (func_t fnum)
 #undef OPC
 
 
-static ddef_t* PR_GetDefinition(int offset)
+const ddef_t* PR_GetDefinition(int offset);
+
+static const char* PR_GetTypeString(unsigned short type)
 {
-	ddef_t* globaldefs = (ddef_t*)((byte*)progs + progs->ofs_globaldefs);
-
-	for (int i = 0; i < progs->numglobaldefs; ++i)
-	{
-		ddef_t* defition = &globaldefs[i];
-
-		if (defition->ofs == offset)
-			return defition;
-	}
-
-	return NULL;
-}
-
-static const char* PR_TypeToString(const ddef_t* defition)
-{
-	switch (defition->type)
+	switch (type)
 	{
 		case ev_void:     return "void";     break;
 		case ev_string:   return "string";   break;
 		case ev_float:    return "float";    break;
 		case ev_vector:   return "vector";   break;
 		case ev_entity:   return "entity";   break;
-		case ev_field:    return "field";    break;
-		case ev_function: return "function"; break;
-		case ev_pointer:  return "pointer";  break;
 		default:          return "???";      break;
 	}
 }
@@ -688,43 +672,55 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 {
 	int first_statement = func->first_statement;
 
+	// Return value
+	unsigned short rettype = ev_bad;
+
 	if (first_statement > 0)
 	{
-		const char* rettype = "void";
-
 		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
 		{
 			dstatement_t* statement = &pr_statements[i];
 
 			if (statement->op == OP_RETURN)
 			{
-				ddef_t* def = PR_GetDefinition(statement->a);
-				rettype = def ? PR_TypeToString(def) : "???";   // TODO: ???
+				const ddef_t* def = PR_GetDefinition(statement->a);
+				rettype = PR_GetTypeString(def);
 				break;
 			}
 			else if (statement->op == OP_DONE)
 				break;
 		}
-
-		Con_SafePrintf("%s ", rettype);
 	}
 
-	const char* name = PR_GetString(func->s_name);
-	Con_SafePrintf("%s(", name);
+	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), PR_GetString(func->s_name));
+
+	// Parameters
+	int numparms = q_min(func->numparms, MAX_PARMS);
 
 	if (first_statement > 0)
 	{
-		for (int ib = func->parm_start, ie = ib + func->numparms, i = ib; i < ie; ++i)
+		int parmstart = func->parm_start;
+
+		for (int i = 0; i < numparms; ++i)
 		{
-			ddef_t* def = PR_GetDefinition(i);
-			Con_SafePrintf("%s%s %s", i == ib ? "" : ", ", PR_TypeToString(def), PR_GetString(def->s_name));
+			const ddef_t* def = PR_GetDefinition(parmstart + i);
+			const char* prefix = i == 0 ? "" : ", ";
+
+			if (def)
+				Con_SafePrintf("%s%s %s", prefix, PR_GetTypeString(def->type), PR_GetString(def->s_name));
+			else
+				Con_SafePrintf("%s%s", prefix, PR_GetTypeString(ev_bad));
 		}
 	}
 	else
-		Con_SafePrintf("<%i parameters>", func->numparms);  // TODO: ???
+	{
+		for (int i = 0; i < numparms; ++i)
+			Con_SafePrintf("%s%s", i == 0 ? "" : ", ", PR_GetTypeString(ev_bad));
+	}
 
 	Con_SafePrintf("): // %s\n", PR_GetString(func->s_file));
 
+	// Code disassembly
 	if (first_statement > 0)
 	{
 		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
