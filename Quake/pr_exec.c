@@ -140,7 +140,7 @@ const char *PR_GlobalStringNoContents (int ofs);
 PR_PrintStatement
 =================
 */
-static void PR_PrintStatement (dstatement_t *s)
+void PR_PrintStatement (dstatement_t *s)
 {
 	int	i;
 

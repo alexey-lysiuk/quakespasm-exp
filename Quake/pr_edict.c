@@ -1335,6 +1335,75 @@ void PR_LoadProgs (void)
 }
 
 
+static void PR_DisassembleFunction(const dfunction_t* func)
+{
+	int first_statement = func->first_statement;
+
+	int funcname = func->s_name;
+	Con_SafePrintf("%s():\n", funcname != 0 ? PR_GetString(funcname) : "???");
+
+	if (first_statement > 0)
+	{
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			void PR_PrintStatement(dstatement_t* s);
+			PR_PrintStatement(statement);
+
+			if (statement->op == OP_DONE)
+				break;
+		}
+	}
+	else
+		Con_SafePrintf("<built-in>\n");
+}
+
+static void PR_Disassemble_f(void)
+{
+	if (!progs)
+		return;
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_SafePrintf("disassemble <function|*>");
+		return;
+	}
+
+	int numfuncs = progs->numfunctions;
+	const char* name = Cmd_Argv(1);
+
+	if (strcmp(name, "*") == 0)
+	{
+		for (int i = 1; i < numfuncs; ++i)
+		{
+			PR_DisassembleFunction(&pr_functions[i]);
+			Con_SafePrintf("\n");
+		}
+	}
+	else
+	{
+		qboolean found = false;
+
+		for (int i = 1; i < numfuncs; ++i)
+		{
+			dfunction_t* func = &pr_functions[i];
+
+			if (strcmp(PR_GetString(func->s_name), name) == 0)
+			{
+				PR_DisassembleFunction(func);
+
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			Con_SafePrintf("ERROR: Could not find function \"%s\"\n", name);
+	}
+}
+
+
 /*
 ===============
 PR_Init
@@ -1346,6 +1415,8 @@ void PR_Init (void)
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
+	Cmd_AddCommand ("disassemble", PR_Disassemble_f);
+
 	Cvar_RegisterVariable (&nomonsters);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);
