@@ -654,16 +654,20 @@ void PR_ExecuteProgram (func_t fnum)
 
 
 const ddef_t* PR_GetDefinition(int offset);
+const char* PR_SafeGetString(int offset);
 
 static const char* PR_GetTypeString(unsigned short type)
 {
-	switch (type)
+	switch (type & ~DEF_SAVEGLOBAL)
 	{
 		case ev_void:     return "void";     break;
 		case ev_string:   return "string";   break;
 		case ev_float:    return "float";    break;
 		case ev_vector:   return "vector";   break;
 		case ev_entity:   return "entity";   break;
+		case ev_field:    return "field";    break;
+		case ev_function: return "function"; break;
+		case ev_pointer:  return "pointer";  break;
 		default:          return "???";      break;
 	}
 }
@@ -696,7 +700,7 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	else
 		rettype = ev_bad;
 
-	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), PR_GetString(func->s_name));
+	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), PR_SafeGetString(func->s_name));
 
 	// Parameters
 	int numparms = q_min(func->numparms, MAX_PARMS);
@@ -709,11 +713,13 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 		{
 			const ddef_t* def = PR_GetDefinition(parmstart + i);
 			const char* prefix = i == 0 ? "" : ", ";
+			const char* type = PR_GetTypeString(def ? def->type : ev_bad);
+			const char* name = PR_SafeGetString(def ? def->s_name : 0);
 
-			if (def)
-				Con_SafePrintf("%s%s %s", prefix, PR_GetTypeString(def->type), PR_GetString(def->s_name));
+			if (name[0] == '\0')
+				Con_SafePrintf("%s%s", prefix, type);
 			else
-				Con_SafePrintf("%s%s", prefix, PR_GetTypeString(ev_bad));
+				Con_SafePrintf("%s%s %s", prefix, type, name);
 		}
 	}
 	else
@@ -724,7 +730,14 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 			Con_SafePrintf("%s%s", i == 0 ? "" : ", ", unknowntype);
 	}
 
-	Con_SafePrintf("): // %s\n", PR_GetString(func->s_file));
+	Con_SafePrintf("):");
+
+	int file = func->s_file;
+
+	if (file)
+		Con_SafePrintf(" // %s\n", PR_SafeGetString(file));
+	else
+		Con_SafePrintf("\n");
 
 	// Code disassembly
 	if (first_statement > 0)
@@ -772,7 +785,7 @@ void PR_Disassemble_f(void)
 		{
 			dfunction_t* func = &pr_functions[i];
 
-			if (strcmp(PR_GetString(func->s_name), name) == 0)
+			if (strcmp(PR_SafeGetString(func->s_name), name) == 0)
 			{
 				PR_DisassembleFunction(func);
 
