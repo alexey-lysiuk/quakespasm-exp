@@ -1351,6 +1351,19 @@ static const char* PR_GetTypeString(unsigned short type)
 	}
 }
 
+static const char* PR_SafeGetString(int offset)
+{
+	if (offset >= 0 && offset < pr_stringssize)
+		return pr_strings + offset;
+	else if (offset < 0 && offset >= -pr_numknownstrings)
+	{
+		const char* knownstring = pr_knownstrings[-1 - offset];
+		return knownstring ? knownstring : "???";
+	}
+
+	return "???";
+}
+
 static void PR_DisassembleFunction(const dfunction_t* func)
 {
 	int first_statement = func->first_statement;
@@ -1380,7 +1393,7 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 		rettype = ev_bad;
 
 	int funcname = func->s_name;
-	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), funcname != 0 ? PR_GetString(funcname) : "???");
+	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), funcname != 0 ? PR_SafeGetString(funcname) : "???");
 
 	// Parameters
 	int numparms = q_min(func->numparms, MAX_PARMS);
@@ -1413,7 +1426,7 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	for (int i = 0; i < numparms; ++i)
 	{
 		const char* prefix = i == 0 ? "" : ", ";
-		const char* name = PR_GetString(parameters[i].name);
+		const char* name = PR_SafeGetString(parameters[i].name);
 		const char* type = PR_GetTypeString(parameters[i].type);
 
 		if (name[0] == '\0')
@@ -1425,7 +1438,7 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	int file = func->s_file;
 
 	if (file)
-		Con_SafePrintf("): // %s\n", PR_GetString(file));
+		Con_SafePrintf("): // %s\n", PR_SafeGetString(file));
 	else
 		Con_SafePrintf("):\n");
 
@@ -1477,7 +1490,7 @@ static void PR_Disassemble_f(void)
 		{
 			dfunction_t* func = &pr_functions[i];
 
-			if (strcmp(PR_GetString(func->s_name), name) == 0)
+			if (strcmp(PR_SafeGetString(func->s_name), name) == 0)
 			{
 				PR_DisassembleFunction(func);
 
