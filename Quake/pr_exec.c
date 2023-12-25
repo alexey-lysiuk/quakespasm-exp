@@ -700,44 +700,55 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	else
 		rettype = ev_bad;
 
-	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), PR_SafeGetString(func->s_name));
+	int funcname = func->s_name;
+	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), funcname != 0 ? PR_SafeGetString(funcname) : "???");
 
 	// Parameters
 	int numparms = q_min(func->numparms, MAX_PARMS);
-
-	if (first_statement > 0)
+	typedef struct
 	{
-		int parmstart = func->parm_start;
+		int name;
+		unsigned short type;
+	} Parameter;
+	Parameter parameters[MAX_PARMS];
 
-		for (int i = 0; i < numparms; ++i)
+	for (int i = 0; i < numparms; ++i)
+	{
+		Parameter param;
+
+		if (first_statement > 0)
 		{
-			const ddef_t* def = PR_GetDefinition(parmstart + i);
-			const char* prefix = i == 0 ? "" : ", ";
-			const char* type = PR_GetTypeString(def ? def->type : ev_bad);
-			const char* name = PR_SafeGetString(def ? def->s_name : 0);
-
-			if (name[0] == '\0')
-				Con_SafePrintf("%s%s", prefix, type);
-			else
-				Con_SafePrintf("%s%s %s", prefix, type, name);
+			const ddef_t* def = PR_GetDefinition(func->parm_start + i);
+			param.name = def ? def->s_name : 0;
+			param.type = def ? def->type : (func->parm_size[i] > 1 ? ev_vector : ev_bad);
 		}
+		else
+		{
+			param.name = 0 /* no name */;
+			param.type = func->parm_size[i] > 1 ? ev_vector : ev_bad;
+		}
+
+		parameters[i] = param;
 	}
-	else
+
+	for (int i = 0; i < numparms; ++i)
 	{
-		const char* unknowntype = PR_GetTypeString(ev_bad);
+		const char* prefix = i == 0 ? "" : ", ";
+		const char* name = PR_SafeGetString(parameters[i].name);
+		const char* type = PR_GetTypeString(parameters[i].type);
 
-		for (int i = 0; i < numparms; ++i)
-			Con_SafePrintf("%s%s", i == 0 ? "" : ", ", unknowntype);
+		if (name[0] == '\0')
+			Con_SafePrintf("%s%s", prefix, type);
+		else
+			Con_SafePrintf("%s%s %s", prefix, type, name);
 	}
-
-	Con_SafePrintf("):");
 
 	int file = func->s_file;
 
 	if (file)
-		Con_SafePrintf(" // %s\n", PR_SafeGetString(file));
+		Con_SafePrintf("): // %s\n", PR_SafeGetString(file));
 	else
-		Con_SafePrintf("\n");
+		Con_SafePrintf("):\n");
 
 	// Code disassembly
 	if (first_statement > 0)
