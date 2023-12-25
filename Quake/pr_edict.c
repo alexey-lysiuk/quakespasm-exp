@@ -1422,7 +1422,12 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 			Con_SafePrintf("%s%s %s", prefix, type, name);
 	}
 
-	Con_SafePrintf("):\n");
+	int file = func->s_file;
+
+	if (file)
+		Con_SafePrintf("): // %s\n", PR_GetString(file));
+	else
+		Con_SafePrintf("):\n");
 
 	// Code disassembly
 	if (first_statement > 0)
