@@ -673,10 +673,12 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	int first_statement = func->first_statement;
 
 	// Return value
-	unsigned short rettype = ev_bad;
+	unsigned short rettype;
 
 	if (first_statement > 0)
 	{
+		rettype = ev_void;
+
 		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
 		{
 			dstatement_t* statement = &pr_statements[i];
@@ -684,13 +686,15 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 			if (statement->op == OP_RETURN)
 			{
 				const ddef_t* def = PR_GetDefinition(statement->a);
-				rettype = PR_GetTypeString(def);
+				rettype = def ? def->type : ev_bad;
 				break;
 			}
 			else if (statement->op == OP_DONE)
 				break;
 		}
 	}
+	else
+		rettype = ev_bad;
 
 	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), PR_GetString(func->s_name));
 
@@ -714,8 +718,10 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	}
 	else
 	{
+		const char* unknowntype = PR_GetTypeString(ev_bad);
+
 		for (int i = 0; i < numparms; ++i)
-			Con_SafePrintf("%s%s", i == 0 ? "" : ", ", PR_GetTypeString(ev_bad));
+			Con_SafePrintf("%s%s", i == 0 ? "" : ", ", unknowntype);
 	}
 
 	Con_SafePrintf("): // %s\n", PR_GetString(func->s_file));
