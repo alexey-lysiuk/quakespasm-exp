@@ -653,11 +653,8 @@ lua_State* LS_GetState(void)
 		LS_LoadEngineScripts(state);
 
 #ifdef USE_IMGUI
-		extern lua_State* lState;
-		lState = state;
-
-		void LoadImguiBindings(void);
-		LoadImguiBindings();
+		void LoadImguiBindings(lua_State* state);
+		LoadImguiBindings(state);
 #endif // USE_IMGUI
 
 		lua_gc(state, LUA_GCRESTART);

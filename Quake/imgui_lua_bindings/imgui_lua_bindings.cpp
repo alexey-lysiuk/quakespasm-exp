@@ -20,7 +20,7 @@ extern "C" {
 
 
 // define this global before you call RunString or LoadImGuiBindings
-lua_State* lState;
+//lua_State* lState;
 
 #ifdef ENABLE_IM_LUA_END_STACK
 // Stack for imgui begin and end
@@ -625,10 +625,10 @@ static void PushImguiEnums(lua_State* lState, const char* tableName) {
 };
 
 
-extern "C" void LoadImguiBindings() {
-    if (!lState) {
-        fprintf(stderr, "You didn't assign the global lState, either assign that or refactor LoadImguiBindings and RunString\n");
-    }
+extern "C" void LoadImguiBindings(lua_State* lState) {
+//    if (!lState) {
+//        fprintf(stderr, "You didn't assign the global lState, either assign that or refactor LoadImguiBindings and RunString\n");
+//    }
     lua_newtable(lState);
     luaL_setfuncs(lState, imguilib, 0);
     PushImguiEnums(lState, "constant");
