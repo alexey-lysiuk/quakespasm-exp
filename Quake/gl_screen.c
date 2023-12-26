@@ -1091,11 +1091,6 @@ void SCR_UpdateScreen (void)
 
 	V_RenderView ();
 
-#ifdef USE_IMGUI
-	void IG_Render(void);
-	IG_Render();
-#endif // USE_IMGUI
-
 	GL_Set2D ();
 
 	//FIXME: only call this when needed
@@ -1136,6 +1131,12 @@ void SCR_UpdateScreen (void)
 		SCR_DrawDevStats (); //johnfitz
 		SCR_DrawFPS (); //johnfitz
 		SCR_DrawClock (); //johnfitz
+
+#ifdef USE_IMGUI
+		void IG_Render(void);
+		IG_Render();
+#endif // USE_IMGUI
+
 		SCR_DrawConsole ();
 		M_Draw ();
 	}

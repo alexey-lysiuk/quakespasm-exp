@@ -59,6 +59,8 @@ static void IG_Activate()
 
 	if (key_dest == key_console)
 		Con_ToggleConsole_f();
+	else if (key_dest == key_menu)
+		M_ToggleMenu_f();
 
 	IN_Deactivate(true);
 
@@ -118,7 +120,7 @@ void IG_Update()
 
 	if (ig_active)
 	{
-		ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always, ImVec2(0.f, 0.f));
+		ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
 		ImGui::Begin("Close Hint", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
 		ImGui::End();
@@ -152,11 +154,14 @@ void IG_Render()
 	}
 #endif // !NDEBUG
 
-	GL_ClearBufferBindings();
-
 	ImGui::Render();
 
+	GL_ClearBufferBindings();
+	glDisable(GL_ALPHA_TEST);
+
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+
+	glEnable(GL_ALPHA_TEST);
 
 	ig_framestarted = false;
 }
