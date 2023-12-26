@@ -24,7 +24,7 @@ extern "C" {
 
 #ifdef ENABLE_IM_LUA_END_STACK
 // Stack for imgui begin and end
-std::deque<int> endStack;
+ImVector<int> endStack;
 static void AddToStack(int type) {
     endStack.push_back(type);
 }

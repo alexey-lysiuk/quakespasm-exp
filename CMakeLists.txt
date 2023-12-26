@@ -326,6 +326,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_IMGUI
 	USE_LUA_SCRIPTING
 #	IMGUI_DISABLE_OBSOLETE_FUNCTIONS  # TODO: remove deprecated functions from Lua binding, and add their replacements
+	ENABLE_IM_LUA_END_STACK
 )
 
 if(MSVC)
