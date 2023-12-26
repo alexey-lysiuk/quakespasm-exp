@@ -416,8 +416,9 @@ padded to 20 field width
 const char *PR_GlobalString (int ofs)
 {
 	static char	line[4096];
+	static const int lastchari = Q_COUNTOF(line) - 2;
 	const char	*s;
-	size_t		i;
+	int		i;
 	ddef_t		*def;
 	void		*val;
 
@@ -434,8 +435,11 @@ const char *PR_GlobalString (int ofs)
 	i = strlen(line);
 	for ( ; i < 20; i++)
 		strcat (line, " ");
-	if (i < Q_COUNTOF(line) - 1)
+
+	if (i < lastchari)
 		strcat (line, " ");
+	else
+		line[lastchari] = ' ';
 
 	return line;
 }
@@ -443,7 +447,8 @@ const char *PR_GlobalString (int ofs)
 const char *PR_GlobalStringNoContents (int ofs)
 {
 	static char	line[4096];
-	size_t		i;
+	static const int lastchari = Q_COUNTOF(line) - 2;
+	int		i;
 	ddef_t		*def;
 
 	def = ED_GlobalAtOfs(ofs);
@@ -455,8 +460,11 @@ const char *PR_GlobalStringNoContents (int ofs)
 	i = strlen(line);
 	for ( ; i < 20; i++)
 		strcat (line, " ");
-	if (i < Q_COUNTOF(line) - 1)
+
+	if (i < lastchari)
 		strcat (line, " ");
+	else
+		line[lastchari] = ' ';
 
 	return line;
 }
@@ -1327,6 +1335,176 @@ void PR_LoadProgs (void)
 }
 
 
+static const char* PR_GetTypeString(unsigned short type)
+{
+	switch (type & ~DEF_SAVEGLOBAL)
+	{
+		case ev_void:     return "void";     break;
+		case ev_string:   return "string";   break;
+		case ev_float:    return "float";    break;
+		case ev_vector:   return "vector";   break;
+		case ev_entity:   return "entity";   break;
+		case ev_field:    return "field";    break;
+		case ev_function: return "function"; break;
+		case ev_pointer:  return "pointer";  break;
+		default:          return "???";      break;
+	}
+}
+
+static const char* PR_SafeGetString(int offset)
+{
+	if (offset >= 0 && offset < pr_stringssize)
+		return pr_strings + offset;
+	else if (offset < 0 && offset >= -pr_numknownstrings)
+	{
+		const char* knownstring = pr_knownstrings[-1 - offset];
+		return knownstring ? knownstring : "???";
+	}
+
+	return "???";
+}
+
+static void PR_DisassembleFunction(const dfunction_t* func)
+{
+	int first_statement = func->first_statement;
+
+	// Return value
+	unsigned short rettype;
+
+	if (first_statement > 0)
+	{
+		rettype = ev_void;
+
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			if (statement->op == OP_RETURN)
+			{
+				const ddef_t* def = ED_GlobalAtOfs(statement->a);
+				rettype = def ? def->type : ev_bad;
+				break;
+			}
+			else if (statement->op == OP_DONE)
+				break;
+		}
+	}
+	else
+		rettype = ev_bad;
+
+	int funcname = func->s_name;
+	Con_SafePrintf("%s %s(", PR_GetTypeString(rettype), funcname != 0 ? PR_SafeGetString(funcname) : "???");
+
+	// Parameters
+	int numparms = q_min(func->numparms, MAX_PARMS);
+	typedef struct
+	{
+		int name;
+		unsigned short type;
+	} Parameter;
+	Parameter parameters[MAX_PARMS];
+
+	for (int i = 0; i < numparms; ++i)
+	{
+		Parameter param;
+
+		if (first_statement > 0)
+		{
+			const ddef_t* def = ED_GlobalAtOfs(func->parm_start + i);
+			param.name = def ? def->s_name : 0;
+			param.type = def ? def->type : (func->parm_size[i] > 1 ? ev_vector : ev_bad);
+		}
+		else
+		{
+			param.name = 0 /* no name */;
+			param.type = func->parm_size[i] > 1 ? ev_vector : ev_bad;
+		}
+
+		parameters[i] = param;
+	}
+
+	for (int i = 0; i < numparms; ++i)
+	{
+		const char* prefix = i == 0 ? "" : ", ";
+		const char* name = PR_SafeGetString(parameters[i].name);
+		const char* type = PR_GetTypeString(parameters[i].type);
+
+		if (name[0] == '\0')
+			Con_SafePrintf("%s%s", prefix, type);
+		else
+			Con_SafePrintf("%s%s %s", prefix, type, name);
+	}
+
+	int file = func->s_file;
+
+	if (file)
+		Con_SafePrintf("): // %s\n", PR_SafeGetString(file));
+	else
+		Con_SafePrintf("):\n");
+
+	// Code disassembly
+	if (first_statement > 0)
+	{
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			void PR_PrintStatement(dstatement_t* s);
+			PR_PrintStatement(statement);
+
+			if (statement->op == OP_DONE)
+				break;
+		}
+	}
+	else
+		Con_SafePrintf("<built-in>\n");
+}
+
+static void PR_Disassemble_f(void)
+{
+	if (!progs)
+		return;
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_SafePrintf("disassemble <function|*>");
+		return;
+	}
+
+	int numfuncs = progs->numfunctions;
+	const char* name = Cmd_Argv(1);
+
+	if (strcmp(name, "*") == 0)
+	{
+		for (int i = 1; i < numfuncs; ++i)
+		{
+			PR_DisassembleFunction(&pr_functions[i]);
+			Con_SafePrintf("\n");
+		}
+	}
+	else
+	{
+		qboolean found = false;
+
+		for (int i = 1; i < numfuncs; ++i)
+		{
+			dfunction_t* func = &pr_functions[i];
+
+			if (strcmp(PR_SafeGetString(func->s_name), name) == 0)
+			{
+				PR_DisassembleFunction(func);
+
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			Con_SafePrintf("ERROR: Could not find function \"%s\"\n", name);
+	}
+}
+
+
 /*
 ===============
 PR_Init
@@ -1338,8 +1516,6 @@ void PR_Init (void)
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
-
-	void PR_Disassemble_f (void);
 	Cmd_AddCommand ("disassemble", PR_Disassemble_f);
 
 	Cvar_RegisterVariable (&nomonsters);
@@ -1467,24 +1643,6 @@ int PR_AllocString (int size, char **ptr)
 	return -1 - i;
 }
 
-
-const ddef_t* PR_GetDefinition(int offset)
-{
-	return ED_GlobalAtOfs(offset);
-}
-
-const char* PR_SafeGetString(int offset)
-{
-	if (offset >= 0 && offset < pr_stringssize)
-		return pr_strings + offset;
-	else if (offset < 0 && offset >= -pr_numknownstrings)
-	{
-		const char* knownstring = pr_knownstrings[-1 - offset];
-		return knownstring ? knownstring : "???";
-	}
-
-	return "???";
-}
 
 #ifdef USE_LUA_SCRIPTING
 
