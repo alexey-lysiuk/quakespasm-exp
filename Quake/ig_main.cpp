@@ -108,6 +108,19 @@ void IG_Shutdown()
 	ImGui::DestroyContext();
 }
 
+static void IG_TracedEntityWindow()
+{
+	// TODO: redo this with Lua scripting
+	extern char sv_tracedentityinfo[1024];
+
+	if (sv_tracedentityinfo[0] != '\0')
+	{
+		ImGui::Begin("Traced entity");
+		ImGui::Text("%s", sv_tracedentityinfo);
+		ImGui::End();
+	}
+}
+
 void IG_Update()
 {
 	if (ig_framestarted)
@@ -125,6 +138,8 @@ void IG_Update()
 		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
 		ImGui::End();
 	}
+
+	IG_TracedEntityWindow();
 
 	if (ig_justactived > 0)
 	{

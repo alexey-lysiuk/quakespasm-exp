@@ -654,31 +654,6 @@ void SCR_DrawCrosshair (void)
 }
 
 
-//extern char sv_tracedentityinfo[1024];
-//
-//static void SCR_DrawEdictInfo (void)
-//{
-//	GL_SetCanvas (CANVAS_CROSSHAIR);
-//
-//	const char *info = sv_tracedentityinfo;
-//	char buffer[sizeof sv_tracedentityinfo];
-//	int lineindex = 0;
-//
-//	while (info[0] != '\0')
-//	{
-//		const char *nextzero = info + 1;
-//		for (; nextzero[0] != '\0'; ++nextzero) {}
-//
-//		strcpy(buffer, info);
-//		info = nextzero + 1;
-//
-//		Draw_String (30, 20 + lineindex * 10, buffer);
-//		lineindex++;
-//	}
-//}
-
-
-
 //=============================================================================
 
 
@@ -1122,7 +1097,6 @@ void SCR_UpdateScreen (void)
 	else
 	{
 		SCR_DrawCrosshair (); //johnfitz
-		//SCR_DrawEdictInfo ();
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
