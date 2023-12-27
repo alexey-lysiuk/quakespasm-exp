@@ -34,6 +34,8 @@ lua_State* LS_GetState(void);
 // Report error with message on the top of the stack
 void LS_ReportError(lua_State* state);
 
+void LS_LoadScript(lua_State* state, const char* filename);
+
 typedef struct
 {
 	union
