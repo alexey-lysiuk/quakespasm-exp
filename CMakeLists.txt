@@ -339,6 +339,11 @@ if(MSVC)
 		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
 		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 	endif()
+
+	# Disable a bunch of warnings
+	# warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+	# warning C4244: 'argument': conversion from 'lua_Number' to 'float', possible loss of data
+	set_source_files_properties(${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp PROPERTIES COMPILE_FLAGS "/wd4244")
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
@@ -348,7 +353,7 @@ else()
 
 	# Disable lots of unused variable warnings
 	set_source_files_properties(${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp PROPERTIES
-		COMPILE_FLAGS -Wno-unused-variable
+		COMPILE_FLAGS "-Wno-unused-variable -Wno-format-security"
 	)
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
