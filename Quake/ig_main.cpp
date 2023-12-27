@@ -139,9 +139,10 @@ static void LS_UpdateWidgets()
 		if (lua_getfield(state, -1, ls_widgets_name) == LUA_TTABLE)
 		{
 			if (lua_getfield(state, -1, "draw") == LUA_TFUNCTION)
-				lua_pcall(state, 1, 0, 0);
-			else
-				lua_pushfstring(state, "%s.%s has no draw() function", ls_imgui_name, ls_widgets_name);
+				if (lua_pcall(state, 0, 0, 0) != LUA_OK)
+					LS_ReportError(state);
+//			else
+//				lua_pushfstring(state, "%s.%s has no draw() function", ls_imgui_name, ls_widgets_name);
 
 			lua_pop(state, 2);  // remove imgui and widgets tables
 		}
