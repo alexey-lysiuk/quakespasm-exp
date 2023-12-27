@@ -343,7 +343,8 @@ if(MSVC)
 	# Disable a bunch of warnings
 	# warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 	# warning C4244: 'argument': conversion from 'lua_Number' to 'float', possible loss of data
-	set_source_files_properties(${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp PROPERTIES COMPILE_FLAGS "/wd4244")
+	# warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+	set_source_files_properties(${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
