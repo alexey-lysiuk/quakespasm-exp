@@ -2,8 +2,7 @@ function imgui.widgets.draw()
 	e = player.traceentity()
 
 	if e then
-		imgui.Begin("Traced entity")
-		imgui.Text(tostring(e))
+		imgui.Begin(tostring(e) .. "###Traced entity")
 
 		for _, f in ipairs(e) do
 			imgui.Text(f.name .. ': ' .. tostring(f.value))
