@@ -641,8 +641,8 @@ lua_State* LS_GetState(void)
 		LS_InitMenuModule(state);
 
 #ifdef USE_IMGUI
-		void LoadImguiBindings(lua_State* state);
-		LoadImguiBindings(state);
+		void LS_InitImGuiModule(lua_State* state);
+		LS_InitImGuiModule(state);
 #endif // USE_IMGUI
 
 		lua_gc(state, LUA_GCRESTART);

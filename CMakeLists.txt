@@ -623,6 +623,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/sm212_naitelveni@a835.ent
 		maps/sm27_bear@92ba.ent
 		scripts/edicts.lua
+		scripts/imgui.lua
 		scripts/input.lua
 		scripts/menus.lua
 		default.cfg

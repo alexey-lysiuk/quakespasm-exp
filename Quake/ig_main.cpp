@@ -37,6 +37,7 @@ extern "C"
 {
 
 #include "quakedef.h"
+#include "ls_common.h"
 
 #ifndef NDEBUG
 static cvar_t ig_showdemo = {"imgui_showdemo", "0", CVAR_NONE};
@@ -108,6 +109,53 @@ void IG_Shutdown()
 	ImGui::DestroyContext();
 }
 
+#ifdef USE_LUA_SCRIPTING
+
+static const char* ls_imgui_name = "imgui";
+static const char* ls_widgets_name = "widgets";
+
+void LS_InitImGuiModule(lua_State* state)
+{
+	void LoadImguiBindings(lua_State* state);
+	LoadImguiBindings(state);
+
+	// Register table for widgets
+	lua_getglobal(state, ls_imgui_name);
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, ls_widgets_name);
+	lua_pop(state, 1);  // remove imgui global table
+
+	LS_LoadScript(state, "scripts/imgui.lua");
+}
+
+static void LS_UpdateWidgets()
+{
+	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
+
+	if (lua_getglobal(state, ls_imgui_name) == LUA_TTABLE)
+	{
+		if (lua_getfield(state, -1, ls_widgets_name) == LUA_TTABLE)
+		{
+			if (lua_getfield(state, -1, "draw") == LUA_TFUNCTION)
+				lua_pcall(state, 1, 0, 0);
+			else
+				lua_pushfstring(state, "%s.%s has no draw() function", ls_imgui_name, ls_widgets_name);
+
+			lua_pop(state, 2);  // remove imgui and widgets tables
+		}
+		else
+			lua_pop(state, 2);  // remove imgui table and incorrect widgets table value
+	}
+	else
+		lua_pop(state, 1);  // remove incorrect value for imgui table
+
+	assert(lua_gettop(state) == 0);
+}
+
+#endif // USE_LUA_SCRIPTING
+
 static void IG_TracedEntityWindow()
 {
 	// TODO: redo this with Lua scripting
@@ -138,6 +186,10 @@ void IG_Update()
 		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
 		ImGui::End();
 	}
+
+#ifdef USE_LUA_SCRIPTING
+	LS_UpdateWidgets();
+#endif // USE_LUA_SCRIPTING
 
 	IG_TracedEntityWindow();
 
@@ -197,6 +249,6 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 	return ImGui_ImplSDL2_ProcessEvent(event);
 }
 
-}
+} // extern "C"
 
 #endif // USE_IMGUI
