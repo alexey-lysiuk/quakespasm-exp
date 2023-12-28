@@ -18,6 +18,7 @@ extern "C" {
 // to keep track of end and begins and clean up the imgui stack
 // if lua errors
 
+#define ENABLE_IM_LUA_END_STACK
 
 // define this global before you call RunString or LoadImGuiBindings
 //lua_State* lState;
