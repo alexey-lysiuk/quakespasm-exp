@@ -53,6 +53,7 @@ set(COMMON_SOURCES
 	Quake/glquake.h
 	Quake/host.c
 	Quake/host_cmd.c
+	Quake/ig_main.cpp
 	Quake/image.c
 	Quake/image.h
 	Quake/in_sdl.c

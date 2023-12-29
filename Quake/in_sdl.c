@@ -1008,6 +1008,13 @@ void IN_SendKeyEvents (void)
 
 	while (SDL_PollEvent(&event))
 	{
+#ifdef USE_IMGUI
+		qboolean IG_ProcessEvent(const SDL_Event* event);
+
+		if (IG_ProcessEvent(&event))
+			continue;
+#endif // USE_IMGUI
+
 		switch (event.type)
 		{
 #if defined(USE_SDL2)

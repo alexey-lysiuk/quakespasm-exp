@@ -678,6 +678,11 @@ static qboolean VID_SetMode (int width, int height, int refreshrate, int bpp, qb
 		gl_context = SDL_GL_CreateContext(draw_context);
 		if (!gl_context)
 			Sys_Error("Couldn't create GL context");
+
+#ifdef USE_IMGUI
+		void IG_Init(SDL_Window* window, SDL_GLContext context);
+		IG_Init(draw_context, gl_context);
+#endif // USE_IMGUI
 	}
 
 	gl_swap_control = true;
@@ -1434,6 +1439,12 @@ void	VID_Shutdown (void)
 	if (vid_initialized)
 	{
 		VID_Gamma_Shutdown (); //johnfitz
+
+#ifdef USE_IMGUI
+		void IG_Shutdown(void);
+		IG_Shutdown();
+#endif // USE_IMGUI
+
 #if defined(USE_SDL2)
 		SDL_GL_DeleteContext(gl_context);
 		gl_context = NULL;
