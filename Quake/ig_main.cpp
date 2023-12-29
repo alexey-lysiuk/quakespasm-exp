@@ -169,8 +169,23 @@ void IG_Render()
 
 	ImGui::Render();
 
-	GL_ClearBufferBindings();
+	// Fade screen a bit
 	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.25f);
+
+	glBegin(GL_QUADS);
+	glVertex2f(0.0f, 0.0f);
+	glVertex2f(glwidth, 0.0f);
+	glVertex2f(glwidth, glheight);
+	glVertex2f(0.0f, glheight);
+	glEnd();
+
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+
+	GL_ClearBufferBindings();
 
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
