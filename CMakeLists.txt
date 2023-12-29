@@ -235,15 +235,6 @@ set(IMGUI_SOURCES
 
 source_group("Source Files\\ImGui" FILES ${IMGUI_SOURCES})
 
-set(IMGUI_LUA_BINDINGS_DIR Quake/imgui_lua_bindings)
-
-set(IMGUI_LUA_BINDINGS_SOURCES
-	${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp
-	${IMGUI_LUA_BINDINGS_DIR}/imgui_iterator.h
-)
-
-source_group("Source Files\\ImGui Lua Bindings" FILES ${IMGUI_LUA_BINDINGS_SOURCES})
-
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
@@ -321,11 +312,11 @@ else()
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
+	IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 	USE_CODEC_UMX
 	USE_CODEC_WAVE
 	USE_IMGUI
 	USE_LUA_SCRIPTING
-	IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 )
 
 if(MSVC)
@@ -338,23 +329,12 @@ if(MSVC)
 		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
 		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 	endif()
-
-	# Disable a bunch of warnings
-	# warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-	# warning C4244: 'argument': conversion from 'lua_Number' to 'float', possible loss of data
-	# warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-	set_source_files_properties(${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
 	if(QUAKE_SEARCH_USERDIRS)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
-
-	# Disable lots of unused variable warnings
-	set_source_files_properties(${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp PROPERTIES
-		COMPILE_FLAGS "-Wno-unused-variable -Wno-format-security"
-	)
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
 endif()
@@ -451,7 +431,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${COMMON_SOURCES}
 	${LUA_SOURCES}
 	${IMGUI_SOURCES}
-	${IMGUI_LUA_BINDINGS_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
 )
@@ -622,7 +601,6 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/sm212_naitelveni@a835.ent
 		maps/sm27_bear@92ba.ent
 		scripts/edicts.lua
-		scripts/imgui.lua
 		scripts/input.lua
 		scripts/menus.lua
 		default.cfg

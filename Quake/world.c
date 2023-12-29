@@ -1307,7 +1307,7 @@ static inline void entity_sprintf(const char* format, ...)
 	va_start(argptr, format);
 
 	et_infoptr += q_vsnprintf(et_infoptr, size, format, argptr);
-//	et_infoptr++;  // set current position after null terminator
+	et_infoptr++;  // set current position after null terminator
 
 	va_end(argptr);
 }
@@ -1350,34 +1350,34 @@ void SV_UpdateTracedEntityInfo(void)
 
 	et_infoptr = sv_tracedentityinfo;
 
-	entity_sprintf("%i: %s\n", NUM_FOR_EDICT(ent), name);
-	entity_sprintf("min: %.0f %.0f %.0f\n", min[0], min[1], min[2]);
-	entity_sprintf("max: %.0f %.0f %.0f\n", max[0], max[1], max[2]);
+	entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
+	entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
+	entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
 
 	{
 		float health = ent->v.health;
 		if (health != 0.f)
-			entity_sprintf("health: %.0f\n", health);
+			entity_sprintf("health: %.0f", health);
 	}
 	{
 		const char *target = PR_GetString(ent->v.target);
 		if (target[0] != '\0')
-			entity_sprintf("target: %s\n", target);
+			entity_sprintf("target: %s", target);
 	}
 	{
 		const char *targetname = PR_GetString(ent->v.targetname);
 		if (targetname[0] != '\0')
-			entity_sprintf("targetname: %s\n", targetname);
+			entity_sprintf("targetname: %s", targetname);
 	}
 	{
 		int spawnflags = ent->v.spawnflags;
 		if (spawnflags != 0)
-			entity_sprintf("spawnflags: 0x%X\n", spawnflags);
+			entity_sprintf("spawnflags: 0x%X", spawnflags);
 	}
 	{
 		int flags = ent->v.flags;
 		if (flags != 0)
-			entity_sprintf("flags: 0x%X\n", flags);
+			entity_sprintf("flags: 0x%X", flags);
 	}
 
 	// Terminating zero (additional '\0' after the last line's null terminator) designates end of info

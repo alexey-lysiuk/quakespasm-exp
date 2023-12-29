@@ -109,70 +109,6 @@ void IG_Shutdown()
 	ImGui::DestroyContext();
 }
 
-#ifdef USE_LUA_SCRIPTING
-
-static const char* ls_imgui_name = "imgui";
-static const char* ls_widgets_name = "widgets";
-
-void LS_InitImGuiModule(lua_State* state)
-{
-	void LoadImguiBindings(lua_State* state);
-	LoadImguiBindings(state);
-
-	// Register table for widgets
-	lua_getglobal(state, ls_imgui_name);
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, ls_widgets_name);
-	lua_pop(state, 1);  // remove imgui global table
-
-	LS_LoadScript(state, "scripts/imgui.lua");
-}
-
-static void LS_UpdateWidgets()
-{
-	lua_State* state = LS_GetState();
-	assert(state);
-	assert(lua_gettop(state) == 0);
-
-	if (lua_getglobal(state, ls_imgui_name) == LUA_TTABLE)
-	{
-		if (lua_getfield(state, -1, ls_widgets_name) == LUA_TTABLE)
-		{
-			if (lua_getfield(state, -1, "draw") == LUA_TFUNCTION)
-			{
-				if (lua_pcall(state, 0, 0, 0) != LUA_OK)
-					LS_ReportError(state);
-
-				void ImClearStack();
-				ImClearStack();
-			}
-
-			lua_pop(state, 2);  // remove imgui and widgets tables
-		}
-		else
-			lua_pop(state, 2);  // remove imgui table and incorrect widgets table value
-	}
-	else
-		lua_pop(state, 1);  // remove incorrect value for imgui table
-
-	assert(lua_gettop(state) == 0);
-}
-
-#endif // USE_LUA_SCRIPTING
-
-static void IG_TracedEntityWindow()
-{
-	// TODO: redo this with Lua scripting
-	extern char sv_tracedentityinfo[1024];
-
-	if (sv_tracedentityinfo[0] != '\0')
-	{
-		ImGui::Begin("Traced entity");
-		ImGui::Text("%s", sv_tracedentityinfo);
-		ImGui::End();
-	}
-}
-
 void IG_Update()
 {
 	if (ig_framestarted)
@@ -190,12 +126,6 @@ void IG_Update()
 		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
 		ImGui::End();
 	}
-
-#ifdef USE_LUA_SCRIPTING
-	LS_UpdateWidgets();
-#endif // USE_LUA_SCRIPTING
-
-	IG_TracedEntityWindow();
 
 	if (ig_justactived > 0)
 	{
