@@ -50,12 +50,21 @@ static bool ig_framestarted;
 static SDL_EventFilter ig_eventfilter;
 static void* ig_eventuserdata;
 
-static void IG_Activate()
+static void IG_Open()
 {
-	if (ig_active || cls.state != ca_connected)
+	if (ig_active)
 		return;
 
+	if (cls.state != ca_connected)
+	{
+		ig_active = false;
+		return;
+	}
+
 	ig_active = true;
+
+	// Need to skip two frames because SDL_StopTextInput() is called during the next one after ImGui activation
+	// Otherwise, text input will be unavailable. See IG_Update() for SDL_StartTextInput() call
 	ig_justactived = 2;
 
 	if (key_dest == key_console)
@@ -71,7 +80,7 @@ static void IG_Activate()
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 }
 
-static void IG_Deactivate()
+static void IG_Close()
 {
 	if (!ig_active)
 		return;
@@ -94,7 +103,7 @@ void IG_Init(SDL_Window* window, SDL_GLContext context)
 	ImGui_ImplSDL2_InitForOpenGL(window, context);
 	ImGui_ImplOpenGL2_Init();
 
-	Cmd_AddCommand("imgui_activate", IG_Activate);
+	Cmd_AddCommand("imgui_open", IG_Open);
 
 #ifndef NDEBUG
 	Cvar_RegisterVariable(&ig_showdemo);
@@ -111,21 +120,13 @@ void IG_Shutdown()
 
 void IG_Update()
 {
-	if (ig_framestarted)
+	if (!ig_active || ig_framestarted)
 		return;
 
 	ImGui_ImplOpenGL2_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 
 	ImGui::NewFrame();
-
-	if (ig_active)
-	{
-		ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
-		ImGui::Begin("Close Hint", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-		ImGui::TextColored(ImVec4(.9f, 0.1f, 0.1f, 1.f), "Press ESC to exit ImGui mode");
-		ImGui::End();
-	}
 
 	if (ig_justactived > 0)
 	{
@@ -155,6 +156,12 @@ void IG_Render()
 	}
 #endif // !NDEBUG
 
+	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_Always);
+	ImGui::Begin("Close Hint", nullptr, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
+	if (ImGui::Button("Press ESC to exit"))
+		IG_Close();
+	ImGui::End();
+
 	ImGui::Render();
 
 	GL_ClearBufferBindings();
@@ -176,7 +183,7 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 
 	if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
 	{
-		IG_Deactivate();
+		IG_Close();
 		return true;
 	}
 
