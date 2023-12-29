@@ -208,6 +208,9 @@ void LS_InitMenuModule(lua_State* state)
 	lua_newtable(state);
 	lua_setfield(state, -2, ls_menu_pagestack_name);
 	lua_setglobal(state, ls_menu_name);
+
+	LS_LoadScript(state, "scripts/input.lua");
+	LS_LoadScript(state, "scripts/menus.lua");
 }
 
 void LS_ShutdownMenuModule(lua_State* state)

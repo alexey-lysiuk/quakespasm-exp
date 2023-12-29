@@ -506,9 +506,6 @@ static void LS_InitGlobalFunctions(lua_State* state)
 
 static void LS_InitGlobalTables(lua_State* state)
 {
-	LS_InitVec3Type(state);
-	LS_InitEdictType(state);
-
 	// Create and register 'player' table
 	{
 		static const luaL_Reg functions[] =
@@ -567,26 +564,18 @@ static void LS_InitGlobalTables(lua_State* state)
 	// Register namespace for console commands
 	lua_createtable(state, 0, 64);
 	lua_setglobal(state, ls_console_name);
+
+	LS_InitVec3Type(state);
+	LS_InitEdictType(state);
 }
 
-static void LS_LoadEngineScripts(lua_State* state)
+void LS_LoadScript(lua_State* state, const char* filename)
 {
-	static const char* scripts[] =
-	{
-		"scripts/edicts.lua",
-		"scripts/input.lua",
-		"scripts/menus.lua",
-		NULL
-	};
+	lua_pushcfunction(state, LS_global_dofile);
+	lua_pushstring(state, filename);
 
-	for (const char** scriptptr = scripts; *scriptptr != NULL; ++scriptptr)
-	{
-		lua_pushcfunction(state, LS_global_dofile);
-		lua_pushstring(state, *scriptptr);
-
-		if (lua_pcall(state, 1, 0, 0) != LUA_OK)
-			LS_ReportError(state);
-	}
+	if (lua_pcall(state, 1, 0, 0) != LUA_OK)
+		LS_ReportError(state);
 }
 
 static void LS_ResetState(void)
@@ -650,7 +639,6 @@ lua_State* LS_GetState(void)
 		LS_InitGlobalFunctions(state);
 		LS_InitGlobalTables(state);
 		LS_InitMenuModule(state);
-		LS_LoadEngineScripts(state);
 
 		lua_gc(state, LUA_GCRESTART);
 		lua_gc(state, LUA_GCCOLLECT);

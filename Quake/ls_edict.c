@@ -371,6 +371,8 @@ void LS_InitEdictType(lua_State* state)
 	lua_setmetatable(state, -2);
 
 	lua_pop(state, 1);  // remove table
+
+	LS_LoadScript(state, "scripts/edicts.lua");
 }
 
 #endif // USE_LUA_SCRIPTING
