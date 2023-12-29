@@ -72,6 +72,8 @@ static void IG_Open()
 	else if (key_dest == key_menu)
 		M_ToggleMenu_f();
 
+	key_dest = key_menu;
+
 	IN_Deactivate(true);
 
 	SDL_GetEventFilter(&ig_eventfilter, &ig_eventuserdata);
@@ -91,6 +93,9 @@ static void IG_Close()
 	SDL_SetEventFilter(ig_eventfilter, ig_eventuserdata);
 
 	IN_Activate();
+
+	if (cls.state == ca_connected)
+		key_dest = key_game;
 
 	ig_active = false;
 }
