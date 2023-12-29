@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(quakespasm-exp LANGUAGES C)
+project(quakespasm-exp LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 11)
 
 set(COMMON_SOURCES
 	Quake/anorm_dots.h
@@ -209,6 +211,29 @@ set(LUA_SOURCES
 
 source_group("Source Files\\Lua" FILES ${LUA_SOURCES})
 
+set(IMGUI_DIR Quake/imgui)
+set(IMGUI_BACKENDS_DIR ${IMGUI_DIR}/backends)
+
+set(IMGUI_SOURCES
+	${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp
+	${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.h
+	${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.cpp
+	${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.h
+	${IMGUI_DIR}/imconfig.h
+	${IMGUI_DIR}/imgui.cpp
+	${IMGUI_DIR}/imgui.h
+	${IMGUI_DIR}/imgui_demo.cpp
+	${IMGUI_DIR}/imgui_draw.cpp
+	${IMGUI_DIR}/imgui_internal.h
+	${IMGUI_DIR}/imstb_rectpack.h
+	${IMGUI_DIR}/imgui_tables.cpp
+	${IMGUI_DIR}/imstb_textedit.h
+	${IMGUI_DIR}/imstb_truetype.h
+	${IMGUI_DIR}/imgui_widgets.cpp
+)
+
+source_group("Source Files\\ImGui" FILES ${IMGUI_SOURCES})
+
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
@@ -286,8 +311,10 @@ else()
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
+	IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 	USE_CODEC_UMX
 	USE_CODEC_WAVE
+	USE_IMGUI
 	USE_LUA_SCRIPTING
 )
 
@@ -311,7 +338,7 @@ else()
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
 
 if(APPLE)
 	if(NOT QUAKE_MACOS_MOUSE_ACCELERATION)
@@ -325,6 +352,11 @@ if(APPLE)
 	target_link_libraries(${PROJECT_NAME} PRIVATE
 		"-framework AppKit"
 		"-framework IOKit"
+	)
+
+	# Disable macro redefinition warning
+	set_source_files_properties(${IMGUI_BACKENDS_DIR}/imgui_impl_opengl2.cpp PROPERTIES
+		COMPILE_FLAGS -UGL_SILENCE_DEPRECATION
 	)
 
 	if(${CMAKE_GENERATOR} STREQUAL Xcode)
@@ -397,6 +429,7 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE
 	${COMMON_SOURCES}
 	${LUA_SOURCES}
+	${IMGUI_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
 )
