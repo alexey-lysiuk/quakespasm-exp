@@ -121,7 +121,7 @@ void IG_Shutdown()
 
 void IG_Update()
 {
-	if (!ig_active || ig_framestarted)
+	if (!ig_active)
 		return;
 
 	ImGui_ImplOpenGL2_NewFrame();
@@ -136,14 +136,6 @@ void IG_Update()
 		if (ig_justactived == 0)
 			SDL_StartTextInput();
 	}
-
-	ig_framestarted = true;
-}
-
-void IG_Render()
-{
-	if (!ig_framestarted)
-		return;
 
 	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
 	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
