@@ -45,7 +45,6 @@ static bool ig_showdemo;
 
 static bool ig_active;
 static char ig_justactived;
-static bool ig_framestarted;
 
 static SDL_EventFilter ig_eventfilter;
 static void* ig_eventuserdata;
@@ -121,7 +120,7 @@ void IG_Shutdown()
 
 void IG_Update()
 {
-	if (!ig_active || ig_framestarted)
+	if (!ig_active)
 		return;
 
 	ImGui_ImplOpenGL2_NewFrame();
@@ -136,14 +135,6 @@ void IG_Update()
 		if (ig_justactived == 0)
 			SDL_StartTextInput();
 	}
-
-	ig_framestarted = true;
-}
-
-void IG_Render()
-{
-	if (!ig_framestarted)
-		return;
 
 	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
 	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
@@ -188,8 +179,6 @@ void IG_Render()
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
 	glEnable(GL_ALPHA_TEST);
-
-	ig_framestarted = false;
 }
 
 qboolean IG_ProcessEvent(const SDL_Event* event)

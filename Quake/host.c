@@ -741,11 +741,6 @@ void _Host_Frame (float time)
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
 
-#ifdef USE_IMGUI
-	void IG_Update(void);
-	IG_Update();
-#endif // USE_IMGUI
-
 	SCR_UpdateScreen ();
 
 	CL_RunParticles (); //johnfitz -- seperated from rendering
