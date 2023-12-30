@@ -75,6 +75,10 @@ static void IG_Open()
 
 	IN_Deactivate(true);
 
+	// Clear key down state, needed when ImGui is opened via bound key press
+	extern qboolean keydown[MAX_KEYS];
+	memset(keydown, 0, sizeof keydown);
+
 	SDL_GetEventFilter(&ig_eventfilter, &ig_eventuserdata);
 	SDL_SetEventFilter(nullptr, nullptr);
 
