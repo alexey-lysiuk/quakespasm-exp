@@ -66,22 +66,27 @@ static void IG_Open()
 	// Otherwise, text input will be unavailable. See IG_Update() for SDL_StartTextInput() call
 	ig_justactived = 2;
 
+	// Close menu or console if opened
 	if (key_dest == key_console)
 		Con_ToggleConsole_f();
 	else if (key_dest == key_menu)
 		M_ToggleMenu_f();
 
+	// Mimin menu mode behavior, e.g. pause game in single player
 	key_dest = key_menu;
 
+	// Disallow in-game input, and enable mouse cursor
 	IN_Deactivate(true);
 
 	// Clear key down state, needed when ImGui is opened via bound key press
 	extern qboolean keydown[MAX_KEYS];
 	memset(keydown, 0, sizeof keydown);
 
+	// Remove event filter to allow mouse move events
 	SDL_GetEventFilter(&ig_eventfilter, &ig_eventuserdata);
 	SDL_SetEventFilter(nullptr, nullptr);
 
+	// Enable contol of ImGui windows by all input devices
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 }
 
