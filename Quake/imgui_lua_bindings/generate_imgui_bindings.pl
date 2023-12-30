@@ -377,10 +377,10 @@ sub generateImguiGeneric {
           push(@funcArgs, $name);
         # one of the various enums
         # we are handling these as ints
-        } elsif ($args[$i] =~ m/^ *(ImGuiCol|ImGuiCond|ImGuiDataType|ImGuiDir|ImGuiKey|ImGuiNavInput|ImGuiMouseButton|ImGuiMouseCursor|ImGuiSortDirection|ImGuiStyleVar|ImGuiTableBgTarget) ([^ ]*)( = [0-9]*|) *$/) {
+        } elsif ($args[$i] =~ m/^\s*(ImGuiCol|ImGuiCond|ImGuiDataType|ImGuiDir|ImGuiKey|ImGuiNavInput|ImGuiMouseButton|ImGuiMouseCursor|ImGuiSortDirection|ImGuiStyleVar|ImGuiTableBgTarget)\s+(\S*)(\s*=\s*\d*|)\s*$/) {
           #These are ints
           my $name = $2;
-          if ($3 =~ m/^ = ([0-9]*)$/) {
+          if ($3 =~ m/^\s*=\s*(\d*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");
@@ -388,19 +388,19 @@ sub generateImguiGeneric {
           push(@funcArgs, $name);
         # generic enum flags
         # we are handling these as ints
-        } elsif ($args[$i] =~ m/^ *Im[a-zA-Z]+Flags ([^ ]*)( = [0-9]*|) *$/) {
+        } elsif ($args[$i] =~ m/^\s*Im\w+Flags\s+(\w*)(\s*=\s*\d*|)\s*$/) {
           #These are ints
           my $name = $1;
-          if($2 =~ m/^ = ([0-9]*)$/) {
+          if($2 =~ m/^\s*=\s*(\d*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");
           }
           push(@funcArgs, $name);
         #int with default value or not
-        } elsif ($args[$i] =~ m/^ *int ([^ =\[]*)( = [^ ]*|) *$/) {
+        } elsif ($args[$i] =~ m/^\s*int\s+([^ =\[]*)(\s*=\s*\S*|)\s*$/) {
           my $name = $1;
-          if ($2 =~ m/^ = ([^ ]*)$/) {
+          if ($2 =~ m/^\s*=\s*(\S*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");
