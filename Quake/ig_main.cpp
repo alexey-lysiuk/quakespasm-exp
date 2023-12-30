@@ -161,8 +161,11 @@ void IG_Render()
 	}
 #endif // !NDEBUG
 
-	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_Always);
-	ImGui::Begin("Close Hint", nullptr, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
+	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
+	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
 	if (ImGui::Button("Press ESC to exit"))
 		IG_Close();
 	ImGui::End();
