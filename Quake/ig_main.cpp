@@ -40,7 +40,7 @@ extern "C"
 #include "ls_common.h"
 
 #ifndef NDEBUG
-static cvar_t ig_showdemo = {"imgui_showdemo", "0", CVAR_NONE};
+static bool ig_showdemo;
 #endif // !NDEBUG
 
 static bool ig_active;
@@ -109,10 +109,6 @@ void IG_Init(SDL_Window* window, SDL_GLContext context)
 	ImGui_ImplOpenGL2_Init();
 
 	Cmd_AddCommand("imgui_open", IG_Open);
-
-#ifndef NDEBUG
-	Cvar_RegisterVariable(&ig_showdemo);
-#endif // !NDEBUG
 }
 
 void IG_Shutdown()
@@ -149,20 +145,19 @@ void IG_Render()
 	if (!ig_framestarted)
 		return;
 
-#ifndef NDEBUG
-	if (ig_showdemo.value)
-	{
-		bool showdemo = true;
-
-		ImGui::ShowDemoWindow(&showdemo);
-
-		if (!showdemo)
-			Cvar_SetQuick(&ig_showdemo, "0");
-	}
-#endif // !NDEBUG
-
 	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
 	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+
+#ifndef NDEBUG
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+	ImGui::Checkbox("Demo Window", &ig_showdemo);
+
+	if (ig_showdemo)
+		ImGui::ShowDemoWindow(&ig_showdemo);
+#endif // !NDEBUG
+
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
