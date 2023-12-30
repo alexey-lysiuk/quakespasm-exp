@@ -26,10 +26,7 @@ sub generateNamespaceImgui {
   my %bannedNames = (
     "NewFrame" => "banned",
     "Render" => "banned",
-    "Shutdown" => "banned",
-    "ColorConvertRGBtoHSV" => "banned",
-    "ColorConvertHSVtoRGB" => "banned",
-  );
+    "Shutdown" => "banned" );
 #
 # This is only useful for ENABLE_IM_LUA_END_STACK
 # We hold a list of differnet 'things' that can be pushed to the stack
@@ -290,11 +287,6 @@ sub generateImguiGeneric {
           push(@before, "FLOAT_POINTER_ARG($name)");
           push(@funcArgs, $name);
           push(@after, "END_FLOAT_POINTER($name)");
-        # float & x
-        } elsif ($args[$i] =~ m/^ *float *\& *([^ =\[]*)$/) {
-          my $name = $1;
-          push(@before, "FLOAT_ARG($name)");
-          push(@funcArgs, $name);
         #float a or float a = number
         } elsif ($args[$i] =~ m/^ *float *([^ =\[]*)( *= *[^ ]*|)$/) {
           my $name = $1;
@@ -385,10 +377,10 @@ sub generateImguiGeneric {
           push(@funcArgs, $name);
         # one of the various enums
         # we are handling these as ints
-        } elsif ($args[$i] =~ m/^ *(ImGuiCol|ImGuiCond|ImGuiDataType|ImGuiDir|ImGuiKey|ImGuiNavInput|ImGuiMouseButton|ImGuiMouseCursor|ImGuiSortDirection|ImGuiStyleVar|ImGuiTableBgTarget) ([^ ]*)( = [0-9]*|) *$/) {
+        } elsif ($args[$i] =~ m/^\s*(ImGuiCol|ImGuiCond|ImGuiDataType|ImGuiDir|ImGuiKey|ImGuiNavInput|ImGuiMouseButton|ImGuiMouseCursor|ImGuiSortDirection|ImGuiStyleVar|ImGuiTableBgTarget)\s+(\S*)(\s*=\s*\d*|)\s*$/) {
           #These are ints
           my $name = $2;
-          if ($3 =~ m/^ = ([0-9]*)$/) {
+          if ($3 =~ m/^\s*=\s*(\d*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");
@@ -396,19 +388,19 @@ sub generateImguiGeneric {
           push(@funcArgs, $name);
         # generic enum flags
         # we are handling these as ints
-        } elsif ($args[$i] =~ m/^ *Im[a-zA-Z]+Flags ([a-zA-Z_]+)( *= *[0-9]*|) *$/) {
+        } elsif ($args[$i] =~ m/^\s*Im\w+Flags\s+(\w*)(\s*=\s*\d*|)\s*$/) {
           #These are ints
           my $name = $1;
-          if($2 =~ m/^ *= *([0-9]*)$/) {
+          if($2 =~ m/^\s*=\s*(\d*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");
           }
           push(@funcArgs, $name);
         #int with default value or not
-        } elsif ($args[$i] =~ m/^ *int ([^ =\[]*)( = [^ ]*|) *$/) {
+        } elsif ($args[$i] =~ m/^\s*int\s+([^ =\[]*)(\s*=\s*\S*|)\s*$/) {
           my $name = $1;
-          if ($2 =~ m/^ = ([^ ]*)$/) {
+          if ($2 =~ m/^\s*=\s*(\S*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");

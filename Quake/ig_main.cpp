@@ -45,7 +45,6 @@ static bool ig_showdemo;
 
 static bool ig_active;
 static char ig_justactived;
-static bool ig_framestarted;
 
 static SDL_EventFilter ig_eventfilter;
 static void* ig_eventuserdata;
@@ -67,18 +66,27 @@ static void IG_Open()
 	// Otherwise, text input will be unavailable. See IG_Update() for SDL_StartTextInput() call
 	ig_justactived = 2;
 
+	// Close menu or console if opened
 	if (key_dest == key_console)
 		Con_ToggleConsole_f();
 	else if (key_dest == key_menu)
 		M_ToggleMenu_f();
 
+	// Mimin menu mode behavior, e.g. pause game in single player
 	key_dest = key_menu;
 
+	// Disallow in-game input, and enable mouse cursor
 	IN_Deactivate(true);
 
+	// Clear key down state, needed when ImGui is opened via bound key press
+	extern qboolean keydown[MAX_KEYS];
+	memset(keydown, 0, sizeof keydown);
+
+	// Remove event filter to allow mouse move events
 	SDL_GetEventFilter(&ig_eventfilter, &ig_eventuserdata);
 	SDL_SetEventFilter(nullptr, nullptr);
 
+	// Enable contol of ImGui windows by all input devices
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 }
 
@@ -180,8 +188,6 @@ void IG_Update()
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
 	glEnable(GL_ALPHA_TEST);
-
-	ig_framestarted = false;
 }
 
 qboolean IG_ProcessEvent(const SDL_Event* event)
@@ -191,7 +197,7 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 
 	assert(event);
 
-	if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
+	if (event->type == SDL_KEYUP && event->key.keysym.sym == SDLK_ESCAPE)
 	{
 		IG_Close();
 		return true;
