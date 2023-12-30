@@ -287,11 +287,6 @@ sub generateImguiGeneric {
           push(@before, "FLOAT_POINTER_ARG($name)");
           push(@funcArgs, $name);
           push(@after, "END_FLOAT_POINTER($name)");
-        # float & x
-        } elsif ($args[$i] =~ m/^ *float *\& *([^ =\[]*)$/) {
-          my $name = $1;
-          push(@before, "FLOAT_ARG($name)");
-          push(@funcArgs, $name);
         #float a or float a = number
         } elsif ($args[$i] =~ m/^ *float *([^ =\[]*)( *= *[^ ]*|)$/) {
           my $name = $1;
