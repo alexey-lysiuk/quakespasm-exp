@@ -205,13 +205,13 @@ IMGUI_FUNCTION(SetNextWindowPos)
 IM_VEC_2_ARG(pos)
 OPTIONAL_INT_ARG(cond, 0)
 OPTIONAL_IM_VEC_2_ARG(pivot, 0, 0)
-CALL_FUNCTION_NO_RET(SetNextWindowPos, pos, cond, pivot)
+CALL_FUNCTION_NO_RET(SetNextWindowPos, pos, (ImGuiCond)cond, pivot)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowSize(const ImVec2& size, ImGuiCond cond = 0);                  // set next window size. set axis to 0.0f to force an auto-fit on this axis. call before Begin()
 IMGUI_FUNCTION(SetNextWindowSize)
 IM_VEC_2_ARG(size)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetNextWindowSize, size, cond)
+CALL_FUNCTION_NO_RET(SetNextWindowSize, size, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowSizeConstraints(const ImVec2& size_min, const ImVec2& size_max, ImGuiSizeCallback custom_callback = NULL, void* custom_callback_data = NULL); // set next window size limits. use 0.0f or FLT_MAX if you don't want limits. Use -1 for both min and max of same axis to preserve current size (which itself is a constraint). Use callback to apply non-trivial programmatic constraints.
 // Optional callback arguments aren't suppported but here it is anyway
@@ -231,7 +231,7 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(SetNextWindowCollapsed)
 BOOL_ARG(collapsed)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetNextWindowCollapsed, collapsed, cond)
+CALL_FUNCTION_NO_RET(SetNextWindowCollapsed, collapsed, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowFocus();                                                       // set next window to be focused / top-most. call before Begin()
 IMGUI_FUNCTION(SetNextWindowFocus)
@@ -256,19 +256,19 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(SetWindowPos)
 IM_VEC_2_ARG(pos)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetWindowPos, pos, cond)
+CALL_FUNCTION_NO_RET(SetWindowPos, pos, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowSize(const ImVec2& size, ImGuiCond cond = 0);                      // (not recommended) set current window size - call within Begin()/End(). set to ImVec2 0  0 to force an auto-fit. prefer using SetNextWindowSize(), as this may incur tearing and minor side-effects.
 IMGUI_FUNCTION(SetWindowSize)
 IM_VEC_2_ARG(size)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetWindowSize, size, cond)
+CALL_FUNCTION_NO_RET(SetWindowSize, size, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowCollapsed(bool collapsed, ImGuiCond cond = 0);                     // (not recommended) set current window collapsed state. prefer using SetNextWindowCollapsed().
 IMGUI_FUNCTION(SetWindowCollapsed)
 BOOL_ARG(collapsed)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetWindowCollapsed, collapsed, cond)
+CALL_FUNCTION_NO_RET(SetWindowCollapsed, collapsed, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowFocus();                                                           // (not recommended) set current window to be focused / top-most. prefer using SetNextWindowFocus().
 IMGUI_FUNCTION(SetWindowFocus)
@@ -284,21 +284,21 @@ IMGUI_FUNCTION(SetWindowPos_3)
 LABEL_ARG(name)
 IM_VEC_2_ARG(pos)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetWindowPos, name, pos, cond)
+CALL_FUNCTION_NO_RET(SetWindowPos, name, pos, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowSize(const char* name, const ImVec2& size, ImGuiCond cond = 0);    // set named window size. set axis to 0.0f to force an auto-fit on this axis.
 IMGUI_FUNCTION(SetWindowSize_3)
 LABEL_ARG(name)
 IM_VEC_2_ARG(size)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetWindowSize, name, size, cond)
+CALL_FUNCTION_NO_RET(SetWindowSize, name, size, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowCollapsed(const char* name, bool collapsed, ImGuiCond cond = 0);   // set named window collapsed state
 IMGUI_FUNCTION(SetWindowCollapsed_3)
 LABEL_ARG(name)
 BOOL_ARG(collapsed)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetWindowCollapsed, name, collapsed, cond)
+CALL_FUNCTION_NO_RET(SetWindowCollapsed, name, collapsed, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowFocus(const char* name);                                           // set named window to be focused / top-most. use NULL to remove focus.
 IMGUI_FUNCTION(SetWindowFocus_1)
@@ -403,13 +403,13 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(PushStyleColor)
 INT_ARG(idx)
 UINT_ARG(col)
-CALL_FUNCTION_NO_RET(PushStyleColor, idx, col)
+CALL_FUNCTION_NO_RET(PushStyleColor, (ImGuiCol)idx, col)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushStyleColor(ImGuiCol idx, const ImVec4& col);
 IMGUI_FUNCTION(PushStyleColor_2)
 INT_ARG(idx)
 IM_VEC_4_ARG(col)
-CALL_FUNCTION_NO_RET(PushStyleColor, idx, col)
+CALL_FUNCTION_NO_RET(PushStyleColor, (ImGuiCol)idx, col)
 END_IMGUI_FUNC
 //    IMGUI_API void          PopStyleColor(int count = 1);
 IMGUI_FUNCTION(PopStyleColor)
@@ -420,14 +420,14 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(PushStyleVar)
 INT_ARG(idx)
 NUMBER_ARG(val)
-CALL_FUNCTION_NO_RET(PushStyleVar, idx, val)
+CALL_FUNCTION_NO_RET(PushStyleVar, (ImGuiStyleVar)idx, val)
 ADD_END_STACK(3)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushStyleVar(ImGuiStyleVar idx, const ImVec2& val);             // modify a style ImVec2 variable. always use this if you modify the style after NewFrame().
 IMGUI_FUNCTION(PushStyleVar_2)
 INT_ARG(idx)
 IM_VEC_2_ARG(val)
-CALL_FUNCTION_NO_RET(PushStyleVar, idx, val)
+CALL_FUNCTION_NO_RET(PushStyleVar, (ImGuiStyleVar)idx, val)
 ADD_END_STACK(3)
 END_IMGUI_FUNC
 //    IMGUI_API void          PopStyleVar(int count = 1);
@@ -502,7 +502,7 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(GetColorU32)
 INT_ARG(idx)
 OPTIONAL_NUMBER_ARG(alpha_mul, 1.0f)
-CALL_FUNCTION(GetColorU32, unsigned int, idx, alpha_mul)
+CALL_FUNCTION(GetColorU32, unsigned int, (ImGuiCol)idx, alpha_mul)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImU32         GetColorU32(const ImVec4& col);                                 // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
@@ -693,56 +693,56 @@ LABEL_ARG(text)
 OPTIONAL_LABEL_ARG(text_end,NULL)
 CALL_FUNCTION_NO_RET(TextUnformatted, text, text_end)
 END_IMGUI_FUNC
-//    IMGUI_API void          Text(const char* fmt, ...)                                      IM_FMTARGS(1); // formatted text
+//    IMGUI_API void          Text(const char* fmt, ...); // formatted text
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(Text)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(Text, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          TextV(const char* fmt, va_list args)                            IM_FMTLIST(1);
-// Unsupported arg type  va_list args)                            IM_FMTLIST(1
-//    IMGUI_API void          TextColored(const ImVec4& col, const char* fmt, ...)            IM_FMTARGS(2); // shortcut for PushStyleColor(ImGuiCol_Text, col); Text(fmt, ...); PopStyleColor();
+//    IMGUI_API void          TextV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API void          TextColored(const ImVec4& col, const char* fmt, ...); // shortcut for PushStyleColor(ImGuiCol_Text, col); Text(fmt, ...); PopStyleColor();
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TextColored)
 IM_VEC_4_ARG(col)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(TextColored, col, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          TextColoredV(const ImVec4& col, const char* fmt, va_list args)  IM_FMTLIST(2);
-// Unsupported arg type  va_list args)  IM_FMTLIST(2
-//    IMGUI_API void          TextDisabled(const char* fmt, ...)                              IM_FMTARGS(1); // shortcut for PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]); Text(fmt, ...); PopStyleColor();
+//    IMGUI_API void          TextColoredV(const ImVec4& col, const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API void          TextDisabled(const char* fmt, ...); // shortcut for PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]); Text(fmt, ...); PopStyleColor();
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TextDisabled)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(TextDisabled, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          TextDisabledV(const char* fmt, va_list args)                    IM_FMTLIST(1);
-// Unsupported arg type  va_list args)                    IM_FMTLIST(1
-//    IMGUI_API void          TextWrapped(const char* fmt, ...)                               IM_FMTARGS(1); // shortcut for PushTextWrapPos(0.0f); Text(fmt, ...); PopTextWrapPos();. Note that this won't work on an auto-resizing window if there's no other widgets to extend the window width, yoy may need to set a size using SetNextWindowSize().
+//    IMGUI_API void          TextDisabledV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API void          TextWrapped(const char* fmt, ...); // shortcut for PushTextWrapPos(0.0f); Text(fmt, ...); PopTextWrapPos();. Note that this won't work on an auto-resizing window if there's no other widgets to extend the window width, yoy may need to set a size using SetNextWindowSize().
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TextWrapped)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(TextWrapped, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          TextWrappedV(const char* fmt, va_list args)                     IM_FMTLIST(1);
-// Unsupported arg type  va_list args)                     IM_FMTLIST(1
-//    IMGUI_API void          LabelText(const char* label, const char* fmt, ...)              IM_FMTARGS(2); // display text+label aligned the same way as value+label widgets
+//    IMGUI_API void          TextWrappedV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API void          LabelText(const char* label, const char* fmt, ...); // display text+label aligned the same way as value+label widgets
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(LabelText)
 LABEL_ARG(label)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(LabelText, label, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          LabelTextV(const char* label, const char* fmt, va_list args)    IM_FMTLIST(2);
-// Unsupported arg type  va_list args)    IM_FMTLIST(2
-//    IMGUI_API void          BulletText(const char* fmt, ...)                                IM_FMTARGS(1); // shortcut for Bullet()+Text()
+//    IMGUI_API void          LabelTextV(const char* label, const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API void          BulletText(const char* fmt, ...); // shortcut for Bullet()+Text()
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(BulletText)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(BulletText, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          BulletTextV(const char* fmt, va_list args)                      IM_FMTLIST(1);
-// Unsupported arg type  va_list args)                      IM_FMTLIST(1
+//    IMGUI_API void          BulletTextV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
 //    IMGUI_API void          SeparatorText(const char* label);                               // currently: formatted text with an horizontal line
 IMGUI_FUNCTION(SeparatorText)
 LABEL_ARG(label)
@@ -773,7 +773,7 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(ArrowButton)
 LABEL_ARG(str_id)
 INT_ARG(dir)
-CALL_FUNCTION(ArrowButton, bool, str_id, dir)
+CALL_FUNCTION(ArrowButton, bool, str_id, (ImGuiDir)dir)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          Checkbox(const char* label, bool* v);
@@ -1039,7 +1039,7 @@ OPTIONAL_VOID_ARG(p_min, NULL)
 OPTIONAL_VOID_ARG(p_max, NULL)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(DragScalar, bool, label, data_type, p_data, v_speed, p_min, p_max, format, flags)
+CALL_FUNCTION(DragScalar, bool, label, (ImGuiDataType)data_type, p_data, v_speed, p_min, p_max, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          DragScalarN(const char* label, ImGuiDataType data_type, void* p_data, int components, float v_speed = 1.0f, const void* p_min = NULL, const void* p_max = NULL, const char* format = NULL, ImGuiSliderFlags flags = 0);
@@ -1053,7 +1053,7 @@ OPTIONAL_VOID_ARG(p_min, NULL)
 OPTIONAL_VOID_ARG(p_max, NULL)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(DragScalarN, bool, label, data_type, p_data, components, v_speed, p_min, p_max, format, flags)
+CALL_FUNCTION(DragScalarN, bool, label, (ImGuiDataType)data_type, p_data, components, v_speed, p_min, p_max, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          SliderFloat(const char* label, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);     // adjust format to decorate the value with a prefix or a suffix for in-slider labels or unit display.
@@ -1203,7 +1203,7 @@ VOID_ARG(p_min)
 VOID_ARG(p_max)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(SliderScalar, bool, label, data_type, p_data, p_min, p_max, format, flags)
+CALL_FUNCTION(SliderScalar, bool, label, (ImGuiDataType)data_type, p_data, p_min, p_max, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          SliderScalarN(const char* label, ImGuiDataType data_type, void* p_data, int components, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
@@ -1216,7 +1216,7 @@ VOID_ARG(p_min)
 VOID_ARG(p_max)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(SliderScalarN, bool, label, data_type, p_data, components, p_min, p_max, format, flags)
+CALL_FUNCTION(SliderScalarN, bool, label, (ImGuiDataType)data_type, p_data, components, p_min, p_max, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          VSliderFloat(const char* label, const ImVec2& size, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
@@ -1255,7 +1255,7 @@ VOID_ARG(p_min)
 VOID_ARG(p_max)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(VSliderScalar, bool, label, size, data_type, p_data, p_min, p_max, format, flags)
+CALL_FUNCTION(VSliderScalar, bool, label, size, (ImGuiDataType)data_type, p_data, p_min, p_max, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          InputText(const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
@@ -1420,7 +1420,7 @@ OPTIONAL_VOID_ARG(p_step, NULL)
 OPTIONAL_VOID_ARG(p_step_fast, NULL)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(InputScalar, bool, label, data_type, p_data, p_step, p_step_fast, format, flags)
+CALL_FUNCTION(InputScalar, bool, label, (ImGuiDataType)data_type, p_data, p_step, p_step_fast, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          InputScalarN(const char* label, ImGuiDataType data_type, void* p_data, int components, const void* p_step = NULL, const void* p_step_fast = NULL, const char* format = NULL, ImGuiInputTextFlags flags = 0);
@@ -1433,7 +1433,7 @@ OPTIONAL_VOID_ARG(p_step, NULL)
 OPTIONAL_VOID_ARG(p_step_fast, NULL)
 OPTIONAL_LABEL_ARG(format,NULL)
 OPTIONAL_INT_ARG(flags, 0)
-CALL_FUNCTION(InputScalarN, bool, label, data_type, p_data, components, p_step, p_step_fast, format, flags)
+CALL_FUNCTION(InputScalarN, bool, label, (ImGuiDataType)data_type, p_data, components, p_step, p_step_fast, format, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          ColorEdit3(const char* label, float col[3], ImGuiColorEditFlags flags = 0);
@@ -1503,7 +1503,7 @@ CALL_FUNCTION(TreeNode, bool, label)
 IF_RET_ADD_END_STACK(6)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API bool          TreeNode(const char* str_id, const char* fmt, ...) IM_FMTARGS(2);   // helper variation to easily decorelate the id from the displayed string. Read the FAQ about why and how to use ID. to align arbitrary text at the same level as a TreeNode() you can use Bullet().
+//    IMGUI_API bool          TreeNode(const char* str_id, const char* fmt, ...);   // helper variation to easily decorelate the id from the displayed string. Read the FAQ about why and how to use ID. to align arbitrary text at the same level as a TreeNode() you can use Bullet().
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TreeNode_3)
 LABEL_ARG(str_id)
@@ -1512,7 +1512,7 @@ CALL_FUNCTION(TreeNode, bool, str_id, fmt)
 IF_RET_ADD_END_STACK(6)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API bool          TreeNode(const void* ptr_id, const char* fmt, ...) IM_FMTARGS(2);   // "
+//    IMGUI_API bool          TreeNode(const void* ptr_id, const char* fmt, ...);   // "
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TreeNode_3_3)
 VOID_ARG(ptr_id)
@@ -1521,10 +1521,10 @@ CALL_FUNCTION(TreeNode, bool, ptr_id, fmt)
 IF_RET_ADD_END_STACK(6)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API bool          TreeNodeV(const char* str_id, const char* fmt, va_list args) IM_FMTLIST(2);
-// Unsupported arg type  va_list args) IM_FMTLIST(2
-//    IMGUI_API bool          TreeNodeV(const void* ptr_id, const char* fmt, va_list args) IM_FMTLIST(2);
-// Unsupported arg type  va_list args) IM_FMTLIST(2
+//    IMGUI_API bool          TreeNodeV(const char* str_id, const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API bool          TreeNodeV(const void* ptr_id, const char* fmt, va_list args);
+// Unsupported arg type  va_list args
 //    IMGUI_API bool          TreeNodeEx(const char* label, ImGuiTreeNodeFlags flags = 0);
 IMGUI_FUNCTION(TreeNodeEx)
 LABEL_ARG(label)
@@ -1532,7 +1532,7 @@ OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(TreeNodeEx, bool, label, flags)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API bool          TreeNodeEx(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, ...) IM_FMTARGS(3);
+//    IMGUI_API bool          TreeNodeEx(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, ...);
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TreeNodeEx_4)
 LABEL_ARG(str_id)
@@ -1541,7 +1541,7 @@ LABEL_ARG(fmt)
 CALL_FUNCTION(TreeNodeEx, bool, str_id, flags, fmt)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API bool          TreeNodeEx(const void* ptr_id, ImGuiTreeNodeFlags flags, const char* fmt, ...) IM_FMTARGS(3);
+//    IMGUI_API bool          TreeNodeEx(const void* ptr_id, ImGuiTreeNodeFlags flags, const char* fmt, ...);
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(TreeNodeEx_4_4)
 VOID_ARG(ptr_id)
@@ -1550,10 +1550,10 @@ LABEL_ARG(fmt)
 CALL_FUNCTION(TreeNodeEx, bool, ptr_id, flags, fmt)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API bool          TreeNodeExV(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, va_list args) IM_FMTLIST(3);
-// Unsupported arg type  va_list args) IM_FMTLIST(3
-//    IMGUI_API bool          TreeNodeExV(const void* ptr_id, ImGuiTreeNodeFlags flags, const char* fmt, va_list args) IM_FMTLIST(3);
-// Unsupported arg type  va_list args) IM_FMTLIST(3
+//    IMGUI_API bool          TreeNodeExV(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, va_list args);
+// Unsupported arg type  va_list args
+//    IMGUI_API bool          TreeNodeExV(const void* ptr_id, ImGuiTreeNodeFlags flags, const char* fmt, va_list args);
+// Unsupported arg type  va_list args
 //    IMGUI_API void          TreePush(const char* str_id);                                       // ~ Indent()+PushId(). Already called by TreeNode() when returning true, but you can call TreePush/TreePop yourself if desired.
 IMGUI_FUNCTION(TreePush)
 LABEL_ARG(str_id)
@@ -1596,7 +1596,7 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(SetNextItemOpen)
 BOOL_ARG(is_open)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetNextItemOpen, is_open, cond)
+CALL_FUNCTION_NO_RET(SetNextItemOpen, is_open, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API bool          Selectable(const char* label, bool selected = false, ImGuiSelectableFlags flags = 0, const ImVec2& size = ImVec2 0  0); // "bool selected" carry the selection state (read-only). Selectable() is clicked is returns true so you can modify your selection state. size.x==0.0: use remaining width, size.x>0.0: specify width. size.y==0.0: use label height, size.y>0.0: specify height
 IMGUI_FUNCTION(Selectable)
@@ -1736,34 +1736,34 @@ IMGUI_FUNCTION(EndTooltip)
 CALL_FUNCTION_NO_RET(EndTooltip)
 POP_END_STACK(11)
 END_IMGUI_FUNC
-//    IMGUI_API void          SetTooltip(const char* fmt, ...) IM_FMTARGS(1);                     // set a text-only tooltip. Often used after a ImGui::IsItemHovered() check. Override any previous call to SetTooltip().
+//    IMGUI_API void          SetTooltip(const char* fmt, ...);                     // set a text-only tooltip. Often used after a ImGui::IsItemHovered() check. Override any previous call to SetTooltip().
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(SetTooltip)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(SetTooltip, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          SetTooltipV(const char* fmt, va_list args) IM_FMTLIST(1);
-// Unsupported arg type  va_list args) IM_FMTLIST(1
+//    IMGUI_API void          SetTooltipV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
 //    IMGUI_API bool          BeginItemTooltip();                                                 // begin/append a tooltip window if preceding item was hovered.
 IMGUI_FUNCTION(BeginItemTooltip)
 CALL_FUNCTION(BeginItemTooltip, bool)
-IF_RET_ADD_END_STACK(12)
+IF_RET_ADD_END_STACK(11)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
-//    IMGUI_API void          SetItemTooltip(const char* fmt, ...) IM_FMTARGS(1);                 // set a text-only tooltip if preceeding item was hovered. override any previous call to SetTooltip().
+//    IMGUI_API void          SetItemTooltip(const char* fmt, ...);                 // set a text-only tooltip if preceeding item was hovered. override any previous call to SetTooltip().
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(SetItemTooltip)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(SetItemTooltip, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          SetItemTooltipV(const char* fmt, va_list args) IM_FMTLIST(1);
-// Unsupported arg type  va_list args) IM_FMTLIST(1
+//    IMGUI_API void          SetItemTooltipV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
 //    IMGUI_API bool          BeginPopup(const char* str_id, ImGuiWindowFlags flags = 0);                         // return true if the popup is open, and you can start outputting to it.
 IMGUI_FUNCTION(BeginPopup)
 LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginPopup, bool, str_id, flags)
-IF_RET_ADD_END_STACK(13)
+IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupModal(const char* name, bool* p_open = NULL, ImGuiWindowFlags flags = 0); // return true if the modal is open, and you can start outputting to it.
@@ -1772,14 +1772,14 @@ LABEL_ARG(name)
 OPTIONAL_BOOL_POINTER_ARG(p_open)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginPopupModal, bool, name, p_open, flags)
-IF_RET_ADD_END_STACK(13)
+IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndPopup();                                                                         // only call EndPopup() if BeginPopupXXX() returns true!
 IMGUI_FUNCTION(EndPopup)
 CALL_FUNCTION_NO_RET(EndPopup)
-POP_END_STACK(13)
+POP_END_STACK(12)
 END_IMGUI_FUNC
 //    IMGUI_API void          OpenPopup(const char* str_id, ImGuiPopupFlags popup_flags = 0);                     // call to mark popup as open (don't call every frame!).
 IMGUI_FUNCTION(OpenPopup)
@@ -1808,7 +1808,7 @@ IMGUI_FUNCTION(BeginPopupContextItem)
 OPTIONAL_LABEL_ARG(str_id,NULL)
 OPTIONAL_INT_ARG(popup_flags, 1)
 CALL_FUNCTION(BeginPopupContextItem, bool, str_id, popup_flags)
-IF_RET_ADD_END_STACK(13)
+IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupContextWindow(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1);// open+begin popup when clicked on current window.
@@ -1816,7 +1816,7 @@ IMGUI_FUNCTION(BeginPopupContextWindow)
 OPTIONAL_LABEL_ARG(str_id,NULL)
 OPTIONAL_INT_ARG(popup_flags, 1)
 CALL_FUNCTION(BeginPopupContextWindow, bool, str_id, popup_flags)
-IF_RET_ADD_END_STACK(13)
+IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupContextVoid(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1);  // open+begin popup when clicked in void (where there are no windows).
@@ -1824,7 +1824,7 @@ IMGUI_FUNCTION(BeginPopupContextVoid)
 OPTIONAL_LABEL_ARG(str_id,NULL)
 OPTIONAL_INT_ARG(popup_flags, 1)
 CALL_FUNCTION(BeginPopupContextVoid, bool, str_id, popup_flags)
-IF_RET_ADD_END_STACK(13)
+IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsPopupOpen(const char* str_id, ImGuiPopupFlags flags = 0);                         // return true if the popup is open.
@@ -1842,13 +1842,13 @@ OPTIONAL_INT_ARG(flags, 0)
 OPTIONAL_IM_VEC_2_ARG(outer_size, 0.0f, 0.0f)
 OPTIONAL_NUMBER_ARG(inner_width, 0.0f)
 CALL_FUNCTION(BeginTable, bool, str_id, column, flags, outer_size, inner_width)
-IF_RET_ADD_END_STACK(14)
+IF_RET_ADD_END_STACK(13)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTable();                                         // only call EndTable() if BeginTable() returns true!
 IMGUI_FUNCTION(EndTable)
 CALL_FUNCTION_NO_RET(EndTable)
-POP_END_STACK(14)
+POP_END_STACK(13)
 END_IMGUI_FUNC
 //    IMGUI_API void          TableNextRow(ImGuiTableRowFlags row_flags = 0, float min_row_height = 0.0f); // append into the first cell of a new row.
 IMGUI_FUNCTION(TableNextRow)
@@ -1934,7 +1934,7 @@ IMGUI_FUNCTION(TableSetBgColor)
 INT_ARG(target)
 UINT_ARG(color)
 OPTIONAL_INT_ARG(column_n, -1)
-CALL_FUNCTION_NO_RET(TableSetBgColor, target, color, column_n)
+CALL_FUNCTION_NO_RET(TableSetBgColor, (ImGuiTableBgTarget)target, color, column_n)
 END_IMGUI_FUNC
 //    IMGUI_API void          Columns(int count = 1, const char* id = NULL, bool border = true);
 IMGUI_FUNCTION(Columns)
@@ -1986,13 +1986,13 @@ IMGUI_FUNCTION(BeginTabBar)
 LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginTabBar, bool, str_id, flags)
-IF_RET_ADD_END_STACK(15)
+IF_RET_ADD_END_STACK(14)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTabBar();                                                        // only call EndTabBar() if BeginTabBar() returns true!
 IMGUI_FUNCTION(EndTabBar)
 CALL_FUNCTION_NO_RET(EndTabBar)
-POP_END_STACK(15)
+POP_END_STACK(14)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginTabItem(const char* label, bool* p_open = NULL, ImGuiTabItemFlags flags = 0); // create a Tab. Returns true if the Tab is selected.
 IMGUI_FUNCTION(BeginTabItem)
@@ -2000,14 +2000,14 @@ LABEL_ARG(label)
 OPTIONAL_BOOL_POINTER_ARG(p_open)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginTabItem, bool, label, p_open, flags)
-IF_RET_ADD_END_STACK(16)
+IF_RET_ADD_END_STACK(15)
 PUSH_BOOL(ret)
 END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTabItem();                                                       // only call EndTabItem() if BeginTabItem() returns true!
 IMGUI_FUNCTION(EndTabItem)
 CALL_FUNCTION_NO_RET(EndTabItem)
-POP_END_STACK(16)
+POP_END_STACK(15)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TabItemButton(const char* label, ImGuiTabItemFlags flags = 0);      // create a Tab behaving like a button. return true when clicked. cannot be selected in the tab bar.
 IMGUI_FUNCTION(TabItemButton)
@@ -2030,7 +2030,7 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(SetNextWindowDockID)
 UINT_ARG(dock_id)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION_NO_RET(SetNextWindowDockID, dock_id, cond)
+CALL_FUNCTION_NO_RET(SetNextWindowDockID, dock_id, (ImGuiCond)cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowClass(const ImGuiWindowClass* window_class);           // set next window class (control docking compatibility + provide hints to platform backend via custom viewport flags and platform parent/child relationship)
 // Unsupported arg type const ImGuiWindowClass* window_class
@@ -2068,19 +2068,19 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(LogButtons)
 CALL_FUNCTION_NO_RET(LogButtons)
 END_IMGUI_FUNC
-//    IMGUI_API void          LogText(const char* fmt, ...) IM_FMTARGS(1);                        // pass text data straight to log (without being displayed)
+//    IMGUI_API void          LogText(const char* fmt, ...);                        // pass text data straight to log (without being displayed)
 // Variadic functions aren't suppported but here it is anyway
 IMGUI_FUNCTION(LogText)
 LABEL_ARG(fmt)
 CALL_FUNCTION_NO_RET(LogText, fmt)
 END_IMGUI_FUNC
-//    IMGUI_API void          LogTextV(const char* fmt, va_list args) IM_FMTLIST(1);
-// Unsupported arg type  va_list args) IM_FMTLIST(1
+//    IMGUI_API void          LogTextV(const char* fmt, va_list args);
+// Unsupported arg type  va_list args
 //    IMGUI_API bool          BeginDragDropSource(ImGuiDragDropFlags flags = 0);                                      // call after submitting an item which may be dragged. when this return true, you can call SetDragDropPayload() + EndDragDropSource()
 IMGUI_FUNCTION(BeginDragDropSource)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginDragDropSource, bool, flags)
-IF_RET_ADD_END_STACK(17)
+IF_RET_ADD_END_STACK(16)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          SetDragDropPayload(const char* type, const void* data, size_t sz, ImGuiCond cond = 0);  // type is a user defined string of maximum 32 characters. Strings starting with '_' are reserved for dear imgui internal types. Data is copied and held by imgui. Return true when payload has been accepted.
@@ -2089,18 +2089,18 @@ LABEL_ARG(type)
 VOID_ARG(data)
 UINT_ARG(sz)
 OPTIONAL_INT_ARG(cond, 0)
-CALL_FUNCTION(SetDragDropPayload, bool, type, data, sz, cond)
+CALL_FUNCTION(SetDragDropPayload, bool, type, data, sz, (ImGuiCond)cond)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndDragDropSource();                                                                    // only call EndDragDropSource() if BeginDragDropSource() returns true!
 IMGUI_FUNCTION(EndDragDropSource)
 CALL_FUNCTION_NO_RET(EndDragDropSource)
-POP_END_STACK(17)
+POP_END_STACK(16)
 END_IMGUI_FUNC
 //    IMGUI_API bool                  BeginDragDropTarget();                                                          // call after submitting an item that may receive a payload. If this returns true, you can call AcceptDragDropPayload() + EndDragDropTarget()
 IMGUI_FUNCTION(BeginDragDropTarget)
 CALL_FUNCTION(BeginDragDropTarget, bool)
-IF_RET_ADD_END_STACK(18)
+IF_RET_ADD_END_STACK(17)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API const ImGuiPayload*   AcceptDragDropPayload(const char* type, ImGuiDragDropFlags flags = 0);          // accept contents of a given type. If ImGuiDragDropFlags_AcceptBeforeDelivery is set you can peek into the payload before the mouse button is released.
@@ -2108,7 +2108,7 @@ END_IMGUI_FUNC
 //    IMGUI_API void                  EndDragDropTarget();                                                            // only call EndDragDropTarget() if BeginDragDropTarget() returns true!
 IMGUI_FUNCTION(EndDragDropTarget)
 CALL_FUNCTION_NO_RET(EndDragDropTarget)
-POP_END_STACK(18)
+POP_END_STACK(17)
 END_IMGUI_FUNC
 //    IMGUI_API const ImGuiPayload*   GetDragDropPayload();                                                           // peek directly into the current payload from anywhere. returns NULL when drag and drop is finished or inactive. use ImGuiPayload::IsDataType() to test for the payload type.
 // Unsupported return type const
@@ -2116,12 +2116,12 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(BeginDisabled)
 OPTIONAL_BOOL_ARG(disabled, true)
 CALL_FUNCTION_NO_RET(BeginDisabled, disabled)
-ADD_END_STACK(19)
+ADD_END_STACK(18)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndDisabled();
 IMGUI_FUNCTION(EndDisabled)
 CALL_FUNCTION_NO_RET(EndDisabled)
-POP_END_STACK(19)
+POP_END_STACK(18)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushClipRect(const ImVec2& clip_rect_min, const ImVec2& clip_rect_max, bool intersect_with_current_clip_rect);
 IMGUI_FUNCTION(PushClipRect)
@@ -2166,7 +2166,7 @@ END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemClicked(ImGuiMouseButton mouse_button = 0);                   // is the last item hovered and mouse clicked on? (**)  == IsMouseClicked(mouse_button) && IsItemHovered()Important. (**) this is NOT equivalent to the behavior of e.g. Button(). Read comments in function definition.
 IMGUI_FUNCTION(IsItemClicked)
 OPTIONAL_INT_ARG(mouse_button, 0)
-CALL_FUNCTION(IsItemClicked, bool, mouse_button)
+CALL_FUNCTION(IsItemClicked, bool, (ImGuiMouseButton)mouse_button)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemVisible();                                                    // is the last item visible? (items may be out of sight because of clipping/scrolling)
@@ -2315,7 +2315,7 @@ END_IMGUI_FUNC
 //    IMGUI_API const char*   GetStyleColorName(ImGuiCol idx);                                    // get a string corresponding to the enum value (for display, saving, etc.).
 IMGUI_FUNCTION(GetStyleColorName)
 INT_ARG(idx)
-CALL_FUNCTION(GetStyleColorName, const char*, idx)
+CALL_FUNCTION(GetStyleColorName, const char*, (ImGuiCol)idx)
 PUSH_STRING(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetStateStorage(ImGuiStorage* storage);                             // replace current window storage with our own (if you want to manipulate it yourself, typically clear subsection of it)
@@ -2356,26 +2356,30 @@ CALL_FUNCTION(ColorConvertFloat4ToU32, unsigned int, in)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          ColorConvertRGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float& out_v);
-//Not allowed to use this function
+// Unsupported arg type  float& out_h
+// Unsupported arg type  float& out_s
+// Unsupported arg type  float& out_v
 //    IMGUI_API void          ColorConvertHSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float& out_b);
-//Not allowed to use this function
+// Unsupported arg type  float& out_r
+// Unsupported arg type  float& out_g
+// Unsupported arg type  float& out_b
 //    IMGUI_API bool          IsKeyDown(ImGuiKey key);                                            // is key being held.
 IMGUI_FUNCTION(IsKeyDown)
 INT_ARG(key)
-CALL_FUNCTION(IsKeyDown, bool, key)
+CALL_FUNCTION(IsKeyDown, bool, (ImGuiKey)key)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyPressed(ImGuiKey key, bool repeat = true);                     // was key pressed (went from !Down to Down)? if repeat=true, uses io.KeyRepeatDelay / KeyRepeatRate
 IMGUI_FUNCTION(IsKeyPressed)
 INT_ARG(key)
 OPTIONAL_BOOL_ARG(repeat, true)
-CALL_FUNCTION(IsKeyPressed, bool, key, repeat)
+CALL_FUNCTION(IsKeyPressed, bool, (ImGuiKey)key, repeat)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyReleased(ImGuiKey key);                                        // was key released (went from Down to !Down)?
 IMGUI_FUNCTION(IsKeyReleased)
 INT_ARG(key)
-CALL_FUNCTION(IsKeyReleased, bool, key)
+CALL_FUNCTION(IsKeyReleased, bool, (ImGuiKey)key)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyChordPressed(ImGuiKeyChord key_chord);                         // was key chord (mods + key) pressed, e.g. you can pass 'ImGuiMod_Ctrl | ImGuiKey_S' as a key-chord. This doesn't do any routing or focus check, please consider using Shortcut() function instead.
@@ -2385,13 +2389,13 @@ IMGUI_FUNCTION(GetKeyPressedAmount)
 INT_ARG(key)
 NUMBER_ARG(repeat_delay)
 NUMBER_ARG(rate)
-CALL_FUNCTION(GetKeyPressedAmount, int, key, repeat_delay, rate)
+CALL_FUNCTION(GetKeyPressedAmount, int, (ImGuiKey)key, repeat_delay, rate)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API const char*   GetKeyName(ImGuiKey key);                                           // [DEBUG] returns English name of the key. Those names a provided for debugging purpose and are not meant to be saved persistently not compared.
 IMGUI_FUNCTION(GetKeyName)
 INT_ARG(key)
-CALL_FUNCTION(GetKeyName, const char*, key)
+CALL_FUNCTION(GetKeyName, const char*, (ImGuiKey)key)
 PUSH_STRING(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextFrameWantCaptureKeyboard(bool want_capture_keyboard);        // Override io.WantCaptureKeyboard flag next frame (said flag is left for your application to handle, typically when true it instructs your app to ignore inputs). e.g. force capture keyboard when your widget is being hovered. This is equivalent to setting "io.WantCaptureKeyboard = want_capture_keyboard"; after the next NewFrame() call.
@@ -2402,32 +2406,32 @@ END_IMGUI_FUNC
 //    IMGUI_API bool          IsMouseDown(ImGuiMouseButton button);                               // is mouse button held?
 IMGUI_FUNCTION(IsMouseDown)
 INT_ARG(button)
-CALL_FUNCTION(IsMouseDown, bool, button)
+CALL_FUNCTION(IsMouseDown, bool, (ImGuiMouseButton)button)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsMouseClicked(ImGuiMouseButton button, bool repeat = false);       // did mouse button clicked? (went from !Down to Down). Same as GetMouseClickedCount() == 1.
 IMGUI_FUNCTION(IsMouseClicked)
 INT_ARG(button)
 OPTIONAL_BOOL_ARG(repeat, false)
-CALL_FUNCTION(IsMouseClicked, bool, button, repeat)
+CALL_FUNCTION(IsMouseClicked, bool, (ImGuiMouseButton)button, repeat)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsMouseReleased(ImGuiMouseButton button);                           // did mouse button released? (went from Down to !Down)
 IMGUI_FUNCTION(IsMouseReleased)
 INT_ARG(button)
-CALL_FUNCTION(IsMouseReleased, bool, button)
+CALL_FUNCTION(IsMouseReleased, bool, (ImGuiMouseButton)button)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsMouseDoubleClicked(ImGuiMouseButton button);                      // did mouse button double-clicked? Same as GetMouseClickedCount() == 2. (note that a double-click will also report IsMouseClicked() == true)
 IMGUI_FUNCTION(IsMouseDoubleClicked)
 INT_ARG(button)
-CALL_FUNCTION(IsMouseDoubleClicked, bool, button)
+CALL_FUNCTION(IsMouseDoubleClicked, bool, (ImGuiMouseButton)button)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API int           GetMouseClickedCount(ImGuiMouseButton button);                      // return the number of successive mouse-clicks at the time where a click happen (otherwise 0).
 IMGUI_FUNCTION(GetMouseClickedCount)
 INT_ARG(button)
-CALL_FUNCTION(GetMouseClickedCount, int, button)
+CALL_FUNCTION(GetMouseClickedCount, int, (ImGuiMouseButton)button)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsMouseHoveringRect(const ImVec2& r_min, const ImVec2& r_max, bool clip = true);// is mouse hovering given bounding rect (in screen space). clipped by current clipping settings, but disregarding of other consideration of focus/window ordering/popup-block.
@@ -2467,14 +2471,14 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(IsMouseDragging)
 INT_ARG(button)
 OPTIONAL_NUMBER_ARG(lock_threshold, -1.0f)
-CALL_FUNCTION(IsMouseDragging, bool, button, lock_threshold)
+CALL_FUNCTION(IsMouseDragging, bool, (ImGuiMouseButton)button, lock_threshold)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetMouseDragDelta(ImGuiMouseButton button = 0, float lock_threshold = -1.0f);   // return the delta from the initial clicking position while the mouse button is pressed or was just released. This is locked and return 0.0f until the mouse moves past a distance threshold at least once (if lock_threshold < -1.0f, uses io.MouseDraggingThreshold)
 IMGUI_FUNCTION(GetMouseDragDelta)
 OPTIONAL_INT_ARG(button, 0)
 OPTIONAL_NUMBER_ARG(lock_threshold, -1.0f)
-CALL_FUNCTION(GetMouseDragDelta, ImVec2, button, lock_threshold)
+CALL_FUNCTION(GetMouseDragDelta, ImVec2, (ImGuiMouseButton)button, lock_threshold)
 PUSH_TABLE
 PUSH_TABLE_NUMBER(ret.x)
 SET_TABLE_FIELD("x")
@@ -2484,14 +2488,14 @@ END_IMGUI_FUNC
 //    IMGUI_API void          ResetMouseDragDelta(ImGuiMouseButton button = 0);                   //
 IMGUI_FUNCTION(ResetMouseDragDelta)
 OPTIONAL_INT_ARG(button, 0)
-CALL_FUNCTION_NO_RET(ResetMouseDragDelta, button)
+CALL_FUNCTION_NO_RET(ResetMouseDragDelta, (ImGuiMouseButton)button)
 END_IMGUI_FUNC
 //    IMGUI_API ImGuiMouseCursor GetMouseCursor();                                                // get desired mouse cursor shape. Important: reset in ImGui::NewFrame(), this is updated during the frame. valid before Render(). If you use software rendering by setting io.MouseDrawCursor ImGui will render those for you
 // Unsupported return type ImGuiMouseCursor
 //    IMGUI_API void          SetMouseCursor(ImGuiMouseCursor cursor_type);                       // set desired mouse cursor shape
 IMGUI_FUNCTION(SetMouseCursor)
 INT_ARG(cursor_type)
-CALL_FUNCTION_NO_RET(SetMouseCursor, cursor_type)
+CALL_FUNCTION_NO_RET(SetMouseCursor, (ImGuiMouseCursor)cursor_type)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextFrameWantCaptureMouse(bool want_capture_mouse);              // Override io.WantCaptureMouse flag next frame (said flag is left for your application to handle, typical when true it instucts your app to ignore inputs). This is equivalent to setting "io.WantCaptureMouse = want_capture_mouse;" after the next NewFrame() call.
 IMGUI_FUNCTION(SetNextFrameWantCaptureMouse)
@@ -2646,14 +2650,13 @@ END_STACK_OPTION(8, EndMenuBar)
 END_STACK_OPTION(9, EndMainMenuBar)
 END_STACK_OPTION(10, EndMenu)
 END_STACK_OPTION(11, EndTooltip)
-END_STACK_OPTION(12, EndItemTooltip)
-END_STACK_OPTION(13, EndPopup)
-END_STACK_OPTION(14, EndTable)
-END_STACK_OPTION(15, EndTabBar)
-END_STACK_OPTION(16, EndTabItem)
-END_STACK_OPTION(17, EndDragDropSource)
-END_STACK_OPTION(18, EndDragDropTarget)
-END_STACK_OPTION(19, EndDisabled)
+END_STACK_OPTION(12, EndPopup)
+END_STACK_OPTION(13, EndTable)
+END_STACK_OPTION(14, EndTabBar)
+END_STACK_OPTION(15, EndTabItem)
+END_STACK_OPTION(16, EndDragDropSource)
+END_STACK_OPTION(17, EndDragDropTarget)
+END_STACK_OPTION(18, EndDisabled)
 END_STACK_END
 //enum ImGuiWindowFlags_
 
@@ -2720,8 +2723,6 @@ MAKE_ENUM(ImGuiWindowFlags_Modal,Modal)
 MAKE_ENUM(ImGuiWindowFlags_ChildMenu,ChildMenu)
 //    ImGuiWindowFlags_DockNodeHost           = 1 << 29,  // Don't use! For internal use by Begin()/NewFrame()
 MAKE_ENUM(ImGuiWindowFlags_DockNodeHost,DockNodeHost)
-//    ImGuiWindowFlags_AlwaysUseWindowPadding = 1 << 30,  // Obsoleted in 1.90: Use ImGuiChildFlags_AlwaysUseWindowPadding in BeginChild() call.
-MAKE_ENUM(ImGuiWindowFlags_AlwaysUseWindowPadding,AlwaysUseWindowPadding)
 END_ENUM(WindowFlags)
 //enum ImGuiChildFlags_
 
@@ -2830,8 +2831,6 @@ MAKE_ENUM(ImGuiTreeNodeFlags_SpanAllColumns,SpanAllColumns)
 MAKE_ENUM(ImGuiTreeNodeFlags_NavLeftJumpsBackHere,NavLeftJumpsBackHere)
 //    ImGuiTreeNodeFlags_CollapsingHeader     = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog,
 MAKE_ENUM(ImGuiTreeNodeFlags_CollapsingHeader,CollapsingHeader)
-//    ImGuiTreeNodeFlags_AllowItemOverlap     = ImGuiTreeNodeFlags_AllowOverlap,  // Renamed in 1.89.7
-MAKE_ENUM(ImGuiTreeNodeFlags_AllowItemOverlap,AllowItemOverlap)
 END_ENUM(TreeNodeFlags)
 //enum ImGuiPopupFlags_
 
@@ -2870,8 +2869,6 @@ MAKE_ENUM(ImGuiSelectableFlags_AllowDoubleClick,AllowDoubleClick)
 MAKE_ENUM(ImGuiSelectableFlags_Disabled,Disabled)
 //    ImGuiSelectableFlags_AllowOverlap       = 1 << 4,   // (WIP) Hit testing to allow subsequent widgets to overlap this one
 MAKE_ENUM(ImGuiSelectableFlags_AllowOverlap,AllowOverlap)
-//    ImGuiSelectableFlags_AllowItemOverlap   = ImGuiSelectableFlags_AllowOverlap,  // Renamed in 1.89.7
-MAKE_ENUM(ImGuiSelectableFlags_AllowItemOverlap,AllowItemOverlap)
 END_ENUM(SelectableFlags)
 //enum ImGuiComboFlags_
 
@@ -3170,10 +3167,6 @@ MAKE_ENUM(ImGuiDockNodeFlags_NoResize,NoResize)
 MAKE_ENUM(ImGuiDockNodeFlags_AutoHideTabBar,AutoHideTabBar)
 //    ImGuiDockNodeFlags_NoUndocking                  = 1 << 7,   //       // Disable undocking this node.
 MAKE_ENUM(ImGuiDockNodeFlags_NoUndocking,NoUndocking)
-//    ImGuiDockNodeFlags_NoSplit                      = ImGuiDockNodeFlags_NoDockingSplit, // Renamed in 1.90
-MAKE_ENUM(ImGuiDockNodeFlags_NoSplit,NoSplit)
-//    ImGuiDockNodeFlags_NoDockingInCentralNode       = ImGuiDockNodeFlags_NoDockingOverCentralNode, // Renamed in 1.90
-MAKE_ENUM(ImGuiDockNodeFlags_NoDockingInCentralNode,NoDockingInCentralNode)
 END_ENUM(DockNodeFlags)
 //enum ImGuiDragDropFlags_
 
@@ -4141,8 +4134,6 @@ END_ENUM(ViewportFlags)
 //struct ImGuiPlatformMonitor
 
 //struct ImGuiPlatformImeData
-
-//namespace ImGui
 
 //namespace ImGui
 
