@@ -379,13 +379,14 @@ sub generateImguiGeneric {
         # we are handling these as ints
         } elsif ($args[$i] =~ m/^\s*(ImGuiCol|ImGuiCond|ImGuiDataType|ImGuiDir|ImGuiKey|ImGuiNavInput|ImGuiMouseButton|ImGuiMouseCursor|ImGuiSortDirection|ImGuiStyleVar|ImGuiTableBgTarget)\s+(\S*)(\s*=\s*\d*|)\s*$/) {
           #These are ints
+          my $type = $1;
           my $name = $2;
           if ($3 =~ m/^\s*=\s*(\d*)$/) {
             push(@before, "OPTIONAL_INT_ARG($name, $1)");
           } else {
             push(@before, "INT_ARG($name)");
           }
-          push(@funcArgs, $name);
+          push(@funcArgs, "($type)$name");
         # generic enum flags
         # we are handling these as ints
         } elsif ($args[$i] =~ m/^\s*Im\w+Flags\s+(\w*)(\s*=\s*\d*|)\s*$/) {
