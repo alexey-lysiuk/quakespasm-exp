@@ -1,5 +1,4 @@
 #include <imgui.h>
-#include <deque>
 
 extern "C" {
   #include "lua.h"
@@ -20,15 +19,15 @@ extern "C" {
 
 #ifdef ENABLE_IM_LUA_END_STACK
 // Stack for imgui begin and end
-std::deque<int> endStack;
+static ImVector<int> endStack;
 static void AddToStack(int type) {
     endStack.push_back(type);
 }
 
 static void PopEndStack(int type) {
-    if (!endStack.empty()) {
-        endStack.pop_back(); // hopefully the type matches
-    }
+    assert(!endStack.empty());
+    assert(endStack.back() == type);
+    endStack.pop_back();
 }
 
 static void ImEndStack(int type);
