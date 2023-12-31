@@ -16,6 +16,7 @@ extern "C" {
 // if lua errors
 
 
+#define ENABLE_IM_LUA_END_STACK
 
 #ifdef ENABLE_IM_LUA_END_STACK
 // Stack for imgui begin and end
