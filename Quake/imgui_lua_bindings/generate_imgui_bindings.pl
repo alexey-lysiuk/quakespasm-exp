@@ -48,6 +48,7 @@ sub generateNamespaceImgui {
     "PopStyleVar" => "StyleVar"
     );
   my %endOverride = (
+    "ItemTooltip" => "Tooltip",
     "PopupModal" => "Popup",
     "PopupContextItem" => "Popup",
     "PopupContextWindow" => "Popup",
