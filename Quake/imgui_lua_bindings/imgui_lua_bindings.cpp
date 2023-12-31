@@ -1,7 +1,4 @@
-//#include <stdio.h>
 #include <imgui.h>
-//#include <deque>
-//#include <vector>
 
 extern "C" {
   #include "lua.h"
@@ -20,9 +17,6 @@ extern "C" {
 
 #define ENABLE_IM_LUA_END_STACK
 
-// define this global before you call RunString or LoadImGuiBindings
-//lua_State* lState;
-
 #ifdef ENABLE_IM_LUA_END_STACK
 // Stack for imgui begin and end
 static ImVector<int> endStack;
@@ -31,24 +25,19 @@ static void AddToStack(int type) {
 }
 
 static void PopEndStack(int type) {
-//    if (!endStack.empty()) {
-//        endStack.pop_back(); // hopefully the type matches
-//    }
-
-	assert(!endStack.empty());
-	assert(endStack.back() == type);
-	endStack.pop_back();
+    assert(!endStack.empty());
+    assert(endStack.back() == type);
+    endStack.pop_back();
 }
 
 static void ImEndStack(int type);
 
-extern "C" void ImClearStack()
-{
-	while (!endStack.empty())
-	{
-		ImEndStack(endStack.back());
-		endStack.pop_back();
-	}
+extern "C" void ImClearStack() {
+    while (!endStack.empty())
+    {
+        ImEndStack(endStack.back());
+        endStack.pop_back();
+    }
 }
 
 #endif
@@ -638,22 +627,9 @@ static void PushImguiEnums(lua_State* lState, const char* tableName) {
     lua_rawset(lState, -3);
 };
 
-
-extern "C" void LoadImguiBindings(lua_State* lState) {
-//    if (!lState) {
-//        fprintf(stderr, "You didn't assign the global lState, either assign that or refactor LoadImguiBindings and RunString\n");
-//    }
+extern "C" void ImLoadBindings(lua_State* lState) {
     lua_newtable(lState);
     luaL_setfuncs(lState, imguilib, 0);
     PushImguiEnums(lState, "constant");
     lua_setglobal(lState, "imgui");
 }
-
-//std::vector<int> drawList;
-//
-//int imgui_draw(lua_State *L){
-//    lua_pushvalue(L, 1);
-//    auto ref = luaL_ref(L, LUA_REGISTRYINDEX);
-//    drawList.push_back(ref);
-//    return 1;
-//}

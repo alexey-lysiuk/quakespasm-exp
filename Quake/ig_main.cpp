@@ -134,8 +134,8 @@ static const char* ls_windows_name = "windows";
 
 void LS_InitImGuiModule(lua_State* state)
 {
-	void LoadImguiBindings(lua_State* state);
-	LoadImguiBindings(state);
+	void ImLoadBindings(lua_State* state);
+	ImLoadBindings(state);
 
 	// Register tables for scripted ImGui windows
 	lua_newtable(state);
