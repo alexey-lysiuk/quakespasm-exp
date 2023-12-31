@@ -15,6 +15,7 @@ extern "C" {
 // to keep track of end and begins and clean up the imgui stack
 // if lua errors
 
+
 #define ENABLE_IM_LUA_END_STACK
 
 #ifdef ENABLE_IM_LUA_END_STACK
@@ -626,6 +627,7 @@ static void PushImguiEnums(lua_State* lState, const char* tableName) {
 
     lua_rawset(lState, -3);
 };
+
 
 extern "C" void ImLoadBindings(lua_State* lState) {
     lua_newtable(lState);
