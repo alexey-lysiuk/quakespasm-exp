@@ -127,6 +127,59 @@ void IG_Shutdown()
 	ImGui::DestroyContext();
 }
 
+#ifdef USE_LUA_SCRIPTING
+
+static const char* ls_qimgui_name = "qimgui";
+static const char* ls_windows_name = "windows";
+
+void LS_InitImGuiModule(lua_State* state)
+{
+	void LoadImguiBindings(lua_State* state);
+	LoadImguiBindings(state);
+
+	// Register tables for scripted ImGui windows
+	lua_newtable(state);
+	lua_pushvalue(state, -1);  // copy for lua_setfield()
+	lua_setglobal(state, ls_qimgui_name);
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, ls_windows_name);
+	lua_pop(state, 1);  // remove qimgui global table
+
+	LS_LoadScript(state, "scripts/qimgui.lua");
+}
+
+static void LS_UpdateWindows()
+{
+	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
+
+	if (lua_getglobal(state, ls_qimgui_name) == LUA_TTABLE)
+	{
+		if (lua_getfield(state, -1, ls_windows_name) == LUA_TTABLE)
+		{
+			if (lua_getfield(state, -1, "draw") == LUA_TFUNCTION)
+			{
+				if (lua_pcall(state, 0, 0, 0) != LUA_OK)
+					LS_ReportError(state);
+
+				void ImClearStack();
+				ImClearStack();
+			}
+
+			lua_pop(state, 2);  // remove qimgui and windows tables
+		}
+		else
+			lua_pop(state, 2);  // remove qimgui table and incorrect windows table value
+	}
+	else
+		lua_pop(state, 1);  // remove incorrect value for qimgui table
+
+	assert(lua_gettop(state) == 0);
+}
+
+#endif // USE_LUA_SCRIPTING
+
 void IG_Update()
 {
 	if (!ig_active)
@@ -164,6 +217,10 @@ void IG_Update()
 	if (ImGui::Button("Press ESC to exit"))
 		IG_Close();
 	ImGui::End();
+
+#ifdef USE_LUA_SCRIPTING
+	LS_UpdateWindows();
+#endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
 

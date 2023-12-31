@@ -1,4 +1,4 @@
-function imgui.widgets.draw()
+function qimgui.windows.draw()
 	e = player.traceentity()
 
 	if e then

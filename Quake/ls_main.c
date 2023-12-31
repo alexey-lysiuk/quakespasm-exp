@@ -640,6 +640,10 @@ lua_State* LS_GetState(void)
 		LS_InitGlobalTables(state);
 		LS_InitMenuModule(state);
 
+#ifdef USE_IMGUI
+		LS_InitImGuiModule(state);
+#endif // USE_IMGUI
+
 		lua_gc(state, LUA_GCRESTART);
 		lua_gc(state, LUA_GCCOLLECT);
 
