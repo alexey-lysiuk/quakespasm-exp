@@ -54,7 +54,21 @@ sub parse_blocks {
   my @blocknames;
   my $lastline;
   my $curBlock;
+  my $obsolete = 0;
   while (my $line = <STDIN>) {
+   # Add in a hack that avoids parsing obsolete blocks of ImGui library code
+   if ($obsolete) {
+     if ($line =~ m/#endif/) {
+       $obsolete = 0;
+     }
+     next;
+   }
+
+   if ($line =~ m/#ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS/) {
+     $obsolete = 1;
+     next;
+   }
+
 	if (does_line_match_begin_block($line)) {
 		push @blocknames, $lastline;
 		$curBlock = "";
