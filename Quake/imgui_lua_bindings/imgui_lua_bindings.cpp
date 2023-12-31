@@ -33,6 +33,14 @@ static void PopEndStack(int type) {
 
 static void ImEndStack(int type);
 
+extern "C" void ImClearStack() {
+    while (!endStack.empty())
+    {
+        ImEndStack(endStack.back());
+        endStack.pop_back();
+    }
+}
+
 #endif
 
 #define IMGUI_FUNCTION_DRAW_LIST(name) \
