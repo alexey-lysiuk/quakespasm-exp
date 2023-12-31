@@ -142,6 +142,9 @@ sub generateImguiGeneric {
   my ($imguiCodeBlock) = @_;
 
 
+  #delete obsolete functions
+  $imguiCodeBlock =~ s/^#ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS(.*?)^#endif//msg;
+
   my $numSupported = 0;
   my $numUnsupported = 0;
   my $line;
@@ -156,6 +159,9 @@ sub generateImguiGeneric {
 
     #delete this so it's eaiser for regexes
     $line =~ s/ IM_PRINTFARGS\(.\);/;/g;
+    $line =~ s/ *IM_FMTARGS\(.\);/;/g;
+    $line =~ s/ *IM_FMTLIST\(.\);/;/g;
+
     if ($line =~ m/$lineCaptureRegex/) {
       print "//" . $line . "\n";
       # this will be set to 0 if something is not supported yet
