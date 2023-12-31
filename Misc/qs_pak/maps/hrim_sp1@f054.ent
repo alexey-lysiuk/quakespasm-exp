@@ -2496,7 +2496,6 @@
 "speed" "20"
 "targetname" "ele1"
 "sounds" "1"
-"angle" "-1"
 "classname" "func_train"
 }
 {
