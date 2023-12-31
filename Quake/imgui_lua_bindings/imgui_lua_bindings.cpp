@@ -1,6 +1,5 @@
 #include <imgui.h>
 #include <deque>
-#include <vector>
 
 extern "C" {
   #include "lua.h"
@@ -627,13 +626,4 @@ extern "C" void ImLoadBindings(lua_State* lState) {
     luaL_setfuncs(lState, imguilib, 0);
     PushImguiEnums(lState, "constant");
     lua_setglobal(lState, "imgui");
-}
-
-std::vector<int> drawList;
-
-int imgui_draw(lua_State *L){
-    lua_pushvalue(L, 1);
-    auto ref = luaL_ref(L, LUA_REGISTRYINDEX);
-    drawList.push_back(ref);
-    return 1;
 }
