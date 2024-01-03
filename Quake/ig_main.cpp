@@ -93,68 +93,25 @@ static qboolean LS_PushQImGuiTable(lua_State* state, const char* const name)
 	return true;
 }
 
-static void LS_UpdateTools()
+static void LS_CallQImGuiFunction(const char* const name)
 {
 	lua_State* state = LS_GetState();
 	assert(state);
 	assert(lua_gettop(state) == 0);
 
-	if (LS_PushQImGuiTable(state, ls_tools_name))
+	if (lua_getglobal(state, ls_qimgui_name) == LUA_TTABLE)
 	{
-		lua_pushnil(state);  // initial iteration key
-
-		while (lua_next(state, -2) != 0)
+		if (lua_getfield(state, -1, name) == LUA_TFUNCTION)
 		{
-			if (lua_type(state, -1) == LUA_TTABLE && lua_type(state, -2) == LUA_TNUMBER)
-			{
-				if (lua_getfield(state, -1, "title") == LUA_TSTRING)
-				{
-					bool todo = false;
-					ImGui::Checkbox(lua_tostring(state, -1), &todo);
+			if (lua_pcall(state, 0, 0, 0) != LUA_OK)
+				LS_ReportError(state);
 
-					lua_pop(state, 1);  // remove title string
-				}
-			}
-
-			lua_pop(state, 1);  // remove tool instance, keep key for next iteration
+			void ImClearStack();
+			ImClearStack();
 		}
 	}
 
 	lua_pop(state, 1);  // remove tools table
-	assert(lua_gettop(state) == 0);
-}
-
-static void LS_UpdateWindows()
-{
-	lua_State* state = LS_GetState();
-	assert(state);
-	assert(lua_gettop(state) == 0);
-
-	if (LS_PushQImGuiTable(state, ls_windows_name))
-	{
-		lua_pushnil(state);  // initial iteration key
-
-		while (lua_next(state, -2) != 0)
-		{
-			if (lua_type(state, -1) == LUA_TTABLE && lua_type(state, -2) == LUA_TSTRING)
-			{
-				if (lua_getfield(state, -1, "onupdate") == LUA_TFUNCTION)
-				{
-					lua_insert(state, -2);  // swap tool instance with onupdate() function
-
-					if (lua_pcall(state, 1, 0, 0) != LUA_OK)
-						LS_ReportError(state);
-
-					void ImClearStack();
-					ImClearStack();
-				}
-			}
-
-			lua_pop(state, 1);  // remove tool instance, keep key for next iteration
-		}
-	}
-
-	lua_pop(state, 1);  // remove windows table
 	assert(lua_gettop(state) == 0);
 }
 
@@ -260,7 +217,8 @@ void IG_Update()
 	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
 
 #ifdef USE_LUA_SCRIPTING
-	LS_UpdateTools();
+	//LS_UpdateTools();
+	LS_CallQImGuiFunction("updatetools");
 #endif // USE_LUA_SCRIPTING
 
 #ifndef NDEBUG
@@ -281,7 +239,8 @@ void IG_Update()
 	ImGui::End();
 
 #ifdef USE_LUA_SCRIPTING
-	LS_UpdateWindows();
+	//LS_UpdateWindows();
+	LS_CallQImGuiFunction("updatewindows");
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
