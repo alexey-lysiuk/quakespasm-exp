@@ -273,7 +273,7 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 
 	assert(event);
 
-	if (event->type == SDL_KEYUP && event->key.keysym.sym == SDLK_ESCAPE)
+	if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
 	{
 		IG_Close();
 		return true;

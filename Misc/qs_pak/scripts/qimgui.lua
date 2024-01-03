@@ -37,7 +37,7 @@ function qimgui.scratchpad()
 
 	local onupdate = function (self)
 		imgui.Begin(title)
-		_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024)
+		_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1)
 		imgui.End()
 	end
 
