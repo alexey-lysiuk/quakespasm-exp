@@ -1,13 +1,23 @@
-function qimgui.windows.draw()
-	e = player.traceentity()
 
-	if e then
-		imgui.Begin(tostring(e) .. "###Traced entity")
+function qimgui.basictool(title, onupdate, onopen, onclose)
+	local tool =
+	{
+		title = title or 'Tool',
+		onupdate = onupdate or function () end,
+		onopen = onopen or function () end,
+		onclose = onclose or function () end,
+	}
+	return tool
+end
 
-		for _, f in ipairs(e) do
-			imgui.Text(f.name .. ': ' .. tostring(f.value))
-		end
-
+function qimgui.scratchpad()
+	local onupdate = function (self)
+		imgui.Begin('')
+		
 		imgui.End()
 	end
+
+	return qimgui.basictool('Scratchpad', onupdate)
 end
+
+table.insert(qimgui.tools, qimgui.scratchpad())
