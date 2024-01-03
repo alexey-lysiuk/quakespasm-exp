@@ -52,8 +52,6 @@ static void* ig_eventuserdata;
 #ifdef USE_LUA_SCRIPTING
 
 static const char* ls_qimgui_name = "qimgui";
-static const char* ls_windows_name = "windows";
-static const char* ls_tools_name = "tools";
 
 void LS_InitImGuiModule(lua_State* state)
 {
@@ -65,9 +63,9 @@ void LS_InitImGuiModule(lua_State* state)
 	lua_pushvalue(state, -1);  // copy for lua_setfield()
 	lua_setglobal(state, ls_qimgui_name);
 	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, ls_windows_name);
+	lua_setfield(state, -2, "windows");
 	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, ls_tools_name);
+	lua_setfield(state, -2, "tools");
 	lua_pop(state, 1);  // remove qimgui global table
 
 	LS_LoadScript(state, "scripts/qimgui.lua");

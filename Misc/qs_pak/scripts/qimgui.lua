@@ -6,8 +6,8 @@ function qimgui.updatetools()
 		local _, isopen = imgui.Checkbox(tool.title, wasopen)
 
 		if wasopen and not isopen then
-			tool:onclose()
 			qimgui.windows[title] = nil
+			tool:onclose()
 		elseif not wasopen and isopen then
 			tool:onopen()
 			qimgui.windows[title] = tool
@@ -37,11 +37,13 @@ function qimgui.scratchpad()
 
 	local onupdate = function (self)
 		imgui.Begin(title)
-		
+		_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024)
 		imgui.End()
 	end
 
-	return qimgui.basictool(title, onupdate)
+	local scratchpad = qimgui.basictool(title, onupdate)
+	scratchpad.text = ''
+	return scratchpad
 end
 
 table.insert(qimgui.tools, qimgui.scratchpad())
