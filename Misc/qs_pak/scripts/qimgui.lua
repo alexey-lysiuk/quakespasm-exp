@@ -71,11 +71,18 @@ function qimgui.scratchpad()
 		-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
 		imgui.SetNextWindowSize(320, 240, imgui.constant.Cond.FirstUseEver)
 
-		if imgui.Begin(title) then
+		local visible, opened = imgui.Begin(title, true)
+
+		if visible and opened then
 			_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1, imgui.constant.InputTextFlags.AllowTabInput)
 		end
 
 		imgui.End()
+
+		if not opened then
+			windows[title] = nil
+			self.onclose()
+		end
 	end
 
 	local scratchpad = qimgui.basictool(title, onupdate)
