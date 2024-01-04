@@ -2,7 +2,7 @@
 local tools = qimgui.tools
 local windows = qimgui.windows
 
-function qimgui.updatetools()
+local function updatetools()
 	for _, tool in ipairs(tools) do
 		local title = tool.title
 		local wasopen = windows[title]
@@ -25,7 +25,24 @@ local function foreachwindow(funcname)
 end
 
 function qimgui.onupdate()
-	foreachwindow('onupdate')
+	imgui.SetNextWindowPos(0, 0, imgui.constant.Cond.FirstUseEver)
+	imgui.Begin("Tools", nil, imgui.constant.WindowFlags.AlwaysAutoResize | imgui.constant.WindowFlags.NoResize | imgui.constant.WindowFlags.NoScrollbar | imgui.constant.WindowFlags.NoCollapse)
+
+	updatetools()
+
+	imgui.Spacing()
+	imgui.Separator()
+	imgui.Spacing()
+
+	local shouldexit = imgui.Button("Press ESC to exit")
+
+	imgui.End()
+
+	if shouldexit then
+		qimgui.close()
+	else
+		foreachwindow('onupdate')
+	end
 end
 
 function qimgui.onopen()
@@ -51,6 +68,7 @@ function qimgui.scratchpad()
 	local title = 'Scratchpad'
 
 	local onupdate = function (self)
+		-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
 		imgui.SetNextWindowSize(320, 240)
 
 		if imgui.Begin(title) then
@@ -65,4 +83,7 @@ function qimgui.scratchpad()
 	return scratchpad
 end
 
-table.insert(qimgui.tools, qimgui.scratchpad())
+table.insert(tools, qimgui.scratchpad())
+
+local imguidemo = qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow)
+table.insert(tools, imguidemo)

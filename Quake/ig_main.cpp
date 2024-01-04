@@ -39,10 +39,6 @@ extern "C"
 #include "quakedef.h"
 #include "ls_common.h"
 
-#ifndef NDEBUG
-static bool ig_showdemo;
-#endif // !NDEBUG
-
 static bool ig_active;
 static char ig_justactived;
 
@@ -52,24 +48,6 @@ static void* ig_eventuserdata;
 #ifdef USE_LUA_SCRIPTING
 
 static const char* ls_qimgui_name = "qimgui";
-
-void LS_InitImGuiModule(lua_State* state)
-{
-	void ImLoadBindings(lua_State* state);
-	ImLoadBindings(state);
-
-	// Register tables for scripted ImGui windows
-	lua_newtable(state);
-	lua_pushvalue(state, -1);  // copy for lua_setfield()
-	lua_setglobal(state, ls_qimgui_name);
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, "windows");
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, "tools");
-	lua_pop(state, 1);  // remove qimgui global table
-
-	LS_LoadScript(state, "scripts/qimgui.lua");
-}
 
 static void LS_CallQImGuiFunction(const char* const name)
 {
@@ -87,9 +65,11 @@ static void LS_CallQImGuiFunction(const char* const name)
 			void ImClearStack();
 			ImClearStack();
 		}
+		else
+			lua_pop(state, 1);  // remove incorrect value for given function
 	}
 
-	lua_pop(state, 1);  // remove tools table
+	lua_pop(state, 1);  // remove qimgui table
 	assert(lua_gettop(state) == 0);
 }
 
@@ -199,30 +179,6 @@ void IG_Update()
 			SDL_StartTextInput();
 	}
 
-	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Tools", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
-
-#ifdef USE_LUA_SCRIPTING
-	LS_CallQImGuiFunction("updatetools");
-#endif // USE_LUA_SCRIPTING
-
-#ifndef NDEBUG
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	ImGui::Checkbox("Demo Window", &ig_showdemo);
-
-	if (ig_showdemo)
-		ImGui::ShowDemoWindow(&ig_showdemo);
-#endif // !NDEBUG
-
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	if (ImGui::Button("Press ESC to exit"))
-		IG_Close();
-	ImGui::End();
-
 #ifdef USE_LUA_SCRIPTING
 	LS_CallQImGuiFunction("onupdate");
 #endif // USE_LUA_SCRIPTING
@@ -267,6 +223,37 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 
 	return ImGui_ImplSDL2_ProcessEvent(event);
 }
+
+
+#ifdef USE_LUA_SCRIPTING
+
+static int LS_qimgui_close(lua_State* state)
+{
+	IG_Close();
+	return 0;
+}
+
+void LS_InitImGuiModule(lua_State* state)
+{
+	void ImLoadBindings(lua_State* state);
+	ImLoadBindings(state);
+
+	// Register tables for scripted ImGui windows
+	lua_newtable(state);
+	lua_pushvalue(state, -1);  // copy for lua_setfield()
+	lua_setglobal(state, ls_qimgui_name);
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, "windows");
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, "tools");
+	lua_pushcfunction(state, LS_qimgui_close);
+	lua_setfield(state, -2, "close");
+	lua_pop(state, 1);  // remove qimgui global table
+
+	LS_LoadScript(state, "scripts/qimgui.lua");
+}
+
+#endif // USE_LUA_SCRIPTING
 
 } // extern "C"
 
