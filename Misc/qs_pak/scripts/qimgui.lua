@@ -92,5 +92,17 @@ end
 
 table.insert(tools, qimgui.scratchpad())
 
-local imguidemo = qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow)
-table.insert(tools, imguidemo)
+local function imguidemo()
+	local onupdate = function (self)
+		local opened = imgui.ShowDemoWindow(true)
+
+		if not opened then
+			windows[self.title] = nil
+			self.onclose()
+		end
+	end
+
+	return qimgui.basictool('Dear ImGui Demo', onupdate)
+end
+
+table.insert(tools, imguidemo())
