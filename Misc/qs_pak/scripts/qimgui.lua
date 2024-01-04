@@ -69,10 +69,10 @@ function qimgui.scratchpad()
 
 	local onupdate = function (self)
 		-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
-		imgui.SetNextWindowSize(320, 240)
+		imgui.SetNextWindowSize(320, 240, imgui.constant.Cond.FirstUseEver)
 
 		if imgui.Begin(title) then
-			_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1)
+			_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1, imgui.constant.InputTextFlags.AllowTabInput)
 		end
 
 		imgui.End()
