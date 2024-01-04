@@ -530,7 +530,7 @@ sub generateImguiGeneric {
             push(@endTypes, $curEndType);
           }
           my $curEndTypeInt = $endTypeToInt{$curEndType};
-          if ($hasRet) {
+          if ($hasRet and $funcName ne "Begin" and $funcName ne "BeginChild") {
             print "IF_RET_ADD_END_STACK($curEndTypeInt)\n";
           } else {
             print "ADD_END_STACK($curEndTypeInt)\n";
