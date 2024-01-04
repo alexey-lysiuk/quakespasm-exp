@@ -18,12 +18,6 @@ local function updatetools()
 	end
 end
 
-local function foreachwindow(funcname)
-	for _, window in pairs(windows) do
-		window[funcname](window)
-	end
-end
-
 function qimgui.onupdate()
 	imgui.SetNextWindowPos(0, 0, imgui.constant.Cond.FirstUseEver)
 	imgui.Begin("Tools", nil, imgui.constant.WindowFlags.AlwaysAutoResize | imgui.constant.WindowFlags.NoResize | imgui.constant.WindowFlags.NoScrollbar | imgui.constant.WindowFlags.NoCollapse)
@@ -41,23 +35,38 @@ function qimgui.onupdate()
 	if shouldexit then
 		qimgui.close()
 	else
-		foreachwindow('onupdate')
+		local closedwindows = {}
+
+		for _, window in pairs(windows) do
+			if not window:onupdate() then
+				table.insert(closedwindows, window)
+			end
+		end
+
+		for _, window in ipairs(closedwindows) do
+			windows[window.title] = nil
+			window.onclose()
+		end
 	end
 end
 
 function qimgui.onopen()
-	foreachwindow('onopen')
+	for _, window in pairs(windows) do
+		window:onopen()
+	end
 end
 
 function qimgui.onclose()
-	foreachwindow('onclose')
+	for _, window in pairs(windows) do
+		window:onclose()
+	end
 end
 
 function qimgui.basictool(title, onupdate, onopen, onclose)
 	local tool =
 	{
 		title = title or 'Tool',
-		onupdate = onupdate or function () end,
+		onupdate = onupdate or function () return true end,
 		onopen = onopen or function () end,
 		onclose = onclose or function () end,
 	}
@@ -79,10 +88,7 @@ function qimgui.scratchpad()
 
 		imgui.End()
 
-		if not opened then
-			windows[title] = nil
-			self.onclose()
-		end
+		return opened
 	end
 
 	local scratchpad = qimgui.basictool(title, onupdate)
@@ -93,16 +99,7 @@ end
 table.insert(tools, qimgui.scratchpad())
 
 local function imguidemo()
-	local onupdate = function (self)
-		local opened = imgui.ShowDemoWindow(true)
-
-		if not opened then
-			windows[self.title] = nil
-			self.onclose()
-		end
-	end
-
-	return qimgui.basictool('Dear ImGui Demo', onupdate)
+	return qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow)
 end
 
 table.insert(tools, imguidemo())
