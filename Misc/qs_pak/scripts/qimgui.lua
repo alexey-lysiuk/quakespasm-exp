@@ -1,24 +1,39 @@
 
+local tools = qimgui.tools
+local windows = qimgui.windows
+
 function qimgui.updatetools()
-	for _, tool in ipairs(qimgui.tools) do
+	for _, tool in ipairs(tools) do
 		local title = tool.title
-		local wasopen = qimgui.windows[title]
+		local wasopen = windows[title]
 		local _, isopen = imgui.Checkbox(tool.title, wasopen)
 
 		if wasopen and not isopen then
-			qimgui.windows[title] = nil
+			windows[title] = nil
 			tool:onclose()
 		elseif not wasopen and isopen then
 			tool:onopen()
-			qimgui.windows[title] = tool
+			windows[title] = tool
 		end
 	end
 end
 
-function qimgui.updatewindows()
-	for _, window in pairs(qimgui.windows) do
-		window:onupdate()
+local function foreachwindow(funcname)
+	for _, window in pairs(windows) do
+		window[funcname](window)
 	end
+end
+
+function qimgui.onupdate()
+	foreachwindow('onupdate')
+end
+
+function qimgui.onopen()
+	foreachwindow('onopen')
+end
+
+function qimgui.onclose()
+	foreachwindow('onclose')
 end
 
 function qimgui.basictool(title, onupdate, onopen, onclose)
@@ -36,8 +51,12 @@ function qimgui.scratchpad()
 	local title = 'Scratchpad'
 
 	local onupdate = function (self)
-		imgui.Begin(title)
-		_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1)
+		imgui.SetNextWindowSize(320, 240)
+
+		if imgui.Begin(title) then
+			_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1)
+		end
+
 		imgui.End()
 	end
 

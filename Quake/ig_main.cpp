@@ -71,26 +71,6 @@ void LS_InitImGuiModule(lua_State* state)
 	LS_LoadScript(state, "scripts/qimgui.lua");
 }
 
-static qboolean LS_PushQImGuiTable(lua_State* state, const char* const name)
-{
-	assert(state != NULL);
-
-	if (lua_getglobal(state, ls_qimgui_name) != LUA_TTABLE)
-	{
-		lua_pop(state, 1);  // remove incorrect value for qimgui table
-		return false;
-	}
-
-	if (lua_getfield(state, -1, name) != LUA_TTABLE)
-	{
-		lua_pop(state, 2);  // remove qimgui table and incorrect named table value
-		return false;
-	}
-
-	lua_remove(state, -2);  // remove qimgui table
-	return true;
-}
-
 static void LS_CallQImGuiFunction(const char* const name)
 {
 	lua_State* state = LS_GetState();
@@ -154,12 +134,20 @@ static void IG_Open()
 
 	// Enable contol of ImGui windows by all input devices
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+
+#ifdef USE_LUA_SCRIPTING
+	LS_CallQImGuiFunction("onopen");
+#endif // USE_LUA_SCRIPTING
 }
 
 static void IG_Close()
 {
 	if (!ig_active)
 		return;
+
+#ifdef USE_LUA_SCRIPTING
+	LS_CallQImGuiFunction("onclose");
+#endif // USE_LUA_SCRIPTING
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
 
@@ -212,10 +200,9 @@ void IG_Update()
 	}
 
 	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
-	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+	ImGui::Begin("Tools", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
 
 #ifdef USE_LUA_SCRIPTING
-	//LS_UpdateTools();
 	LS_CallQImGuiFunction("updatetools");
 #endif // USE_LUA_SCRIPTING
 
@@ -237,8 +224,7 @@ void IG_Update()
 	ImGui::End();
 
 #ifdef USE_LUA_SCRIPTING
-	//LS_UpdateWindows();
-	LS_CallQImGuiFunction("updatewindows");
+	LS_CallQImGuiFunction("onupdate");
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
