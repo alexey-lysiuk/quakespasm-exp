@@ -28,13 +28,11 @@ function qimgui.onupdate()
 	imgui.Separator()
 	imgui.Spacing()
 
-	local shouldexit = imgui.Button("Press ESC to exit")
+	local keepopen = not imgui.Button("Press ESC to exit")
 
 	imgui.End()
 
-	if shouldexit then
-		qimgui.close()
-	else
+	if keepopen then
 		local closedwindows = {}
 
 		for _, window in pairs(windows) do
@@ -48,6 +46,8 @@ function qimgui.onupdate()
 			window.onclose()
 		end
 	end
+
+	return keepopen
 end
 
 function qimgui.onopen()

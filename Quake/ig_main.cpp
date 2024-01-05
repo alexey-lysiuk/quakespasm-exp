@@ -49,28 +49,53 @@ static void* ig_eventuserdata;
 
 static const char* ls_qimgui_name = "qimgui";
 
-static void LS_CallQImGuiFunction(const char* const name)
+static bool LS_CallQImGuiFunction(const char* const name)
 {
 	lua_State* state = LS_GetState();
 	assert(state);
 	assert(lua_gettop(state) == 0);
 
+	bool result = false;
+
 	if (lua_getglobal(state, ls_qimgui_name) == LUA_TTABLE)
 	{
 		if (lua_getfield(state, -1, name) == LUA_TFUNCTION)
 		{
-			if (lua_pcall(state, 0, 0, 0) != LUA_OK)
+			if (lua_pcall(state, 0, 1, 0) != LUA_OK)
 				LS_ReportError(state);
+
+			result = lua_toboolean(state, -1);
+			lua_pop(state, 1);  // remove result
 
 			void ImClearStack();
 			ImClearStack();
 		}
 		else
-			lua_pop(state, 1);  // remove incorrect value for given function
+			lua_pop(state, 1);  // remove incorrect value for function to call
 	}
 
 	lua_pop(state, 1);  // remove qimgui table
 	assert(lua_gettop(state) == 0);
+
+	return result;
+}
+
+void LS_InitImGuiModule(lua_State* state)
+{
+	void ImLoadBindings(lua_State* state);
+	ImLoadBindings(state);
+
+	// Register tables for scripted ImGui windows
+	lua_newtable(state);
+	lua_pushvalue(state, -1);  // copy for lua_setfield()
+	lua_setglobal(state, ls_qimgui_name);
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, "windows");
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, "tools");
+	lua_pop(state, 1);  // remove qimgui global table
+
+	LS_LoadScript(state, "scripts/qimgui.lua");
 }
 
 #endif // USE_LUA_SCRIPTING
@@ -180,7 +205,8 @@ void IG_Update()
 	}
 
 #ifdef USE_LUA_SCRIPTING
-	LS_CallQImGuiFunction("onupdate");
+	if (!LS_CallQImGuiFunction("onupdate"))
+		IG_Close();
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
@@ -223,37 +249,6 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 
 	return ImGui_ImplSDL2_ProcessEvent(event);
 }
-
-
-#ifdef USE_LUA_SCRIPTING
-
-static int LS_qimgui_close(lua_State* state)
-{
-	IG_Close();
-	return 0;
-}
-
-void LS_InitImGuiModule(lua_State* state)
-{
-	void ImLoadBindings(lua_State* state);
-	ImLoadBindings(state);
-
-	// Register tables for scripted ImGui windows
-	lua_newtable(state);
-	lua_pushvalue(state, -1);  // copy for lua_setfield()
-	lua_setglobal(state, ls_qimgui_name);
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, "windows");
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, "tools");
-	lua_pushcfunction(state, LS_qimgui_close);
-	lua_setfield(state, -2, "close");
-	lua_pop(state, 1);  // remove qimgui global table
-
-	LS_LoadScript(state, "scripts/qimgui.lua");
-}
-
-#endif // USE_LUA_SCRIPTING
 
 } // extern "C"
 
