@@ -240,14 +240,18 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 		return false;
 
 	assert(event);
+	const Uint32 type = event->type;
 
-	if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
+	if (type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
 	{
 		IG_Close();
-		return true;
+		return true;  // stop further event processing
 	}
 
-	return ImGui_ImplSDL2_ProcessEvent(event);
+	const qboolean eventconsumed = ImGui_ImplSDL2_ProcessEvent(event)
+		// Window and quit events should be processed by engine as well
+		&& (type != SDL_WINDOWEVENT) && (type != SDL_QUIT);
+	return eventconsumed;
 }
 
 } // extern "C"
