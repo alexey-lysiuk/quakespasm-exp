@@ -83,7 +83,7 @@ function qimgui.scratchpad()
 		local visible, opened = imgui.Begin(title, true)
 
 		if visible and opened then
-			_, self.text = imgui.InputTextMultiline('##text', self.text, 1024 * 1024, -1, -1, imgui.constant.InputTextFlags.AllowTabInput)
+			_, self.text = imgui.InputTextMultiline('##text', self.text, 64 * 1024, -1, -1, imgui.constant.InputTextFlags.AllowTabInput)
 		end
 
 		imgui.End()

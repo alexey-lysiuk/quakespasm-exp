@@ -74,11 +74,17 @@ static int impl_##name(lua_State *L) { \
         name = otherwise; \
     }
 
+static ImVector<char> ioTextBuffer;
+
 #define IOTEXT_ARG(name) \
     size_t i_##name##_size; \
     const char * i_##name##_const = luaL_checklstring(L, arg++, &(i_##name##_size)); \
-    char name[255]; \
-    strcpy(name, i_##name##_const);
+    const size_t bufferSize = (size_t)luaL_checknumber(L, arg); \
+    ioTextBuffer.resize(bufferSize); \
+    if (bufferSize <= i_##name##_size) \
+        i_##name##_size = bufferSize - 1; \
+    char* name = &ioTextBuffer[0]; \
+    strncpy(name, i_##name##_const, i_##name##_size);
 
 #define END_IOTEXT(name) \
     const char* o_##name = name;\
