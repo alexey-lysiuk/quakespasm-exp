@@ -74,11 +74,25 @@ static int impl_##name(lua_State *L) { \
         name = otherwise; \
     }
 
+static ImVector<char> ioTextBuffer;
+
 #define IOTEXT_ARG(name) \
     size_t i_##name##_size; \
     const char * i_##name##_const = luaL_checklstring(L, arg++, &(i_##name##_size)); \
-    char name[255]; \
-    strcpy(name, i_##name##_const);
+    const lua_Integer bufferSizeInt = luaL_checkinteger(L, arg); \
+    static constexpr lua_Integer BUFFER_SIZE_MIN = 1024; \
+    static constexpr lua_Integer BUFFER_SIZE_MAX = 1024 * 1024; \
+    const size_t bufferSize = bufferSizeInt < BUFFER_SIZE_MIN ? BUFFER_SIZE_MIN : (bufferSizeInt > BUFFER_SIZE_MAX ? BUFFER_SIZE_MAX : bufferSizeInt); \
+    ioTextBuffer.resize(bufferSize); \
+    if (bufferSize <= i_##name##_size) { \
+        i_##name##_size = bufferSize - 1; \
+        ioTextBuffer[i_##name##_size] = '\0'; \
+    } \
+    char* name = &ioTextBuffer[0]; \
+    if (i_##name##_size > 0) \
+        strncpy(name, i_##name##_const, i_##name##_size); \
+    else \
+        name[0] = '\0';
 
 #define END_IOTEXT(name) \
     const char* o_##name = name;\
@@ -205,8 +219,13 @@ static int impl_##name(lua_State *L) { \
     bool i_##name##_value; \
     bool* name = NULL; \
     if (arg <= max_args) { \
-        i_##name##_value = lua_toboolean(L, arg++); \
-        name = &(i_##name##_value); \
+        if (lua_isnil(L, arg) == 0) {\
+            i_##name##_value = lua_toboolean(L, arg++); \
+            name = &(i_##name##_value); \
+        } \
+        else { \
+            ++arg; \
+        } \
     }
 
 #define END_BOOL_POINTER(name) \
