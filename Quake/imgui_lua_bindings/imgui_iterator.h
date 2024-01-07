@@ -107,7 +107,7 @@ LABEL_ARG(name)
 OPTIONAL_BOOL_POINTER_ARG(p_open)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(Begin, bool, name, p_open, flags)
-IF_RET_ADD_END_STACK(1)
+ADD_END_STACK(1)
 PUSH_BOOL(ret)
 END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
@@ -123,7 +123,7 @@ OPTIONAL_IM_VEC_2_ARG(size, 0, 0)
 OPTIONAL_INT_ARG(child_flags, 0)
 OPTIONAL_INT_ARG(window_flags, 0)
 CALL_FUNCTION(BeginChild, bool, str_id, size, child_flags, window_flags)
-IF_RET_ADD_END_STACK(2)
+ADD_END_STACK(2)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginChild(ImGuiID id, const ImVec2& size = ImVec2 0  0, ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0);
@@ -133,7 +133,7 @@ OPTIONAL_IM_VEC_2_ARG(size, 0, 0)
 OPTIONAL_INT_ARG(child_flags, 0)
 OPTIONAL_INT_ARG(window_flags, 0)
 CALL_FUNCTION(BeginChild, bool, id, size, child_flags, window_flags)
-IF_RET_ADD_END_STACK(2)
+ADD_END_STACK(2)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndChild();
