@@ -73,6 +73,31 @@ function qimgui.basictool(title, onupdate, onopen, onclose)
 	return tool
 end
 
+function qimgui.scratchpad()
+	local title = 'Scratchpad'
+
+	local onupdate = function (self)
+		-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
+		imgui.SetNextWindowSize(320, 240, imgui.constant.Cond.FirstUseEver)
+
+		local visible, opened = imgui.Begin(title, true)
+
+		if visible and opened then
+			_, self.text = imgui.InputTextMultiline('##text', self.text, 64 * 1024, -1, -1, imgui.constant.InputTextFlags.AllowTabInput)
+		end
+
+		imgui.End()
+
+		return opened
+	end
+
+	local scratchpad = qimgui.basictool(title, onupdate)
+	scratchpad.text = ''
+	return scratchpad
+end
+
+table.insert(tools, qimgui.scratchpad())
+
 local function imguidemo()
 	return qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow)
 end
