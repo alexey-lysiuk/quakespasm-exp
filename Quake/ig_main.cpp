@@ -39,15 +39,66 @@ extern "C"
 #include "quakedef.h"
 #include "ls_common.h"
 
-#ifndef NDEBUG
-static bool ig_showdemo;
-#endif // !NDEBUG
-
 static bool ig_active;
 static char ig_justactived;
 
 static SDL_EventFilter ig_eventfilter;
 static void* ig_eventuserdata;
+
+#ifdef USE_LUA_SCRIPTING
+
+static const char* ls_qimgui_name = "qimgui";
+
+static bool LS_CallQImGuiFunction(const char* const name)
+{
+	lua_State* state = LS_GetState();
+	assert(state);
+	assert(lua_gettop(state) == 0);
+
+	bool result = false;
+
+	if (lua_getglobal(state, ls_qimgui_name) == LUA_TTABLE)
+	{
+		if (lua_getfield(state, -1, name) == LUA_TFUNCTION)
+		{
+			if (lua_pcall(state, 0, 1, 0) != LUA_OK)
+				LS_ReportError(state);
+
+			result = lua_toboolean(state, -1);
+			lua_pop(state, 1);  // remove result
+
+			void ImClearStack();
+			ImClearStack();
+		}
+		else
+			lua_pop(state, 1);  // remove incorrect value for function to call
+	}
+
+	lua_pop(state, 1);  // remove qimgui table
+	assert(lua_gettop(state) == 0);
+
+	return result;
+}
+
+void LS_InitImGuiModule(lua_State* state)
+{
+	void ImLoadBindings(lua_State* state);
+	ImLoadBindings(state);
+
+	// Register tables for scripted ImGui windows
+	lua_newtable(state);
+	lua_pushvalue(state, -1);  // copy for lua_setfield()
+	lua_setglobal(state, ls_qimgui_name);
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, "windows");
+	lua_createtable(state, 0, 16);
+	lua_setfield(state, -2, "tools");
+	lua_pop(state, 1);  // remove qimgui global table
+
+	LS_LoadScript(state, "scripts/qimgui.lua");
+}
+
+#endif // USE_LUA_SCRIPTING
 
 static void IG_Open()
 {
@@ -88,12 +139,20 @@ static void IG_Open()
 
 	// Enable contol of ImGui windows by all input devices
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+
+#ifdef USE_LUA_SCRIPTING
+	LS_CallQImGuiFunction("onopen");
+#endif // USE_LUA_SCRIPTING
 }
 
 static void IG_Close()
 {
 	if (!ig_active)
 		return;
+
+#ifdef USE_LUA_SCRIPTING
+	LS_CallQImGuiFunction("onclose");
+#endif // USE_LUA_SCRIPTING
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
 
@@ -145,25 +204,10 @@ void IG_Update()
 			SDL_StartTextInput();
 	}
 
-	ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
-	ImGui::Begin("ImGui", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
-
-#ifndef NDEBUG
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	ImGui::Checkbox("Demo Window", &ig_showdemo);
-
-	if (ig_showdemo)
-		ImGui::ShowDemoWindow(&ig_showdemo);
-#endif // !NDEBUG
-
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	if (ImGui::Button("Press ESC to exit"))
+#ifdef USE_LUA_SCRIPTING
+	if (!LS_CallQImGuiFunction("onupdate"))
 		IG_Close();
-	ImGui::End();
+#endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
 

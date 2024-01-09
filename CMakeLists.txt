@@ -613,6 +613,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		scripts/edicts.lua
 		scripts/input.lua
 		scripts/menus.lua
+		scripts/qimgui.lua
 		default.cfg
 	)
 
