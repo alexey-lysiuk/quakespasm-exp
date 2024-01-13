@@ -3,26 +3,29 @@ local tools = qimgui.tools
 local windows = qimgui.windows
 
 local function updatetools()
+	local wintofocus
+
 	for _, tool in ipairs(tools) do
 		local title = tool.title
-		local wasopen = windows[title]
-		local _, isopen = imgui.Checkbox(tool.title, wasopen)
 
-		if wasopen and not isopen then
-			windows[title] = nil
-			tool:onclose()
-		elseif not wasopen and isopen then
-			tool:onopen()
-			windows[title] = tool
+		if imgui.Button(title, -1, 0) then
+			if windows[title] then
+				wintofocus = title
+			else
+				tool:onopen()
+				windows[title] = tool
+			end
 		end
 	end
+
+	return wintofocus
 end
 
 function qimgui.onupdate()
 	imgui.SetNextWindowPos(0, 0, imgui.constant.Cond.FirstUseEver)
 	imgui.Begin("Tools", nil, imgui.constant.WindowFlags.AlwaysAutoResize | imgui.constant.WindowFlags.NoResize | imgui.constant.WindowFlags.NoScrollbar | imgui.constant.WindowFlags.NoCollapse)
 
-	updatetools()
+	local wintofocus = updatetools()
 
 	imgui.Spacing()
 	imgui.Separator()
@@ -36,6 +39,10 @@ function qimgui.onupdate()
 		local closedwindows = {}
 
 		for _, window in pairs(windows) do
+			if wintofocus == window.title then
+				imgui.SetNextWindowFocus()
+			end
+
 			if not window:onupdate() then
 				table.insert(closedwindows, window)
 			end

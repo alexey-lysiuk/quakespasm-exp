@@ -61,11 +61,13 @@ static bool LS_CallQImGuiFunction(const char* const name)
 	{
 		if (lua_getfield(state, -1, name) == LUA_TFUNCTION)
 		{
-			if (lua_pcall(state, 0, 1, 0) != LUA_OK)
+			if (lua_pcall(state, 0, 1, 0) == LUA_OK)
+			{
+				result = lua_toboolean(state, -1);
+				lua_pop(state, 1);  // remove result
+			}
+			else
 				LS_ReportError(state);
-
-			result = lua_toboolean(state, -1);
-			lua_pop(state, 1);  // remove result
 
 			void ImClearStack();
 			ImClearStack();
@@ -224,8 +226,9 @@ void IG_Update()
 	glVertex2f(0.0f, glheight);
 	glEnd();
 
-	glEnable(GL_TEXTURE_2D);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glDisable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
 
 	GL_ClearBufferBindings();
 
