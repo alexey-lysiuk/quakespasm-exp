@@ -1,4 +1,6 @@
 
+local insert <const> = table.insert
+
 local tools = qimgui.tools
 local windows = qimgui.windows
 
@@ -8,13 +10,17 @@ local function updatetools()
 	for _, tool in ipairs(tools) do
 		local title = tool.title
 
-		if imgui.Button(title, -1, 0) then
-			if windows[title] then
-				wintofocus = title
-			else
-				tool:onopen()
-				windows[title] = tool
+		if tool.onupdate then
+			if imgui.Button(title, -1, 0) then
+				if windows[title] then
+					wintofocus = title
+				else
+					tool:onopen()
+					windows[title] = tool
+				end
 			end
+		else
+			imgui.SeparatorText(title)
 		end
 	end
 
@@ -103,10 +109,9 @@ function qimgui.scratchpad()
 	return scratchpad
 end
 
-table.insert(tools, qimgui.scratchpad())
+insert(tools, { title = 'Misc' })
+insert(tools, qimgui.scratchpad())
+insert(tools, qimgui.basictool('Stop All Sounds', function () sound.stopall() end))
 
-local function imguidemo()
-	return qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow)
-end
-
-table.insert(tools, imguidemo())
+insert(tools, { title = 'Debug' })
+insert(tools, qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow))
