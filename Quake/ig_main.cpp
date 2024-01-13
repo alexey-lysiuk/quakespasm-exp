@@ -224,8 +224,9 @@ void IG_Update()
 	glVertex2f(0.0f, glheight);
 	glEnd();
 
-	glEnable(GL_TEXTURE_2D);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glDisable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
 
 	GL_ClearBufferBindings();
 
