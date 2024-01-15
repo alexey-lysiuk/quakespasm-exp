@@ -78,6 +78,7 @@ static ImVector<char> ioTextBuffer;
 
 #define IOTEXT_ARG(name) \
     size_t i_##name##_size; \
+    const int bufferIndex = arg; \
     const char * i_##name##_const = luaL_checklstring(L, arg++, &(i_##name##_size)); \
     const lua_Integer bufferSizeInt = luaL_checkinteger(L, arg); \
     static constexpr lua_Integer BUFFER_SIZE_MIN = 1024; \
@@ -96,7 +97,10 @@ static ImVector<char> ioTextBuffer;
 
 #define END_IOTEXT(name) \
     const char* o_##name = name;\
-    lua_pushstring(L, o_##name); \
+    if (ret) \
+        lua_pushstring(L, o_##name); \
+    else \
+        lua_pushvalue(L, bufferIndex); \
     stackval++;
 
 #define IM_VEC_2_ARG(name)\
