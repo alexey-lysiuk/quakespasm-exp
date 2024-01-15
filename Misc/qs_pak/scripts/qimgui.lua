@@ -111,6 +111,7 @@ end
 
 insert(tools, { title = 'Misc' })
 insert(tools, qimgui.scratchpad())
+insert(tools, qimgui.basictool('Stop All Sounds', function () sound.stopall() end))
 
 insert(tools, { title = 'Debug' })
 insert(tools, qimgui.basictool('Dear ImGui Demo', imgui.ShowDemoWindow))
