@@ -160,6 +160,12 @@ static int LS_global_sound_playlocal(lua_State* state)
 	return 0;
 }
 
+static int LS_global_sound_stopall(lua_State* state)
+{
+	S_StopAllSounds(true);
+	return 0;
+}
+
 
 //
 // Expose 'host' global table with related functions
@@ -527,6 +533,7 @@ static void LS_InitGlobalTables(lua_State* state)
 		static const luaL_Reg functions[] =
 		{
 			{ "playlocal", LS_global_sound_playlocal },
+			{ "stopall", LS_global_sound_stopall },
 			{ NULL, NULL }
 		};
 
