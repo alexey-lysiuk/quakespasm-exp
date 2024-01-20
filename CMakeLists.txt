@@ -600,6 +600,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 
 	set(ENGINE_PAK_SOURCES
 		gfx/conback.lmp
+		maps/blitz1000@e5bb.ent
 		maps/e1m1@c49d.ent
 		maps/e1m2@0caa.ent
 		maps/e1m4@958e.ent

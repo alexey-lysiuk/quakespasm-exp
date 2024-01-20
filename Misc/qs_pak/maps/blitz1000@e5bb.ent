@@ -1257,7 +1257,7 @@
 }
 {
 "classname" "weapon_lightning"
-"origin" "-288 792 440"
+"origin" "-288 808 440"
 }
 {
 "classname" "monster_ogre"
