@@ -340,8 +340,14 @@ if(MSVC)
 	endif()
 
 	# Disable C++ exceptions and RTTI
-	target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
-	add_definitions(-D_HAS_EXCEPTIONS=0)
+	# Altering of global CMAKE_CXX_FLAGS is required because the following line
+	#   target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
+	# cause these compilation warnings
+	#   warning D9025: overriding '/EHs' with '/EHs-'
+	#   warning D9025: overriding '/EHc' with '/EHc-'
+	string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REGEX REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	add_definitions(-D_HAS_EXCEPTIONS=0)  # This one is for STL
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
@@ -349,10 +355,7 @@ else()
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
 
-	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
-
-	# Disable C++ exceptions and RTTI
-	target_compile_options(${PROJECT_NAME} PRIVATE -fno-exceptions -fno-rtti)
+	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs -fno-exceptions -fno-rtti)
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
