@@ -608,6 +608,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/e2m3@237a.ent
 		maps/e2m7@10a8.ent
 		maps/eoem7@3ea8.ent
+		maps/hrim_sp1@f054.ent
 		maps/sm100_zwiffle@c897.ent
 		maps/sm212_naitelveni@a835.ent
 		maps/sm27_bear@92ba.ent
