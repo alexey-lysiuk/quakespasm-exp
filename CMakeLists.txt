@@ -289,10 +289,6 @@ set(WINDOWS_SOURCES
 	Quake/net_wipx.h
 	Quake/pl_win.c
 	Quake/sys_sdl_win.c
-)
-
-set(WINDOWS_SOURCES
-	${WINDOWS_SOURCES}
 	Windows/QuakeSpasm.ico
 	Windows/QuakeSpasm.rc
 )
@@ -355,7 +351,12 @@ else()
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
 
-	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs -fno-exceptions -fno-rtti)
+	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
+
+	# Disable C++ exceptions and RTTI
+	# target_compile_options() doesn't fit very well as GCC complains on every C file
+	#   warning: command-line option ‘-fno-rtti’ is valid for C++/D/ObjC++ but not for C
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
