@@ -338,6 +338,10 @@ if(MSVC)
 		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
 		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 	endif()
+
+	# Disable C++ exceptions and RTTI
+	target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
+	add_definitions(-D_HAS_EXCEPTIONS=0)
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
@@ -346,6 +350,9 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
+
+	# Disable C++ exceptions and RTTI
+	target_compile_options(${PROJECT_NAME} PRIVATE -fno-exceptions -fno-rtti)
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
