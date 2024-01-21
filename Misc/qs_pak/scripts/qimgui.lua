@@ -137,6 +137,98 @@ end
 local addtool <const> = qimgui.addtool
 local addseparator <const> = qimgui.addseparator
 
+
+local vec3mid <const> = vec3.mid
+local vec3origin <const> = vec3.new()
+
+local foreach <const> = edicts.foreach
+local isfree <const> = edicts.isfree
+local getname <const> = edicts.getname
+
+local function describe(edict)
+	local description = getname(edict)
+	local location, angles
+
+	if not isfree(edict) then
+		location = vec3mid(edict.absmin, edict.absmax)
+		angles = edict.angles
+
+		if location == vec3origin then
+			location = edict.origin or vec3origin
+		end
+
+		if angles and angles == vec3origin then
+			angles = nil
+		end
+	end
+
+	return description, location, angles
+end
+
+local function edicts_onupdate(self)
+	local title = self.title
+	local visible, opened = imgui.Begin(title, true)
+
+	if visible and opened then
+		local entries = self.entries
+		local zerobasesindex = self.filter
+
+		local tableflags = imgui.constant.TableFlags
+		local columnflags = imgui.constant.TableColumnFlags
+
+		if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
+			imgui.TableSetupColumn('Index', columnflags.WidthFixed)
+			imgui.TableSetupColumn('Description', columnflags.WidthStretch)
+			imgui.TableSetupColumn('Location', columnflags.WidthStretch)
+			imgui.TableHeadersRow()
+
+			for row = 1, #entries do
+				local entry = self.entries[row]
+				local index = tostring(zerobasesindex and row - 1 or row)
+				local location = tostring(entry.location)
+
+				imgui.TableNextRow()
+				imgui.TableSetColumnIndex(0)
+				imgui.Text(index)
+				imgui.TableSetColumnIndex(1)
+				imgui.Text(entry.description)
+				imgui.TableSetColumnIndex(2)
+				imgui.Text(location)
+			end
+
+			imgui.EndTable()
+		end
+	end
+
+	imgui.End()
+
+	return opened
+end
+
+local function edicts_onopen(self)
+	local filter = self.filter or describe
+	local entries = {}
+
+	foreach(function (edict, current)
+		local description, location, angles = filter(edict)
+
+		if not description then
+			return current
+		end
+
+		insert(entries, 
+			{ edict = edict, description = description, location = location, angles = angles })
+
+		return current + 1
+	end)
+
+	self.entries = entries
+end
+
+
+addseparator('Edicts')
+addtool('All Edicts', edicts_onupdate, edicts_onopen, function (self) self.entries = nil end)
+
 addseparator('Misc')
 addtool('Scratchpad', function (self)
  	-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
