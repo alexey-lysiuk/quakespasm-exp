@@ -3729,7 +3729,7 @@
 }
 {
 "classname" "info_teleport_destination"
-"origin" "1663 -1423 -186"
+"origin" "1643 -1423 -186"
 "angle" "180"
 "targetname" "traptele"
 }
