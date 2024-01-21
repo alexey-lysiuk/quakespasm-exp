@@ -289,10 +289,6 @@ set(WINDOWS_SOURCES
 	Quake/net_wipx.h
 	Quake/pl_win.c
 	Quake/sys_sdl_win.c
-)
-
-set(WINDOWS_SOURCES
-	${WINDOWS_SOURCES}
 	Windows/QuakeSpasm.ico
 	Windows/QuakeSpasm.rc
 )
