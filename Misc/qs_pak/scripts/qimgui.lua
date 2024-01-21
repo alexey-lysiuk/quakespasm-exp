@@ -71,7 +71,7 @@ local function updatetoolwindow()
 	return wintofocus
 end
 
-local function updatewindows()
+local function updatewindows(wintofocus)
 	local closedwindows = {}
 
 	for _, window in pairs(windows) do
@@ -95,7 +95,7 @@ function qimgui.onupdate()
 	local keepopen = not shouldexit
 
 	if keepopen then
-		updatewindows()
+		updatewindows(wintofocus)
 	end
 
 	return keepopen
