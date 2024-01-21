@@ -334,6 +334,16 @@ if(MSVC)
 		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
 		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 	endif()
+
+	# Disable C++ exceptions and RTTI
+	# Altering of global CMAKE_CXX_FLAGS is required because the following line
+	#   target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
+	# cause these compilation warnings
+	#   warning D9025: overriding '/EHs' with '/EHs-'
+	#   warning D9025: overriding '/EHc' with '/EHc-'
+	string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REGEX REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	add_definitions(-D_HAS_EXCEPTIONS=0)  # This one is for STL
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
@@ -342,6 +352,11 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
+
+	# Disable C++ exceptions and RTTI
+	# target_compile_options() doesn't fit very well as GCC complains on every C file
+	#   warning: command-line option ‘-fno-rtti’ is valid for C++/D/ObjC++ but not for C
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
