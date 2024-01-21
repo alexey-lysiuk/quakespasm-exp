@@ -171,7 +171,7 @@ local function edicts_onupdate(self)
 
 	if visible and opened then
 		local entries = self.entries
-		local zerobasesindex = self.filter
+		local zerobasedindex = not self.filter
 
 		local tableflags = imgui.constant.TableFlags
 		local columnflags = imgui.constant.TableColumnFlags
@@ -184,7 +184,7 @@ local function edicts_onupdate(self)
 
 			for row = 1, #entries do
 				local entry = self.entries[row]
-				local index = tostring(zerobasesindex and row - 1 or row)
+				local index = tostring(zerobasedindex and row - 1 or row)
 				local location = tostring(entry.location)
 
 				imgui.TableNextRow()
