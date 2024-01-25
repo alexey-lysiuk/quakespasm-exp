@@ -148,6 +148,8 @@ local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
 local function edictinfo_onupdate(self)
+	imgui.SetNextWindowSize(320, 0, imgui.constant.Cond.FirstUseEver)
+
 	local title = self.title
 	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
 
@@ -157,7 +159,7 @@ local function edictinfo_onupdate(self)
 
 		if imgui.BeginTable(title, 2, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
 			imgui.TableSetupColumn('Name', columnflags.WidthFixed)
-			imgui.TableSetupColumn('Value', columnflags.WidthStretch)
+			imgui.TableSetupColumn('Value')
 			imgui.TableHeadersRow()
 
 			for _, field in ipairs(self.fields) do
@@ -241,6 +243,8 @@ local function describe(edict)
 end
 
 local function edicts_onupdate(self)
+--	imgui.SetNextWindowSize(640, 480, imgui.constant.Cond.FirstUseEver)
+
 	local title = self.title
 	local visible, opened = imgui.Begin(title, true)
 
@@ -251,38 +255,31 @@ local function edicts_onupdate(self)
 		local tableflags = imgui.constant.TableFlags
 		local columnflags = imgui.constant.TableColumnFlags
 
---		if imgui.BeginPopupContextItem('Edict Popup') then
---			if imgui.Selectable('Move to') then
-----				player.safemove(entry.location)
---				print('Move to: todo')
---			end
---			if imgui.Selectable('Fields') then
---				print('Fields: todo')
---			end
---			if imgui.Selectable('References') then
---				print('References: todo')
---			end
---			imgui.EndPopup()
---		end
-
 		if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
 			imgui.TableSetupColumn('Index', columnflags.WidthFixed)
-			imgui.TableSetupColumn('Description', columnflags.WidthStretch)
-			imgui.TableSetupColumn('Location', columnflags.WidthStretch)
+			imgui.TableSetupColumn('Description')
+			imgui.TableSetupColumn('Location')
 			imgui.TableHeadersRow()
 
 			for row = 1, #entries do
 				local entry = entries[row]
 				local index = tostring(zerobasedindex and row - 1 or row)
+				local description = entry.description
 				local location = tostring(entry.location)
-				local cellfunc = entry.isfree and imgui.Text or imgui.Selectable
+				local cellfunc
+
+				if entry.isfree then
+					cellfunc = imgui.Text
+				else
+					description = description .. '##' .. row
+					cellfunc = imgui.Selectable
+				end
 
 				imgui.TableNextRow()
---				imgui.OpenPopupOnItemClick('Edict Popup', imgui.constant.PopupFlags.MouseButtonRight);
 				imgui.TableSetColumnIndex(0)
 				imgui.Text(index)
 				imgui.TableSetColumnIndex(1)
-				if cellfunc(entry.description .. '##' .. row) then
+				if cellfunc(description) then
 					qimgui.edictinfo(entry.edict)
 				end
 				imgui.TableSetColumnIndex(2)
