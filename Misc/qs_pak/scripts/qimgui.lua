@@ -149,7 +149,7 @@ local float <const> = edicts.valuetypes.float
 
 local function edictinfo_onupdate(self)
 	local title = self.title
-	local visible, opened = imgui.Begin(title, true)
+	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
 
 	if visible and opened then
 		local tableflags = imgui.constant.TableFlags
@@ -282,7 +282,7 @@ local function edicts_onupdate(self)
 				imgui.TableSetColumnIndex(0)
 				imgui.Text(index)
 				imgui.TableSetColumnIndex(1)
-				if cellfunc(entry.description) then
+				if cellfunc(entry.description .. '##' .. row) then
 					qimgui.edictinfo(entry.edict)
 				end
 				imgui.TableSetColumnIndex(2)
