@@ -172,7 +172,16 @@ static void IG_Close()
 void IG_Init(SDL_Window* window, SDL_GLContext context)
 {
 	ImGui::CreateContext();
-	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
+
+	ImGuiIO& io = ImGui::GetIO();
+
+	const int configargindex = COM_CheckParm("-imguiconfig");
+	const char* const configpath = configargindex > 0
+		? (configargindex < com_argc - 1 ? com_argv[configargindex + 1] : "")
+		: io.IniFilename;
+
+	io.ConfigFlags = ImGuiConfigFlags_NoMouse;
+	io.IniFilename = configpath[0] == '\0' ? nullptr : configpath;
 
 	ImGui_ImplSDL2_InitForOpenGL(window, context);
 	ImGui_ImplOpenGL2_Init();
