@@ -86,7 +86,7 @@ local function updatewindows(wintofocus)
 
 	for _, window in ipairs(closedwindows) do
 		windows[window.title] = nil
-		window.onclose()
+		window:onclose()
 	end
 end
 
