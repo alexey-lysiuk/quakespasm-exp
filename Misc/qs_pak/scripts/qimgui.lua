@@ -6,6 +6,7 @@ local windows = qimgui.windows
 
 local toolwidgedwidth
 local shouldexit
+local wintofocus
 
 function qimgui.exit()
 	shouldexit = true
@@ -24,7 +25,6 @@ local function updatetoolwindow()
 
 	local calcwidth = toolwidgedwidth == 0
 	local maxwidth = 0
-	local wintofocus
 
 	imgui.SetNextWindowPos(0, 0, imgui.constant.Cond.FirstUseEver)
 	imgui.Begin("Tools", nil, imgui.constant.WindowFlags.AlwaysAutoResize | imgui.constant.WindowFlags.NoResize 
@@ -67,16 +67,19 @@ local function updatetoolwindow()
 	elseif toolwidgedwidth == -1 then
 		toolwidgedwidth = 0
 	end
-
-	return wintofocus
 end
 
-local function updatewindows(wintofocus)
+local function updatewindows()
 	local closedwindows = {}
 
 	for _, window in pairs(windows) do
+		if wintofocus then
+			print(wintofocus)
+		end
 		if wintofocus == window.title then
+			print('updatewindows', title)
 			imgui.SetNextWindowFocus()
+			wintofocus = nil
 		end
 
 		if not window:onupdate() then
@@ -86,16 +89,17 @@ local function updatewindows(wintofocus)
 
 	for _, window in ipairs(closedwindows) do
 		windows[window.title] = nil
-		window.onclose()
+		window:onclose()
 	end
 end
 
 function qimgui.onupdate()
-	local wintofocus = updatetoolwindow()
+	updatetoolwindow()
+
 	local keepopen = not shouldexit
 
 	if keepopen then
-		updatewindows(wintofocus)
+		updatewindows()
 	end
 
 	return keepopen
@@ -145,6 +149,79 @@ local foreach <const> = edicts.foreach
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 
+local function edictinfo_onupdate(self)
+	local title = self.title
+	local visible, opened = imgui.Begin(title, true)
+
+	if visible and opened then
+		local tableflags = imgui.constant.TableFlags
+		local columnflags = imgui.constant.TableColumnFlags
+
+		if imgui.BeginTable(title, 2, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
+			imgui.TableSetupColumn('Name', columnflags.WidthFixed)
+			imgui.TableSetupColumn('Value', columnflags.WidthStretch)
+			imgui.TableHeadersRow()
+
+			for _, field in ipairs(self.fields) do
+--				local value = field.type == float and format('%.1f', field.value) or field.value
+
+				imgui.TableNextRow()
+				imgui.TableSetColumnIndex(0)
+				imgui.Text(field.name)
+				imgui.TableSetColumnIndex(1)
+				imgui.Text(field.value)
+				-- TODO: type?
+			end
+
+			imgui.EndTable()
+		end
+	end
+
+	imgui.End()
+
+	return opened
+end
+
+local function edictinfo_onopen(self)
+	local fields = {}
+
+	for i, field in ipairs(self.edict) do
+		field.value = tostring(field.value)
+		fields[i] = field
+	end
+
+	self.fields = fields
+end
+
+local function edictinfo_onclose(self)
+	self.fields = nil
+end
+
+function qimgui.edictinfo(edict)
+	if isfree(edict) then
+		return
+	end
+
+	local title = tostring(edict)
+	local window = windows[title]
+
+	if window then
+		wintofocus = title
+--		print('qimgui.edictinfo', title)
+	else
+		window =
+		{
+			title = title,
+			edict = edict,
+			onupdate = edictinfo_onupdate,
+			onopen = edictinfo_onopen,
+			onclose = edictinfo_onclose
+		}
+		edictinfo_onopen(window)
+		windows[title] = window
+	end
+end
+
 local function describe(edict)
 	local description = getname(edict)
 	local location, angles
@@ -176,6 +253,20 @@ local function edicts_onupdate(self)
 		local tableflags = imgui.constant.TableFlags
 		local columnflags = imgui.constant.TableColumnFlags
 
+--		if imgui.BeginPopupContextItem('Edict Popup') then
+--			if imgui.Selectable('Move to') then
+----				player.safemove(entry.location)
+--				print('Move to: todo')
+--			end
+--			if imgui.Selectable('Fields') then
+--				print('Fields: todo')
+--			end
+--			if imgui.Selectable('References') then
+--				print('References: todo')
+--			end
+--			imgui.EndPopup()
+--		end
+
 		if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
 			imgui.TableSetupColumn('Index', columnflags.WidthFixed)
 			imgui.TableSetupColumn('Description', columnflags.WidthStretch)
@@ -183,17 +274,23 @@ local function edicts_onupdate(self)
 			imgui.TableHeadersRow()
 
 			for row = 1, #entries do
-				local entry = self.entries[row]
+				local entry = entries[row]
 				local index = tostring(zerobasedindex and row - 1 or row)
 				local location = tostring(entry.location)
+				local cellfunc = entry.isfree and imgui.Text or imgui.Selectable
 
 				imgui.TableNextRow()
+--				imgui.OpenPopupOnItemClick('Edict Popup', imgui.constant.PopupFlags.MouseButtonRight);
 				imgui.TableSetColumnIndex(0)
 				imgui.Text(index)
 				imgui.TableSetColumnIndex(1)
-				imgui.Text(entry.description)
+				if cellfunc(entry.description) then
+					qimgui.edictinfo(entry.edict)
+				end
 				imgui.TableSetColumnIndex(2)
-				imgui.Text(location)
+				if cellfunc(location) then
+					player.safemove(entry.location)
+				end
 			end
 
 			imgui.EndTable()
@@ -216,8 +313,14 @@ local function edicts_onopen(self)
 			return current
 		end
 
-		insert(entries, 
-			{ edict = edict, description = description, location = location, angles = angles })
+		insert(entries,
+		{
+			edict = edict,
+			isfree = isfree(edict),
+			description = description,
+			location = location,
+			angles = angles
+		})
 
 		return current + 1
 	end)
