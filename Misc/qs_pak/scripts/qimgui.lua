@@ -1,4 +1,5 @@
 
+local format <const> = string.format
 local insert <const> = table.insert
 
 local tools = qimgui.tools
@@ -73,11 +74,7 @@ local function updatewindows()
 	local closedwindows = {}
 
 	for _, window in pairs(windows) do
-		if wintofocus then
-			print(wintofocus)
-		end
 		if wintofocus == window.title then
-			print('updatewindows', title)
 			imgui.SetNextWindowFocus()
 			wintofocus = nil
 		end
@@ -148,6 +145,7 @@ local vec3origin <const> = vec3.new()
 local foreach <const> = edicts.foreach
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
+local float <const> = edicts.valuetypes.float
 
 local function edictinfo_onupdate(self)
 	local title = self.title
@@ -186,7 +184,8 @@ local function edictinfo_onopen(self)
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
-		field.value = tostring(field.value)
+		local value = field.value
+		field.value = field.type == float and format('%.1f', value) or tostring(value)
 		fields[i] = field
 	end
 
@@ -207,7 +206,6 @@ function qimgui.edictinfo(edict)
 
 	if window then
 		wintofocus = title
---		print('qimgui.edictinfo', title)
 	else
 		window =
 		{
@@ -290,6 +288,7 @@ local function edicts_onupdate(self)
 				imgui.TableSetColumnIndex(2)
 				if cellfunc(location) then
 					player.safemove(entry.location)
+					shouldexit = true
 				end
 			end
 
@@ -318,7 +317,7 @@ local function edicts_onopen(self)
 			edict = edict,
 			isfree = isfree(edict),
 			description = description,
-			location = location,
+			location = location or '',
 			angles = angles
 		})
 
