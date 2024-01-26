@@ -214,7 +214,7 @@ local function edictinfo_onupdate(self)
 	imgui.SameLine(0, buttonspacing)
 
 	if imgui.Button('References', buttonwidth, 0) then
-		print('todo References')
+		qimgui.edictreferences(self.edict)
 	end
 	imgui.SameLine(0, buttonspacing)
 
@@ -398,6 +398,105 @@ local function traceentity_onopen(self)
 		qimgui.edictinfo(edict)
 	else
 		playlocal('doors/basetry.wav')
+	end
+end
+
+local function edictrefs_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
+	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
+
+	local title = self.title
+	local visible, opened = imgui.Begin(title, true)
+
+	if visible and opened then
+		local references = self.references
+
+		if #references > 0 then
+			imgui.Text('References')
+			edictstable('', references)
+			imgui.Spacing()
+		end
+
+		local referencedby = self.referencedby
+
+		if #referencedby > 0 then
+			imgui.Text('Referenced by')
+			edictstable('', referencedby)
+		end
+	end
+
+	imgui.End()
+
+	return opened
+end
+
+local function edictrefs_onopen(self)
+	local edict = self.edict
+
+	if isfree(edict) then
+		windows[self.title] = nil
+		return
+	end
+
+	local function addentry(list, edict)
+		insert(list,
+		{
+			edict = edict,
+			description = getname(edict),
+			location = vec3mid(edict.absmin, edict.absmax),
+			angles = edict.angles
+		})
+	end
+
+	local target = edict.target
+	local targetname = edict.targetname
+	local references = {}
+	local referencedby = {}
+
+	local function collectrefs(edict)
+		if target ~= '' and target == edict.targetname then
+			addentry(references, edict)
+		end
+
+		if targetname ~= '' and targetname == edict.target then
+			addentry(referencedby, edict)
+		end
+
+		return 1
+	end
+
+	foreach(collectrefs)
+
+	self.references = references
+	self.referencedby = referencedby
+end
+
+local function edictrefs_onclose(self)
+	self.references = nil
+	self.referencedby = nil
+end
+
+function qimgui.edictreferences(edict)
+	if isfree(edict) then
+		return
+	end
+
+	local title = 'References of ' .. tostring(edict)
+	local window = windows[title]
+
+	if window then
+		wintofocus = title
+	else
+		window =
+		{
+			title = title,
+			edict = edict,
+			onupdate = edictrefs_onupdate,
+			onopen = edictrefs_onopen,
+			onclose = edictrefs_onclose
+		}
+		edictrefs_onopen(window)
+		windows[title] = window
 	end
 end
 
