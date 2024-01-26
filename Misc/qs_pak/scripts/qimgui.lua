@@ -5,6 +5,9 @@ local insert <const> = table.insert
 local tools = qimgui.tools
 local windows = qimgui.windows
 
+local playlocal <const> = sound.playlocal
+
+local screenwidth, screenheight
 local toolwidgedwidth
 local shouldexit
 local wintofocus
@@ -93,6 +96,12 @@ end
 function qimgui.onupdate()
 	updatetoolwindow()
 
+	if not screenwidth then
+		local viewport = imgui.GetMainViewport()
+		screenwidth = viewport.Size.x
+		screenheight = viewport.Size.y
+	end
+
 	local keepopen = not shouldexit
 
 	if keepopen then
@@ -103,6 +112,7 @@ function qimgui.onupdate()
 end
 
 function qimgui.onopen()
+	screenwidth = nil
 	toolwidgedwidth = -1
 	shouldexit = false
 
@@ -148,6 +158,7 @@ local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
 local function edictinfo_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(320, 0, imgui.constant.Cond.FirstUseEver)
 
 	local title = self.title
@@ -180,6 +191,11 @@ local function edictinfo_onupdate(self)
 end
 
 local function edictinfo_onopen(self)
+	if isfree(self.edict) then
+		windows[self.title] = nil
+		return
+	end
+
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
@@ -240,6 +256,9 @@ local function describe(edict)
 end
 
 local function edicts_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
+	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
+
 	local title = self.title
 	local visible, opened = imgui.Begin(title, true)
 
@@ -280,7 +299,7 @@ local function edicts_onupdate(self)
 					imgui.TableSetColumnIndex(2)
 
 					if imgui.Selectable(location) then
-						player.safemove(entry.location)
+						player.safemove(entry.location, entry.angles)
 						shouldexit = true
 					end
 				end
@@ -321,13 +340,40 @@ local function edicts_onopen(self)
 	self.entries = entries
 end
 
+local function edicts_onclose(self)
+	self.entries = nil
+end
+
+local function addedictstool(title, filter)
+	local tool = addtool(title, edicts_onupdate, edicts_onopen, edicts_onclose)
+	tool.filter = filter
+end
+
+local function traceentity_onopen(self)
+	local edict = player.traceentity()
+
+	if edict then
+		qimgui.edictinfo(edict)
+	else
+		playlocal('doors/basetry.wav')
+	end
+end
+
 
 addseparator('Edicts')
-addtool('All Edicts', edicts_onupdate, edicts_onopen, function (self) self.entries = nil end)
+addedictstool('All Edicts')
+addedictstool('Monsters', edicts.ismonster)
+addedictstool('Teleports', edicts.isteleport)
+addedictstool('Doors', edicts.isdoor)
+addedictstool('Items', edicts.isitem)
+addedictstool('Buttons', edicts.isbutton)
+addedictstool('Exits', edicts.isexit)
+addedictstool('Messages', edicts.ismessage)
+addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
- 	-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(320, 240, imgui.constant.Cond.FirstUseEver)
 
 	local visible, opened = imgui.Begin(self.title, true)
