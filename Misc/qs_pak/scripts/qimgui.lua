@@ -157,6 +157,21 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
+local function moveplayerto(edict, location, angles)
+	location = location or vec3mid(edict.absmin, edict.absmax)
+
+	if location then
+		if edicts.isitem(edict) then
+			-- Adjust Z coordinate so player will appear slightly above destination
+			location = vec3.copy(location)
+			location.z = location.z + 20
+		end
+
+		player.safemove(location, angles or edict.angles)
+		shouldexit = true
+	end
+end
+
 local function edictinfo_onupdate(self)
 	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(320, 0, imgui.constant.Cond.FirstUseEver)
@@ -183,6 +198,28 @@ local function edictinfo_onupdate(self)
 
 			imgui.EndTable()
 		end
+	end
+
+--	imgui.Spacing()
+	imgui.Separator()
+--	imgui.Spacing()
+
+	local buttoncount = 3
+	local buttonspacing = 4
+	local buttonwidth = (imgui.GetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
+
+	if imgui.Button('Move to', buttonwidth, 0) then
+		moveplayerto(self.edict)
+	end
+	imgui.SameLine(0, buttonspacing)
+
+	if imgui.Button('References', buttonwidth, 0) then
+		print('todo References')
+	end
+	imgui.SameLine(0, buttonspacing)
+
+	if imgui.Button('Copy', buttonwidth, 0) then
+		print('todo Copy')
 	end
 
 	imgui.End()
@@ -255,6 +292,48 @@ local function describe(edict)
 	return description, location, angles
 end
 
+local function edictstable(title, entries, zerobasedindex)
+	local tableflags = imgui.constant.TableFlags
+
+	if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
+		imgui.TableSetupColumn('Index', imgui.constant.TableColumnFlags.WidthFixed)
+		imgui.TableSetupColumn('Description')
+		imgui.TableSetupColumn('Location')
+		imgui.TableHeadersRow()
+
+		for row = 1, #entries do
+			local entry = entries[row]
+			local index = tostring(zerobasedindex and row - 1 or row)
+			local description = entry.description
+
+			imgui.TableNextRow()
+			imgui.TableSetColumnIndex(0)
+			imgui.Text(index)
+			imgui.TableSetColumnIndex(1)
+
+			if entry.isfree then
+				imgui.Text(description)
+			else
+				-- Description and location need unique IDs to generate click events
+				local location = entry.location .. '##' .. row
+				description = description .. '##' .. row
+
+				if imgui.Selectable(description) then
+					qimgui.edictinfo(entry.edict)
+				end
+
+				imgui.TableSetColumnIndex(2)
+
+				if imgui.Selectable(location) then
+					moveplayerto(entry.edict, entry.location, entry.angles)
+				end
+			end
+		end
+
+		imgui.EndTable()
+	end
+end
+
 local function edicts_onupdate(self)
 	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
@@ -263,50 +342,7 @@ local function edicts_onupdate(self)
 	local visible, opened = imgui.Begin(title, true)
 
 	if visible and opened then
-		local entries = self.entries
-		local zerobasedindex = not self.filter
-
-		local tableflags = imgui.constant.TableFlags
-		local columnflags = imgui.constant.TableColumnFlags
-
-		if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
-			imgui.TableSetupColumn('Index', columnflags.WidthFixed)
-			imgui.TableSetupColumn('Description')
-			imgui.TableSetupColumn('Location')
-			imgui.TableHeadersRow()
-
-			for row = 1, #entries do
-				local entry = entries[row]
-				local index = tostring(zerobasedindex and row - 1 or row)
-				local description = entry.description
-
-				imgui.TableNextRow()
-				imgui.TableSetColumnIndex(0)
-				imgui.Text(index)
-				imgui.TableSetColumnIndex(1)
-
-				if entry.isfree then
-					imgui.Text(description)
-				else
-					-- Description and location need unique IDs to generate click events
-					local location = entry.location .. '##' .. row
-					description = description .. '##' .. row
-
-					if imgui.Selectable(description) then
-						qimgui.edictinfo(entry.edict)
-					end
-
-					imgui.TableSetColumnIndex(2)
-
-					if imgui.Selectable(location) then
-						player.safemove(entry.location, entry.angles)
-						shouldexit = true
-					end
-				end
-			end
-
-			imgui.EndTable()
-		end
+		edictstable(title, self.entries, not self.filter)
 	end
 
 	imgui.End()
