@@ -333,9 +333,25 @@ local function edicts_onopen(self)
 	self.entries = entries
 end
 
+local function edicts_onclose(self)
+	self.entries = nil
+end
+
+local function addedictstool(title, filter)
+	local tool = addtool(title, edicts_onupdate, edicts_onopen, edicts_onclose)
+	tool.filter = filter
+end
+
 
 addseparator('Edicts')
-addtool('All Edicts', edicts_onupdate, edicts_onopen, function (self) self.entries = nil end)
+addedictstool('All Edicts')
+addedictstool('Monsters', edicts.ismonster)
+addedictstool('Teleports', edicts.isteleport)
+addedictstool('Doors', edicts.isdoor)
+addedictstool('Items', edicts.isitem)
+addedictstool('Buttons', edicts.isbutton)
+addedictstool('Exits', edicts.isexit)
+addedictstool('Messages', edicts.ismessage)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
