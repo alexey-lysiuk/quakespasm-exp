@@ -5,6 +5,7 @@ local insert <const> = table.insert
 local tools = qimgui.tools
 local windows = qimgui.windows
 
+local screenwidth, screenheight
 local toolwidgedwidth
 local shouldexit
 local wintofocus
@@ -93,6 +94,12 @@ end
 function qimgui.onupdate()
 	updatetoolwindow()
 
+	if not screenwidth then
+		local viewport = imgui.GetMainViewport()
+		screenwidth = viewport.Size.x
+		screenheight = viewport.Size.y
+	end
+
 	local keepopen = not shouldexit
 
 	if keepopen then
@@ -103,6 +110,7 @@ function qimgui.onupdate()
 end
 
 function qimgui.onopen()
+	screenwidth = nil
 	toolwidgedwidth = -1
 	shouldexit = false
 
@@ -148,6 +156,7 @@ local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
 local function edictinfo_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(320, 0, imgui.constant.Cond.FirstUseEver)
 
 	local title = self.title
@@ -240,6 +249,9 @@ local function describe(edict)
 end
 
 local function edicts_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
+	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
+
 	local title = self.title
 	local visible, opened = imgui.Begin(title, true)
 
@@ -327,7 +339,7 @@ addtool('All Edicts', edicts_onupdate, edicts_onopen, function (self) self.entri
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
- 	-- TODO: center window via imgui.SetNextWindowPos(?, ?, 0, 0.5, 0.5)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(320, 240, imgui.constant.Cond.FirstUseEver)
 
 	local visible, opened = imgui.Begin(self.title, true)
