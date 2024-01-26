@@ -406,7 +406,7 @@ local function edictrefs_onupdate(self)
 	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
 
 	local title = self.title
-	local visible, opened = imgui.Begin(title, true)
+	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
 
 	if visible and opened then
 		local references = self.references
@@ -496,7 +496,12 @@ function qimgui.edictreferences(edict)
 			onclose = edictrefs_onclose
 		}
 		edictrefs_onopen(window)
-		windows[title] = window
+
+		if #window.references == 0 and #window.referencedby == 0 then
+			playlocal('doors/basetry.wav')
+		else
+			windows[title] = window
+		end
 	end
 end
 
