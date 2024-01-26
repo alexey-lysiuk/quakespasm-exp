@@ -5,6 +5,8 @@ local insert <const> = table.insert
 local tools = qimgui.tools
 local windows = qimgui.windows
 
+local playlocal <const> = sound.playlocal
+
 local screenwidth, screenheight
 local toolwidgedwidth
 local shouldexit
@@ -347,6 +349,16 @@ local function addedictstool(title, filter)
 	tool.filter = filter
 end
 
+local function traceentity_onopen(self)
+	local edict = player.traceentity()
+
+	if edict then
+		qimgui.edictinfo(edict)
+	else
+		playlocal('doors/basetry.wav')
+	end
+end
+
 
 addseparator('Edicts')
 addedictstool('All Edicts')
@@ -357,6 +369,7 @@ addedictstool('Items', edicts.isitem)
 addedictstool('Buttons', edicts.isbutton)
 addedictstool('Exits', edicts.isexit)
 addedictstool('Messages', edicts.ismessage)
+addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
