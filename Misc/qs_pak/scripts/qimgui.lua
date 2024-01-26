@@ -219,7 +219,13 @@ local function edictinfo_onupdate(self)
 	imgui.SameLine(0, buttonspacing)
 
 	if imgui.Button('Copy', buttonwidth, 0) then
-		print('todo Copy')
+		local fields = {}
+
+		for i, field in ipairs(self.fields) do
+			fields[i] = field.name .. ': ' .. field.value
+		end
+
+		imgui.SetClipboardText(table.concat(fields, '\n'))
 	end
 
 	imgui.End()
