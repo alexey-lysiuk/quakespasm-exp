@@ -163,14 +163,11 @@ local function edictinfo_onupdate(self)
 			imgui.TableHeadersRow()
 
 			for _, field in ipairs(self.fields) do
---				local value = field.type == float and format('%.1f', field.value) or field.value
-
 				imgui.TableNextRow()
 				imgui.TableSetColumnIndex(0)
 				imgui.Text(field.name)
 				imgui.TableSetColumnIndex(1)
 				imgui.Text(field.value)
-				-- TODO: type?
 			end
 
 			imgui.EndTable()
@@ -243,8 +240,6 @@ local function describe(edict)
 end
 
 local function edicts_onupdate(self)
---	imgui.SetNextWindowSize(640, 480, imgui.constant.Cond.FirstUseEver)
-
 	local title = self.title
 	local visible, opened = imgui.Begin(title, true)
 
@@ -265,27 +260,29 @@ local function edicts_onupdate(self)
 				local entry = entries[row]
 				local index = tostring(zerobasedindex and row - 1 or row)
 				local description = entry.description
-				local location = tostring(entry.location)
-				local cellfunc
-
-				if entry.isfree then
-					cellfunc = imgui.Text
-				else
-					description = description .. '##' .. row
-					cellfunc = imgui.Selectable
-				end
 
 				imgui.TableNextRow()
 				imgui.TableSetColumnIndex(0)
 				imgui.Text(index)
 				imgui.TableSetColumnIndex(1)
-				if cellfunc(description) then
-					qimgui.edictinfo(entry.edict)
-				end
-				imgui.TableSetColumnIndex(2)
-				if cellfunc(location) then
-					player.safemove(entry.location)
-					shouldexit = true
+
+				if entry.isfree then
+					imgui.Text(description)
+				else
+					-- Description and location need unique IDs to generate click events
+					local location = entry.location .. '##' .. row
+					description = description .. '##' .. row
+
+					if imgui.Selectable(description) then
+						qimgui.edictinfo(entry.edict)
+					end
+
+					imgui.TableSetColumnIndex(2)
+
+					if imgui.Selectable(location) then
+						player.safemove(entry.location)
+						shouldexit = true
+					end
 				end
 			end
 
