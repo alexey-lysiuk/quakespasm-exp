@@ -189,6 +189,11 @@ local function edictinfo_onupdate(self)
 end
 
 local function edictinfo_onopen(self)
+	if isfree(self.edict) then
+		windows[self.title] = nil
+		return
+	end
+
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
