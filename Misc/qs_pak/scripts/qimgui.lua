@@ -157,7 +157,7 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
-local function moveplayerto(edict, location, angles)
+local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
 
 	if location then
@@ -180,6 +180,7 @@ local function edictinfo_onupdate(self)
 	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
 
 	if visible and opened then
+		-- Table of fields names and values
 		local tableflags = imgui.constant.TableFlags
 		local columnflags = imgui.constant.TableColumnFlags
 
@@ -198,34 +199,33 @@ local function edictinfo_onupdate(self)
 
 			imgui.EndTable()
 		end
-	end
 
---	imgui.Spacing()
-	imgui.Separator()
---	imgui.Spacing()
+		-- Tool buttons
+		imgui.Separator()
 
-	local buttoncount = 3
-	local buttonspacing = 4
-	local buttonwidth = (imgui.GetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
+		local buttoncount = 3
+		local buttonspacing = 4
+		local buttonwidth = (imgui.GetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
 
-	if imgui.Button('Move to', buttonwidth, 0) then
-		moveplayerto(self.edict)
-	end
-	imgui.SameLine(0, buttonspacing)
-
-	if imgui.Button('References', buttonwidth, 0) then
-		qimgui.edictreferences(self.edict)
-	end
-	imgui.SameLine(0, buttonspacing)
-
-	if imgui.Button('Copy', buttonwidth, 0) then
-		local fields = {}
-
-		for i, field in ipairs(self.fields) do
-			fields[i] = field.name .. ': ' .. field.value
+		if imgui.Button('Move to', buttonwidth, 0) then
+			moveplayer(self.edict)
 		end
+		imgui.SameLine(0, buttonspacing)
 
-		imgui.SetClipboardText(table.concat(fields, '\n'))
+		if imgui.Button('References', buttonwidth, 0) then
+			qimgui.edictreferences(self.edict)
+		end
+		imgui.SameLine(0, buttonspacing)
+
+		if imgui.Button('Copy', buttonwidth, 0) then
+			local fields = {}
+
+			for i, field in ipairs(self.fields) do
+				fields[i] = field.name .. ': ' .. field.value
+			end
+
+			imgui.SetClipboardText(table.concat(fields, '\n'))
+		end
 	end
 
 	imgui.End()
@@ -331,7 +331,7 @@ local function edictstable(title, entries, zerobasedindex)
 				imgui.TableSetColumnIndex(2)
 
 				if imgui.Selectable(location) then
-					moveplayerto(entry.edict, entry.location, entry.angles)
+					moveplayer(entry.edict, entry.location, entry.angles)
 				end
 			end
 		end
