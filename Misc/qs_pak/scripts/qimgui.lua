@@ -174,6 +174,7 @@ local function edictinfo_onupdate(self)
 	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
 
 	if visible and opened then
+		-- Table of fields names and values
 		local tableflags = imgui.constant.TableFlags
 		local columnflags = imgui.constant.TableColumnFlags
 
@@ -191,6 +192,33 @@ local function edictinfo_onupdate(self)
 			end
 
 			imgui.EndTable()
+		end
+
+		-- Tool buttons
+		imgui.Separator()
+
+		local buttoncount = 3
+		local buttonspacing = 4
+		local buttonwidth = (imgui.GetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
+
+		if imgui.Button('Move to', buttonwidth, 0) then
+			moveplayer(self.edict)
+		end
+		imgui.SameLine(0, buttonspacing)
+
+		if imgui.Button('References', buttonwidth, 0) then
+			qimgui.edictreferences(self.edict)
+		end
+		imgui.SameLine(0, buttonspacing)
+
+		if imgui.Button('Copy', buttonwidth, 0) then
+			local fields = {}
+
+			for i, field in ipairs(self.fields) do
+				fields[i] = field.name .. ': ' .. field.value
+			end
+
+			imgui.SetClipboardText(table.concat(fields, '\n'))
 		end
 	end
 
