@@ -161,6 +161,12 @@ local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
 
 	if location then
+		if edicts.isitem(edict) then
+			-- Adjust Z coordinate so player will appear slightly above destination
+			location = vec3.copy(location)
+			location.z = location.z + 20
+		end
+
 		player.safemove(location, angles or edict.angles)
 		shouldexit = true
 	end
