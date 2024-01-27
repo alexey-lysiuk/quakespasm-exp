@@ -157,6 +157,15 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
+local function moveplayer(edict, location, angles)
+	location = location or vec3mid(edict.absmin, edict.absmax)
+
+	if location then
+		player.safemove(location, angles or edict.angles)
+		shouldexit = true
+	end
+end
+
 local function edictinfo_onupdate(self)
 	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(320, 0, imgui.constant.Cond.FirstUseEver)
@@ -255,6 +264,48 @@ local function describe(edict)
 	return description, location, angles
 end
 
+local function edictstable(title, entries, zerobasedindex)
+	local tableflags = imgui.constant.TableFlags
+
+	if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
+		imgui.TableSetupColumn('Index', imgui.constant.TableColumnFlags.WidthFixed)
+		imgui.TableSetupColumn('Description')
+		imgui.TableSetupColumn('Location')
+		imgui.TableHeadersRow()
+
+		for row = 1, #entries do
+			local entry = entries[row]
+			local index = tostring(zerobasedindex and row - 1 or row)
+			local description = entry.description
+
+			imgui.TableNextRow()
+			imgui.TableSetColumnIndex(0)
+			imgui.Text(index)
+			imgui.TableSetColumnIndex(1)
+
+			if entry.isfree then
+				imgui.Text(description)
+			else
+				-- Description and location need unique IDs to generate click events
+				local location = entry.location .. '##' .. row
+				description = description .. '##' .. row
+
+				if imgui.Selectable(description) then
+					qimgui.edictinfo(entry.edict)
+				end
+
+				imgui.TableSetColumnIndex(2)
+
+				if imgui.Selectable(location) then
+					moveplayer(entry.edict, entry.location, entry.angles)
+				end
+			end
+		end
+
+		imgui.EndTable()
+	end
+end
+
 local function edicts_onupdate(self)
 	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
 	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
@@ -263,50 +314,7 @@ local function edicts_onupdate(self)
 	local visible, opened = imgui.Begin(title, true)
 
 	if visible and opened then
-		local entries = self.entries
-		local zerobasedindex = not self.filter
-
-		local tableflags = imgui.constant.TableFlags
-		local columnflags = imgui.constant.TableColumnFlags
-
-		if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
-			imgui.TableSetupColumn('Index', columnflags.WidthFixed)
-			imgui.TableSetupColumn('Description')
-			imgui.TableSetupColumn('Location')
-			imgui.TableHeadersRow()
-
-			for row = 1, #entries do
-				local entry = entries[row]
-				local index = tostring(zerobasedindex and row - 1 or row)
-				local description = entry.description
-
-				imgui.TableNextRow()
-				imgui.TableSetColumnIndex(0)
-				imgui.Text(index)
-				imgui.TableSetColumnIndex(1)
-
-				if entry.isfree then
-					imgui.Text(description)
-				else
-					-- Description and location need unique IDs to generate click events
-					local location = entry.location .. '##' .. row
-					description = description .. '##' .. row
-
-					if imgui.Selectable(description) then
-						qimgui.edictinfo(entry.edict)
-					end
-
-					imgui.TableSetColumnIndex(2)
-
-					if imgui.Selectable(location) then
-						player.safemove(entry.location, entry.angles)
-						shouldexit = true
-					end
-				end
-			end
-
-			imgui.EndTable()
-		end
+		edictstable(title, self.entries, not self.filter)
 	end
 
 	imgui.End()
@@ -356,6 +364,110 @@ local function traceentity_onopen(self)
 		qimgui.edictinfo(edict)
 	else
 		playlocal('doors/basetry.wav')
+	end
+end
+
+local function edictrefs_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
+	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
+
+	local title = self.title
+	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
+
+	if visible and opened then
+		local references = self.references
+
+		if #references > 0 then
+			imgui.Text('References')
+			edictstable('', references)
+			imgui.Spacing()
+		end
+
+		local referencedby = self.referencedby
+
+		if #referencedby > 0 then
+			imgui.Text('Referenced by')
+			edictstable('', referencedby)
+		end
+	end
+
+	imgui.End()
+
+	return opened
+end
+
+local function edictrefs_onopen(self)
+	local edict = self.edict
+
+	if isfree(edict) then
+		windows[self.title] = nil
+		return
+	end
+
+	local function addentry(list, edict)
+		insert(list,
+		{
+			edict = edict,
+			description = getname(edict),
+			location = vec3mid(edict.absmin, edict.absmax),
+			angles = edict.angles
+		})
+	end
+
+	local target = edict.target
+	local targetname = edict.targetname
+	local references = {}
+	local referencedby = {}
+
+	local function collectrefs(edict)
+		if target ~= '' and target == edict.targetname then
+			addentry(references, edict)
+		end
+
+		if targetname ~= '' and targetname == edict.target then
+			addentry(referencedby, edict)
+		end
+
+		return 1
+	end
+
+	foreach(collectrefs)
+
+	self.references = references
+	self.referencedby = referencedby
+end
+
+local function edictrefs_onclose(self)
+	self.references = nil
+	self.referencedby = nil
+end
+
+function qimgui.edictreferences(edict)
+	if isfree(edict) then
+		return
+	end
+
+	local title = 'References of ' .. tostring(edict)
+	local window = windows[title]
+
+	if window then
+		wintofocus = title
+	else
+		window =
+		{
+			title = title,
+			edict = edict,
+			onupdate = edictrefs_onupdate,
+			onopen = edictrefs_onopen,
+			onclose = edictrefs_onclose
+		}
+		edictrefs_onopen(window)
+
+		if #window.references == 0 and #window.referencedby == 0 then
+			playlocal('doors/basetry.wav')
+		else
+			windows[title] = window
+		end
 	end
 end
 
