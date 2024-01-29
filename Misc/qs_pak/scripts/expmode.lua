@@ -5,8 +5,6 @@ local insert <const> = table.insert
 local tools = expmode.tools
 local windows = expmode.windows
 
-local playlocal <const> = sound.playlocal
-
 local screenwidth, screenheight
 local toolwidgedwidth
 local shouldexit
@@ -124,6 +122,43 @@ end
 function expmode.onclose()
 	for _, window in pairs(windows) do
 		window:onclose()
+	end
+end
+
+local function messagebox_onupdate(self)
+	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.35, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
+
+	local visible, opened = imgui.Begin(self.title, true, imgui.constant.WindowFlags.AlwaysAutoResize | imgui.constant.WindowFlags.NoResize 
+		| imgui.constant.WindowFlags.NoScrollbar | imgui.constant.WindowFlags.NoCollapse | imgui.constant.WindowFlags.NoSavedSettings)
+
+	if visible and opened then
+		imgui.Text(self.text)
+		if imgui.Button('Close') then
+			opened = false
+		end
+	end
+
+	imgui.End()
+
+	return opened
+end
+
+function expmode.messagebox(title, text)
+	local messagebox = windows[title]
+
+	if messagebox then
+		messagebox.text = text
+		wintofocus = title
+	else
+		messagebox =
+		{
+			title = title,
+			text = text,
+			onupdate = messagebox_onupdate,
+			onopen = function () end,
+			onclose = function () end
+		}
+		windows[title] = messagebox
 	end
 end
 
@@ -397,7 +432,7 @@ local function traceentity_onopen(self)
 	if edict then
 		expmode.edictinfo(edict)
 	else
-		playlocal('doors/basetry.wav')
+		expmode.messagebox('No entity', 'Player is not looking at any entity')
 	end
 end
 
@@ -498,7 +533,7 @@ function expmode.edictreferences(edict)
 		edictrefs_onopen(window)
 
 		if #window.references == 0 and #window.referencedby == 0 then
-			playlocal('doors/basetry.wav')
+			expmode.messagebox('No references', 'Edict has no references')
 		else
 			windows[title] = window
 		end
