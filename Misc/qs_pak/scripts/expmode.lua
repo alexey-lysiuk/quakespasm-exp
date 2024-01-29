@@ -388,19 +388,35 @@ local function edictstable(title, entries, zerobasedindex)
 			if entry.isfree then
 				imSelectable(description, false, imSelectableDisabled)
 			else
-				-- Description and location need unique IDs to generate click events
-				local location = entry.location .. '##' .. row
-				description = description .. '##' .. row
+				local location = entry.location
 
-				if imSelectable(description) then
+				local function contextmenu(cellvalue)
+					if imgui.BeginPopupContextItem() then
+						if imSelectable('Copy cell') then
+							imSetClipboardText(tostring(cellvalue))
+						end
+						if imSelectable('Copy row') then
+							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
+						end
+						imgui.EndPopup()
+					end
+				end
+
+				-- Description and location need unique IDs to generate click events
+				local descriptionid = description .. '##' .. row
+				local locationid = location .. '##' .. row
+
+				if imSelectable(descriptionid) then
 					expmode.edictinfo(entry.edict)
 				end
+				contextmenu(description)
 
 				imTableNextColumn()
 
-				if imSelectable(location) then
-					moveplayer(entry.edict, entry.location, entry.angles)
+				if imSelectable(locationid) then
+					moveplayer(entry.edict, location, entry.angles)
 				end
+				contextmenu(location)
 			end
 		end
 
