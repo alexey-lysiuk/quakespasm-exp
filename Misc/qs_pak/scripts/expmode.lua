@@ -2,19 +2,55 @@
 local format <const> = string.format
 local insert <const> = table.insert
 
-local tools = qimgui.tools
-local windows = qimgui.windows
+local imBegin <const> = imgui.Begin
+local imBeginTable <const> = imgui.BeginTable
+local imButton <const> = imgui.Button
+local imEnd <const> = imgui.End
+local imEndTable <const> = imgui.EndTable
+local imGetItemRectMax <const> = imgui.GetItemRectMax
+local imGetItemRectMin <const> = imgui.GetItemRectMin
+local imGetMainViewport <const> = imgui.GetMainViewport
+local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
+local imInputTextMultiline <const> = imgui.InputTextMultiline
+local imSameLine <const> = imgui.SameLine
+local imSelectable <const> = imgui.Selectable
+local imSeparator <const> = imgui.Separator
+local imSeparatorText <const> = imgui.SeparatorText
+local imSpacing <const> = imgui.Spacing
+local imSetClipboardText <const> = imgui.SetClipboardText
+local imSetNextWindowFocus <const> = imgui.SetNextWindowFocus
+local imSetNextWindowPos <const> = imgui.SetNextWindowPos
+local imSetNextWindowSize <const> = imgui.SetNextWindowSize
+local imTableHeadersRow <const> = imgui.TableHeadersRow
+local imTableNextColumn <const> = imgui.TableNextColumn
+local imTableNextRow <const> = imgui.TableNextRow
+local imTableSetupColumn <const> = imgui.TableSetupColumn
+local imText <const> = imgui.Text
 
-local playlocal <const> = sound.playlocal
+local imTableFlags <const> = imgui.TableFlags
+local imWindowFlags <const> = imgui.WindowFlags
+
+local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
+local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
+local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
+local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
+local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
+
+local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
+
+local tools = expmode.tools
+local windows = expmode.windows
 
 local screenwidth, screenheight
 local toolwidgedwidth
 local shouldexit
 local wintofocus
 
-function qimgui.exit()
+function expmode.exit()
 	shouldexit = true
 end
+
+local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local function updatetoolwindow()
 	-- Maximum widget width calculation needs two frames
@@ -30,16 +66,15 @@ local function updatetoolwindow()
 	local calcwidth = toolwidgedwidth == 0
 	local maxwidth = 0
 
-	imgui.SetNextWindowPos(0, 0, imgui.constant.Cond.FirstUseEver)
-	imgui.Begin("Tools", nil, imgui.constant.WindowFlags.AlwaysAutoResize | imgui.constant.WindowFlags.NoResize 
-		| imgui.constant.WindowFlags.NoScrollbar | imgui.constant.WindowFlags.NoCollapse)
+	imSetNextWindowPos(0, 0, imCondFirstUseEver)
+	imBegin("Tools", nil, toolswindowflags)
 
 	for _, tool in ipairs(tools) do
 		local title = tool.title
 
 		if tool.onupdate then
 			-- Real tool
-			if imgui.Button(title, toolwidgedwidth, 0) then
+			if imButton(title, toolwidgedwidth, 0) then
 				if windows[title] then
 					wintofocus = title
 				else
@@ -49,22 +84,22 @@ local function updatetoolwindow()
 			end
 		elseif title then
 			-- Group separator with text
-			imgui.SeparatorText(title)
+			imSeparatorText(title)
 		else
 			-- Group separator without text
-			imgui.Spacing()
-			imgui.Separator()
-			imgui.Spacing()
+			imSpacing()
+			imSeparator()
+			imSpacing()
 		end
 
 		if calcwidth then
-			local min = imgui.GetItemRectMin()
-			local max = imgui.GetItemRectMax()
+			local min = imGetItemRectMin()
+			local max = imGetItemRectMax()
 			maxwidth = math.max(maxwidth, max.x - min.x)
 		end
 	end
 
-	imgui.End()
+	imEnd()
 
 	if calcwidth then
 		toolwidgedwidth = maxwidth
@@ -78,7 +113,7 @@ local function updatewindows()
 
 	for _, window in pairs(windows) do
 		if wintofocus == window.title then
-			imgui.SetNextWindowFocus()
+			imSetNextWindowFocus()
 			wintofocus = nil
 		end
 
@@ -93,11 +128,11 @@ local function updatewindows()
 	end
 end
 
-function qimgui.onupdate()
+function expmode.onupdate()
 	updatetoolwindow()
 
 	if not screenwidth then
-		local viewport = imgui.GetMainViewport()
+		local viewport = imGetMainViewport()
 		screenwidth = viewport.Size.x
 		screenheight = viewport.Size.y
 	end
@@ -111,7 +146,7 @@ function qimgui.onupdate()
 	return keepopen
 end
 
-function qimgui.onopen()
+function expmode.onopen()
 	screenwidth = nil
 	toolwidgedwidth = -1
 	shouldexit = false
@@ -121,13 +156,51 @@ function qimgui.onopen()
 	end
 end
 
-function qimgui.onclose()
+function expmode.onclose()
 	for _, window in pairs(windows) do
 		window:onclose()
 	end
 end
 
-function qimgui.addtool(title, onupdate, onopen, onclose)
+local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
+
+local function messagebox_onupdate(self)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.35, imCondFirstUseEver, 0.5, 0.5)
+
+	local visible, opened = imBegin(self.title, true, messageboxflags)
+
+	if visible and opened then
+		imText(self.text)
+		if imButton('Close') then
+			opened = false
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
+function expmode.messagebox(title, text)
+	local messagebox = windows[title]
+
+	if messagebox then
+		messagebox.text = text
+		wintofocus = title
+	else
+		messagebox =
+		{
+			title = title,
+			text = text,
+			onupdate = messagebox_onupdate,
+			onopen = function () end,
+			onclose = function () end
+		}
+		windows[title] = messagebox
+	end
+end
+
+function expmode.addtool(title, onupdate, onopen, onclose)
 	local tool =
 	{
 		title = title or 'Tool',
@@ -140,13 +213,13 @@ function qimgui.addtool(title, onupdate, onopen, onclose)
 	return tool
 end
 
-function qimgui.addseparator(text)
+function expmode.addseparator(text)
 	local separator = { title = text }
 	insert(tools, separator)
 end
 
-local addtool <const> = qimgui.addtool
-local addseparator <const> = qimgui.addseparator
+local addtool <const> = expmode.addtool
+local addseparator <const> = expmode.addseparator
 
 
 local vec3mid <const> = vec3.mid
@@ -173,62 +246,59 @@ local function moveplayer(edict, location, angles)
 end
 
 local function edictinfo_onupdate(self)
-	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
-	imgui.SetNextWindowSize(320, 0, imgui.constant.Cond.FirstUseEver)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(320, 0, imCondFirstUseEver)
 
 	local title = self.title
-	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
+	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		-- Table of fields names and values
-		local tableflags = imgui.constant.TableFlags
-		local columnflags = imgui.constant.TableColumnFlags
-
-		if imgui.BeginTable(title, 2, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
-			imgui.TableSetupColumn('Name', columnflags.WidthFixed)
-			imgui.TableSetupColumn('Value')
-			imgui.TableHeadersRow()
+		if imBeginTable(title, 2, defaulttableflags) then
+			imTableSetupColumn('Name', imTableColumnWidthFixed)
+			imTableSetupColumn('Value')
+			imTableHeadersRow()
 
 			for _, field in ipairs(self.fields) do
-				imgui.TableNextRow()
-				imgui.TableSetColumnIndex(0)
-				imgui.Text(field.name)
-				imgui.TableSetColumnIndex(1)
-				imgui.Text(field.value)
+				imTableNextRow()
+				imTableNextColumn()
+				imText(field.name)
+				imTableNextColumn()
+				imText(field.value)
 			end
 
-			imgui.EndTable()
+			imEndTable()
 		end
 
 		-- Tool buttons
-		imgui.Separator()
+		imSeparator()
 
 		local buttoncount = 3
 		local buttonspacing = 4
-		local buttonwidth = (imgui.GetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
+		local buttonwidth = (imGetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
 
-		if imgui.Button('Move to', buttonwidth, 0) then
+		if imButton('Move to', buttonwidth, 0) then
 			moveplayer(self.edict)
 		end
-		imgui.SameLine(0, buttonspacing)
+		imSameLine(0, buttonspacing)
 
-		if imgui.Button('References', buttonwidth, 0) then
-			qimgui.edictreferences(self.edict)
+		if imButton('References', buttonwidth, 0) then
+			expmode.edictreferences(self.edict)
 		end
-		imgui.SameLine(0, buttonspacing)
+		imSameLine(0, buttonspacing)
 
-		if imgui.Button('Copy', buttonwidth, 0) then
+		if imButton('Copy', buttonwidth, 0) then
 			local fields = {}
 
 			for i, field in ipairs(self.fields) do
 				fields[i] = field.name .. ': ' .. field.value
 			end
 
-			imgui.SetClipboardText(table.concat(fields, '\n'))
+			imSetClipboardText(table.concat(fields, '\n'))
 		end
 	end
 
-	imgui.End()
+	imEnd()
 
 	return opened
 end
@@ -254,7 +324,7 @@ local function edictinfo_onclose(self)
 	self.fields = nil
 end
 
-function qimgui.edictinfo(edict)
+function expmode.edictinfo(edict)
 	if isfree(edict) then
 		return
 	end
@@ -299,59 +369,73 @@ local function describe(edict)
 end
 
 local function edictstable(title, entries, zerobasedindex)
-	local tableflags = imgui.constant.TableFlags
-
-	if imgui.BeginTable(title, 3, tableflags.Resizable | tableflags.RowBg | tableflags.Borders) then
-		imgui.TableSetupColumn('Index', imgui.constant.TableColumnFlags.WidthFixed)
-		imgui.TableSetupColumn('Description')
-		imgui.TableSetupColumn('Location')
-		imgui.TableHeadersRow()
+	if imBeginTable(title, 3, defaulttableflags) then
+		imTableSetupColumn('Index', imTableColumnWidthFixed)
+		imTableSetupColumn('Description')
+		imTableSetupColumn('Location')
+		imTableHeadersRow()
 
 		for row = 1, #entries do
 			local entry = entries[row]
 			local index = tostring(zerobasedindex and row - 1 or row)
 			local description = entry.description
 
-			imgui.TableNextRow()
-			imgui.TableSetColumnIndex(0)
-			imgui.Text(index)
-			imgui.TableSetColumnIndex(1)
+			imTableNextRow()
+			imTableNextColumn()
+			imSelectable(index, false, imSelectableDisabled)
+			imTableNextColumn()
 
 			if entry.isfree then
-				imgui.Text(description)
+				imSelectable(description, false, imSelectableDisabled)
 			else
+				local location = entry.location
+
+				local function contextmenu(cellvalue)
+					if imgui.BeginPopupContextItem() then
+						if imSelectable('Copy cell') then
+							imSetClipboardText(tostring(cellvalue))
+						end
+						if imSelectable('Copy row') then
+							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
+						end
+						imgui.EndPopup()
+					end
+				end
+
 				-- Description and location need unique IDs to generate click events
-				local location = entry.location .. '##' .. row
-				description = description .. '##' .. row
+				local descriptionid = description .. '##' .. row
+				local locationid = location .. '##' .. row
 
-				if imgui.Selectable(description) then
-					qimgui.edictinfo(entry.edict)
+				if imSelectable(descriptionid) then
+					expmode.edictinfo(entry.edict)
 				end
+				contextmenu(description)
 
-				imgui.TableSetColumnIndex(2)
+				imTableNextColumn()
 
-				if imgui.Selectable(location) then
-					moveplayer(entry.edict, entry.location, entry.angles)
+				if imSelectable(locationid) then
+					moveplayer(entry.edict, location, entry.angles)
 				end
+				contextmenu(location)
 			end
 		end
 
-		imgui.EndTable()
+		imEndTable()
 	end
 end
 
 local function edicts_onupdate(self)
-	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
-	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(480, screenheight * 0.8, imCondFirstUseEver)
 
 	local title = self.title
-	local visible, opened = imgui.Begin(title, true)
+	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
 		edictstable(title, self.entries, not self.filter)
 	end
 
-	imgui.End()
+	imEnd()
 
 	return opened
 end
@@ -395,37 +479,37 @@ local function traceentity_onopen(self)
 	local edict = player.traceentity()
 
 	if edict then
-		qimgui.edictinfo(edict)
+		expmode.edictinfo(edict)
 	else
-		playlocal('doors/basetry.wav')
+		expmode.messagebox('No entity', 'Player is not looking at any entity')
 	end
 end
 
 local function edictrefs_onupdate(self)
-	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
-	imgui.SetNextWindowSize(480, screenheight * 0.8, imgui.constant.Cond.FirstUseEver)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(480, screenheight * 0.8, imCondFirstUseEver)
 
 	local title = self.title
-	local visible, opened = imgui.Begin(title, true, imgui.constant.WindowFlags.NoSavedSettings)
+	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		local references = self.references
 
 		if #references > 0 then
-			imgui.Text('References')
+			imText('References')
 			edictstable('', references)
-			imgui.Spacing()
+			imSpacing()
 		end
 
 		local referencedby = self.referencedby
 
 		if #referencedby > 0 then
-			imgui.Text('Referenced by')
+			imText('Referenced by')
 			edictstable('', referencedby)
 		end
 	end
 
-	imgui.End()
+	imEnd()
 
 	return opened
 end
@@ -476,7 +560,7 @@ local function edictrefs_onclose(self)
 	self.referencedby = nil
 end
 
-function qimgui.edictreferences(edict)
+function expmode.edictreferences(edict)
 	if isfree(edict) then
 		return
 	end
@@ -498,7 +582,7 @@ function qimgui.edictreferences(edict)
 		edictrefs_onopen(window)
 
 		if #window.references == 0 and #window.referencedby == 0 then
-			playlocal('doors/basetry.wav')
+			expmode.messagebox('No references', 'Edict has no references')
 		else
 			windows[title] = window
 		end
@@ -519,16 +603,16 @@ addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
-	imgui.SetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imgui.constant.Cond.FirstUseEver, 0.5, 0.5)
-	imgui.SetNextWindowSize(320, 240, imgui.constant.Cond.FirstUseEver)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(320, 240, imCondFirstUseEver)
 
-	local visible, opened = imgui.Begin(self.title, true)
+	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		_, self.text = imgui.InputTextMultiline('##text', self.text or '', 64 * 1024, -1, -1, imgui.constant.InputTextFlags.AllowTabInput)
+		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, -1, -1, imInputTextAllowTabInput)
 	end
 
-	imgui.End()
+	imEnd()
 
 	return opened
 end)
@@ -538,4 +622,4 @@ addseparator('Debug')
 addtool('Dear ImGui Demo', imgui.ShowDemoWindow)
 
 addseparator()
-addtool('Press ESC to exit', qimgui.exit)
+addtool('Press ESC to exit', expmode.exit)

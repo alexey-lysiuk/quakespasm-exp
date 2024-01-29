@@ -1140,8 +1140,8 @@ void SCR_UpdateScreen (void)
 	GLSLGamma_GammaCorrect ();
 
 #ifdef USE_IMGUI
-	void IG_Update(void);
-	IG_Update();
+	void EXP_Update(void);
+	EXP_Update();
 #endif // USE_IMGUI
 
 	GL_EndRendering ();

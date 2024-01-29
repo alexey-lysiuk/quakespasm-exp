@@ -1008,9 +1008,9 @@ void IN_SendKeyEvents (void)
 	while (SDL_PollEvent(&event))
 	{
 #ifdef USE_IMGUI
-		qboolean IG_ProcessEvent(const SDL_Event* event);
+		qboolean EXP_ProcessEvent(const SDL_Event* event);
 
-		if (IG_ProcessEvent(&event))
+		if (EXP_ProcessEvent(&event))
 			continue;
 #endif // USE_IMGUI
 

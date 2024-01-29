@@ -53,7 +53,7 @@ set(COMMON_SOURCES
 	Quake/glquake.h
 	Quake/host.c
 	Quake/host_cmd.c
-	Quake/ig_main.cpp
+	Quake/expmode.cpp
 	Quake/image.c
 	Quake/image.h
 	Quake/in_sdl.c
@@ -624,9 +624,9 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/sm212_naitelveni@a835.ent
 		maps/sm27_bear@92ba.ent
 		scripts/edicts.lua
+		scripts/expmode.lua
 		scripts/input.lua
 		scripts/menus.lua
-		scripts/qimgui.lua
 		default.cfg
 	)
 
