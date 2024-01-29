@@ -514,9 +514,7 @@ static const struct luaL_Reg imguilib [] = {
     {NULL, NULL}
 };
 
-static void PushImguiEnums(lua_State* lState, const char* tableName) {
-    lua_pushstring(lState, tableName);
-    lua_newtable(lState);
+static void PushImguiEnums(lua_State* lState) {
 
 #undef START_ENUM
 #undef MAKE_ENUM
@@ -648,13 +646,12 @@ static void PushImguiEnums(lua_State* lState, const char* tableName) {
 
 #include "imgui_iterator.h"
 
-    lua_rawset(lState, -3);
 };
 
 
 extern "C" void ImLoadBindings(lua_State* lState) {
     lua_newtable(lState);
     luaL_setfuncs(lState, imguilib, 0);
-    PushImguiEnums(lState, "constant");
+    PushImguiEnums(lState);
     lua_setglobal(lState, "imgui");
 }
