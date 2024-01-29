@@ -3,9 +3,11 @@ local format <const> = string.format
 local insert <const> = table.insert
 
 local imBegin <const> = imgui.Begin
+local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
 local imBeginTable <const> = imgui.BeginTable
 local imButton <const> = imgui.Button
 local imEnd <const> = imgui.End
+local imEndPopup <const> = imgui.EndPopup
 local imEndTable <const> = imgui.EndTable
 local imGetItemRectMax <const> = imgui.GetItemRectMax
 local imGetItemRectMin <const> = imgui.GetItemRectMin
@@ -391,14 +393,14 @@ local function edictstable(title, entries, zerobasedindex)
 				local location = entry.location
 
 				local function contextmenu(cellvalue)
-					if imgui.BeginPopupContextItem() then
+					if imBeginPopupContextItem() then
 						if imSelectable('Copy cell') then
 							imSetClipboardText(tostring(cellvalue))
 						end
 						if imSelectable('Copy row') then
 							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
 						end
-						imgui.EndPopup()
+						imEndPopup()
 					end
 				end
 
