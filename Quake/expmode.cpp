@@ -39,15 +39,15 @@ extern "C"
 #include "quakedef.h"
 #include "ls_common.h"
 
-static bool ig_active;
-static char ig_justactived;
+static bool exp_active;
+static char exp_justactived;
 
-static SDL_EventFilter ig_eventfilter;
-static void* ig_eventuserdata;
+static SDL_EventFilter exp_eventfilter;
+static void* exp_eventuserdata;
 
 #ifdef USE_LUA_SCRIPTING
 
-static const char* ls_qimgui_name = "qimgui";
+static const char* ls_expmode_name = "expmode";
 
 static bool LS_CallQImGuiFunction(const char* const name)
 {
@@ -57,7 +57,7 @@ static bool LS_CallQImGuiFunction(const char* const name)
 
 	bool result = false;
 
-	if (lua_getglobal(state, ls_qimgui_name) == LUA_TTABLE)
+	if (lua_getglobal(state, ls_expmode_name) == LUA_TTABLE)
 	{
 		if (lua_getfield(state, -1, name) == LUA_TFUNCTION)
 		{
@@ -90,34 +90,34 @@ void LS_InitImGuiModule(lua_State* state)
 	// Register tables for scripted ImGui windows
 	lua_newtable(state);
 	lua_pushvalue(state, -1);  // copy for lua_setfield()
-	lua_setglobal(state, ls_qimgui_name);
+	lua_setglobal(state, ls_expmode_name);
 	lua_createtable(state, 0, 16);
 	lua_setfield(state, -2, "windows");
 	lua_createtable(state, 0, 16);
 	lua_setfield(state, -2, "tools");
 	lua_pop(state, 1);  // remove qimgui global table
 
-	LS_LoadScript(state, "scripts/qimgui.lua");
+	LS_LoadScript(state, "scripts/expmode.lua");
 }
 
 #endif // USE_LUA_SCRIPTING
 
-static void IG_Open()
+static void EXP_EnterMode()
 {
-	if (ig_active)
+	if (exp_active)
 		return;
 
 	if (cls.state != ca_connected)
 	{
-		ig_active = false;
+		exp_active = false;
 		return;
 	}
 
-	ig_active = true;
+	exp_active = true;
 
 	// Need to skip two frames because SDL_StopTextInput() is called during the next one after ImGui activation
-	// Otherwise, text input will be unavailable. See IG_Update() for SDL_StartTextInput() call
-	ig_justactived = 2;
+	// Otherwise, text input will be unavailable. See EXP_Update() for SDL_StartTextInput() call
+	exp_justactived = 2;
 
 	// Close menu or console if opened
 	if (key_dest == key_console)
@@ -136,7 +136,7 @@ static void IG_Open()
 	memset(keydown, 0, sizeof keydown);
 
 	// Remove event filter to allow mouse move events
-	SDL_GetEventFilter(&ig_eventfilter, &ig_eventuserdata);
+	SDL_GetEventFilter(&exp_eventfilter, &exp_eventuserdata);
 	SDL_SetEventFilter(nullptr, nullptr);
 
 	// Enable contol of ImGui windows by all input devices
@@ -147,9 +147,9 @@ static void IG_Open()
 #endif // USE_LUA_SCRIPTING
 }
 
-static void IG_Close()
+static void EXP_ExitMode()
 {
-	if (!ig_active)
+	if (!exp_active)
 		return;
 
 #ifdef USE_LUA_SCRIPTING
@@ -159,26 +159,26 @@ static void IG_Close()
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
 
 	SDL_StopTextInput();
-	SDL_SetEventFilter(ig_eventfilter, ig_eventuserdata);
+	SDL_SetEventFilter(exp_eventfilter, exp_eventuserdata);
 
 	IN_Activate();
 
 	if (cls.state == ca_connected)
 		key_dest = key_game;
 
-	ig_active = false;
+	exp_active = false;
 }
 
-void IG_Init(SDL_Window* window, SDL_GLContext context)
+void EXP_Init(SDL_Window* window, SDL_GLContext context)
 {
 	ImGui::CreateContext();
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	const int configargindex = COM_CheckParm("-imguiconfig");
+	const int configargindex = COM_CheckParm("-expmodeconfig");
 	const char* const configpath = configargindex > 0
 		? (configargindex < com_argc - 1 ? com_argv[configargindex + 1] : "")
-		: io.IniFilename;
+		: "expmode.ini";
 
 	io.ConfigFlags = ImGuiConfigFlags_NoMouse;
 	io.IniFilename = configpath[0] == '\0' ? nullptr : configpath;
@@ -186,10 +186,10 @@ void IG_Init(SDL_Window* window, SDL_GLContext context)
 	ImGui_ImplSDL2_InitForOpenGL(window, context);
 	ImGui_ImplOpenGL2_Init();
 
-	Cmd_AddCommand("imgui_open", IG_Open);
+	Cmd_AddCommand("expmode", EXP_EnterMode);
 }
 
-void IG_Shutdown()
+void EXP_Shutdown()
 {
 	ImGui_ImplOpenGL2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
@@ -197,9 +197,9 @@ void IG_Shutdown()
 	ImGui::DestroyContext();
 }
 
-void IG_Update()
+void EXP_Update()
 {
-	if (!ig_active)
+	if (!exp_active)
 		return;
 
 	ImGui_ImplOpenGL2_NewFrame();
@@ -207,17 +207,17 @@ void IG_Update()
 
 	ImGui::NewFrame();
 
-	if (ig_justactived > 0)
+	if (exp_justactived > 0)
 	{
-		--ig_justactived;
+		--exp_justactived;
 
-		if (ig_justactived == 0)
+		if (exp_justactived == 0)
 			SDL_StartTextInput();
 	}
 
 #ifdef USE_LUA_SCRIPTING
 	if (!LS_CallQImGuiFunction("onupdate"))
-		IG_Close();
+		EXP_ExitMode();
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
@@ -246,9 +246,9 @@ void IG_Update()
 	glEnable(GL_ALPHA_TEST);
 }
 
-qboolean IG_ProcessEvent(const SDL_Event* event)
+qboolean EXP_ProcessEvent(const SDL_Event* event)
 {
-	if (!ig_active)
+	if (!exp_active)
 		return false;
 
 	assert(event);
@@ -256,7 +256,7 @@ qboolean IG_ProcessEvent(const SDL_Event* event)
 
 	if (type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
 	{
-		IG_Close();
+		EXP_ExitMode();
 		return true;  // stop further event processing
 	}
 

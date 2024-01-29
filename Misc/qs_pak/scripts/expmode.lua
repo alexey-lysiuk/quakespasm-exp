@@ -2,8 +2,8 @@
 local format <const> = string.format
 local insert <const> = table.insert
 
-local tools = qimgui.tools
-local windows = qimgui.windows
+local tools = expmode.tools
+local windows = expmode.windows
 
 local playlocal <const> = sound.playlocal
 
@@ -12,7 +12,7 @@ local toolwidgedwidth
 local shouldexit
 local wintofocus
 
-function qimgui.exit()
+function expmode.exit()
 	shouldexit = true
 end
 
@@ -93,7 +93,7 @@ local function updatewindows()
 	end
 end
 
-function qimgui.onupdate()
+function expmode.onupdate()
 	updatetoolwindow()
 
 	if not screenwidth then
@@ -111,7 +111,7 @@ function qimgui.onupdate()
 	return keepopen
 end
 
-function qimgui.onopen()
+function expmode.onopen()
 	screenwidth = nil
 	toolwidgedwidth = -1
 	shouldexit = false
@@ -121,13 +121,13 @@ function qimgui.onopen()
 	end
 end
 
-function qimgui.onclose()
+function expmode.onclose()
 	for _, window in pairs(windows) do
 		window:onclose()
 	end
 end
 
-function qimgui.addtool(title, onupdate, onopen, onclose)
+function expmode.addtool(title, onupdate, onopen, onclose)
 	local tool =
 	{
 		title = title or 'Tool',
@@ -140,13 +140,13 @@ function qimgui.addtool(title, onupdate, onopen, onclose)
 	return tool
 end
 
-function qimgui.addseparator(text)
+function expmode.addseparator(text)
 	local separator = { title = text }
 	insert(tools, separator)
 end
 
-local addtool <const> = qimgui.addtool
-local addseparator <const> = qimgui.addseparator
+local addtool <const> = expmode.addtool
+local addseparator <const> = expmode.addseparator
 
 
 local vec3mid <const> = vec3.mid
@@ -213,7 +213,7 @@ local function edictinfo_onupdate(self)
 		imgui.SameLine(0, buttonspacing)
 
 		if imgui.Button('References', buttonwidth, 0) then
-			qimgui.edictreferences(self.edict)
+			expmode.edictreferences(self.edict)
 		end
 		imgui.SameLine(0, buttonspacing)
 
@@ -254,7 +254,7 @@ local function edictinfo_onclose(self)
 	self.fields = nil
 end
 
-function qimgui.edictinfo(edict)
+function expmode.edictinfo(edict)
 	if isfree(edict) then
 		return
 	end
@@ -325,7 +325,7 @@ local function edictstable(title, entries, zerobasedindex)
 				description = description .. '##' .. row
 
 				if imgui.Selectable(description) then
-					qimgui.edictinfo(entry.edict)
+					expmode.edictinfo(entry.edict)
 				end
 
 				imgui.TableSetColumnIndex(2)
@@ -395,7 +395,7 @@ local function traceentity_onopen(self)
 	local edict = player.traceentity()
 
 	if edict then
-		qimgui.edictinfo(edict)
+		expmode.edictinfo(edict)
 	else
 		playlocal('doors/basetry.wav')
 	end
@@ -476,7 +476,7 @@ local function edictrefs_onclose(self)
 	self.referencedby = nil
 end
 
-function qimgui.edictreferences(edict)
+function expmode.edictreferences(edict)
 	if isfree(edict) then
 		return
 	end
@@ -538,4 +538,4 @@ addseparator('Debug')
 addtool('Dear ImGui Demo', imgui.ShowDemoWindow)
 
 addseparator()
-addtool('Press ESC to exit', qimgui.exit)
+addtool('Press ESC to exit', expmode.exit)
