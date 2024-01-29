@@ -31,8 +31,9 @@ local imTableFlags <const> = imgui.TableFlags
 local imWindowFlags <const> = imgui.WindowFlags
 
 local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
-local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
 local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
+local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
+local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
@@ -381,11 +382,11 @@ local function edictstable(title, entries, zerobasedindex)
 
 			imTableNextRow()
 			imTableNextColumn()
-			imText(index)
+			imSelectable(index, false, imSelectableDisabled)
 			imTableNextColumn()
 
 			if entry.isfree then
-				imText(description)
+				imSelectable(description, false, imSelectableDisabled)
 			else
 				-- Description and location need unique IDs to generate click events
 				local location = entry.location .. '##' .. row
