@@ -164,6 +164,33 @@ function expmode.onclose()
 	end
 end
 
+function expmode.window(title, construct, onupdate, onopen, onclose)
+	local window = windows[title]
+
+	if window then
+		wintofocus = title
+	else
+		window =
+		{
+			title = title,
+			onupdate = onupdate,
+			onopen = onopen or function () end,
+			onclose = onclose or function () end
+		}
+
+		if construct then
+			construct(window)
+		end
+
+		window:onopen()
+		windows[title] = window
+	end
+
+	return window
+end
+
+local window <const> = expmode.window
+
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
 local function messagebox_onupdate(self)
@@ -184,22 +211,7 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	local messagebox = windows[title]
-
-	if messagebox then
-		messagebox.text = text
-		wintofocus = title
-	else
-		messagebox =
-		{
-			title = title,
-			text = text,
-			onupdate = messagebox_onupdate,
-			onopen = function () end,
-			onclose = function () end
-		}
-		windows[title] = messagebox
-	end
+	window(title, function (self) self.text = text end, messagebox_onupdate)
 end
 
 local messagebox <const> = expmode.messagebox
@@ -333,23 +345,9 @@ function expmode.edictinfo(edict)
 		return
 	end
 
-	local title = tostring(edict)
-	local window = windows[title]
-
-	if window then
-		wintofocus = title
-	else
-		window =
-		{
-			title = title,
-			edict = edict,
-			onupdate = edictinfo_onupdate,
-			onopen = edictinfo_onopen,
-			onclose = edictinfo_onclose
-		}
-		edictinfo_onopen(window)
-		windows[title] = window
-	end
+	window(tostring(edict), 
+		function (self) self.edict = edict end, 
+		edictinfo_onupdate, edictinfo_onopen, edictinfo_onclose)
 end
 
 local edictinfo <const> = expmode.edictinfo
