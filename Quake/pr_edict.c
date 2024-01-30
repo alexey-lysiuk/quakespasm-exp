@@ -1161,26 +1161,24 @@ static void PR_PatchFishCountBug (void)
 	see https://quakewiki.org/wiki/Rotfish#Bugs.2FIssues
 	Official add-ons have this bug fixed, the original game should be patched.
 
-	Disassembly of swimmonster_start_go() from version 1.06:
+	Disassembly of swimmonster_start() from version 1.06:
 
-	8600: IFNOT      35(deathmatch)      0.0                         branch 4
-	8604: STORE_V    28                  4                           0
-	8604: CALL1      460                 0                           0
-	8604: RETURN     0                   0                           0
-	8604: ADDRESS    28(self)            163(takedamage).takedamage  5579(?)
-	8605: STOREP_F   252(DAMAGE_AIM)     2.0                         5579(?)
-	8606: ADD_F      40(total_monsters)  1.0                         5580(?)
-	8607: STORE_F    5580(?)             40(total_monsters)          0
-	8608: ADDRESS    28(self)entity      191(ideal_yaw).ideal_yaw    5581(?)
-	...
+	8674: ADDRESS    28(self)entity 127   150(nextthink).nextthink 5630(?)
+	8675: INDIRECT   28(self)entity 127   150(nextthink).nextthink 5631(?)
+	8676: CALL0      452(random)random()
+	8677: MUL_F      1(?)                 1485(IMMEDIATE)  0.5 5632(?)
+	8678: ADD_F      5631(?)              5632(?)              5633(?)
+	8679: STOREP_F   5633(?)              5630(?)
+	8680: ADDRESS    28(self)entity 127   148(think).think     5634(?)
+	8681: STOREP_FNC 5578(swimmonster_start_go)swimmonster_start_go() 5634(?)
+	8682: ADD_F      40(total_monsters) 23.0 214(TRUE)  1.0       5635(?)
+	8683: STORE_F    5635(?)              40(total_monsters)
+	8684: DONE
 
-	Instructions at 8606 and 8607 should be removed.
+	Instructions at 8682 and 8683 should be removed.
 	QuakeC doesn't have no-op instruction, replace the first instruction
 	with unconditional jump to skip the second one.
 */
-
-	if (strcmp(sv.name, "sm175_scampie") == 0)
-		return;
 
 	int funcindex, funcstart;
 	short totalmonsters;
@@ -1193,9 +1191,9 @@ static void PR_PatchFishCountBug (void)
 	}
 	else if (pr_crc == 24778)  // version 1.06
 	{
-		funcindex = 373;
-		funcstart = 8600;
-		totalmonsters = 5580;
+		funcindex = 374;
+		funcstart = 8674;
+		totalmonsters = 5635;
 	}
 	else
 		return;
@@ -1206,12 +1204,12 @@ static void PR_PatchFishCountBug (void)
 		return;
 
 	// Check the second instruction
-	dstatement_t* st = &pr_statements[funcstart + 7];
+	dstatement_t* st = &pr_statements[funcstart + 9];
 	if (st->op != OP_STORE_F || st->a != totalmonsters || st->b != 40 || st->c != 0)
 		return;
 
 	// Check the first instruction
-	st = &pr_statements[funcstart + 6];
+	st = &pr_statements[funcstart + 8];
 	if (st->op != OP_ADD_F || st->a != 40 || st->b != 214 || st->c != totalmonsters)
 		return;
 
