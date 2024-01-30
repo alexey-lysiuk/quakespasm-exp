@@ -1447,6 +1447,8 @@ static void PR_DisassembleFunction(const dfunction_t* func)
 	{
 		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
 		{
+			Con_SafePrintf("%06i: ", i);
+
 			dstatement_t* statement = &pr_statements[i];
 
 			void PR_PrintStatement(dstatement_t* s);
