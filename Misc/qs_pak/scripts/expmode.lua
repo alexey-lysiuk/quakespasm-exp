@@ -3,9 +3,11 @@ local format <const> = string.format
 local insert <const> = table.insert
 
 local imBegin <const> = imgui.Begin
+local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
 local imBeginTable <const> = imgui.BeginTable
 local imButton <const> = imgui.Button
 local imEnd <const> = imgui.End
+local imEndPopup <const> = imgui.EndPopup
 local imEndTable <const> = imgui.EndTable
 local imGetItemRectMax <const> = imgui.GetItemRectMax
 local imGetItemRectMin <const> = imgui.GetItemRectMin
@@ -200,6 +202,8 @@ function expmode.messagebox(title, text)
 	end
 end
 
+local messagebox <const> = expmode.messagebox
+
 function expmode.addtool(title, onupdate, onopen, onclose)
 	local tool =
 	{
@@ -348,6 +352,8 @@ function expmode.edictinfo(edict)
 	end
 end
 
+local edictinfo <const> = expmode.edictinfo
+
 local function describe(edict)
 	local description = getname(edict)
 	local location, angles
@@ -391,14 +397,14 @@ local function edictstable(title, entries, zerobasedindex)
 				local location = entry.location
 
 				local function contextmenu(cellvalue)
-					if imgui.BeginPopupContextItem() then
+					if imBeginPopupContextItem() then
 						if imSelectable('Copy cell') then
 							imSetClipboardText(tostring(cellvalue))
 						end
 						if imSelectable('Copy row') then
 							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
 						end
-						imgui.EndPopup()
+						imEndPopup()
 					end
 				end
 
@@ -407,7 +413,7 @@ local function edictstable(title, entries, zerobasedindex)
 				local locationid = location .. '##' .. row
 
 				if imSelectable(descriptionid) then
-					expmode.edictinfo(entry.edict)
+					edictinfo(entry.edict)
 				end
 				contextmenu(description)
 
@@ -479,9 +485,9 @@ local function traceentity_onopen(self)
 	local edict = player.traceentity()
 
 	if edict then
-		expmode.edictinfo(edict)
+		edictinfo(edict)
 	else
-		expmode.messagebox('No entity', 'Player is not looking at any entity')
+		messagebox('No entity', 'Player is not looking at any entity')
 	end
 end
 
@@ -582,7 +588,7 @@ function expmode.edictreferences(edict)
 		edictrefs_onopen(window)
 
 		if #window.references == 0 and #window.referencedby == 0 then
-			expmode.messagebox('No references', 'Edict has no references')
+			messagebox('No references', 'Edict has no references')
 		else
 			windows[title] = window
 		end
