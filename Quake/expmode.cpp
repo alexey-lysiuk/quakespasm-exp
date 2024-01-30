@@ -87,15 +87,9 @@ void LS_InitImGuiModule(lua_State* state)
 	void ImLoadBindings(lua_State* state);
 	ImLoadBindings(state);
 
-	// Register tables for scripted ImGui windows
-	lua_newtable(state);
-	lua_pushvalue(state, -1);  // copy for lua_setfield()
+	// Register 'expmode' table
+	lua_createtable(state, 0, 16);
 	lua_setglobal(state, ls_expmode_name);
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, "windows");
-	lua_createtable(state, 0, 16);
-	lua_setfield(state, -2, "tools");
-	lua_pop(state, 1);  // remove qimgui global table
 
 	LS_LoadScript(state, "scripts/expmode.lua");
 }

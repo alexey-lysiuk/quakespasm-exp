@@ -40,8 +40,8 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
 
-local tools = expmode.tools
-local windows = expmode.windows
+local tools = {}
+local windows = {}
 
 local screenwidth, screenheight
 local toolwidgedwidth
