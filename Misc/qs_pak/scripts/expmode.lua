@@ -245,7 +245,9 @@ local foreach <const> = edicts.foreach
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
+local string <const> = edicts.valuetypes.string
 
+local localize <const> = text.localize
 local toascii <const> = text.toascii
 
 local function moveplayer(edict, location, angles)
@@ -331,7 +333,16 @@ local function edictinfo_onopen(self)
 
 	for i, field in ipairs(self.edict) do
 		local value = field.value
-		field.value = field.type == float and format('%.1f', value) or toascii(value)
+		local type = field.type
+
+		if type == float then
+			field.value = format('%.1f', value)
+		elseif type == string then
+			field.value = toascii(localize(value))
+		else
+			field.value = tostring(value)
+		end
+
 		fields[i] = field
 	end
 
