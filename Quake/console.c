@@ -488,52 +488,6 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
-
-static const char* Con_ToAscii(const char *message)
-{
-	// '\xFF' means skip this character
-	static const char translate[] =
-		"\0\xFF\xFF.......\n.  .."
-		"[]0123456789.-=-"
-		" !\"#$%&'()*+,-./"
-		"0123456789:;<=>?"
-		"@ABCDEFGHIJKLMNO"
-		"PQRSTUVWXYZ[\\]^_"
-		"`abcdefghijklmno"
-		"pqrstuvwxyz{|}~."
-		"-=-....... ....."
-		"[]0123456789.-=-"
-		" !\"#$%&'()*+,-./"
-		"0123456789:;<=>?"
-		"@ABCDEFGHIJKLMNO"
-		"PQRSTUVWXYZ[\\]^_"
-		"`abcdefghijklmno"
-		"pqrstuvwxyz{|}~.";
-
-	static char ascii[MAXPRINTMSG];
-	char* asciiptr = ascii;
-
-	for (const char* ch = message; ; ++ch)
-	{
-		if (asciiptr - ascii == MAXPRINTMSG - 1)
-			break;  // ascii array must remain null-terminated
-
-		unsigned char oldch = *ch;
-		char newch = translate[oldch];
-
-		if (newch == '\xFF')
-			continue;
-
-		*asciiptr = newch;
-		++asciiptr;
-
-		if (oldch == '\0')
-			break;
-	}
-
-	return ascii;
-}
-
 void Con_Printf (const char *fmt, ...)
 {
 	va_list		argptr;
@@ -544,7 +498,7 @@ void Con_Printf (const char *fmt, ...)
 	q_vsnprintf (msg, sizeof(msg), fmt, argptr);
 	va_end (argptr);
 
-	const char *ascii = Con_ToAscii(msg);
+	const char *ascii = q_strtoascii(msg, NULL, 0);
 
 // also echo to debugging console
 	Sys_Printf ("%s", ascii);

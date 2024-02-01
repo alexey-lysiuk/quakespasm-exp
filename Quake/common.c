@@ -593,6 +593,61 @@ float Q_atof (const char *str)
 	return val*sign;
 }
 
+char *q_strtoascii(const char *str, char *dest, size_t size)
+{
+	// '\xFF' means skip this character
+	static const char translate[] =
+		"\0\xFF\xFF.......\n.  .."
+		"[]0123456789.-=-"
+		" !\"#$%&'()*+,-./"
+		"0123456789:;<=>?"
+		"@ABCDEFGHIJKLMNO"
+		"PQRSTUVWXYZ[\\]^_"
+		"`abcdefghijklmno"
+		"pqrstuvwxyz{|}~."
+		"-=-....... ....."
+		"[]0123456789.-=-"
+		" !\"#$%&'()*+,-./"
+		"0123456789:;<=>?"
+		"@ABCDEFGHIJKLMNO"
+		"PQRSTUVWXYZ[\\]^_"
+		"`abcdefghijklmno"
+		"pqrstuvwxyz{|}~.";
+
+	static char localbuffer[4096];
+	static const size_t localbuffersize = sizeof(localbuffer);
+	char* ascii = dest;
+
+	if (ascii == NULL)
+	{
+		ascii = localbuffer;
+		size = localbuffersize;
+	}
+
+	char* asciiptr = ascii;
+
+	for (const char* ch = str; ; ++ch)
+	{
+		if (asciiptr - ascii == size - 1)
+			break;  // leave space for null terminator
+
+		unsigned char oldch = *ch;
+		char newch = translate[oldch];
+
+		if (newch == '\xFF')
+			continue;
+
+		*asciiptr = newch;
+		++asciiptr;
+
+		if (oldch == '\0')
+			break;
+	}
+
+	ascii[asciiptr - ascii] = '\0';
+	return ascii;
+}
+
 /*
 ============================================================================
 
