@@ -40,8 +40,8 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
 
-local tools = expmode.tools
-local windows = expmode.windows
+local tools = {}
+local windows = {}
 
 local screenwidth, screenheight
 local toolwidgedwidth
@@ -164,6 +164,33 @@ function expmode.onclose()
 	end
 end
 
+function expmode.window(title, construct, onupdate, onopen, onclose)
+	local window = windows[title]
+
+	if window then
+		wintofocus = title
+	else
+		window =
+		{
+			title = title,
+			onupdate = onupdate,
+			onopen = onopen or function () end,
+			onclose = onclose or function () end
+		}
+
+		if construct then
+			construct(window)
+		end
+
+		window:onopen()
+		windows[title] = window
+	end
+
+	return window
+end
+
+local window <const> = expmode.window
+
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
 local function messagebox_onupdate(self)
@@ -184,23 +211,10 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	local messagebox = windows[title]
-
-	if messagebox then
-		messagebox.text = text
-		wintofocus = title
-	else
-		messagebox =
-		{
-			title = title,
-			text = text,
-			onupdate = messagebox_onupdate,
-			onopen = function () end,
-			onclose = function () end
-		}
-		windows[title] = messagebox
-	end
+	window(title, function (self) self.text = text end, messagebox_onupdate)
 end
+
+local messagebox <const> = expmode.messagebox
 
 function expmode.addtool(title, onupdate, onopen, onclose)
 	local tool =
@@ -231,6 +245,8 @@ local foreach <const> = edicts.foreach
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
+
+local toascii <const> = text.toascii
 
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
@@ -315,7 +331,7 @@ local function edictinfo_onopen(self)
 
 	for i, field in ipairs(self.edict) do
 		local value = field.value
-		field.value = field.type == float and format('%.1f', value) or tostring(value)
+		field.value = field.type == float and format('%.1f', value) or toascii(value)
 		fields[i] = field
 	end
 
@@ -331,24 +347,12 @@ function expmode.edictinfo(edict)
 		return
 	end
 
-	local title = tostring(edict)
-	local window = windows[title]
-
-	if window then
-		wintofocus = title
-	else
-		window =
-		{
-			title = title,
-			edict = edict,
-			onupdate = edictinfo_onupdate,
-			onopen = edictinfo_onopen,
-			onclose = edictinfo_onclose
-		}
-		edictinfo_onopen(window)
-		windows[title] = window
-	end
+	window(tostring(edict), 
+		function (self) self.edict = edict end, 
+		edictinfo_onupdate, edictinfo_onopen, edictinfo_onclose)
 end
+
+local edictinfo <const> = expmode.edictinfo
 
 local function describe(edict)
 	local description = getname(edict)
@@ -409,7 +413,7 @@ local function edictstable(title, entries, zerobasedindex)
 				local locationid = location .. '##' .. row
 
 				if imSelectable(descriptionid) then
-					expmode.edictinfo(entry.edict)
+					edictinfo(entry.edict)
 				end
 				contextmenu(description)
 
@@ -457,7 +461,7 @@ local function edicts_onopen(self)
 		{
 			edict = edict,
 			isfree = isfree(edict),
-			description = description,
+			description = toascii(description),
 			location = location or '',
 			angles = angles
 		})
@@ -481,9 +485,9 @@ local function traceentity_onopen(self)
 	local edict = player.traceentity()
 
 	if edict then
-		expmode.edictinfo(edict)
+		edictinfo(edict)
 	else
-		expmode.messagebox('No entity', 'Player is not looking at any entity')
+		messagebox('No entity', 'Player is not looking at any entity')
 	end
 end
 
@@ -584,7 +588,7 @@ function expmode.edictreferences(edict)
 		edictrefs_onopen(window)
 
 		if #window.references == 0 and #window.referencedby == 0 then
-			expmode.messagebox('No references', 'Edict has no references')
+			messagebox('No references', 'Edict has no references')
 		else
 			windows[title] = window
 		end
@@ -594,6 +598,7 @@ end
 
 addseparator('Edicts')
 addedictstool('All Edicts')
+addedictstool('Secrets', edicts.issecret)
 addedictstool('Monsters', edicts.ismonster)
 addedictstool('Teleports', edicts.isteleport)
 addedictstool('Doors', edicts.isdoor)

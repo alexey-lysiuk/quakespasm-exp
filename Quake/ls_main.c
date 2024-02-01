@@ -451,6 +451,24 @@ static int LS_global_text_tint(lua_State* state)
 	return 1;
 }
 
+static int LS_global_text_toascii(lua_State* state)
+{
+	// Convert argument to function
+	lua_getglobal(state, "tostring");
+	lua_insert(state, 1);  // swap argument and function
+	lua_call(state, 1, 1);
+
+	const char* string = luaL_checkstring(state, 1);
+	size_t buffersize = strlen(string) + 1;
+	char* result = tlsf_malloc(ls_memory, buffersize);
+
+	q_strtoascii(string, result, buffersize);
+	lua_pushstring(state, result);
+	tlsf_free(ls_memory, result);
+
+	return 1;
+}
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -547,6 +565,7 @@ static void LS_InitGlobalTables(lua_State* state)
 		{
 			{ "localize", LS_global_text_localize },
 			{ "tint", LS_global_text_tint },
+			{ "toascii", LS_global_text_toascii },
 			{ NULL, NULL }
 		};
 
