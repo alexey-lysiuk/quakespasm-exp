@@ -1612,7 +1612,6 @@
 }
 {
 "classname" "func_train"
-"angle" "-1"
 "sounds" "1"
 "speed" "75"
 "targetname" "bars3"
