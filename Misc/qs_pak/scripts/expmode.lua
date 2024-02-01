@@ -487,10 +487,12 @@ local function edicts_onclose(self)
 	self.entries = nil
 end
 
-local function addedictstool(title, filter)
+function expmode.addedictstool(title, filter)
 	local tool = addtool(title, edicts_onupdate, edicts_onopen, edicts_onclose)
 	tool.filter = filter
 end
+
+local addedictstool <const> = expmode.addedictstool
 
 local function traceentity_onopen(self)
 	local edict = player.traceentity()
