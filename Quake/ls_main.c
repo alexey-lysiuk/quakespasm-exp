@@ -420,9 +420,13 @@ static int LS_global_dprint(lua_State* state)
 static int LS_global_text_localize(lua_State* state)
 {
 	const char* key = luaL_checkstring(state, 1);
-	const char* value = LOC_GetString(key);
+	const char* value = LOC_GetRawString(key);
 
-	lua_pushstring(state, value);
+	if (value)
+		lua_pushstring(state, value);
+	else
+		lua_pushvalue(state, 1);  // Push key if localization wasn't found
+
 	return 1;
 }
 
