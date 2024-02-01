@@ -596,6 +596,7 @@ end
 
 addseparator('Edicts')
 addedictstool('All Edicts')
+addedictstool('Secrets', edicts.issecret)
 addedictstool('Monsters', edicts.ismonster)
 addedictstool('Teleports', edicts.isteleport)
 addedictstool('Doors', edicts.isdoor)
