@@ -246,6 +246,8 @@ local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 
+local toascii <const> = text.toascii
+
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
 
@@ -329,7 +331,7 @@ local function edictinfo_onopen(self)
 
 	for i, field in ipairs(self.edict) do
 		local value = field.value
-		field.value = field.type == float and format('%.1f', value) or tostring(value)
+		field.value = field.type == float and format('%.1f', value) or toascii(value)
 		fields[i] = field
 	end
 
@@ -459,7 +461,7 @@ local function edicts_onopen(self)
 		{
 			edict = edict,
 			isfree = isfree(edict),
-			description = description,
+			description = toascii(description),
 			location = location or '',
 			angles = angles
 		})
