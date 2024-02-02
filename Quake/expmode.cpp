@@ -123,7 +123,25 @@ static void LS_InitImGuiBindings(lua_State* state)
 	};
 
 	luaL_newlib(state, functions);
+	lua_pushvalue(state, 1);  // copy of imgui table for addition of enums
 	lua_setglobal(state, "imgui");
+
+	lua_pushstring(state, "Cond");
+	lua_createtable(state, 0, 5);
+
+#define EXP_IMGUI_ENUM_VALUE(ENUMNAME, VALUENAME) \
+	lua_pushstring(state, #VALUENAME); lua_pushnumber(state, ImGui##ENUMNAME##_##VALUENAME); lua_rawset(state, -3);
+
+	EXP_IMGUI_ENUM_VALUE(Cond, None);
+	EXP_IMGUI_ENUM_VALUE(Cond, Always);
+	EXP_IMGUI_ENUM_VALUE(Cond, Once);
+	EXP_IMGUI_ENUM_VALUE(Cond, FirstUseEver);
+	EXP_IMGUI_ENUM_VALUE(Cond, Appearing);
+
+#undef EXP_IMGUI_ENUM_VALUE
+
+	lua_rawset(state, -3);  // add enum table to imgui table
+	lua_pop(state, 1);  // remove imgui table
 }
 
 
