@@ -112,6 +112,38 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_Button(lua_State* state)
+{
+	const char* const label = luaL_checkstring(state, 1);
+
+	const float sizex = luaL_optnumber(state, 2, 0.f);
+	const float sizey = luaL_optnumber(state, 3, 0.f);
+	const ImVec2 size(sizex, sizey);
+
+	const bool result = ImGui::Button(label, size);
+	lua_pushboolean(state, result);
+	return 1;
+}
+
+static int LS_global_imgui_Spacing(lua_State* state)
+{
+	ImGui::Spacing();
+	return 0;
+}
+
+static int LS_global_imgui_Separator(lua_State* state)
+{
+	ImGui::Separator();
+	return 0;
+}
+
+static int LS_global_imgui_SeparatorText(lua_State* state)
+{
+	const char* const label = luaL_checkstring(state, 1);
+	ImGui::SeparatorText(label);
+	return 0;
+}
+
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
 	const float posx = luaL_checknumber(state, 1);
@@ -312,6 +344,11 @@ static void LS_InitImGuiBindings(lua_State* state)
 	{
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
+
+		{ "Button", LS_global_imgui_Button },
+		{ "Spacing", LS_global_imgui_Spacing },
+		{ "Separator", LS_global_imgui_Separator },
+		{ "SeparatorText", LS_global_imgui_SeparatorText },
 
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 
