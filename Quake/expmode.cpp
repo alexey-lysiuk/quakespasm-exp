@@ -47,6 +47,86 @@ static void* exp_eventuserdata;
 
 #ifdef USE_LUA_SCRIPTING
 
+using ImGuiEndFunction = void(*)();
+
+static ImVector<ImGuiEndFunction> ls_endfuncstack;
+
+static void LS_AddToImGuiStack(ImGuiEndFunction endfunc)
+{
+	ls_endfuncstack.push_back(endfunc);
+}
+
+static void LS_RemoveFromImGuiStack(lua_State* state, ImGuiEndFunction endfunc)
+{
+	if (ls_endfuncstack.back() != endfunc)
+		luaL_error(state, "unexpected end function");  // TODO: improve error message
+
+	ls_endfuncstack.pop_back();
+	endfunc();
+}
+
+static void LS_ClearImGuiStack()
+{
+	while (!ls_endfuncstack.empty())
+	{
+		ls_endfuncstack.back()();
+		ls_endfuncstack.pop_back();
+	}
+}
+
+static int LS_global_imgui_Begin(lua_State* state)
+{
+	const char* const name = luaL_checkstring(state, 1);
+	assert(name);
+
+	if (name[0] == '\0')
+		luaL_error(state, "window name is required");
+
+	bool openvalue;
+	bool* openptr = &openvalue;
+
+	if (lua_type(state, 2) == LUA_TNIL)
+		openptr = nullptr;
+	else
+		openvalue = lua_toboolean(state, 2);
+
+	const int flags = luaL_optinteger(state, 3, 0);
+
+	LS_AddToImGuiStack(ImGui::End);
+
+	const bool result = ImGui::Begin(name, openptr, flags);
+	lua_pushboolean(state, result);
+
+	if (openptr == nullptr)
+		return 1;  // p_open == nullptr, one return value
+
+	lua_pushboolean(state, openvalue);
+	return 2;
+}
+
+static int LS_global_imgui_End(lua_State* state)
+{
+	LS_RemoveFromImGuiStack(state, ImGui::End);
+	return 0;
+}
+
+static void LS_InitImGuiBindings(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "Begin", LS_global_imgui_Begin },
+		{ "End", LS_global_imgui_End },
+
+		// ...
+
+		{ nullptr, nullptr }
+	};
+
+	luaL_newlib(state, functions);
+	lua_setglobal(state, "imgui");
+}
+
+
 static const char* ls_expmode_name = "expmode";
 
 static bool LS_CallQImGuiFunction(const char* const name)
@@ -69,8 +149,7 @@ static bool LS_CallQImGuiFunction(const char* const name)
 			else
 				LS_ReportError(state);
 
-			void ImClearStack();
-			ImClearStack();
+			LS_ClearImGuiStack();
 		}
 		else
 			lua_pop(state, 1);  // remove incorrect value for function to call
@@ -84,8 +163,7 @@ static bool LS_CallQImGuiFunction(const char* const name)
 
 void LS_InitImGuiModule(lua_State* state)
 {
-	void ImLoadBindings(lua_State* state);
-	ImLoadBindings(state);
+	LS_InitImGuiBindings(state);
 
 	// Register 'expmode' table
 	lua_createtable(state, 0, 16);

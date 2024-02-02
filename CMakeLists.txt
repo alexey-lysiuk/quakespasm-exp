@@ -235,15 +235,6 @@ set(IMGUI_SOURCES
 
 source_group("Source Files\\ImGui" FILES ${IMGUI_SOURCES})
 
-set(IMGUI_LUA_BINDINGS_DIR Quake/imgui_lua_bindings)
-
-set(IMGUI_LUA_BINDINGS_SOURCES
-	${IMGUI_LUA_BINDINGS_DIR}/imgui_lua_bindings.cpp
-	${IMGUI_LUA_BINDINGS_DIR}/imgui_iterator.h
-)
-
-source_group("Source Files\\ImGui Lua Bindings" FILES ${IMGUI_LUA_BINDINGS_SOURCES})
-
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
@@ -451,7 +442,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${COMMON_SOURCES}
 	${LUA_SOURCES}
 	${IMGUI_SOURCES}
-	${IMGUI_LUA_BINDINGS_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
 )
