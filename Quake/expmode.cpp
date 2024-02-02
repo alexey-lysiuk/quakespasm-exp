@@ -112,6 +112,22 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetNextWindowPos(lua_State* state)
+{
+	const float posx = luaL_checknumber(state, 1);
+	const float posy = luaL_checknumber(state, 2);
+	const ImVec2 pos(posx, posy);
+
+	const int cond = luaL_optinteger(state, 3, 0);
+
+	const float pivotx = luaL_optnumber(state, 4, 0.f);
+	const float pivoty = luaL_optnumber(state, 5, 0.f);
+	const ImVec2 pivot(pivotx, pivoty);
+
+	ImGui::SetNextWindowPos(pos, cond, pivot);
+	return 0;
+}
+
 struct ImGuiEnumValue
 {
 	const char* name;
@@ -258,6 +274,33 @@ static void LS_InitImGuiEnums(lua_State* state)
 	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsHovered)
 	EXP_IMGUI_ENUM_END(TableColumnFlags)
 
+	EXP_IMGUI_ENUM_BEGIN()
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, None)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoTitleBar)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoResize)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoMove)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoScrollbar)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoScrollWithMouse)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoCollapse)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, AlwaysAutoResize)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoBackground)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoSavedSettings)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoMouseInputs)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, MenuBar)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, HorizontalScrollbar)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoFocusOnAppearing)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoBringToFrontOnFocus)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, AlwaysVerticalScrollbar)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, AlwaysHorizontalScrollbar)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoNavInputs)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoNavFocus)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, UnsavedDocument)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoDocking)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoNav)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoDecoration)
+	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoInputs)
+	EXP_IMGUI_ENUM_END(WindowFlags)
+
 #undef EXP_IMGUI_ENUM_END
 #undef EXP_IMGUI_ENUM_VALUE
 #undef EXP_IMGUI_ENUM_BEGIN
@@ -269,6 +312,8 @@ static void LS_InitImGuiBindings(lua_State* state)
 	{
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
+
+		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 
 		// ...
 
