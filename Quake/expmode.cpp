@@ -76,6 +76,8 @@ static void LS_ClearImGuiStack()
 
 static int LS_global_imgui_Begin(lua_State* state)
 {
+	// TODO: check for frame scope
+
 	const char* const name = luaL_checkstring(state, 1);
 	assert(name);
 
@@ -110,6 +112,90 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static void LS_InitImGuiEnums(lua_State* state)
+{
+	assert(lua_gettop(state) == 1);
+
+#define EXP_IMGUI_ENUM_VALUE(ENUMNAME, VALUENAME) \
+	lua_pushstring(state, #VALUENAME); lua_pushnumber(state, ImGui##ENUMNAME##_##VALUENAME); lua_rawset(state, -3);
+
+	lua_pushstring(state, "Cond");
+	lua_createtable(state, 0, 5);
+	EXP_IMGUI_ENUM_VALUE(Cond, None);
+	EXP_IMGUI_ENUM_VALUE(Cond, Always);
+	EXP_IMGUI_ENUM_VALUE(Cond, Once);
+	EXP_IMGUI_ENUM_VALUE(Cond, FirstUseEver);
+	EXP_IMGUI_ENUM_VALUE(Cond, Appearing);
+	lua_rawset(state, -3);
+
+	lua_pushstring(state, "InputTextFlags");
+	lua_createtable(state, 0, 18);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, None);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsDecimal);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsHexadecimal);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsUppercase);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsNoBlank);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AutoSelectAll);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EnterReturnsTrue);
+	// TODO: Input text callback support
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCompletion);
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackHistory);
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackAlways);
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCharFilter);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AllowTabInput);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CtrlEnterForNewLine);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoHorizontalScroll);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AlwaysOverwrite);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, ReadOnly);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, Password);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoUndoRedo);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsScientific);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackResize);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackEdit);
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EscapeClearsAll);
+	lua_rawset(state, -3);
+
+	lua_pushstring(state, "SelectableFlags");
+	lua_createtable(state, 0, 6);
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, None);
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, DontClosePopups);
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, SpanAllColumns);
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowDoubleClick);
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, Disabled);
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowOverlap);
+	lua_rawset(state, -3);
+
+	lua_pushstring(state, "TableColumnFlags");
+	lua_createtable(state, 0, 24);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, None);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, Disabled);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultHide);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultSort);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthStretch);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthFixed);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoResize);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoReorder);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHide);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoClip);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSort);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortAscending);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortDescending);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderLabel);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderWidth);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortAscending);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortDescending);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentEnable);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentDisable);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, AngledHeader);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsEnabled);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsVisible);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsSorted);
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsHovered);
+	lua_rawset(state, -3);
+
+#undef EXP_IMGUI_ENUM_VALUE
+}
+
 static void LS_InitImGuiBindings(lua_State* state)
 {
 	static const luaL_Reg functions[] =
@@ -125,29 +211,14 @@ static void LS_InitImGuiBindings(lua_State* state)
 	luaL_newlib(state, functions);
 	lua_pushvalue(state, 1);  // copy of imgui table for addition of enums
 	lua_setglobal(state, "imgui");
-
-	lua_pushstring(state, "Cond");
-	lua_createtable(state, 0, 5);
-
-#define EXP_IMGUI_ENUM_VALUE(ENUMNAME, VALUENAME) \
-	lua_pushstring(state, #VALUENAME); lua_pushnumber(state, ImGui##ENUMNAME##_##VALUENAME); lua_rawset(state, -3);
-
-	EXP_IMGUI_ENUM_VALUE(Cond, None);
-	EXP_IMGUI_ENUM_VALUE(Cond, Always);
-	EXP_IMGUI_ENUM_VALUE(Cond, Once);
-	EXP_IMGUI_ENUM_VALUE(Cond, FirstUseEver);
-	EXP_IMGUI_ENUM_VALUE(Cond, Appearing);
-
-#undef EXP_IMGUI_ENUM_VALUE
-
-	lua_rawset(state, -3);  // add enum table to imgui table
+	LS_InitImGuiEnums(state);
 	lua_pop(state, 1);  // remove imgui table
 }
 
 
 static const char* ls_expmode_name = "expmode";
 
-static bool LS_CallQImGuiFunction(const char* const name)
+static bool LS_CallExpModeFunction(const char* const name)
 {
 	lua_State* state = LS_GetState();
 	assert(state);
@@ -173,7 +244,7 @@ static bool LS_CallQImGuiFunction(const char* const name)
 			lua_pop(state, 1);  // remove incorrect value for function to call
 	}
 
-	lua_pop(state, 1);  // remove qimgui table
+	lua_pop(state, 1);  // remove expmode table
 	assert(lua_gettop(state) == 0);
 
 	return result;
@@ -233,7 +304,7 @@ static void EXP_EnterMode()
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 
 #ifdef USE_LUA_SCRIPTING
-	LS_CallQImGuiFunction("onopen");
+	LS_CallExpModeFunction("onopen");
 #endif // USE_LUA_SCRIPTING
 }
 
@@ -243,7 +314,7 @@ static void EXP_ExitMode()
 		return;
 
 #ifdef USE_LUA_SCRIPTING
-	LS_CallQImGuiFunction("onclose");
+	LS_CallExpModeFunction("onclose");
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
@@ -306,7 +377,7 @@ void EXP_Update()
 	}
 
 #ifdef USE_LUA_SCRIPTING
-	if (!LS_CallQImGuiFunction("onupdate"))
+	if (!LS_CallExpModeFunction("onupdate"))
 		EXP_ExitMode();
 #endif // USE_LUA_SCRIPTING
 
