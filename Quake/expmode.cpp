@@ -112,128 +112,155 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+struct ImGuiEnumValue
+{
+	const char* name;
+	int value;
+};
+
+static void LS_InitImGuiEnum(lua_State* state, const char* name, const ImGuiEnumValue* values, size_t valuecount)
+{
+	assert(lua_gettop(state) > 0);  // imgui table must be on top of the stack
+
+	lua_pushstring(state, name);
+	lua_createtable(state, 0, valuecount);
+
+	for (size_t i = 0; i < valuecount; ++i)
+	{
+		const ImGuiEnumValue& value = values[i];
+		lua_pushstring(state, value.name);
+		lua_pushnumber(state, value.value);
+		lua_rawset(state, -3);
+	}
+
+	lua_rawset(state, -3);  // add enum table to imgui table
+}
+
 static void LS_InitImGuiEnums(lua_State* state)
 {
 	assert(lua_gettop(state) == 1);
 
+#define EXP_IMGUI_ENUM_BEGIN() \
+	{ static const ImGuiEnumValue values[] = {
+
 #define EXP_IMGUI_ENUM_VALUE(ENUMNAME, VALUENAME) \
-	lua_pushstring(state, #VALUENAME); lua_pushnumber(state, ImGui##ENUMNAME##_##VALUENAME); lua_rawset(state, -3);
+	{ #VALUENAME, ImGui##ENUMNAME##_##VALUENAME },
 
-	lua_pushstring(state, "Cond");
-	lua_createtable(state, 0, 5);
-	EXP_IMGUI_ENUM_VALUE(Cond, None);
-	EXP_IMGUI_ENUM_VALUE(Cond, Always);
-	EXP_IMGUI_ENUM_VALUE(Cond, Once);
-	EXP_IMGUI_ENUM_VALUE(Cond, FirstUseEver);
-	EXP_IMGUI_ENUM_VALUE(Cond, Appearing);
-	lua_rawset(state, -3);
+#define EXP_IMGUI_ENUM_END(ENUMNAME) \
+	}; LS_InitImGuiEnum(state, #ENUMNAME, values, Q_COUNTOF(values)); }
 
-	lua_pushstring(state, "InputTextFlags");
-	lua_createtable(state, 0, 18);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, None);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsDecimal);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsHexadecimal);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsUppercase);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsNoBlank);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AutoSelectAll);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EnterReturnsTrue);
+	EXP_IMGUI_ENUM_BEGIN()
+	EXP_IMGUI_ENUM_VALUE(Cond, None)
+	EXP_IMGUI_ENUM_VALUE(Cond, Always)
+	EXP_IMGUI_ENUM_VALUE(Cond, Once)
+	EXP_IMGUI_ENUM_VALUE(Cond, FirstUseEver)
+	EXP_IMGUI_ENUM_VALUE(Cond, Appearing)
+	EXP_IMGUI_ENUM_END(Cond)
+
+	EXP_IMGUI_ENUM_BEGIN()
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, None)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsDecimal)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsHexadecimal)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsUppercase)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsNoBlank)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AutoSelectAll)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EnterReturnsTrue)
 	// TODO: Input text callback support
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCompletion);
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackHistory);
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackAlways);
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCharFilter);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AllowTabInput);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CtrlEnterForNewLine);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoHorizontalScroll);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AlwaysOverwrite);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, ReadOnly);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, Password);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoUndoRedo);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsScientific);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackResize);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackEdit);
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EscapeClearsAll);
-	lua_rawset(state, -3);
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCompletion)
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackHistory)
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackAlways)
+	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCharFilter)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AllowTabInput)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CtrlEnterForNewLine)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoHorizontalScroll)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AlwaysOverwrite)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, ReadOnly)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, Password)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoUndoRedo)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsScientific)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackResize)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackEdit)
+	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EscapeClearsAll)
+	EXP_IMGUI_ENUM_END(InputTextFlags)
 
-	lua_pushstring(state, "SelectableFlags");
-	lua_createtable(state, 0, 6);
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, None);
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, DontClosePopups);
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, SpanAllColumns);
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowDoubleClick);
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, Disabled);
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowOverlap);
-	lua_rawset(state, -3);
+	EXP_IMGUI_ENUM_BEGIN()
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, None)
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, DontClosePopups)
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, SpanAllColumns)
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowDoubleClick)
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, Disabled)
+	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowOverlap)
+	EXP_IMGUI_ENUM_END(SelectableFlags)
 
-	lua_pushstring(state, "TableFlags");
-	lua_createtable(state, 0, 30);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, None);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Resizable);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Reorderable);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Hideable);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Sortable);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoSavedSettings);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, ContextMenuInBody);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, RowBg);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInnerH);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuterH);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInnerV);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuterV);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersH);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersV);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInner);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuter);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Borders);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBody);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBodyUntilResize);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingFixedFit);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingFixedSame);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingStretchProp);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingStretchSame);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendX);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendY);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoKeepColumnsVisible);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, PreciseWidths);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoClip);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, PadOuterX);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoPadOuterX);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoPadInnerX);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, ScrollX);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, ScrollY);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SortMulti);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SortTristate);
-	EXP_IMGUI_ENUM_VALUE(TableFlags, HighlightHoveredColumn);
-	lua_rawset(state, -3);
+	EXP_IMGUI_ENUM_BEGIN()
+	EXP_IMGUI_ENUM_VALUE(TableFlags, None)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, Resizable)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, Reorderable)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, Hideable)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, Sortable)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoSavedSettings)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, ContextMenuInBody)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, RowBg)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInnerH)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuterH)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInnerV)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuterV)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersH)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersV)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInner)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuter)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, Borders)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBody)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBodyUntilResize)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingFixedFit)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingFixedSame)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingStretchProp)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingStretchSame)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendX)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendY)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoKeepColumnsVisible)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, PreciseWidths)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoClip)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, PadOuterX)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoPadOuterX)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, NoPadInnerX)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, ScrollX)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, ScrollY)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, SortMulti)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, SortTristate)
+	EXP_IMGUI_ENUM_VALUE(TableFlags, HighlightHoveredColumn)
+	EXP_IMGUI_ENUM_END(TableFlags)
 
-	lua_pushstring(state, "TableColumnFlags");
-	lua_createtable(state, 0, 24);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, None);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, Disabled);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultHide);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultSort);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthStretch);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthFixed);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoResize);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoReorder);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHide);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoClip);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSort);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortAscending);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortDescending);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderLabel);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderWidth);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortAscending);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortDescending);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentEnable);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentDisable);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, AngledHeader);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsEnabled);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsVisible);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsSorted);
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsHovered);
-	lua_rawset(state, -3);
+	EXP_IMGUI_ENUM_BEGIN()
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, None)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, Disabled)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultHide)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultSort)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthStretch)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthFixed)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoResize)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoReorder)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHide)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoClip)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSort)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortAscending)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortDescending)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderLabel)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderWidth)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortAscending)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortDescending)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentEnable)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentDisable)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, AngledHeader)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsEnabled)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsVisible)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsSorted)
+	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsHovered)
+	EXP_IMGUI_ENUM_END(TableColumnFlags)
 
+#undef EXP_IMGUI_ENUM_END
 #undef EXP_IMGUI_ENUM_VALUE
+#undef EXP_IMGUI_ENUM_BEGIN
 }
 
 static void LS_InitImGuiBindings(lua_State* state)
