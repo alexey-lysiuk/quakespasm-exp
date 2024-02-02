@@ -491,7 +491,7 @@ function edicts.ismessage(edict)
 		return
 	end
 
-	local description = '"' .. gsub(message, '\n+', ' ') .. '"'
+	local description = '"' .. gsub(localize(message), '\n+', ' ') .. '"'
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
