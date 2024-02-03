@@ -181,6 +181,69 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_BeginTable(lua_State* state)
+{
+	const char* strid = luaL_checkstring(state, 1);
+	const int columncount = luaL_checkinteger(state, 2);
+	const int flags = luaL_optinteger(state, 3, 0);
+
+	const float sizex = luaL_optnumber(state, 4, 0.f);
+	const float sizey = luaL_optnumber(state, 5, 0.f);
+	const ImVec2 outersize(sizex, sizey);
+	const float innerwidth = luaL_optnumber(state, 6, 0.f);
+
+	const bool visible = ImGui::BeginTable(strid, columncount, flags, outersize, innerwidth);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+		LS_AddToImGuiStack(ImGui::EndTable);
+
+	return 1;
+}
+
+static int LS_global_imgui_EndTable(lua_State* state)
+{
+	LS_RemoveFromImGuiStack(state, ImGui::EndTable);
+	return 0;
+}
+
+static int LS_global_imgui_TableHeadersRow(lua_State* state)
+{
+	// TODO: check table scope
+	ImGui::TableHeadersRow();
+	return 0;
+}
+
+static int LS_global_imgui_TableNextColumn(lua_State* state)
+{
+	// TODO: check table scope
+	const bool visible = ImGui::TableNextColumn();
+	lua_pushboolean(state, visible);
+	return 1;
+}
+
+static int LS_global_imgui_TableNextRow(lua_State* state)
+{
+	// TODO: check table scope
+	const int flags = luaL_optinteger(state, 1, 0);
+	const float minrowheight = luaL_optnumber(state, 2, 0.f);
+
+	ImGui::TableNextRow(flags, minrowheight);
+	return 0;
+}
+
+static int LS_global_imgui_TableSetupColumn(lua_State* state)
+{
+	// TODO: check table scope
+	const char* label = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+	const float initwidthorweight = luaL_optnumber(state, 3, 0.f);
+	const ImGuiID userid = luaL_optinteger(state, 4, 0);
+
+	ImGui::TableSetupColumn(label, flags, initwidthorweight, userid);
+	return 0;
+}
+
 static ImVector<char> ls_inputtextbuffer;
 
 static int LS_global_imgui_Button(lua_State* state)
@@ -471,6 +534,13 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "End", LS_global_imgui_End },
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
+
+		{ "BeginTable", LS_global_imgui_BeginTable },
+		{ "EndTable", LS_global_imgui_EndTable },
+		{ "TableHeadersRow", LS_global_imgui_TableHeadersRow },
+		{ "TableNextColumn", LS_global_imgui_TableNextColumn },
+		{ "TableNextRow", LS_global_imgui_TableNextRow },
+		{ "TableSetupColumn", LS_global_imgui_TableSetupColumn },
 
 		{ "Button", LS_global_imgui_Button },
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
