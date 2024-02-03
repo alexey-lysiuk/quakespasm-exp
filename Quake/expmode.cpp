@@ -74,6 +74,47 @@ static void LS_ClearImGuiStack()
 	}
 }
 
+static int LS_global_imgui_GetMainViewport(lua_State* state)
+{
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+	// TODO: return userdata with fields accessible on demand instead of complete table
+	lua_createtable(state, 0, 5);
+
+	lua_pushnumber(state, viewport->Flags);
+	lua_setfield(state, -2, "Flags");
+
+	lua_createtable(state, 0, 2);
+	lua_pushnumber(state, viewport->Pos.x);
+	lua_setfield(state, -2, "x");
+	lua_pushnumber(state, viewport->Pos.y);
+	lua_setfield(state, -2, "y");
+	lua_setfield(state, -2, "Pos");
+
+	lua_createtable(state, 0, 2);
+	lua_pushnumber(state, viewport->Size.x);
+	lua_setfield(state, -2, "x");
+	lua_pushnumber(state, viewport->Size.y);
+	lua_setfield(state, -2, "y");
+	lua_setfield(state, -2, "Size");
+
+	lua_createtable(state, 0, 2);
+	lua_pushnumber(state, viewport->WorkPos.x);
+	lua_setfield(state, -2, "x");
+	lua_pushnumber(state, viewport->WorkPos.y);
+	lua_setfield(state, -2, "y");
+	lua_setfield(state, -2, "WorkPos");
+
+	lua_createtable(state, 0, 2);
+	lua_pushnumber(state, viewport->WorkSize.x);
+	lua_setfield(state, -2, "x");
+	lua_pushnumber(state, viewport->WorkSize.y);
+	lua_setfield(state, -2, "y");
+	lua_setfield(state, -2, "WorkSize");
+
+	return 1;
+}
+
 static int LS_global_imgui_Begin(lua_State* state)
 {
 	// TODO: check for frame scope
@@ -112,6 +153,22 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetNextWindowPos(lua_State* state)
+{
+	const float posx = luaL_checknumber(state, 1);
+	const float posy = luaL_checknumber(state, 2);
+	const ImVec2 pos(posx, posy);
+
+	const int cond = luaL_optinteger(state, 3, 0);
+
+	const float pivotx = luaL_optnumber(state, 4, 0.f);
+	const float pivoty = luaL_optnumber(state, 5, 0.f);
+	const ImVec2 pivot(pivotx, pivoty);
+
+	ImGui::SetNextWindowPos(pos, cond, pivot);
+	return 0;
+}
+
 static int LS_global_imgui_Button(lua_State* state)
 {
 	const char* const label = luaL_checkstring(state, 1);
@@ -123,6 +180,26 @@ static int LS_global_imgui_Button(lua_State* state)
 	const bool result = ImGui::Button(label, size);
 	lua_pushboolean(state, result);
 	return 1;
+}
+
+static int LS_PushImVec2(lua_State* state, const ImVec2& value)
+{
+	lua_createtable(state, 0, 2);
+	lua_pushnumber(state, value.x);
+	lua_setfield(state, -2, "x");
+	lua_pushnumber(state, value.y);
+	lua_setfield(state, -2, "y");
+	return 1;
+}
+
+static int LS_global_imgui_GetItemRectMax(lua_State* state)
+{
+	return LS_PushImVec2(state, ImGui::GetItemRectMax());
+}
+
+static int LS_global_imgui_GetItemRectMin(lua_State* state)
+{
+	return LS_PushImVec2(state, ImGui::GetItemRectMin());
 }
 
 static int LS_global_imgui_Spacing(lua_State* state)
@@ -141,22 +218,6 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 {
 	const char* const label = luaL_checkstring(state, 1);
 	ImGui::SeparatorText(label);
-	return 0;
-}
-
-static int LS_global_imgui_SetNextWindowPos(lua_State* state)
-{
-	const float posx = luaL_checknumber(state, 1);
-	const float posy = luaL_checknumber(state, 2);
-	const ImVec2 pos(posx, posy);
-
-	const int cond = luaL_optinteger(state, 3, 0);
-
-	const float pivotx = luaL_optnumber(state, 4, 0.f);
-	const float pivoty = luaL_optnumber(state, 5, 0.f);
-	const ImVec2 pivot(pivotx, pivoty);
-
-	ImGui::SetNextWindowPos(pos, cond, pivot);
 	return 0;
 }
 
@@ -342,15 +403,18 @@ static void LS_InitImGuiBindings(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
+
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
+		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 
 		{ "Button", LS_global_imgui_Button },
+		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
+		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
-
-		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 
 		// ...
 
