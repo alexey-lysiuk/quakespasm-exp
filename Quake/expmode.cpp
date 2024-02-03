@@ -137,8 +137,8 @@ static int LS_global_imgui_Begin(lua_State* state)
 
 	LS_AddToImGuiStack(ImGui::End);
 
-	const bool result = ImGui::Begin(name, openptr, flags);
-	lua_pushboolean(state, result);
+	const bool visible = ImGui::Begin(name, openptr, flags);
+	lua_pushboolean(state, visible);
 
 	if (openptr == nullptr)
 		return 1;  // p_open == nullptr, one return value
@@ -168,6 +168,20 @@ static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 	ImGui::SetNextWindowPos(pos, cond, pivot);
 	return 0;
 }
+
+static int LS_global_imgui_SetNextWindowSize(lua_State* state)
+{
+	const float sizex = luaL_checknumber(state, 1);
+	const float sizey = luaL_checknumber(state, 2);
+	const ImVec2 size(sizex, sizey);
+
+	const int cond = luaL_optinteger(state, 3, 0);
+
+	ImGui::SetNextWindowSize(size, cond);
+	return 0;
+}
+
+static ImVector<char> ls_inputtextbuffer;
 
 static int LS_global_imgui_Button(lua_State* state)
 {
@@ -200,6 +214,54 @@ static int LS_global_imgui_GetItemRectMax(lua_State* state)
 static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
 	return LS_PushImVec2(state, ImGui::GetItemRectMin());
+}
+
+static int LS_global_imgui_InputTextMultiline(lua_State* state)
+{
+	const char* label = luaL_checkstring(state, 1);
+	assert(label);
+
+	size_t textlength = 0;
+	const char* text = luaL_checklstring(state, 2, &textlength);
+	assert(text);
+
+	static constexpr lua_Integer BUFFER_SIZE_MIN = 1024;
+	static constexpr lua_Integer BUFFER_SIZE_MAX = 1024 * 1024;
+	const lua_Integer ibuffersize = luaL_checkinteger(state, 3);
+
+	const size_t buffersize = CLAMP(BUFFER_SIZE_MIN, ibuffersize, BUFFER_SIZE_MAX);
+	ls_inputtextbuffer.resize(buffersize);
+
+	if (buffersize <= textlength)
+	{
+		// Text doesn't fit the buffer, cut it
+		textlength = buffersize - 1;
+		ls_inputtextbuffer[textlength] = '\0';
+	}
+
+	char* buf = &ls_inputtextbuffer[0];
+
+	if (textlength > 0)
+		strncpy(buf, text, textlength);
+	else
+		*buf = '\0';
+
+	const float sizex = luaL_optnumber(state, 4, 0.f);
+	const float sizey = luaL_optnumber(state, 5, 0.f);
+	const ImVec2 size(sizex, sizey);
+
+	const int flags = luaL_optinteger(state, 6, 0);
+
+	// TODO: Input text callback support
+	const bool changed = ImGui::InputTextMultiline(label, buf, buffersize, size, flags);
+	lua_pushboolean(state, changed);
+
+	if (changed)
+		lua_pushstring(state, buf);
+	else
+		lua_pushvalue(state, 2);
+
+	return 2;
 }
 
 static int LS_global_imgui_Spacing(lua_State* state)
@@ -408,10 +470,12 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
+		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
 
 		{ "Button", LS_global_imgui_Button },
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
+		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
