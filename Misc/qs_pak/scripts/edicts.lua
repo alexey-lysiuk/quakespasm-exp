@@ -378,6 +378,12 @@ function edicts.isitem(edict)
 	end
 
 	local classname = edict.classname
+
+	if classname == 'item_gib' and edict.owner then
+		-- Skip Arcane Dimensions gibs
+		return
+	end
+
 	local prefixes = { 'item_', 'weapon_' }
 	local prefixlen
 
