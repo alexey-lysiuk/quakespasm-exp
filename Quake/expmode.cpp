@@ -181,6 +181,26 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
+{
+	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
+	const int flags = luaL_optinteger(state, 2, 0);
+
+	const bool visible = ImGui::BeginPopupContextItem(strid, flags);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+		LS_AddToImGuiStack(ImGui::EndPopup);
+
+	return 1;
+}
+
+static int LS_global_imgui_EndPopup(lua_State* state)
+{
+	LS_RemoveFromImGuiStack(state, ImGui::EndPopup);
+	return 0;
+}
+
 static int LS_global_imgui_BeginTable(lua_State* state)
 {
 	const char* strid = luaL_checkstring(state, 1);
@@ -358,6 +378,13 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 static int LS_global_imgui_Spacing(lua_State* state)
 {
 	ImGui::Spacing();
+	return 0;
+}
+
+static int LS_global_imgui_Text(lua_State* state)
+{
+	const char* const text = luaL_checkstring(state, 1);
+	ImGui::TextUnformatted(text);
 	return 0;
 }
 
@@ -550,6 +577,9 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
 
+		{ "BeginPopupContextItem", LS_global_imgui_BeginPopupContextItem },
+		{ "EndPopup", LS_global_imgui_EndPopup },
+
 		{ "BeginTable", LS_global_imgui_BeginTable },
 		{ "EndTable", LS_global_imgui_EndTable },
 		{ "TableHeadersRow", LS_global_imgui_TableHeadersRow },
@@ -565,6 +595,7 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
 		{ "Spacing", LS_global_imgui_Spacing },
+		{ "Text", LS_global_imgui_Text },
 
 		// ...
 
