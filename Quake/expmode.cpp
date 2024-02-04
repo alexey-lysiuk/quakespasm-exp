@@ -76,7 +76,7 @@ static bool LS_CallQImGuiFunction(const char* const name)
 			lua_pop(state, 1);  // remove incorrect value for function to call
 	}
 
-	lua_pop(state, 1);  // remove qimgui table
+	lua_pop(state, 1);  // remove expmode table
 	assert(lua_gettop(state) == 0);
 
 	return result;
@@ -137,7 +137,7 @@ static void EXP_EnterMode()
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 
 #ifdef USE_LUA_SCRIPTING
-	LS_CallQImGuiFunction("onopen");
+	LS_CallExpModeFunction("onopen");
 #endif // USE_LUA_SCRIPTING
 }
 
@@ -147,7 +147,7 @@ static void EXP_ExitMode()
 		return;
 
 #ifdef USE_LUA_SCRIPTING
-	LS_CallQImGuiFunction("onclose");
+	LS_CallExpModeFunction("onclose");
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
@@ -210,7 +210,7 @@ void EXP_Update()
 	}
 
 #ifdef USE_LUA_SCRIPTING
-	if (!LS_CallQImGuiFunction("onupdate"))
+	if (!LS_CallExpModeFunction("onupdate"))
 		EXP_ExitMode();
 #endif // USE_LUA_SCRIPTING
 
