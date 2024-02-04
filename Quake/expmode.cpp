@@ -153,6 +153,35 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
+{
+	const ImVec2 region = ImGui::GetWindowContentRegionMax();
+
+	// TODO: Optimize to avoid table creation, return two numbers maybe
+	lua_createtable(state, 0, 0);
+	lua_pushnumber(state, region.x);
+	lua_setfield(state, -2, "x");
+	lua_pushnumber(state, region.y);
+	lua_setfield(state, -2, "y");
+
+	return 1;
+}
+
+static int LS_global_imgui_SameLine(lua_State* state)
+{
+	const float offset = luaL_optnumber(state, 1, 0.f);
+	const float spacing = luaL_optnumber(state, 2, 0.f);
+
+	ImGui::SameLine(offset, spacing);
+	return 0;
+}
+
+static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
+{
+	ImGui::SetNextWindowFocus();
+	return 0;
+}
+
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
 	const float posx = luaL_checknumber(state, 1);
@@ -574,6 +603,9 @@ static void LS_InitImGuiBindings(lua_State* state)
 
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
+		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
+		{ "SameLine", LS_global_imgui_SameLine },
+		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
 
