@@ -327,10 +327,19 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	return 2;
 }
 
-static int LS_global_imgui_Spacing(lua_State* state)
+static int LS_global_imgui_Selectable(lua_State* state)
 {
-	ImGui::Spacing();
-	return 0;
+	const char* const label = luaL_checkstring(state, 1);
+	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
+	const int flags = luaL_optinteger(state, 3, 0);
+
+	const float sizex = luaL_optnumber(state, 4, 0.f);
+	const float sizey = luaL_optnumber(state, 5, 0.f);
+	const ImVec2 size(sizex, sizey);
+
+	const bool pressed = ImGui::Selectable(label, selected, flags, size);
+	lua_pushboolean(state, pressed);
+	return 1;
 }
 
 static int LS_global_imgui_Separator(lua_State* state)
@@ -343,6 +352,12 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 {
 	const char* const label = luaL_checkstring(state, 1);
 	ImGui::SeparatorText(label);
+	return 0;
+}
+
+static int LS_global_imgui_Spacing(lua_State* state)
+{
+	ImGui::Spacing();
 	return 0;
 }
 
@@ -546,9 +561,10 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
 		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
-		{ "Spacing", LS_global_imgui_Spacing },
+		{ "Selectable", LS_global_imgui_Selectable },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
+		{ "Spacing", LS_global_imgui_Spacing },
 
 		// ...
 
