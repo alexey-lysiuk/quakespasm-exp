@@ -115,6 +115,32 @@ static int LS_global_imgui_GetMainViewport(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_SetClipboardText(lua_State* state)
+{
+	const char* text = luaL_checkstring(state, 1);
+	ImGui::SetClipboardText(text);
+	return 0;
+}
+
+static int LS_global_imgui_ShowDemoWindow(lua_State* state)
+{
+	bool openvalue;
+	bool* openptr = &openvalue;
+
+	if (lua_type(state, 1) == LUA_TNIL)
+		openptr = nullptr;
+	else
+		openvalue = lua_toboolean(state, 1);
+
+	ImGui::ShowDemoWindow(openptr);
+
+	if (openptr == nullptr)
+		return 0;  // p_open == nullptr, no return value
+
+	lua_pushboolean(state, openvalue);
+	return 1;
+}
+
 static int LS_global_imgui_Begin(lua_State* state)
 {
 	// TODO: check for frame scope
@@ -412,6 +438,7 @@ static int LS_global_imgui_Spacing(lua_State* state)
 
 static int LS_global_imgui_Text(lua_State* state)
 {
+	// Format text is not supported for security reasons
 	const char* const text = luaL_checkstring(state, 1);
 	ImGui::TextUnformatted(text);
 	return 0;
@@ -600,6 +627,8 @@ static void LS_InitImGuiBindings(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
+		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
+		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
 
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
