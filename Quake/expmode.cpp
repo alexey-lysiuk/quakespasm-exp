@@ -39,13 +39,35 @@ extern "C"
 #include "quakedef.h"
 #include "ls_common.h"
 
-static bool exp_active;
-static char exp_justactived;
-
-static SDL_EventFilter exp_eventfilter;
-static void* exp_eventuserdata;
-
 #ifdef USE_LUA_SCRIPTING
+
+static bool exp_framescope;
+
+static void LS_EnsureFrameScope(lua_State* state)
+{
+	if (!exp_framescope)
+		// TODO: Add faulty function name to error message
+		luaL_error(state, "Calling ImGui function outside of frame scope");
+}
+
+uint32_t exp_windowscope;
+
+static void LS_EnsureWindowScope(lua_State* state)
+{
+	if (exp_windowscope == 0)
+		// TODO: Add faulty function name to error message
+		luaL_error(state, "Calling ImGui function outside of window scope");
+}
+
+uint32_t exp_popupscope;
+
+static void LS_EnsurePopupScope(lua_State* state)
+{
+	if (exp_popupscope == 0)
+		// TODO: Add faulty function name to error message
+		luaL_error(state, "Calling ImGui function outside of popup scope");
+}
+
 
 using ImGuiEndFunction = void(*)();
 
@@ -58,6 +80,8 @@ static void LS_AddToImGuiStack(ImGuiEndFunction endfunc)
 
 static void LS_RemoveFromImGuiStack(lua_State* state, ImGuiEndFunction endfunc)
 {
+	assert(!ls_endfuncstack.empty());
+
 	if (ls_endfuncstack.back() != endfunc)
 		luaL_error(state, "unexpected end function");  // TODO: improve error message
 
@@ -76,7 +100,10 @@ static void LS_ClearImGuiStack()
 
 static int LS_global_imgui_GetMainViewport(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	assert(viewport);
 
 	// TODO: return userdata with fields accessible on demand instead of complete table
 	lua_createtable(state, 0, 5);
@@ -117,7 +144,11 @@ static int LS_global_imgui_GetMainViewport(lua_State* state)
 
 static int LS_global_imgui_SetClipboardText(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	const char* text = luaL_checkstring(state, 1);
+	assert(text);
+
 	ImGui::SetClipboardText(text);
 	return 0;
 }
@@ -125,6 +156,8 @@ static int LS_global_imgui_SetClipboardText(lua_State* state)
 #ifndef NDEBUG
 static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	bool openvalue;
 	bool* openptr = &openvalue;
 
@@ -143,9 +176,16 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 }
 #endif // !NDEBUG
 
+static void LS_EndWindowScope()
+{
+	assert(exp_windowscope > 0);
+	ImGui::End();
+	--exp_windowscope;
+}
+
 static int LS_global_imgui_Begin(lua_State* state)
 {
-	// TODO: check for frame scope
+	LS_EnsureFrameScope(state);
 
 	const char* const name = luaL_checkstring(state, 1);
 	assert(name);
@@ -163,10 +203,11 @@ static int LS_global_imgui_Begin(lua_State* state)
 
 	const int flags = luaL_optinteger(state, 3, 0);
 
-	LS_AddToImGuiStack(ImGui::End);
-
 	const bool visible = ImGui::Begin(name, openptr, flags);
 	lua_pushboolean(state, visible);
+
+	LS_AddToImGuiStack(LS_EndWindowScope);
+	++exp_windowscope;
 
 	if (openptr == nullptr)
 		return 1;  // p_open == nullptr, one return value
@@ -177,12 +218,15 @@ static int LS_global_imgui_Begin(lua_State* state)
 
 static int LS_global_imgui_End(lua_State* state)
 {
-	LS_RemoveFromImGuiStack(state, ImGui::End);
+	LS_EnsureWindowScope(state);
+	LS_RemoveFromImGuiStack(state, LS_EndWindowScope);
 	return 0;
 }
 
 static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const ImVec2 region = ImGui::GetWindowContentRegionMax();
 	lua_pushnumber(state, region.x);
 	lua_pushnumber(state, region.y);
@@ -191,6 +235,8 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 
 static int LS_global_imgui_SameLine(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const float offset = luaL_optnumber(state, 1, 0.f);
 	const float spacing = luaL_optnumber(state, 2, 0.f);
 
@@ -200,12 +246,16 @@ static int LS_global_imgui_SameLine(lua_State* state)
 
 static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	ImGui::SetNextWindowFocus();
 	return 0;
 }
 
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	const float posx = luaL_checknumber(state, 1);
 	const float posy = luaL_checknumber(state, 2);
 	const ImVec2 pos(posx, posy);
@@ -222,6 +272,8 @@ static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 
 static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	const float sizex = luaL_checknumber(state, 1);
 	const float sizey = luaL_checknumber(state, 2);
 	const ImVec2 size(sizex, sizey);
@@ -232,8 +284,17 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 	return 0;
 }
 
+static void LS_EndPopupScope()
+{
+	assert(exp_popupscope > 0);
+	ImGui::EndPopup();
+	--exp_popupscope;
+}
+
 static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
 	const int flags = luaL_optinteger(state, 2, 0);
 
@@ -241,14 +302,18 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 	lua_pushboolean(state, visible);
 
 	if (visible)
-		LS_AddToImGuiStack(ImGui::EndPopup);
+	{
+		LS_AddToImGuiStack(LS_EndPopupScope);
+		++exp_popupscope;
+	}
 
 	return 1;
 }
 
 static int LS_global_imgui_EndPopup(lua_State* state)
 {
-	LS_RemoveFromImGuiStack(state, ImGui::EndPopup);
+	LS_EnsurePopupScope(state);
+	LS_RemoveFromImGuiStack(state, LS_EndPopupScope);
 	return 0;
 }
 
@@ -716,6 +781,13 @@ void LS_InitImGuiModule(lua_State* state)
 
 #endif // USE_LUA_SCRIPTING
 
+
+static bool exp_active;
+static char exp_justactived;
+
+static SDL_EventFilter exp_eventfilter;
+static void* exp_eventuserdata;
+
 static void EXP_EnterMode()
 {
 	if (exp_active)
@@ -830,8 +902,13 @@ void EXP_Update()
 	}
 
 #ifdef USE_LUA_SCRIPTING
+	assert(!exp_framescope);
+	exp_framescope = true;
+
 	if (!LS_CallExpModeFunction("onupdate"))
 		EXP_ExitMode();
+
+	exp_framescope = false;
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
