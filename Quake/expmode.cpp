@@ -72,9 +72,11 @@ uint32_t exp_tablescope;
 
 static void LS_EnsureTableScope(lua_State* state)
 {
-	if (exp_tablescope == 0)
-		// TODO: Add faulty function name to error message
-		luaL_error(state, "Calling ImGui function outside of table scope");
+	if (exp_tablescope > 0)
+		return;
+
+	luaL_traceback(state, state, "Calling ImGui function outside of table scope", 0);
+	lua_error(state);
 }
 
 using ImGuiEndFunction = void(*)();
@@ -373,6 +375,7 @@ static int LS_global_imgui_EndTable(lua_State* state)
 static int LS_global_imgui_TableHeadersRow(lua_State* state)
 {
 	LS_EnsureTableScope(state);
+
 	ImGui::TableHeadersRow();
 	return 0;
 }
@@ -439,12 +442,14 @@ static int LS_PushImVec2(lua_State* state, const ImVec2& value)
 static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
+
 	return LS_PushImVec2(state, ImGui::GetItemRectMax());
 }
 
 static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
+
 	return LS_PushImVec2(state, ImGui::GetItemRectMin());
 }
 
