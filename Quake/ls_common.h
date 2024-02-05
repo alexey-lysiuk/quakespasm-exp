@@ -57,9 +57,6 @@ vec_t* LS_GetVec3Value(lua_State* state, int index);
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
 
-void LS_InitMenuModule(lua_State* state);
-void LS_ShutdownMenuModule(lua_State* state);
-
 #ifdef USE_IMGUI
 void LS_InitImGuiModule(lua_State* state);
 #endif // USE_IMGUI
