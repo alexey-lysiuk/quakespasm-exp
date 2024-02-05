@@ -23,7 +23,7 @@ local function handletarget(edict, current, choice)
 	return current
 end
 
-function console.targets(choice)
+function test_targets(choice)
 	edicts.foreach(handletarget, choice)
 end
 
@@ -66,6 +66,6 @@ local function handlecounter(edict, current)
 	return current
 end
 
-function console.counters()
+function test_counters()
 	edicts.foreach(handlecounter)
 end
