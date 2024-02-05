@@ -833,6 +833,31 @@ static char exp_justactived;
 static SDL_EventFilter exp_eventfilter;
 static void* exp_eventuserdata;
 
+static SDL_Window* exp_window;
+static SDL_GLContext exp_glcontext;
+static bool exp_created;
+
+static void EXP_Create()
+{
+	assert(!exp_created);
+	exp_created = true;
+
+	ImGui::CreateContext();
+
+	ImGuiIO& io = ImGui::GetIO();
+
+	const int configargindex = COM_CheckParm("-expmodeconfig");
+	const char* const configpath = configargindex > 0
+		? (configargindex < com_argc - 1 ? com_argv[configargindex + 1] : "")
+		: "expmode.ini";
+
+	io.ConfigFlags = ImGuiConfigFlags_NoMouse;
+	io.IniFilename = configpath[0] == '\0' ? nullptr : configpath;
+
+	ImGui_ImplSDL2_InitForOpenGL(exp_window, exp_glcontext);
+	ImGui_ImplOpenGL2_Init();
+}
+
 static void EXP_EnterMode()
 {
 	if (exp_active)
@@ -843,6 +868,9 @@ static void EXP_EnterMode()
 		exp_active = false;
 		return;
 	}
+
+	if (!exp_created)
+		EXP_Create();
 
 	exp_active = true;
 
@@ -902,26 +930,17 @@ static void EXP_ExitMode()
 
 void EXP_Init(SDL_Window* window, SDL_GLContext context)
 {
-	ImGui::CreateContext();
-
-	ImGuiIO& io = ImGui::GetIO();
-
-	const int configargindex = COM_CheckParm("-expmodeconfig");
-	const char* const configpath = configargindex > 0
-		? (configargindex < com_argc - 1 ? com_argv[configargindex + 1] : "")
-		: "expmode.ini";
-
-	io.ConfigFlags = ImGuiConfigFlags_NoMouse;
-	io.IniFilename = configpath[0] == '\0' ? nullptr : configpath;
-
-	ImGui_ImplSDL2_InitForOpenGL(window, context);
-	ImGui_ImplOpenGL2_Init();
+	exp_window = window;
+	exp_glcontext = context;
 
 	Cmd_AddCommand("expmode", EXP_EnterMode);
 }
 
 void EXP_Shutdown()
 {
+	if (!exp_created)
+		return;
+
 	ImGui_ImplOpenGL2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 
