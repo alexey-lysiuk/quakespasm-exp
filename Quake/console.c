@@ -921,17 +921,6 @@ void BuildTabList (const char *partial)
 	for (alias=cmd_alias ; alias ; alias=alias->next)
 		if (!Q_strncmp (partial, alias->name, len))
 			AddToTabList (alias->name, "alias");
-
-#ifdef USE_LUA_SCRIPTING
-	const char *LS_GetNextCommand (const char *);
-	const char *luacmd = NULL;
-
-	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
-	{
-		if (!Q_strncmp (partial, luacmd, len))
-			AddToTabList (luacmd, "lua command");
-	}
-#endif // USE_LUA_SCRIPTING
 }
 
 /*

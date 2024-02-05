@@ -18,11 +18,12 @@ local imSameLine <const> = imgui.SameLine
 local imSelectable <const> = imgui.Selectable
 local imSeparator <const> = imgui.Separator
 local imSeparatorText <const> = imgui.SeparatorText
-local imSpacing <const> = imgui.Spacing
 local imSetClipboardText <const> = imgui.SetClipboardText
 local imSetNextWindowFocus <const> = imgui.SetNextWindowFocus
 local imSetNextWindowPos <const> = imgui.SetNextWindowPos
 local imSetNextWindowSize <const> = imgui.SetNextWindowSize
+local imShowDemoWindow <const> = imgui.ShowDemoWindow
+local imSpacing <const> = imgui.Spacing
 local imTableHeadersRow <const> = imgui.TableHeadersRow
 local imTableNextColumn <const> = imgui.TableNextColumn
 local imTableNextRow <const> = imgui.TableNextRow
@@ -638,8 +639,10 @@ addtool('Scratchpad', function (self)
 end)
 addtool('Stop All Sounds', function () sound.stopall() end)
 
-addseparator('Debug')
-addtool('Dear ImGui Demo', imgui.ShowDemoWindow)
+if imShowDemoWindow then
+	addseparator('Debug')
+	addtool('Dear ImGui Demo', imShowDemoWindow)
+end
 
 addseparator()
 addtool('Press ESC to exit', expmode.exit)

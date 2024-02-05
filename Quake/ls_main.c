@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static lua_State* ls_state;
 static size_t ls_quota;
-static const char* ls_console_name = "console";
 
 static tlsf_t ls_memory;
 static size_t ls_memorysize;
@@ -591,10 +590,6 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_setglobal(state, "host");
 	}
 
-	// Register namespace for console commands
-	lua_createtable(state, 0, 64);
-	lua_setglobal(state, ls_console_name);
-
 	LS_InitVec3Type(state);
 	LS_InitEdictType(state);
 }
@@ -668,7 +663,6 @@ lua_State* LS_GetState(void)
 		LS_InitStandardLibraries(state);
 		LS_InitGlobalFunctions(state);
 		LS_InitGlobalTables(state);
-		LS_InitMenuModule(state);
 
 #ifdef USE_IMGUI
 		LS_InitImGuiModule(state);
@@ -811,100 +805,10 @@ void LS_Init(void)
 void LS_Shutdown(void)
 {
 	if (ls_state != NULL)
-	{
-		LS_ShutdownMenuModule(ls_state);
 		LS_ResetState();
-	}
 
 	free(ls_memory);
 	ls_memory = NULL;
-}
-
-// Pushes console table if it exists and returns state, otherwise returns null
-static lua_State* LS_PushConsoleTable(void)
-{
-	lua_State* state = LS_GetState();
-	assert(state);
-	assert(lua_gettop(state) == 0);
-
-	lua_getglobal(state, ls_console_name);
-
-	if (lua_istable(state, 1))
-		return state;
-
-	lua_pop(state, 1);  // remove nil
-	return NULL;
-}
-
-static void LS_PopConsoleTable(lua_State* state)
-{
-	lua_pop(state, 1);  // remove console namespace table
-	assert(lua_gettop(state) == 0);
-}
-
-qboolean LS_ConsoleCommand(void)
-{
-	lua_State* state = LS_PushConsoleTable();
-	qboolean result = false;
-
-	if (state != NULL)
-	{
-		if (lua_getfield(state, -1, Cmd_Argv(0)) == LUA_TFUNCTION)
-		{
-			int argc = Cmd_Argc();
-
-			if (lua_checkstack(state, argc))
-			{
-				for (int i = 1; i < argc; ++i)
-					lua_pushstring(state, Cmd_Argv(i));
-
-				if (lua_pcall(state, argc - 1, 0, 0) != LUA_OK)
-					LS_ReportError(state);
-			}
-			else
-				Con_SafePrintf("Too many arguments (%i) to call Lua script\n", argc - 1);
-
-			result = true;  // command has been processed
-		}
-		else
-			lua_pop(state, 1);  // remove nil
-
-		LS_PopConsoleTable(state);
-	}
-
-	return result;
-}
-
-const char *LS_GetNextCommand(const char *command)
-{
-	lua_State* state = LS_PushConsoleTable();
-	const char* result = NULL;
-
-	if (state != NULL)
-	{
-		if (command == NULL)
-			lua_pushnil(state);
-		else
-			lua_pushstring(state, command);
-
-		while (lua_next(state, -2) != 0)
-		{
-			if (lua_type(state, -1) == LUA_TFUNCTION && lua_type(state, -2) == LUA_TSTRING)
-			{
-				result = lua_tostring(state, -2);
-				assert(result);
-
-				lua_pop(state, 2);  // remove name and value
-				break;
-			}
-
-			lua_pop(state, 1);  // remove value, keep name for next iteration
-		}
-
-		LS_PopConsoleTable(state);
-	}
-
-	return result;
 }
 
 #endif // USE_LUA_SCRIPTING

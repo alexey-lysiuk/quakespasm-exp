@@ -64,7 +64,6 @@ set(COMMON_SOURCES
 	Quake/ls_common.h
 	Quake/ls_edict.c
 	Quake/ls_main.c
-	Quake/ls_menu.c
 	Quake/ls_vec3.c
 	Quake/main_sdl.c
 	Quake/mathlib.c
@@ -615,8 +614,6 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		maps/sm27_bear@92ba.ent
 		scripts/edicts.lua
 		scripts/expmode.lua
-		scripts/input.lua
-		scripts/menus.lua
 		default.cfg
 	)
 

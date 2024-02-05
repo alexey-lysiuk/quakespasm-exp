@@ -499,20 +499,6 @@ void Cmd_List_f (void)
 		count++;
 	}
 
-#ifdef USE_LUA_SCRIPTING
-	const char *LS_GetNextCommand (const char *);
-	const char *luacmd = NULL;
-
-	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
-	{
-		if (partial && Q_strncmp (partial, luacmd, len))
-			continue;
-
-		Con_SafePrintf ("   %s\n", luacmd);
-		count++;
-	}
-#endif // USE_LUA_SCRIPTING
-
 	Con_SafePrintf ("%i commands", count);
 	if (partial)
 	{
@@ -573,21 +559,6 @@ void Cmd_Apropos_f(void)
 			Con_SafePrintf ("%s (current value: \"%s\")\n", Cmd_TintSubstring(var->name, substr, tmpbuf, sizeof(tmpbuf)), var->string);
 		}
 	}
-
-#ifdef USE_LUA_SCRIPTING
-	const char *LS_GetNextCommand (const char *);
-	const char *luacmd = NULL;
-
-	while ((luacmd = LS_GetNextCommand (luacmd)) != NULL)
-	{
-		if (q_strcasestr(luacmd, substr))
-		{
-			hits++;
-			Con_SafePrintf ("%s\n", Cmd_TintSubstring(luacmd, substr, tmpbuf, sizeof(tmpbuf)));
-		}
-	}
-#endif // USE_LUA_SCRIPTING
-
 	if (!hits)
 		Con_SafePrintf ("no cvars nor commands contain that substring\n");
 }
@@ -837,16 +808,8 @@ void	Cmd_ExecuteString (const char *text, cmd_source_t src)
 	}
 
 // check cvars
-	if (Cvar_Command ())
-		return;
-
-#ifdef USE_LUA_SCRIPTING
-	qboolean LS_ConsoleCommand (void);
-	if (LS_ConsoleCommand())
-		return;
-#endif // USE_LUA_SCRIPTING
-
-	Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
+	if (!Cvar_Command ())
+		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 }
 
 

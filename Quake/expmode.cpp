@@ -122,6 +122,7 @@ static int LS_global_imgui_SetClipboardText(lua_State* state)
 	return 0;
 }
 
+#ifndef NDEBUG
 static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 {
 	bool openvalue;
@@ -140,6 +141,7 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 	lua_pushboolean(state, openvalue);
 	return 1;
 }
+#endif // !NDEBUG
 
 static int LS_global_imgui_Begin(lua_State* state)
 {
@@ -628,7 +630,9 @@ static void LS_InitImGuiBindings(lua_State* state)
 	{
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
+#ifndef NDEBUG
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
+#endif // !NDEBUG
 
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
