@@ -184,15 +184,9 @@ static int LS_global_imgui_End(lua_State* state)
 static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
 	const ImVec2 region = ImGui::GetWindowContentRegionMax();
-
-	// TODO: Optimize to avoid table creation, return two numbers maybe
-	lua_createtable(state, 0, 0);
 	lua_pushnumber(state, region.x);
-	lua_setfield(state, -2, "x");
 	lua_pushnumber(state, region.y);
-	lua_setfield(state, -2, "y");
-
-	return 1;
+	return 2;
 }
 
 static int LS_global_imgui_SameLine(lua_State* state)
