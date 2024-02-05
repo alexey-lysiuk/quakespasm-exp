@@ -68,6 +68,14 @@ static void LS_EnsurePopupScope(lua_State* state)
 		luaL_error(state, "Calling ImGui function outside of popup scope");
 }
 
+uint32_t exp_tablescope;
+
+static void LS_EnsureTableScope(lua_State* state)
+{
+	if (exp_tablescope == 0)
+		// TODO: Add faulty function name to error message
+		luaL_error(state, "Calling ImGui function outside of table scope");
+}
 
 using ImGuiEndFunction = void(*)();
 
@@ -179,8 +187,9 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 static void LS_EndWindowScope()
 {
 	assert(exp_windowscope > 0);
-	ImGui::End();
 	--exp_windowscope;
+
+	ImGui::End();
 }
 
 static int LS_global_imgui_Begin(lua_State* state)
@@ -219,6 +228,7 @@ static int LS_global_imgui_Begin(lua_State* state)
 static int LS_global_imgui_End(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
+
 	LS_RemoveFromImGuiStack(state, LS_EndWindowScope);
 	return 0;
 }
@@ -287,8 +297,9 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 static void LS_EndPopupScope()
 {
 	assert(exp_popupscope > 0);
-	ImGui::EndPopup();
 	--exp_popupscope;
+
+	ImGui::EndPopup();
 }
 
 static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
@@ -296,7 +307,7 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
-	const int flags = luaL_optinteger(state, 2, 0);
+	const int flags = luaL_optinteger(state, 2, 1);
 
 	const bool visible = ImGui::BeginPopupContextItem(strid, flags);
 	lua_pushboolean(state, visible);
@@ -313,12 +324,23 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 static int LS_global_imgui_EndPopup(lua_State* state)
 {
 	LS_EnsurePopupScope(state);
+
 	LS_RemoveFromImGuiStack(state, LS_EndPopupScope);
 	return 0;
 }
 
+static void LS_EndTableScope()
+{
+	assert(exp_tablescope > 0);
+	--exp_tablescope;
+
+	ImGui::EndTable();
+}
+
 static int LS_global_imgui_BeginTable(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const char* strid = luaL_checkstring(state, 1);
 	const int columncount = luaL_checkinteger(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
@@ -332,27 +354,33 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 	lua_pushboolean(state, visible);
 
 	if (visible)
-		LS_AddToImGuiStack(ImGui::EndTable);
+	{
+		LS_AddToImGuiStack(LS_EndTableScope);
+		++exp_tablescope;
+	}
 
 	return 1;
 }
 
 static int LS_global_imgui_EndTable(lua_State* state)
 {
-	LS_RemoveFromImGuiStack(state, ImGui::EndTable);
+	LS_EnsureTableScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndTableScope);
 	return 0;
 }
 
 static int LS_global_imgui_TableHeadersRow(lua_State* state)
 {
-	// TODO: check table scope
+	LS_EnsureTableScope(state);
 	ImGui::TableHeadersRow();
 	return 0;
 }
 
 static int LS_global_imgui_TableNextColumn(lua_State* state)
 {
-	// TODO: check table scope
+	LS_EnsureTableScope(state);
+
 	const bool visible = ImGui::TableNextColumn();
 	lua_pushboolean(state, visible);
 	return 1;
@@ -360,7 +388,8 @@ static int LS_global_imgui_TableNextColumn(lua_State* state)
 
 static int LS_global_imgui_TableNextRow(lua_State* state)
 {
-	// TODO: check table scope
+	LS_EnsureTableScope(state);
+
 	const int flags = luaL_optinteger(state, 1, 0);
 	const float minrowheight = luaL_optnumber(state, 2, 0.f);
 
@@ -370,7 +399,8 @@ static int LS_global_imgui_TableNextRow(lua_State* state)
 
 static int LS_global_imgui_TableSetupColumn(lua_State* state)
 {
-	// TODO: check table scope
+	LS_EnsureTableScope(state);
+
 	const char* label = luaL_checkstring(state, 1);
 	const int flags = luaL_optinteger(state, 2, 0);
 	const float initwidthorweight = luaL_optnumber(state, 3, 0.f);
@@ -384,8 +414,9 @@ static ImVector<char> ls_inputtextbuffer;
 
 static int LS_global_imgui_Button(lua_State* state)
 {
-	const char* const label = luaL_checkstring(state, 1);
+	LS_EnsureWindowScope(state);
 
+	const char* const label = luaL_checkstring(state, 1);
 	const float sizex = luaL_optnumber(state, 2, 0.f);
 	const float sizey = luaL_optnumber(state, 3, 0.f);
 	const ImVec2 size(sizex, sizey);
@@ -407,16 +438,20 @@ static int LS_PushImVec2(lua_State* state, const ImVec2& value)
 
 static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
 	return LS_PushImVec2(state, ImGui::GetItemRectMax());
 }
 
 static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
 	return LS_PushImVec2(state, ImGui::GetItemRectMin());
 }
 
 static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const char* label = luaL_checkstring(state, 1);
 	assert(label);
 
@@ -465,6 +500,8 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 
 static int LS_global_imgui_Selectable(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const char* const label = luaL_checkstring(state, 1);
 	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
 	const int flags = luaL_optinteger(state, 3, 0);
@@ -480,12 +517,16 @@ static int LS_global_imgui_Selectable(lua_State* state)
 
 static int LS_global_imgui_Separator(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	ImGui::Separator();
 	return 0;
 }
 
 static int LS_global_imgui_SeparatorText(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	const char* const label = luaL_checkstring(state, 1);
 	ImGui::SeparatorText(label);
 	return 0;
@@ -493,12 +534,16 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 
 static int LS_global_imgui_Spacing(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	ImGui::Spacing();
 	return 0;
 }
 
 static int LS_global_imgui_Text(lua_State* state)
 {
+	LS_EnsureWindowScope(state);
+
 	// Format text is not supported for security reasons
 	const char* const text = luaL_checkstring(state, 1);
 	ImGui::TextUnformatted(text);
