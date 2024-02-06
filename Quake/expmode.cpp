@@ -307,7 +307,7 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
-	const int flags = luaL_optinteger(state, 2, 0);
+	const int flags = luaL_optinteger(state, 2, 1);
 
 	const bool visible = ImGui::BeginPopupContextItem(strid, flags);
 	lua_pushboolean(state, visible);
