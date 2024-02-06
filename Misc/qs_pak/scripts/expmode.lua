@@ -53,6 +53,18 @@ function expmode.exit()
 	shouldexit = true
 end
 
+function expmode.safecall(func, ...)
+	status, result_or_error = pcall(func, ...)
+
+	if status then
+		return status, result_or_error
+	else
+		print(result_or_error)
+	end
+end
+
+local safecall <const> = expmode.safecall
+
 local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local function updatetoolwindow()
@@ -80,8 +92,7 @@ local function updatetoolwindow()
 			if imButton(title, toolwidgedwidth, 0) then
 				if windows[title] then
 					wintofocus = title
-				else
-					tool:onopen()
+				elseif safecall(tool.onopen, tool) then
 					windows[title] = tool
 				end
 			end
@@ -120,7 +131,14 @@ local function updatewindows()
 			wintofocus = nil
 		end
 
-		if not window:onupdate() then
+		local status, keepopen = safecall(window.onupdate, window)
+
+		if status then
+			if not keepopen then
+				insert(closedwindows, window)
+			end
+		else
+			-- Error occurred, close this window
 			insert(closedwindows, window)
 		end
 	end
@@ -155,13 +173,13 @@ function expmode.onopen()
 	shouldexit = false
 
 	for _, window in pairs(windows) do
-		window:onopen()
+		safecall(window.onopen, window)
 	end
 end
 
 function expmode.onclose()
 	for _, window in pairs(windows) do
-		window:onclose()
+		safecall(window.onclose, window)
 	end
 end
 
@@ -183,8 +201,11 @@ function expmode.window(title, construct, onupdate, onopen, onclose)
 			construct(window)
 		end
 
-		window:onopen()
-		windows[title] = window
+		if safecall(window.onopen, window) then
+			windows[title] = window
+		else
+			return
+		end
 	end
 
 	return window
@@ -599,7 +620,10 @@ function expmode.edictreferences(edict)
 			onopen = edictrefs_onopen,
 			onclose = edictrefs_onclose
 		}
-		edictrefs_onopen(window)
+
+		if not safecall(edictrefs_onopen, window) then
+			return
+		end
 
 		if #window.references == 0 and #window.referencedby == 0 then
 			messagebox('No references', 'Edict has no references')
