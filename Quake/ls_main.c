@@ -341,11 +341,10 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 
 void LS_ReportError(lua_State* state)
 {
-	Con_SafePrintf("Error while executing Lua script\n");
-
 	const char* errormessage = lua_tostring(state, -1);
-	if (errormessage)
-		Con_SafePrintf("%s\n", errormessage);
+	if (!errormessage)
+		errormessage = "Unknown error occurred while executing Lua script";
+	Con_SafePrintf("%s\n", errormessage);
 
 	lua_pop(state, 1);  // remove error message
 }
@@ -400,6 +399,53 @@ static int LS_global_printmemstats(lua_State* state)
 		stats.usedbytes, stats.usedblocks, stats.freebytes, stats.freeblocks, totalbytes, totalblocks);
 
 	return 0;
+}
+
+static int LS_global_stacktrace(lua_State* state)
+{
+	luaL_traceback(state, state, NULL, 1);
+
+	const char* traceback = lua_tostring(state, 1);
+	assert(traceback);
+
+	size_t length = strlen(traceback);
+	assert(length > 0);
+
+	char* cleaned = tlsf_malloc(ls_memory, length + 1);
+	size_t d = 0;
+	qboolean skipnextquote = false;
+
+	for (size_t s = 0; s < length;)
+	{
+		char ch = traceback[s];
+
+		if (ch == '[' && strncmp(&traceback[s], "[string \"", 9) == 0)
+		{
+			s += 9;
+			skipnextquote = true;
+			continue;
+		}
+
+		if (ch == '\t')
+			ch = ' ';
+		else if (skipnextquote && ch == '"' && traceback[s + 1] == ']')
+		{
+			s += 2;
+			skipnextquote = false;
+			continue;
+		}
+
+		cleaned[d] = ch;
+		++s;
+		++d;
+	}
+
+	cleaned[d] = '\0';
+
+	lua_pushstring(state, cleaned);
+	tlsf_free(ls_memory, cleaned);
+
+	return 1;
 }
 
 static int LS_global_dprint(lua_State* state)
@@ -522,6 +568,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 
 		// Helper functions
 		{ "printmemstats", LS_global_printmemstats },
+		{ "stacktrace", LS_global_stacktrace },
 		{ "dprint", LS_global_dprint },
 
 		{ NULL, NULL }
