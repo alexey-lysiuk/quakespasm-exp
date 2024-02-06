@@ -72,11 +72,9 @@ uint32_t exp_tablescope;
 
 static void LS_EnsureTableScope(lua_State* state)
 {
-	if (exp_tablescope > 0)
-		return;
-
-	luaL_traceback(state, state, "Calling ImGui function outside of table scope", 0);
-	lua_error(state);
+	if (exp_tablescope == 0)
+		// TODO: Add faulty function name to error message
+		luaL_error(state, "Calling ImGui function outside of table scope");
 }
 
 using ImGuiEndFunction = void(*)();
