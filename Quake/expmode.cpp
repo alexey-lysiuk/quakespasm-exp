@@ -906,7 +906,8 @@ static void EXP_EnterMode()
 	else if (key_dest == key_menu)
 		M_ToggleMenu_f();
 
-	// Mimin menu mode behavior, e.g. pause game in single player
+	// Mimic menu mode behavior, e.g. pause game in single player
+	m_state = m_none;
 	key_dest = key_menu;
 
 	// Disallow in-game input, and enable mouse cursor
