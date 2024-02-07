@@ -44,6 +44,17 @@ typedef struct
 } LS_MemoryStats;
 
 
+void* LS_TLSF_malloc(lua_State* state, size_t size)
+{
+	void* result = tlsf_malloc(ls_memory, size);
+
+	if (!result)
+		luaL_error(state, "Unable to allocation %I bytes", size);
+
+	return result;
+}
+
+
 void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
 {
 	int* result = lua_newuserdatauv(state, type->size, 0);
@@ -227,9 +238,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = tlsf_malloc(ls_memory, length);
-	assert(script);
-
+	char* script = LS_TLSF_malloc(state, length);
 	int bytesread = Sys_FileRead(handle, script, length);
 	COM_CloseFile(handle);
 
@@ -434,7 +443,7 @@ static int LS_global_text_tint(lua_State* state)
 {
 	const char* string = luaL_checkstring(state, 1);
 	size_t length = strlen(string);
-	char* result = tlsf_malloc(ls_memory, length + 1);
+	char* result = LS_TLSF_malloc(state, length + 1);
 
 	for (size_t i = 0; i < length; ++i)
 	{
@@ -464,7 +473,7 @@ static int LS_global_text_toascii(lua_State* state)
 
 	const char* string = luaL_checkstring(state, 1);
 	size_t buffersize = strlen(string) + 1;
-	char* result = tlsf_malloc(ls_memory, buffersize);
+	char* result = LS_TLSF_malloc(state, buffersize);
 
 	q_strtoascii(string, result, buffersize);
 	lua_pushstring(state, result);
