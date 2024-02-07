@@ -384,10 +384,8 @@ static void LS_MemoryStatsCollector(void* pointer, size_t size, int isused, void
 	}
 }
 
-static int LS_global_printmemstats(lua_State* state)
+static int LS_global_memstats(lua_State* state)
 {
-	(void)state;
-
 	LS_MemoryStats stats;
 	memset(&stats, 0, sizeof stats);
 	tlsf_walk_pool(tlsf_get_pool(ls_memory), LS_MemoryStatsCollector, &stats);
@@ -396,10 +394,13 @@ static int LS_global_printmemstats(lua_State* state)
 	size_t totalbytes = stats.usedbytes + stats.freebytes + tlsf_size() +
 		tlsf_pool_overhead() + tlsf_alloc_overhead() * (totalblocks - 1);
 
-	Con_SafePrintf("Used : %zu bytes, %zu blocks\nFree : %zu bytes, %zu blocks\nTotal: %zu bytes, %zu blocks\n",
+	char buffer[1024];
+	int length = q_snprintf(buffer, sizeof buffer, "Used : %zu bytes, %zu blocks\nFree : %zu bytes, %zu blocks\nTotal: %zu bytes, %zu blocks",
 		stats.usedbytes, stats.usedblocks, stats.freebytes, stats.freeblocks, totalbytes, totalblocks);
+	assert(length > 0);
 
-	return 0;
+	lua_pushlstring(state, buffer, length);
+	return 1;
 }
 
 static int LS_global_dprint(lua_State* state)
@@ -521,7 +522,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
-		{ "printmemstats", LS_global_printmemstats },
+		{ "memstats", LS_global_memstats },
 		{ "dprint", LS_global_dprint },
 
 		{ NULL, NULL }
