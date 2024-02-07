@@ -14,11 +14,13 @@ local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
 local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
+local imIsWindowAppearing <const> = imgui.IsWindowAppearing
 local imSameLine <const> = imgui.SameLine
 local imSelectable <const> = imgui.Selectable
 local imSeparator <const> = imgui.Separator
 local imSeparatorText <const> = imgui.SeparatorText
 local imSetClipboardText <const> = imgui.SetClipboardText
+local imSetKeyboardFocusHere <const> = imgui.SetKeyboardFocusHere
 local imSetNextWindowFocus <const> = imgui.SetNextWindowFocus
 local imSetNextWindowPos <const> = imgui.SetNextWindowPos
 local imSetNextWindowSize <const> = imgui.SetNextWindowSize
@@ -652,6 +654,10 @@ addtool('Scratchpad', function (self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
+		if imIsWindowAppearing() then
+			imSetKeyboardFocusHere()
+		end
+
 		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, -1, -1, imInputTextAllowTabInput)
 	end
 
