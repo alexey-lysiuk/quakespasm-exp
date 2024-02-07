@@ -158,13 +158,9 @@ function expmode.onupdate()
 		screenheight = viewport.Size.y
 	end
 
-	local keepopen = not shouldexit
+	updatewindows()
 
-	if keepopen then
-		updatewindows()
-	end
-
-	return keepopen
+	return not shouldexit
 end
 
 function expmode.onopen()
