@@ -44,6 +44,17 @@ typedef struct
 } LS_MemoryStats;
 
 
+void* LS_TLSF_malloc(lua_State* state, size_t size)
+{
+	void* result = tlsf_malloc(ls_memory, size);
+
+	if (!result)
+		luaL_error(state, "Unable to allocation %I bytes", size);
+
+	return result;
+}
+
+
 void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
 {
 	int* result = lua_newuserdatauv(state, type->size, 0);
@@ -227,9 +238,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = tlsf_malloc(ls_memory, length);
-	assert(script);
-
+	char* script = LS_TLSF_malloc(state, length);
 	int bytesread = Sys_FileRead(handle, script, length);
 	COM_CloseFile(handle);
 
@@ -383,10 +392,8 @@ static void LS_MemoryStatsCollector(void* pointer, size_t size, int isused, void
 	}
 }
 
-static int LS_global_printmemstats(lua_State* state)
+static int LS_global_memstats(lua_State* state)
 {
-	(void)state;
-
 	LS_MemoryStats stats;
 	memset(&stats, 0, sizeof stats);
 	tlsf_walk_pool(tlsf_get_pool(ls_memory), LS_MemoryStatsCollector, &stats);
@@ -395,10 +402,13 @@ static int LS_global_printmemstats(lua_State* state)
 	size_t totalbytes = stats.usedbytes + stats.freebytes + tlsf_size() +
 		tlsf_pool_overhead() + tlsf_alloc_overhead() * (totalblocks - 1);
 
-	Con_SafePrintf("Used : %zu bytes, %zu blocks\nFree : %zu bytes, %zu blocks\nTotal: %zu bytes, %zu blocks\n",
+	char buffer[1024];
+	int length = q_snprintf(buffer, sizeof buffer, "Used : %zu bytes, %zu blocks\nFree : %zu bytes, %zu blocks\nTotal: %zu bytes, %zu blocks",
 		stats.usedbytes, stats.usedblocks, stats.freebytes, stats.freeblocks, totalbytes, totalblocks);
+	assert(length > 0);
 
-	return 0;
+	lua_pushlstring(state, buffer, length);
+	return 1;
 }
 
 static int LS_global_stacktrace(lua_State* state)
@@ -479,7 +489,7 @@ static int LS_global_text_tint(lua_State* state)
 {
 	const char* string = luaL_checkstring(state, 1);
 	size_t length = strlen(string);
-	char* result = tlsf_malloc(ls_memory, length + 1);
+	char* result = LS_TLSF_malloc(state, length + 1);
 
 	for (size_t i = 0; i < length; ++i)
 	{
@@ -509,7 +519,7 @@ static int LS_global_text_toascii(lua_State* state)
 
 	const char* string = luaL_checkstring(state, 1);
 	size_t buffersize = strlen(string) + 1;
-	char* result = tlsf_malloc(ls_memory, buffersize);
+	char* result = LS_TLSF_malloc(state, buffersize);
 
 	q_strtoascii(string, result, buffersize);
 	lua_pushstring(state, result);
@@ -567,7 +577,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
-		{ "printmemstats", LS_global_printmemstats },
+		{ "memstats", LS_global_memstats },
 		{ "stacktrace", LS_global_stacktrace },
 		{ "dprint", LS_global_dprint },
 
