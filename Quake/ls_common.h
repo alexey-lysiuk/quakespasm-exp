@@ -20,8 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef QUAKE_LUA_SCRIPTING_COMMON_H
-#define QUAKE_LUA_SCRIPTING_COMMON_H
+#pragma once
 
 #ifdef USE_LUA_SCRIPTING
 
@@ -62,5 +61,3 @@ void LS_InitImGuiModule(lua_State* state);
 #endif // USE_IMGUI
 
 #endif // USE_LUA_SCRIPTING
-
-#endif // QUAKE_LUA_SCRIPTING_COMMON_H
