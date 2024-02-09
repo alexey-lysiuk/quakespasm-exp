@@ -815,8 +815,11 @@ static bool LS_CallExpModeFunction(const char* const name)
 	return result;
 }
 
-void LS_InitImGuiModule(lua_State* state)
+static void LS_InitExpMode()
 {
+	lua_State* state = LS_GetState();
+	assert(state);
+
 	LS_InitImGuiBindings(state);
 
 	// Register 'expmode' table
@@ -858,6 +861,10 @@ static void EXP_Create()
 
 	ImGui_ImplSDL2_InitForOpenGL(exp_window, exp_glcontext);
 	ImGui_ImplOpenGL2_Init();
+
+#ifdef USE_LUA_SCRIPTING
+	LS_InitExpMode();
+#endif // USE_LUA_SCRIPTING
 }
 
 static void EXP_EnterMode()
