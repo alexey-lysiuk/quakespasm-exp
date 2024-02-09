@@ -91,6 +91,50 @@ void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDat
 }
 
 
+static char* LS_CleanErrorMessage(lua_State* state, const char* message)
+{
+	assert(message);
+
+	size_t length = strlen(message);
+	assert(length > 0);
+
+	char* result = LS_TLSF_malloc(state, length + 1);
+	assert(result);
+
+	qboolean skipnextquote = false;
+	size_t d = 0;
+
+	for (size_t s = 0; s < length;)
+	{
+		char ch = message[s];
+
+		if (ch == '[' && strncmp(&message[s], "[string \"", 9) == 0)
+		{
+			s += 9;
+			skipnextquote = true;
+			continue;
+		}
+
+		if (ch == '\t')
+			ch = ' ';
+		else if (skipnextquote && ch == '"' && message[s + 1] == ']')
+		{
+			s += 2;
+			skipnextquote = false;
+			continue;
+		}
+
+		result[d] = ch;
+		++s;
+		++d;
+	}
+
+	result[d] = '\0';
+
+	return result;
+}
+
+
 //
 // Expose 'player' global table with corresponding helper functions
 //
@@ -350,10 +394,19 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 
 void LS_ReportError(lua_State* state)
 {
+	assert(lua_gettop(state) > 0);
+
 	const char* errormessage = lua_tostring(state, -1);
-	if (!errormessage)
-		errormessage = "Unknown error occurred while executing Lua script";
-	Con_SafePrintf("%s\n", errormessage);
+	if (errormessage)
+	{
+		char* cleanerror = LS_CleanErrorMessage(state, errormessage);
+		assert(cleanerror);
+
+		Con_SafePrintf("%s\n", cleanerror);
+		tlsf_free(ls_memory, cleanerror);
+	}
+	else
+		Con_SafePrintf("Unknown error occurred while executing Lua script\n");
 
 	lua_pop(state, 1);  // remove error message
 }
@@ -418,39 +471,8 @@ static int LS_global_stacktrace(lua_State* state)
 	const char* traceback = lua_tostring(state, 1);
 	assert(traceback);
 
-	size_t length = strlen(traceback);
-	assert(length > 0);
-
-	char* cleaned = tlsf_malloc(ls_memory, length + 1);
-	size_t d = 0;
-	qboolean skipnextquote = false;
-
-	for (size_t s = 0; s < length;)
-	{
-		char ch = traceback[s];
-
-		if (ch == '[' && strncmp(&traceback[s], "[string \"", 9) == 0)
-		{
-			s += 9;
-			skipnextquote = true;
-			continue;
-		}
-
-		if (ch == '\t')
-			ch = ' ';
-		else if (skipnextquote && ch == '"' && traceback[s + 1] == ']')
-		{
-			s += 2;
-			skipnextquote = false;
-			continue;
-		}
-
-		cleaned[d] = ch;
-		++s;
-		++d;
-	}
-
-	cleaned[d] = '\0';
+	char* cleaned = LS_CleanErrorMessage(state, traceback);
+	assert(cleaned);
 
 	lua_pushstring(state, cleaned);
 	tlsf_free(ls_memory, cleaned);
@@ -788,6 +810,20 @@ static const char* LS_global_reader(lua_State* state, void* data, size_t* size)
 	return result;
 }
 
+static int LS_ConsoleErrorHandler(lua_State* state)
+{
+	const char* message = lua_tostring(state, 1);
+	assert(message);
+
+	char* cleanmessage = LS_CleanErrorMessage(state, message);
+	assert(cleanmessage);
+
+	lua_pushstring(state, cleanmessage);
+	tlsf_free(ls_memory, cleanmessage);
+
+	return 1;
+}
+
 static void LS_Exec_f(void)
 {
 	int argc = Cmd_Argc();
@@ -797,6 +833,8 @@ static void LS_Exec_f(void)
 		lua_State* state = LS_GetState();
 		assert(state);
 		assert(lua_gettop(state) == 0);
+
+		lua_pushcfunction(state, LS_ConsoleErrorHandler);
 
 		const char* args = Cmd_Args();
 		assert(args);
@@ -813,7 +851,7 @@ static void LS_Exec_f(void)
 			script += 1;
 		}
 
-		static const char* scriptname = "script";
+		static const char* scriptname = "console";
 		static const char* scriptmode = "t";
 
 		LS_ReaderData data = { script, scriptlength, 0 };
@@ -826,11 +864,11 @@ static void LS_Exec_f(void)
 		}
 
 		if (status == LUA_OK)
-			status = lua_pcall(state, 0, LUA_MULTRET, 0);
+			status = lua_pcall(state, 0, LUA_MULTRET, 1);
 
 		if (status == LUA_OK)
 		{
-			int resultcount = lua_gettop(state);
+			int resultcount = lua_gettop(state) - 1;  // without error handler
 
 			if (resultcount > 0)
 			{
@@ -838,15 +876,16 @@ static void LS_Exec_f(void)
 
 				// Print all results
 				lua_pushcfunction(state, LS_global_print);
-				lua_insert(state, 1);
+				lua_insert(state, 2);
 				lua_pcall(state, resultcount, 0, 0);
 
-				lua_settop(state, 0);  // clear stack
+				lua_settop(state, 1);  // remove results
 			}
 		}
 		else
 			LS_ReportError(state);
 
+		lua_pop(state, 1);  // remove error handler
 		assert(lua_gettop(state) == 0);
 	}
 	else
