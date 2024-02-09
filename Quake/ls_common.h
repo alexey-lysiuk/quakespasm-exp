@@ -30,8 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 lua_State* LS_GetState(void);
 
-// Report error with message on the top of the stack
-void LS_ReportError(lua_State* state);
+// Default message handler for lua_pcall() and xpcall()
+int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
 

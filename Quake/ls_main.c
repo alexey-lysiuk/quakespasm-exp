@@ -348,15 +348,59 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 	luaL_error(state, "infinite loop detected, aborting");
 }
 
-void LS_ReportError(lua_State* state)
+int LS_ErrorHandler(lua_State* state)
 {
-	Con_SafePrintf("Error while executing Lua script\n");
+	const char* message = NULL;
+	int top = lua_gettop(state);
 
-	const char* errormessage = lua_tostring(state, -1);
-	if (errormessage)
-		Con_SafePrintf("%s\n", errormessage);
+	if (top > 0)
+		message = lua_tostring(state, 1);
 
-	lua_pop(state, 1);  // remove error message
+	luaL_traceback(state, state, message, 1);
+
+	size_t length = 0;
+	const char* traceback = lua_tolstring(state, top + 1, &length);
+
+	assert(traceback);
+	assert(length > 0);
+
+	char* cleaned = LS_TLSF_malloc(state, length + 1);
+	assert(cleaned);
+
+	qboolean skipnextquote = false;
+	size_t d = 0;
+
+	for (size_t s = 0; s < length;)
+	{
+		char ch = traceback[s];
+
+		if (ch == '[' && strncmp(&traceback[s], "[string \"", 9) == 0)
+		{
+			s += 9;
+			skipnextquote = true;
+			continue;
+		}
+
+		if (ch == '\t')
+			ch = ' ';
+		else if (skipnextquote && ch == '"' && traceback[s + 1] == ']')
+		{
+			s += 2;
+			skipnextquote = false;
+			continue;
+		}
+
+		cleaned[d] = ch;
+		++s;
+		++d;
+	}
+
+	cleaned[d] = '\0';
+
+	Con_SafePrintf("%s\n", cleaned);
+	tlsf_free(ls_memory, cleaned);
+
+	return 0;
 }
 
 static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
@@ -409,53 +453,6 @@ static int LS_global_memstats(lua_State* state)
 	assert(length > 0);
 
 	lua_pushlstring(state, buffer, length);
-	return 1;
-}
-
-static int LS_global_stacktrace(lua_State* state)
-{
-	luaL_traceback(state, state, NULL, 1);
-
-	const char* traceback = lua_tostring(state, 1);
-	assert(traceback);
-
-	size_t length = strlen(traceback);
-	assert(length > 0);
-
-	char* cleaned = tlsf_malloc(ls_memory, length + 1);
-	size_t d = 0;
-	qboolean skipnextquote = false;
-
-	for (size_t s = 0; s < length;)
-	{
-		char ch = traceback[s];
-
-		if (ch == '[' && strncmp(&traceback[s], "[string \"", 9) == 0)
-		{
-			s += 9;
-			skipnextquote = true;
-			continue;
-		}
-
-		if (ch == '\t')
-			ch = ' ';
-		else if (skipnextquote && ch == '"' && traceback[s + 1] == ']')
-		{
-			s += 2;
-			skipnextquote = false;
-			continue;
-		}
-
-		cleaned[d] = ch;
-		++s;
-		++d;
-	}
-
-	cleaned[d] = '\0';
-
-	lua_pushstring(state, cleaned);
-	tlsf_free(ls_memory, cleaned);
-
 	return 1;
 }
 
@@ -578,8 +575,8 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
+		{ "errorhandler", LS_ErrorHandler },
 		{ "memstats", LS_global_memstats },
-		{ "stacktrace", LS_global_stacktrace },
 		{ "dprint", LS_global_dprint },
 
 		{ NULL, NULL }
@@ -654,11 +651,14 @@ static void LS_InitGlobalTables(lua_State* state)
 
 void LS_LoadScript(lua_State* state, const char* filename)
 {
+	lua_pushcfunction(state, LS_ErrorHandler);
 	lua_pushcfunction(state, LS_global_dofile);
 	lua_pushstring(state, filename);
 
-	if (lua_pcall(state, 1, 0, 0) != LUA_OK)
-		LS_ReportError(state);
+	if (lua_pcall(state, 1, 0, 1) != LUA_OK)
+		lua_pop(state, 1);  // remove nil returned by error handler
+
+	lua_pop(state, 1);  // remove error handler
 }
 
 static void LS_ResetState(void)
@@ -799,6 +799,8 @@ static void LS_Exec_f(void)
 		assert(state);
 		assert(lua_gettop(state) == 0);
 
+		lua_pushcfunction(state, LS_ErrorHandler);
+
 		const char* args = Cmd_Args();
 		assert(args);
 
@@ -827,11 +829,11 @@ static void LS_Exec_f(void)
 		}
 
 		if (status == LUA_OK)
-			status = lua_pcall(state, 0, LUA_MULTRET, 0);
+			status = lua_pcall(state, 0, LUA_MULTRET, 1);
 
 		if (status == LUA_OK)
 		{
-			int resultcount = lua_gettop(state);
+			int resultcount = lua_gettop(state) - 1;  // exluding error handler
 
 			if (resultcount > 0)
 			{
@@ -839,15 +841,14 @@ static void LS_Exec_f(void)
 
 				// Print all results
 				lua_pushcfunction(state, LS_global_print);
-				lua_insert(state, 1);
+				lua_insert(state, 2);
 				lua_pcall(state, resultcount, 0, 0);
-
-				lua_settop(state, 0);  // clear stack
 			}
 		}
 		else
-			LS_ReportError(state);
+			lua_pop(state, 1);  // remove nil returned by error handler
 
+		lua_pop(state, 1);  // remove error handler
 		assert(lua_gettop(state) == 0);
 	}
 	else
