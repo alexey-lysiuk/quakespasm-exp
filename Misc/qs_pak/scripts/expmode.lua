@@ -54,13 +54,7 @@ function expmode.exit()
 end
 
 function expmode.safecall(func, ...)
-	status, result_or_error = pcall(func, ...)
-
-	if status then
-		return status, result_or_error
-	else
-		print(result_or_error)
-	end
+	return xpcall(func, errorhandler, ...)
 end
 
 local safecall <const> = expmode.safecall
