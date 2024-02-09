@@ -91,50 +91,6 @@ void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDat
 }
 
 
-static char* LS_CleanErrorMessage(lua_State* state, const char* message)
-{
-	assert(message);
-
-	size_t length = strlen(message);
-	assert(length > 0);
-
-	char* result = LS_TLSF_malloc(state, length + 1);
-	assert(result);
-
-	qboolean skipnextquote = false;
-	size_t d = 0;
-
-	for (size_t s = 0; s < length;)
-	{
-		char ch = message[s];
-
-		if (ch == '[' && strncmp(&message[s], "[string \"", 9) == 0)
-		{
-			s += 9;
-			skipnextquote = true;
-			continue;
-		}
-
-		if (ch == '\t')
-			ch = ' ';
-		else if (skipnextquote && ch == '"' && message[s + 1] == ']')
-		{
-			s += 2;
-			skipnextquote = false;
-			continue;
-		}
-
-		result[d] = ch;
-		++s;
-		++d;
-	}
-
-	result[d] = '\0';
-
-	return result;
-}
-
-
 //
 // Expose 'player' global table with corresponding helper functions
 //
@@ -394,17 +350,55 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 
 int LS_ErrorHandler(lua_State* state)
 {
-	const char* message = lua_tostring(state, 1);
+	const char* message = NULL;
+	int top = lua_gettop(state);
+
+	if (top > 0)
+		message = lua_tostring(state, 1);
+
 	luaL_traceback(state, state, message, 1);
 
-	message = lua_tostring(state, 2);
-	assert(message);
+	size_t length = 0;
+	const char* traceback = lua_tolstring(state, top + 1, &length);
 
-	char* cleanmessage = LS_CleanErrorMessage(state, message);
-	assert(cleanmessage);
+	assert(traceback);
+	assert(length > 0);
 
-	Con_SafePrintf("%s\n", cleanmessage);
-	tlsf_free(ls_memory, cleanmessage);
+	char* cleaned = LS_TLSF_malloc(state, length + 1);
+	assert(cleaned);
+
+	qboolean skipnextquote = false;
+	size_t d = 0;
+
+	for (size_t s = 0; s < length;)
+	{
+		char ch = traceback[s];
+
+		if (ch == '[' && strncmp(&traceback[s], "[string \"", 9) == 0)
+		{
+			s += 9;
+			skipnextquote = true;
+			continue;
+		}
+
+		if (ch == '\t')
+			ch = ' ';
+		else if (skipnextquote && ch == '"' && traceback[s + 1] == ']')
+		{
+			s += 2;
+			skipnextquote = false;
+			continue;
+		}
+
+		cleaned[d] = ch;
+		++s;
+		++d;
+	}
+
+	cleaned[d] = '\0';
+
+	Con_SafePrintf("%s\n", cleaned);
+	tlsf_free(ls_memory, cleaned);
 
 	return 0;
 }
@@ -459,22 +453,6 @@ static int LS_global_memstats(lua_State* state)
 	assert(length > 0);
 
 	lua_pushlstring(state, buffer, length);
-	return 1;
-}
-
-static int LS_global_stacktrace(lua_State* state)
-{
-	luaL_traceback(state, state, NULL, 1);
-
-	const char* traceback = lua_tostring(state, 1);
-	assert(traceback);
-
-	char* cleaned = LS_CleanErrorMessage(state, traceback);
-	assert(cleaned);
-
-	lua_pushstring(state, cleaned);
-	tlsf_free(ls_memory, cleaned);
-
 	return 1;
 }
 
@@ -597,8 +575,8 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
+		{ "errorhandler", LS_ErrorHandler },
 		{ "memstats", LS_global_memstats },
-		{ "stacktrace", LS_global_stacktrace },
 		{ "dprint", LS_global_dprint },
 
 		{ NULL, NULL }

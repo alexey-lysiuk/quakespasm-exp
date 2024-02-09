@@ -55,12 +55,8 @@ function expmode.exit()
 	shouldexit = true
 end
 
-local function handler(message)
-	print(message, '\n', stacktrace())
-end
-
 function expmode.safecall(func, ...)
-	return xpcall(func, handler, ...)
+	return xpcall(func, errorhandler, ...)
 end
 
 local safecall <const> = expmode.safecall
