@@ -811,17 +811,16 @@ static bool LS_CallExpModeFunction(const char* const name)
 
 	bool result = false;
 
+	lua_pushcfunction(state, LS_ErrorHandler);
+
 	if (lua_getglobal(state, ls_expmode_name) == LUA_TTABLE)
 	{
 		if (lua_getfield(state, -1, name) == LUA_TFUNCTION)
 		{
-			if (lua_pcall(state, 0, 1, 0) == LUA_OK)
-			{
+			if (lua_pcall(state, 0, 1, 1) == LUA_OK)
 				result = lua_toboolean(state, -1);
-				lua_pop(state, 1);  // remove result
-			}
-			else
-				LS_ReportError(state);
+
+			lua_pop(state, 1);  // remove result or nil returned by error handler
 
 			LS_ClearImGuiStack();
 		}
@@ -829,14 +828,17 @@ static bool LS_CallExpModeFunction(const char* const name)
 			lua_pop(state, 1);  // remove incorrect value for function to call
 	}
 
-	lua_pop(state, 1);  // remove expmode table
+	lua_pop(state, 2);  // remove expmode table and error handler
 	assert(lua_gettop(state) == 0);
 
 	return result;
 }
 
-void LS_InitImGuiModule(lua_State* state)
+static void LS_InitExpMode()
 {
+	lua_State* state = LS_GetState();
+	assert(state);
+
 	LS_InitImGuiBindings(state);
 
 	// Register 'expmode' table
@@ -878,6 +880,10 @@ static void EXP_Create()
 
 	ImGui_ImplSDL2_InitForOpenGL(exp_window, exp_glcontext);
 	ImGui_ImplOpenGL2_Init();
+
+#ifdef USE_LUA_SCRIPTING
+	LS_InitExpMode();
+#endif // USE_LUA_SCRIPTING
 }
 
 static void EXP_EnterMode()

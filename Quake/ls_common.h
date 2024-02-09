@@ -20,8 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef QUAKE_LUA_SCRIPTING_COMMON_H
-#define QUAKE_LUA_SCRIPTING_COMMON_H
+#pragma once
 
 #ifdef USE_LUA_SCRIPTING
 
@@ -31,8 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 lua_State* LS_GetState(void);
 
-// Report error with message on the top of the stack
-void LS_ReportError(lua_State* state);
+// Default message handler for lua_pcall()
+int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
 
@@ -57,10 +56,4 @@ vec_t* LS_GetVec3Value(lua_State* state, int index);
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
 
-#ifdef USE_IMGUI
-void LS_InitImGuiModule(lua_State* state);
-#endif // USE_IMGUI
-
 #endif // USE_LUA_SCRIPTING
-
-#endif // QUAKE_LUA_SCRIPTING_COMMON_H

@@ -392,23 +392,21 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 	luaL_error(state, "infinite loop detected, aborting");
 }
 
-void LS_ReportError(lua_State* state)
+int LS_ErrorHandler(lua_State* state)
 {
-	assert(lua_gettop(state) > 0);
+	const char* message = lua_tostring(state, 1);
+	luaL_traceback(state, state, message, 1);
 
-	const char* errormessage = lua_tostring(state, -1);
-	if (errormessage)
-	{
-		char* cleanerror = LS_CleanErrorMessage(state, errormessage);
-		assert(cleanerror);
+	message = lua_tostring(state, 2);
+	assert(message);
 
-		Con_SafePrintf("%s\n", cleanerror);
-		tlsf_free(ls_memory, cleanerror);
-	}
-	else
-		Con_SafePrintf("Unknown error occurred while executing Lua script\n");
+	char* cleanmessage = LS_CleanErrorMessage(state, message);
+	assert(cleanmessage);
 
-	lua_pop(state, 1);  // remove error message
+	Con_SafePrintf("%s\n", cleanmessage);
+	tlsf_free(ls_memory, cleanmessage);
+
+	return 0;
 }
 
 static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
@@ -675,11 +673,14 @@ static void LS_InitGlobalTables(lua_State* state)
 
 void LS_LoadScript(lua_State* state, const char* filename)
 {
+	lua_pushcfunction(state, LS_ErrorHandler);
 	lua_pushcfunction(state, LS_global_dofile);
 	lua_pushstring(state, filename);
 
-	if (lua_pcall(state, 1, 0, 0) != LUA_OK)
-		LS_ReportError(state);
+	if (lua_pcall(state, 1, 0, 1) != LUA_OK)
+		lua_pop(state, 1);  // remove nil returned by error handler
+
+	lua_pop(state, 1);  // remove error handler
 }
 
 static void LS_ResetState(void)
@@ -742,10 +743,6 @@ lua_State* LS_GetState(void)
 		LS_InitStandardLibraries(state);
 		LS_InitGlobalFunctions(state);
 		LS_InitGlobalTables(state);
-
-#ifdef USE_IMGUI
-		LS_InitImGuiModule(state);
-#endif // USE_IMGUI
 
 		lua_gc(state, LUA_GCRESTART);
 		lua_gc(state, LUA_GCCOLLECT);
@@ -810,20 +807,6 @@ static const char* LS_global_reader(lua_State* state, void* data, size_t* size)
 	return result;
 }
 
-static int LS_ConsoleErrorHandler(lua_State* state)
-{
-	const char* message = lua_tostring(state, 1);
-	assert(message);
-
-	char* cleanmessage = LS_CleanErrorMessage(state, message);
-	assert(cleanmessage);
-
-	lua_pushstring(state, cleanmessage);
-	tlsf_free(ls_memory, cleanmessage);
-
-	return 1;
-}
-
 static void LS_Exec_f(void)
 {
 	int argc = Cmd_Argc();
@@ -834,7 +817,7 @@ static void LS_Exec_f(void)
 		assert(state);
 		assert(lua_gettop(state) == 0);
 
-		lua_pushcfunction(state, LS_ConsoleErrorHandler);
+		lua_pushcfunction(state, LS_ErrorHandler);
 
 		const char* args = Cmd_Args();
 		assert(args);
@@ -868,7 +851,7 @@ static void LS_Exec_f(void)
 
 		if (status == LUA_OK)
 		{
-			int resultcount = lua_gettop(state) - 1;  // without error handler
+			int resultcount = lua_gettop(state) - 1;  // exluding error handler
 
 			if (resultcount > 0)
 			{
@@ -878,12 +861,10 @@ static void LS_Exec_f(void)
 				lua_pushcfunction(state, LS_global_print);
 				lua_insert(state, 2);
 				lua_pcall(state, resultcount, 0, 0);
-
-				lua_settop(state, 1);  // remove results
 			}
 		}
 		else
-			LS_ReportError(state);
+			lua_pop(state, 1);  // remove nil returned by error handler
 
 		lua_pop(state, 1);  // remove error handler
 		assert(lua_gettop(state) == 0);
