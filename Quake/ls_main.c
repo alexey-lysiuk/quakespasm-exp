@@ -816,7 +816,7 @@ static void LS_Exec_f(void)
 			script += 1;
 		}
 
-		static const char* scriptname = "script";
+		static const char* scriptname = "console";
 		static const char* scriptmode = "t";
 
 		LS_ReaderData data = { script, scriptlength, 0 };
