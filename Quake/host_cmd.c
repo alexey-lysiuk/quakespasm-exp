@@ -2323,6 +2323,10 @@ static void Host_DoDamage(int function, edict_t* target, qboolean gib)
 	globals_iptr[OFS_PARM2] = globals_iptr[OFS_PARM1];              // attacker
 	pr_globals[OFS_PARM3] = health + (gib ? 99.0f : 1.0f);          // damage
 
+	// Fill remaining four vec3 parameters with zeroes to handle
+	// T_Damage() function with extra arguments, e.g. Copper 1.30
+	memset(&pr_globals[OFS_PARM4], 0, sizeof(float) * 3 * 4);
+
 	PR_ExecuteProgram(function);
 }
 
