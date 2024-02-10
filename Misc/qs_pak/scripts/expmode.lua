@@ -254,6 +254,7 @@ local vec3mid <const> = vec3.mid
 local vec3origin <const> = vec3.new()
 
 local foreach <const> = edicts.foreach
+local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
@@ -377,26 +378,6 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
-local function describe(edict)
-	local description = getname(edict)
-	local location, angles
-
-	if not isfree(edict) then
-		location = vec3mid(edict.absmin, edict.absmax)
-		angles = edict.angles
-
-		if location == vec3origin then
-			location = edict.origin or vec3origin
-		end
-
-		if angles and angles == vec3origin then
-			angles = nil
-		end
-	end
-
-	return description, location, angles
-end
-
 local function edictstable(title, entries, zerobasedindex)
 	if imBeginTable(title, 3, defaulttableflags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
@@ -470,7 +451,7 @@ local function edicts_onupdate(self)
 end
 
 local function edicts_onopen(self)
-	local filter = self.filter or describe
+	local filter = self.filter or isany
 	local entries = {}
 
 	foreach(function (edict, current)
