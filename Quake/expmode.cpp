@@ -890,14 +890,8 @@ static void EXP_Create()
 
 static void EXP_EnterMode()
 {
-	if (exp_active)
+	if (exp_active || cls.state != ca_connected || cl.intermission)
 		return;
-
-	if (cls.state != ca_connected)
-	{
-		exp_active = false;
-		return;
-	}
 
 	if (!exp_created)
 		EXP_Create();
@@ -983,6 +977,12 @@ void EXP_Update()
 {
 	if (!exp_active)
 		return;
+
+	if (cls.state != ca_connected || cl.intermission)
+	{
+		EXP_ExitMode();
+		return;
+	}
 
 	ImGui_ImplOpenGL2_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
