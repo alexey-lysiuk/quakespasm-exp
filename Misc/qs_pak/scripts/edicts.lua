@@ -195,6 +195,35 @@ local function localizednetname(edict)
 end
 
 
+function edicts.isany(edict)
+	if not edict then
+		return
+	end
+
+	local description = getname(edict)
+	local location, angles
+
+	if not isfree(edict) then
+		location = edict.origin
+
+		if not location or location == vec3origin then
+			local absmin = edict.absmin
+			local absmax = edict.absmax
+
+			if absmin and absmax then
+				location = vec3mid(absmin, absmax)
+			else
+				location = vec3origin
+			end
+		end
+
+		angles = edict.angles
+	end
+
+	return description, location, angles
+end
+
+
 --
 -- Secrets
 --
