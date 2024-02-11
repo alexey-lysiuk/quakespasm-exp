@@ -119,29 +119,20 @@ local function updatetoolwindow()
 end
 
 local function updatewindows()
-	local closedwindows = {}
-
 	for _, window in pairs(windows) do
-		if wintofocus == window.title then
+		local title = window.title
+	
+		if wintofocus == title then
 			imSetNextWindowFocus()
 			wintofocus = nil
 		end
 
 		local status, keepopen = safecall(window.onupdate, window)
 
-		if status then
-			if not keepopen then
-				insert(closedwindows, window)
-			end
-		else
-			-- Error occurred, close this window
-			insert(closedwindows, window)
+		if not status or not keepopen then
+			windows[title] = nil
+			window:onclose()
 		end
-	end
-
-	for _, window in ipairs(closedwindows) do
-		windows[window.title] = nil
-		window:onclose()
 	end
 end
 
@@ -262,6 +253,10 @@ local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 local string <const> = edicts.valuetypes.string
 
+local god <const> = player.god
+local notarget <const> = player.notarget
+local setpos <const> = player.setpos
+
 local localize <const> = text.localize
 local toascii <const> = text.toascii
 
@@ -275,7 +270,10 @@ local function moveplayer(edict, location, angles)
 			location.z = location.z + 20
 		end
 
-		player.safemove(location, angles or edict.angles)
+		god(true)
+		notarget(true)
+		setpos(location, angles or edict.angles)
+
 		shouldexit = true
 	end
 end
@@ -339,8 +337,10 @@ local function edictinfo_onupdate(self)
 end
 
 local function edictinfo_onopen(self)
-	if isfree(self.edict) then
-		windows[self.title] = nil
+	local title = self.title
+
+	if tostring(self.edict) ~= title then
+		windows[title] = nil
 		return
 	end
 
