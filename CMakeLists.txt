@@ -85,6 +85,7 @@ set(COMMON_SOURCES
 	Quake/pr_edict.c
 	Quake/pr_exec.c
 	Quake/progdefs.h
+	Quake/progdefs.q1
 	Quake/progs.h
 	Quake/protocol.h
 	Quake/q_ctype.h
