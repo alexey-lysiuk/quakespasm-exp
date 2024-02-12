@@ -371,8 +371,8 @@ static int LS_global_edicts_references(lua_State* state)
 	if (edict->free)
 		return 2;  // return two empty tables
 
-	lua_Integer outgoing = 1;
-	lua_Integer incoming = 1;
+	//lua_Integer outgoing = 1;
+	//lua_Integer incoming = 1;
 
 	const char* targetname = NULL;
 	const char* target = NULL;
@@ -388,8 +388,14 @@ static int LS_global_edicts_references(lua_State* state)
 		{
 			if (type == ev_entity)
 			{
-				LS_PushEdictValue(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
-				lua_rawseti(state, 1, outgoing++);
+				//LS_PushEdictValue(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+
+//				lua_pushinteger(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+//				lua_rawseti(state, 1, outgoing++);
+
+				lua_pushinteger(state, NUM_FOR_EDICT(value->edict));
+				lua_pushinteger(state, 0);
+				lua_rawset(state, 1);
 			}
 			else if (type == ev_string)
 			{
@@ -421,29 +427,103 @@ static int LS_global_edicts_references(lua_State* state)
 			{
 				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
 				{
-					LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
-					lua_rawseti(state, 1, incoming++);
+					//LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+					
+					//lua_pushinteger(state, NUM_FOR_EDICT(probe));
+					//lua_rawseti(state, 2, incoming++);
+
+					lua_pushinteger(state, NUM_FOR_EDICT(probe));
+					lua_pushinteger(state, 0);
+					lua_rawset(state, 2);
 				}
 				else if (type == ev_string)
 				{
 					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_AreStringsEqual(targetname, value->string))
 					{
-						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
-						lua_rawseti(state, 1, incoming++);
+						//LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+
+						//lua_pushinteger(state, NUM_FOR_EDICT(probe));
+						//lua_rawseti(state, 1, incoming++);
+
+						lua_pushinteger(state, NUM_FOR_EDICT(probe));
+						lua_pushinteger(state, 0);
+						lua_rawset(state, 2);
 					}
 					else if (target && strcmp(name, "targetname") == 0 && LS_AreStringsEqual(target, value->string))
 					{
-						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
-						lua_rawseti(state, 1, outgoing++);
+						//LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+
+//						lua_pushinteger(state, NUM_FOR_EDICT(probe));
+//						lua_rawseti(state, 1, outgoing++);
+
+						lua_pushinteger(state, NUM_FOR_EDICT(probe));
+						lua_pushinteger(state, 0);
+						lua_rawset(state, 1);
 					}
 					else if (killtarget && strcmp(name, "targetname") == 0 && LS_AreStringsEqual(killtarget, value->string))
 					{
-						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
-						lua_rawseti(state, 1, outgoing++);
+						//LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+
+//						lua_pushinteger(state, NUM_FOR_EDICT(probe));
+//						lua_rawseti(state, 1, outgoing++);
+
+						lua_pushinteger(state, NUM_FOR_EDICT(probe));
+						lua_pushinteger(state, 0);
+						lua_rawset(state, 1);
 					}
 				}
 			}
 		}
+	}
+
+	// Convert ...
+	lua_newtable(state);  // [3] this edict references other edicts (outgoing references)
+	lua_newtable(state);  // [4] this edict is referenced by other edicts (incoming references)
+
+	lua_pushnil(state);  // first key
+	lua_Integer counter = 1;
+
+	while (lua_next(state, 1) != 0)
+	{
+		lua_pop(state, 1);  // remove value
+		lua_pushvalue(state, -1);  // copy for next iteration
+		//LS_PushEdictValue(state, lua_tointeger(state, -1));
+		lua_rawseti(state, 3, counter++);
+	}
+
+	lua_pushnil(state);  // first key
+	counter = 1;
+
+	while (lua_next(state, 2) != 0)
+	{
+		lua_pop(state, 1);  // remove value
+		lua_pushvalue(state, -1);  // copy for next iteration
+		//LS_PushEdictValue(state, lua_tointeger(state, -1));
+		lua_rawseti(state, 4, counter++);
+	}
+
+	// Sort reference tables
+	lua_getglobal(state, "table");
+	lua_pushstring(state, "sort");
+	lua_rawget(state, 3);
+	lua_remove(state, 3);  // remove 'table' global table
+	lua_pushvalue(state, 3);  // copy of table.sort() for the second call
+	lua_pushvalue(state, 3);  // 'references' table
+	lua_call(state, 1, 0);
+	lua_pushvalue(state, 4);  // 'referenced by' table
+	lua_call(state, 1, 0);
+
+	// Replace ...
+	lua_pushinteger(state, 0);  // first key
+	counter = 1;
+
+	while (lua_next(state, 4) != 0)
+	{
+		LS_PushEdictValue(state, lua_tointeger(state, -1));
+		//lua_pushvalue(state, -1);  // copy for next iteration
+		lua_remove(state, -2);  // remove old value
+		//LS_PushEdictValue(state, lua_tointeger(state, -1));
+		lua_rawseti(state, 4, counter++);
 	}
 
 	return 2;
