@@ -132,6 +132,16 @@ static int LS_value_edict_eq(lua_State* state)
 	return 1;
 }
 
+// Pushes true if index of first edict is less than index of second edict, otherwise pushes false
+static int LS_value_edict_lt(lua_State* state)
+{
+	int left = LS_GetEdictIndex(state, 1);
+	int right = LS_GetEdictIndex(state, 2);
+
+	lua_pushboolean(state, left < right);
+	return 1;
+}
+
 // Pushes value of edict field by its name
 // or pushes a table with name, type, value by field's numerical index
 static int LS_value_edict_index(lua_State* state)
@@ -249,6 +259,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__eq", LS_value_edict_eq },
+		{ "__lt", LS_value_edict_lt },
 		{ "__index", LS_value_edict_index },
 		{ "__pairs", LS_value_edict_pairs },
 		{ "__tostring", LS_value_edict_tostring },
@@ -485,9 +496,9 @@ static int LS_global_edicts_references(lua_State* state)
 
 	while (lua_next(state, 1) != 0)
 	{
-		lua_pop(state, 1);  // remove value
-		lua_pushvalue(state, -1);  // copy for next iteration
-		//LS_PushEdictValue(state, lua_tointeger(state, -1));
+		lua_pop(state, 1);  // remove value (zero)
+		//lua_pushvalue(state, -1);  // copy for next iteration
+		LS_PushEdictValue(state, lua_tointeger(state, -1));
 		lua_rawseti(state, 3, counter++);
 	}
 
@@ -497,34 +508,34 @@ static int LS_global_edicts_references(lua_State* state)
 	while (lua_next(state, 2) != 0)
 	{
 		lua_pop(state, 1);  // remove value
-		lua_pushvalue(state, -1);  // copy for next iteration
-		//LS_PushEdictValue(state, lua_tointeger(state, -1));
+		//lua_pushvalue(state, -1);  // copy for next iteration
+		LS_PushEdictValue(state, lua_tointeger(state, -1));
 		lua_rawseti(state, 4, counter++);
 	}
 
 	// Sort reference tables
 	lua_getglobal(state, "table");
 	lua_pushstring(state, "sort");
-	lua_rawget(state, 3);
-	lua_remove(state, 3);  // remove 'table' global table
-	lua_pushvalue(state, 3);  // copy of table.sort() for the second call
+	lua_rawget(state, 5);
+	lua_remove(state, 5);  // remove 'table' global table
+	lua_pushvalue(state, 5);  // copy of table.sort() for the second call
 	lua_pushvalue(state, 3);  // 'references' table
 	lua_call(state, 1, 0);
 	lua_pushvalue(state, 4);  // 'referenced by' table
 	lua_call(state, 1, 0);
 
-	// Replace ...
-	lua_pushinteger(state, 0);  // first key
-	counter = 1;
-
-	while (lua_next(state, 4) != 0)
-	{
-		LS_PushEdictValue(state, lua_tointeger(state, -1));
-		//lua_pushvalue(state, -1);  // copy for next iteration
-		lua_remove(state, -2);  // remove old value
-		//LS_PushEdictValue(state, lua_tointeger(state, -1));
-		lua_rawseti(state, 4, counter++);
-	}
+//	// Replace ...
+//	lua_pushinteger(state, 0);  // first key
+//	counter = 1;
+//
+//	while (lua_next(state, 3) != 0)
+//	{
+//		LS_PushEdictValue(state, lua_tointeger(state, -1));
+//		//lua_pushvalue(state, -1);  // copy for next iteration
+//		lua_remove(state, -2);  // remove old value
+//		//LS_PushEdictValue(state, lua_tointeger(state, -1));
+//		lua_rawseti(state, 3, counter++);
+//	}
 
 	return 2;
 }
