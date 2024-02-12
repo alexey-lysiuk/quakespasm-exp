@@ -959,6 +959,12 @@ void EXP_Update()
 	if (!exp_active)
 		return;
 
+	if (cls.state != ca_connected || cl.intermission)
+	{
+		EXP_ExitMode();
+		return;
+	}
+
 	ImGui_ImplOpenGL2_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 
