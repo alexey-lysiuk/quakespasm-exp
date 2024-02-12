@@ -210,8 +210,6 @@ set(LUA_SOURCES
 	${LUA_DIR}/lzio.h
 )
 
-source_group("Source Files\\Lua" FILES ${LUA_SOURCES})
-
 set(IMGUI_DIR Quake/imgui)
 set(IMGUI_BACKENDS_DIR ${IMGUI_DIR}/backends)
 
@@ -232,8 +230,6 @@ set(IMGUI_SOURCES
 	${IMGUI_DIR}/imstb_truetype.h
 	${IMGUI_DIR}/imgui_widgets.cpp
 )
-
-source_group("Source Files\\ImGui" FILES ${IMGUI_SOURCES})
 
 set(POSIX_SOURCES
 	Quake/net_bsd.c
@@ -438,12 +434,20 @@ else()
 	)
 endif()
 
-target_sources(${PROJECT_NAME} PRIVATE
+set(ENGINE_SOURCES
 	${COMMON_SOURCES}
-	${LUA_SOURCES}
-	${IMGUI_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
+)
+
+source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c)
+source_group("ImGui" FILES ${IMGUI_SOURCES})
+source_group("Lua" FILES ${LUA_SOURCES})
+
+target_sources(${PROJECT_NAME} PRIVATE
+	${ENGINE_SOURCES}
+	${IMGUI_SOURCES}
+	${LUA_SOURCES}
 )
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
