@@ -368,25 +368,27 @@ static int LS_global_edicts_references(lua_State* state)
 		const char* name;
 		etype_t type;
 		const eval_t* value;
-
+		
 		if (ED_GetFieldByIndex(edict, f, &name, &type, &value))
 		{
 			if (type == ev_entity)
 			{
-				if (value->edict != 0)
-				{
-					LS_PushEdictValue(state, value->edict);
-					lua_rawseti(state, 1, outgoing++);
-				}
+				LS_PushEdictValue(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+				lua_rawseti(state, 1, outgoing++);
 			}
 			else if (type == ev_string)
 			{
+				const char* stringvalue = PR_GetString(value->string);
+
+				if (!stringvalue || stringvalue[0] == '\0')
+					continue;
+
 				if (strcmp(name, "targetname") == 0)
-					targetname = name;
+					targetname = stringvalue;
 				else if (strcmp(name, "target") == 0)
-					target = name;
+					target = stringvalue;
 				else if (strcmp(name, "killtarget") == 0)
-					killtarget = name;
+					killtarget = stringvalue;
 			}
 		}
 	}
@@ -404,25 +406,36 @@ static int LS_global_edicts_references(lua_State* state)
 			const char* name;
 			etype_t type;
 			const eval_t* value;
-			
+
 			if (ED_GetFieldByIndex(probe, f, &name, &type, &value))
 			{
-				if (type == ev_entity)
+				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
 				{
-					if (value->edict != 0)
-					{
-						LS_PushEdictValue(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
-						lua_rawseti(state, 1, outgoing++);
-					}
+					LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+					lua_rawseti(state, 1, incoming++);
 				}
 				else if (type == ev_string)
 				{
-					if (strcmp(name, "targetname") == 0)
-						targetname = name;
-					else if (strcmp(name, "target") == 0)
-						target = name;
-					else if (strcmp(name, "killtarget") == 0)
-						killtarget = name;
+					const char* stringvalue = PR_GetString(value->string);
+
+					if (!stringvalue || stringvalue[0] == '\0')
+						continue;
+
+					else if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && strcmp(targetname, stringvalue) == 0)
+					{
+						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+						lua_rawseti(state, 1, incoming++);
+					}
+					else if (target && strcmp(name, "targetname") == 0 && strcmp(targetname, stringvalue) == 0)
+					{
+						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+						lua_rawseti(state, 1, outgoing++);
+					}
+					else if (killtarget && strcmp(name, "targetname") == 0 && strcmp(targetname, stringvalue) == 0)
+					{
+						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
+						lua_rawseti(state, 1, outgoing++);
+					}
 				}
 			}
 		}
