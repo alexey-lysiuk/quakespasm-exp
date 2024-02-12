@@ -871,14 +871,8 @@ static void EXP_Create()
 
 static void EXP_EnterMode()
 {
-	if (exp_active)
+	if (exp_active || cls.state != ca_connected || cl.intermission)
 		return;
-
-	if (cls.state != ca_connected)
-	{
-		exp_active = false;
-		return;
-	}
 
 	if (!exp_created)
 		EXP_Create();
