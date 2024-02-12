@@ -342,6 +342,21 @@ static int LS_global_edicts_getname(lua_State* state)
 	return 1;
 }
 
+static const char* LS_GetNonEmptyString(int num)
+{
+	const char* result = PR_GetString(num);
+	return result[0] == '\0' ? NULL : result;
+}
+
+static qboolean LS_AreStringsEqual(const char* string, int num)
+{
+	const char* other = PR_GetString(num);
+	return strcmp(string, other) == 0;
+}
+
+// Push two tables:
+// * The first one contains list of edicts referenced by edict passed as argument (outgoing references)
+// * The second one contains list of edicts that refer edict passed as argument (incoming references)
 static int LS_global_edicts_references(lua_State* state)
 {
 	edict_t* edict = LS_GetEdictFromParameter(state);
@@ -378,17 +393,12 @@ static int LS_global_edicts_references(lua_State* state)
 			}
 			else if (type == ev_string)
 			{
-				const char* stringvalue = PR_GetString(value->string);
-
-				if (!stringvalue || stringvalue[0] == '\0')
-					continue;
-
 				if (strcmp(name, "targetname") == 0)
-					targetname = stringvalue;
+					targetname = LS_GetNonEmptyString(value->string);
 				else if (strcmp(name, "target") == 0)
-					target = stringvalue;
+					target = LS_GetNonEmptyString(value->string);
 				else if (strcmp(name, "killtarget") == 0)
-					killtarget = stringvalue;
+					killtarget = LS_GetNonEmptyString(value->string);
 			}
 		}
 	}
@@ -416,22 +426,17 @@ static int LS_global_edicts_references(lua_State* state)
 				}
 				else if (type == ev_string)
 				{
-					const char* stringvalue = PR_GetString(value->string);
-
-					if (!stringvalue || stringvalue[0] == '\0')
-						continue;
-
-					else if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && strcmp(targetname, stringvalue) == 0)
+					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_AreStringsEqual(targetname, value->string))
 					{
 						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
 						lua_rawseti(state, 1, incoming++);
 					}
-					else if (target && strcmp(name, "targetname") == 0 && strcmp(targetname, stringvalue) == 0)
+					else if (target && strcmp(name, "targetname") == 0 && LS_AreStringsEqual(target, value->string))
 					{
 						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
 						lua_rawseti(state, 1, outgoing++);
 					}
-					else if (killtarget && strcmp(name, "targetname") == 0 && strcmp(targetname, stringvalue) == 0)
+					else if (killtarget && strcmp(name, "targetname") == 0 && LS_AreStringsEqual(killtarget, value->string))
 					{
 						LS_PushEdictValue(state, NUM_FOR_EDICT(probe));
 						lua_rawseti(state, 1, outgoing++);
