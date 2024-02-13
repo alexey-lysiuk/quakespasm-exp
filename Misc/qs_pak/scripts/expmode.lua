@@ -117,29 +117,20 @@ local function updatetoolwindow()
 end
 
 local function updatewindows()
-	local closedwindows = {}
-
 	for _, window in pairs(windows) do
-		if wintofocus == window.title then
+		local title = window.title
+	
+		if wintofocus == title then
 			imSetNextWindowFocus()
 			wintofocus = nil
 		end
 
 		local status, keepopen = safecall(window.onupdate, window)
 
-		if status then
-			if not keepopen then
-				insert(closedwindows, window)
-			end
-		else
-			-- Error occurred, close this window
-			insert(closedwindows, window)
+		if not status or not keepopen then
+			windows[title] = nil
+			window:onclose()
 		end
-	end
-
-	for _, window in ipairs(closedwindows) do
-		windows[window.title] = nil
-		window:onclose()
 	end
 end
 
