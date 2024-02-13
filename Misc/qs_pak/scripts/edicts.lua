@@ -117,13 +117,6 @@ edicts.valuetypes =
 }
 
 
-function player.safemove(location, angles)
-	player.god(true)
-	player.notarget(true)
-	player.setpos(location, angles)
-end
-
-
 function edicts.foreach(func, choice)
 	choice = choice and math.tointeger(choice) or 0
 	local current = 1
