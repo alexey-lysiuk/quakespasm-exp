@@ -353,19 +353,22 @@ static int LS_global_edicts_getname(lua_State* state)
 	return 1;
 }
 
-static const char* LS_GetNonEmptyString(int num)
+
+// Edict reference collection
+
+static const char* LS_references_GetString(int num)
 {
 	const char* result = PR_GetString(num);
 	return result[0] == '\0' ? NULL : result;
 }
 
-static qboolean LS_AreStringsEqual(const char* string, int num)
+static qboolean LS_references_StringsEqual(const char* string, int num)
 {
 	const char* other = PR_GetString(num);
 	return strcmp(string, other) == 0;
 }
 
-static void LS_ConvertEdictTable(lua_State* state, int index)
+static void LS_references_ConvertTable(lua_State* state, int index)
 {
 	lua_newtable(state);
 
@@ -385,6 +388,13 @@ static void LS_ConvertEdictTable(lua_State* state, int index)
 	// Replace initial table
 	lua_remove(state, index);
 	lua_insert(state, index);
+}
+
+static void LS_references_PushEdictIndex(lua_State* state, int tableindex, edict_t* edict)
+{
+	lua_pushinteger(state, NUM_FOR_EDICT(edict));
+	lua_pushinteger(state, 0);
+	lua_rawset(state, tableindex);
 }
 
 // Push two tables:
@@ -420,18 +430,17 @@ static int LS_global_edicts_references(lua_State* state)
 		{
 			if (type == ev_entity)
 			{
-				lua_pushinteger(state, NUM_FOR_EDICT(value->edict));
-				lua_pushinteger(state, 0);
-				lua_rawset(state, 1);
+				qboolean owner = strcmp(name, "owner") == 0;
+				LS_references_PushEdictIndex(state, owner ? 2 : 1, PROG_TO_EDICT(value->edict));
 			}
 			else if (type == ev_string)
 			{
 				if (strcmp(name, "targetname") == 0)
-					targetname = LS_GetNonEmptyString(value->string);
+					targetname = LS_references_GetString(value->string);
 				else if (strcmp(name, "target") == 0)
-					target = LS_GetNonEmptyString(value->string);
+					target = LS_references_GetString(value->string);
 				else if (strcmp(name, "killtarget") == 0)
-					killtarget = LS_GetNonEmptyString(value->string);
+					killtarget = LS_references_GetString(value->string);
 			}
 		}
 	}
@@ -453,39 +462,23 @@ static int LS_global_edicts_references(lua_State* state)
 			if (ED_GetFieldByIndex(probe, f, &name, &type, &value))
 			{
 				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
-				{
-					lua_pushinteger(state, NUM_FOR_EDICT(probe));
-					lua_pushinteger(state, 0);
-					lua_rawset(state, 2);
-				}
+					LS_references_PushEdictIndex(state, 2, probe);
 				else if (type == ev_string)
 				{
-					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_AreStringsEqual(targetname, value->string))
-					{
-						lua_pushinteger(state, NUM_FOR_EDICT(probe));
-						lua_pushinteger(state, 0);
-						lua_rawset(state, 2);
-					}
-					else if (target && strcmp(name, "targetname") == 0 && LS_AreStringsEqual(target, value->string))
-					{
-						lua_pushinteger(state, NUM_FOR_EDICT(probe));
-						lua_pushinteger(state, 0);
-						lua_rawset(state, 1);
-					}
-					else if (killtarget && strcmp(name, "targetname") == 0 && LS_AreStringsEqual(killtarget, value->string))
-					{
-						lua_pushinteger(state, NUM_FOR_EDICT(probe));
-						lua_pushinteger(state, 0);
-						lua_rawset(state, 1);
-					}
+					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_references_StringsEqual(targetname, value->string))
+						LS_references_PushEdictIndex(state, 2, probe);
+					else if (target && strcmp(name, "targetname") == 0 && LS_references_StringsEqual(target, value->string))
+						LS_references_PushEdictIndex(state, 1, probe);
+					else if (killtarget && strcmp(name, "targetname") == 0 && LS_references_StringsEqual(killtarget, value->string))
+						LS_references_PushEdictIndex(state, 1, probe);
 				}
 			}
 		}
 	}
 
 	// Convert tables with edict indices as keys to sequences of edicts
-	LS_ConvertEdictTable(state, 1);
-	LS_ConvertEdictTable(state, 2);
+	LS_references_ConvertTable(state, 1);
+	LS_references_ConvertTable(state, 2);
 
 	// Sort reference tables by edict index
 	lua_getglobal(state, "table");
