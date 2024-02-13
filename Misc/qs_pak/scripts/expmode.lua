@@ -535,7 +535,7 @@ end
 local function edictrefs_onopen(self)
 	local edict = self.edict
 
-	if isfree(edict) then
+	if tostring(self.edict) ~= self.edictid then
 		windows[self.title] = nil
 		return
 	end
@@ -573,7 +573,8 @@ function expmode.edictreferences(edict)
 		return
 	end
 
-	local title = 'References of ' .. tostring(edict)
+	local edictid = tostring(edict)
+	local title = 'References of ' .. edictid
 	local window = windows[title]
 
 	if window then
@@ -583,6 +584,7 @@ function expmode.edictreferences(edict)
 		{
 			title = title,
 			edict = edict,
+			edictid = edictid,
 			onupdate = edictrefs_onupdate,
 			onopen = edictrefs_onopen,
 			onclose = edictrefs_onclose
