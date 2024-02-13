@@ -534,34 +534,24 @@ local function edictrefs_onopen(self)
 		return
 	end
 
-	local function addentry(list, edict)
-		insert(list,
-		{
-			edict = edict,
-			description = getname(edict),
-			location = vec3mid(edict.absmin, edict.absmax),
-			angles = edict.angles
-		})
+	local function addentries(source, list)
+		for _, edict in ipairs(source) do
+			insert(list,
+			{
+				edict = edict,
+				description = getname(edict),
+				location = vec3mid(edict.absmin, edict.absmax),
+				angles = edict.angles
+			})
+		end
 	end
 
-	local target = edict.target
-	local targetname = edict.targetname
 	local references = {}
 	local referencedby = {}
 
-	local function collectrefs(edict)
-		if target ~= '' and target == edict.targetname then
-			addentry(references, edict)
-		end
-
-		if targetname ~= '' and targetname == edict.target then
-			addentry(referencedby, edict)
-		end
-
-		return 1
-	end
-
-	foreach(collectrefs)
+	outgoing, incoming = edicts.references(edict)
+	addentries(outgoing, references)
+	addentries(incoming, referencedby)
 
 	self.references = references
 	self.referencedby = referencedby
