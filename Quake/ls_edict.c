@@ -132,6 +132,16 @@ static int LS_value_edict_eq(lua_State* state)
 	return 1;
 }
 
+// Pushes true if index of first edict is less than index of second edict, otherwise pushes false
+static int LS_value_edict_lt(lua_State* state)
+{
+	int left = LS_GetEdictIndex(state, 1);
+	int right = LS_GetEdictIndex(state, 2);
+
+	lua_pushboolean(state, left < right);
+	return 1;
+}
+
 // Pushes value of edict field by its name
 // or pushes a table with name, type, value by field's numerical index
 static int LS_value_edict_index(lua_State* state)
@@ -249,6 +259,7 @@ static void LS_SetEdictMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__eq", LS_value_edict_eq },
+		{ "__lt", LS_value_edict_lt },
 		{ "__index", LS_value_edict_index },
 		{ "__pairs", LS_value_edict_pairs },
 		{ "__tostring", LS_value_edict_tostring },
