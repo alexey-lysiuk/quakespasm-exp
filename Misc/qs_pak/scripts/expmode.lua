@@ -335,8 +335,10 @@ local function edictinfo_onupdate(self)
 end
 
 local function edictinfo_onopen(self)
-	if isfree(self.edict) then
-		windows[self.title] = nil
+	local title = self.title
+
+	if tostring(self.edict) ~= title then
+		windows[title] = nil
 		return
 	end
 
