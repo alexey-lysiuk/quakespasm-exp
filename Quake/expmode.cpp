@@ -825,6 +825,8 @@ static void LS_InitExpMode()
 	if (initialized)
 		return;
 
+	lua_gc(state, LUA_GCSTOP);
+
 	LS_InitImGuiBindings(state);
 
 	// Register 'expmode' table
@@ -832,6 +834,9 @@ static void LS_InitExpMode()
 	lua_setglobal(state, ls_expmode_name);
 
 	LS_LoadScript(state, "scripts/expmode.lua");
+
+	lua_gc(state, LUA_GCRESTART);
+	lua_gc(state, LUA_GCCOLLECT);
 }
 
 #endif // USE_LUA_SCRIPTING
