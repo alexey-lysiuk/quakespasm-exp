@@ -243,15 +243,6 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 	return 2;
 }
 
-static int LS_global_imgui_IsWindowAppearing(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	const bool appearing = ImGui::IsWindowAppearing();
-	lua_pushboolean(state, appearing);
-	return 1;
-}
-
 static int LS_global_imgui_SameLine(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -544,14 +535,6 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 	return 0;
 }
 
-static int LS_global_imgui_SetKeyboardFocusHere(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	ImGui::SetKeyboardFocusHere();
-	return 0;
-}
-
 static int LS_global_imgui_Spacing(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -760,7 +743,6 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
 		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
-		{ "IsWindowAppearing", LS_global_imgui_IsWindowAppearing },
 		{ "SameLine", LS_global_imgui_SameLine },
 		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
@@ -783,7 +765,6 @@ static void LS_InitImGuiBindings(lua_State* state)
 		{ "Selectable", LS_global_imgui_Selectable },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
-		{ "SetKeyboardFocusHere", LS_global_imgui_SetKeyboardFocusHere },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Text", LS_global_imgui_Text },
 

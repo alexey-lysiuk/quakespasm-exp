@@ -623,10 +623,6 @@ addtool('Scratchpad', function (self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		if imIsWindowAppearing() then
-			imSetKeyboardFocusHere()
-		end
-
 		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, -1, -1, imInputTextAllowTabInput)
 	end
 
