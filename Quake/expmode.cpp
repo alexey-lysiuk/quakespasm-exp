@@ -42,6 +42,8 @@ extern "C"
 {
 #include "quakedef.h"
 #include "ls_common.h"
+
+qboolean keydown[MAX_KEYS];
 }
 
 
@@ -955,7 +957,6 @@ static void EXP_EnterMode()
 	IN_Deactivate(true);
 
 	// Clear key down state, needed when ImGui is opened via bound key press
-	extern qboolean keydown[MAX_KEYS];
 	memset(keydown, 0, sizeof keydown);
 
 	// Remove event filter to allow mouse move events
