@@ -40,34 +40,59 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern "C"
 {
-
 #include "quakedef.h"
 #include "ls_common.h"
+}
+
 
 #ifdef USE_LUA_SCRIPTING
 
 enum LS_ImGuiType
 {
 	IMTYPE_BOOL,
+	IMTYPE_INT,
 	IMTYPE_FLOAT,
-	IMTYPE_DIR,
 	IMTYPE_VEC2,
 	IMTYPE_VEC4,
 };
 
 struct LS_ImGuiMember
 {
-	size_t offset:24;
 	size_t type:8;
+	size_t offset:24;
 };
 
-//#define LS_IMGUI_DEFINE_MEMBER(TYPENAME, MEMBERNAME, TYPE) { #MEMBERNAME, { offsetof(TYPENAME, MEMBERNAME) } }
+template <typename T>
+constexpr LS_ImGuiType LS_GetImGuiType(T value = T());
 
-constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 2> ls_imguistyle_members =
+template <> constexpr LS_ImGuiType LS_GetImGuiType(bool   value) { return IMTYPE_BOOL ; }
+template <> constexpr LS_ImGuiType LS_GetImGuiType(int    value) { return IMTYPE_INT  ; }
+template <> constexpr LS_ImGuiType LS_GetImGuiType(float  value) { return IMTYPE_FLOAT; }
+template <> constexpr LS_ImGuiType LS_GetImGuiType(ImVec2 value) { return IMTYPE_VEC2 ; }
+template <> constexpr LS_ImGuiType LS_GetImGuiType(ImVec4 value) { return IMTYPE_VEC4 ; }
+
+#define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
+	{ #MEMBERNAME, { LS_GetImGuiType<decltype(TYPENAME::MEMBERNAME)>(), offsetof(TYPENAME, MEMBERNAME) } }
+
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 8> ls_imguistyle_members =
 {
-	{ "Alpha", { offsetof(ImGuiStyle, Alpha), IMTYPE_FLOAT } },
-	{ "DisabledAlpha", { offsetof(ImGuiStyle, DisabledAlpha), IMTYPE_FLOAT } },
+#define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
+
+	LS_IMGUI_STYLE_MEMBER(Alpha),
+	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
+	LS_IMGUI_STYLE_MEMBER(WindowPadding),
+	LS_IMGUI_STYLE_MEMBER(WindowRounding),
+	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
+	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
+	LS_IMGUI_STYLE_MEMBER(WindowTitleAlign),
+	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
+	// TODO: all members
+
+#undef LS_IMGUI_STYLE_MEMBER
 };
+
+#undef LS_IMGUI_MEMBER
+
 
 static bool ls_framescope;
 
@@ -941,6 +966,9 @@ static void EXP_EnterMode()
 #endif // USE_LUA_SCRIPTING
 }
 
+extern "C"
+{
+
 static void EXP_ExitMode()
 {
 	if (!exp_active)
@@ -967,6 +995,11 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 {
 	exp_window = window;
 	exp_glcontext = context;
+
+//	for (const auto& entry : ls_imguistyle_members)
+//	{
+//		printf("%s: %i at %i\n", entry.first.data(), entry.second.type, entry.second.offset);
+//	}
 
 	Cmd_AddCommand("expmode", EXP_EnterMode);
 }
