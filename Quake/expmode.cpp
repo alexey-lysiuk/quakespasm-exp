@@ -43,7 +43,7 @@ extern "C"
 #include "quakedef.h"
 #include "ls_common.h"
 
-qboolean keydown[MAX_KEYS];
+extern qboolean keydown[MAX_KEYS];
 }
 
 
