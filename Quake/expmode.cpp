@@ -49,11 +49,11 @@ extern "C"
 
 enum LS_ImGuiType
 {
-	IMTYPE_BOOL,
-	IMTYPE_INT,
-	IMTYPE_FLOAT,
-	IMTYPE_VEC2,
-	IMTYPE_VEC4,
+	ImMemberType_bool,
+	ImMemberType_int,
+	ImMemberType_float,
+	ImMemberType_ImVec2,
+	ImMemberType_ImVec4,
 };
 
 struct LS_ImGuiMember
@@ -63,16 +63,21 @@ struct LS_ImGuiMember
 };
 
 template <typename T>
-constexpr LS_ImGuiType LS_GetImGuiType(T value = T());
+struct LS_ImGuiTypeHolder;
 
-template <> constexpr LS_ImGuiType LS_GetImGuiType(bool   value) { return IMTYPE_BOOL ; }
-template <> constexpr LS_ImGuiType LS_GetImGuiType(int    value) { return IMTYPE_INT  ; }
-template <> constexpr LS_ImGuiType LS_GetImGuiType(float  value) { return IMTYPE_FLOAT; }
-template <> constexpr LS_ImGuiType LS_GetImGuiType(ImVec2 value) { return IMTYPE_VEC2 ; }
-template <> constexpr LS_ImGuiType LS_GetImGuiType(ImVec4 value) { return IMTYPE_VEC4 ; }
+#define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
+	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr LS_ImGuiType IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
+
+LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
+LS_IMGUI_DEFINE_MEMBER_TYPE(int);
+LS_IMGUI_DEFINE_MEMBER_TYPE(float);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+
+#undef LS_IMGUI_DEFINE_MEMBER_TYPE
 
 #define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
-	{ #MEMBERNAME, { LS_GetImGuiType<decltype(TYPENAME::MEMBERNAME)>(), offsetof(TYPENAME, MEMBERNAME) } }
+	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
 
 constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 8> ls_imguistyle_members =
 {
@@ -996,10 +1001,10 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 	exp_window = window;
 	exp_glcontext = context;
 
-//	for (const auto& entry : ls_imguistyle_members)
-//	{
-//		printf("%s: %i at %i\n", entry.first.data(), entry.second.type, entry.second.offset);
-//	}
+	for (const auto& entry : ls_imguistyle_members)
+	{
+		printf("%s: %i at %i\n", entry.first.data(), entry.second.type, entry.second.offset);
+	}
 
 	Cmd_AddCommand("expmode", EXP_EnterMode);
 }
