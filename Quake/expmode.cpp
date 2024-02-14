@@ -33,6 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "backends/imgui_impl_opengl2.h"
 #include "backends/imgui_impl_sdl2.h"
 
+#ifdef USE_LUA_SCRIPTING
+#include "frozen/string.h"
+#include "frozen/unordered_map.h"
+#endif // USE_LUA_SCRIPTING
+
 extern "C"
 {
 
@@ -40,6 +45,29 @@ extern "C"
 #include "ls_common.h"
 
 #ifdef USE_LUA_SCRIPTING
+
+enum LS_ImGuiType
+{
+	IMTYPE_BOOL,
+	IMTYPE_FLOAT,
+	IMTYPE_DIR,
+	IMTYPE_VEC2,
+	IMTYPE_VEC4,
+};
+
+struct LS_ImGuiMember
+{
+	size_t offset:24;
+	size_t type:8;
+};
+
+//#define LS_IMGUI_DEFINE_MEMBER(TYPENAME, MEMBERNAME, TYPE) { #MEMBERNAME, { offsetof(TYPENAME, MEMBERNAME) } }
+
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 2> ls_imguistyle_members =
+{
+	{ "Alpha", { offsetof(ImGuiStyle, Alpha), IMTYPE_FLOAT } },
+	{ "DisabledAlpha", { offsetof(ImGuiStyle, DisabledAlpha), IMTYPE_FLOAT } },
+};
 
 static bool ls_framescope;
 
