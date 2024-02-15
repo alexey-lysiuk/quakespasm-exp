@@ -197,17 +197,13 @@ function edicts.isany(edict)
 	local location, angles
 
 	if not isfree(edict) then
-		location = edict.origin
+		local absmin = edict.absmin
+		local absmax = edict.absmax
 
-		if not location or location == vec3origin then
-			local absmin = edict.absmin
-			local absmax = edict.absmax
-
-			if absmin and absmax then
-				location = vec3mid(absmin, absmax)
-			else
-				location = vec3origin
-			end
+		if absmin and absmax then
+			location = vec3mid(absmin, absmax)
+		else
+			location = edict.origin or vec3origin
 		end
 
 		angles = edict.angles
