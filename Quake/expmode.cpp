@@ -44,52 +44,48 @@ extern qboolean keydown[MAX_KEYS];
 
 #ifdef USE_LUA_SCRIPTING
 
-static bool exp_framescope;
+static bool ls_framescope;
 
 static void LS_EnsureFrameScope(lua_State* state)
 {
-	if (!exp_framescope)
-		// TODO: Add faulty function name to error message
+	if (!ls_framescope)
 		luaL_error(state, "Calling ImGui function outside of frame scope");
 }
 
-uint32_t exp_windowscope;
+static uint32_t ls_windowscope;
 
 static void LS_EnsureWindowScope(lua_State* state)
 {
-	if (exp_windowscope == 0)
-		// TODO: Add faulty function name to error message
+	if (ls_windowscope == 0)
 		luaL_error(state, "Calling ImGui function outside of window scope");
 }
 
-uint32_t exp_popupscope;
+static uint32_t ls_popupscope;
 
 static void LS_EnsurePopupScope(lua_State* state)
 {
-	if (exp_popupscope == 0)
-		// TODO: Add faulty function name to error message
+	if (ls_popupscope == 0)
 		luaL_error(state, "Calling ImGui function outside of popup scope");
 }
 
-uint32_t exp_tablescope;
+static uint32_t ls_tablescope;
 
 static void LS_EnsureTableScope(lua_State* state)
 {
-	if (exp_tablescope == 0)
-		// TODO: Add faulty function name to error message
+	if (ls_tablescope == 0)
 		luaL_error(state, "Calling ImGui function outside of table scope");
 }
 
-using ImGuiEndFunction = void(*)();
+using LS_ImGuiEndFunction = void(*)();
 
-static ImVector<ImGuiEndFunction> ls_endfuncstack;
+static ImVector<LS_ImGuiEndFunction> ls_endfuncstack;
 
-static void LS_AddToImGuiStack(ImGuiEndFunction endfunc)
+static void LS_AddToImGuiStack(LS_ImGuiEndFunction endfunc)
 {
 	ls_endfuncstack.push_back(endfunc);
 }
 
-static void LS_RemoveFromImGuiStack(lua_State* state, ImGuiEndFunction endfunc)
+static void LS_RemoveFromImGuiStack(lua_State* state, LS_ImGuiEndFunction endfunc)
 {
 	assert(!ls_endfuncstack.empty());
 
@@ -189,8 +185,8 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 
 static void LS_EndWindowScope()
 {
-	assert(exp_windowscope > 0);
-	--exp_windowscope;
+	assert(ls_windowscope > 0);
+	--ls_windowscope;
 
 	ImGui::End();
 }
@@ -219,7 +215,7 @@ static int LS_global_imgui_Begin(lua_State* state)
 	lua_pushboolean(state, visible);
 
 	LS_AddToImGuiStack(LS_EndWindowScope);
-	++exp_windowscope;
+	++ls_windowscope;
 
 	if (openptr == nullptr)
 		return 1;  // p_open == nullptr, one return value
@@ -299,8 +295,8 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 
 static void LS_EndPopupScope()
 {
-	assert(exp_popupscope > 0);
-	--exp_popupscope;
+	assert(ls_popupscope > 0);
+	--ls_popupscope;
 
 	ImGui::EndPopup();
 }
@@ -318,7 +314,7 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 	if (visible)
 	{
 		LS_AddToImGuiStack(LS_EndPopupScope);
-		++exp_popupscope;
+		++ls_popupscope;
 	}
 
 	return 1;
@@ -334,8 +330,8 @@ static int LS_global_imgui_EndPopup(lua_State* state)
 
 static void LS_EndTableScope()
 {
-	assert(exp_tablescope > 0);
-	--exp_tablescope;
+	assert(ls_tablescope > 0);
+	--ls_tablescope;
 
 	ImGui::EndTable();
 }
@@ -359,7 +355,7 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 	if (visible)
 	{
 		LS_AddToImGuiStack(LS_EndTableScope);
-		++exp_tablescope;
+		++ls_tablescope;
 	}
 
 	return 1;
@@ -584,153 +580,153 @@ static void LS_InitImGuiEnums(lua_State* state)
 {
 	assert(lua_gettop(state) == 1);
 
-#define EXP_IMGUI_ENUM_BEGIN() \
+#define LS_IMGUI_ENUM_BEGIN() \
 	{ static const ImGuiEnumValue values[] = {
 
-#define EXP_IMGUI_ENUM_VALUE(ENUMNAME, VALUENAME) \
+#define LS_IMGUI_ENUM_VALUE(ENUMNAME, VALUENAME) \
 	{ #VALUENAME, ImGui##ENUMNAME##_##VALUENAME },
 
-#define EXP_IMGUI_ENUM_END(ENUMNAME) \
+#define LS_IMGUI_ENUM_END(ENUMNAME) \
 	}; LS_InitImGuiEnum(state, #ENUMNAME, values, Q_COUNTOF(values)); }
 
-	EXP_IMGUI_ENUM_BEGIN()
-	EXP_IMGUI_ENUM_VALUE(Cond, None)
-	EXP_IMGUI_ENUM_VALUE(Cond, Always)
-	EXP_IMGUI_ENUM_VALUE(Cond, Once)
-	EXP_IMGUI_ENUM_VALUE(Cond, FirstUseEver)
-	EXP_IMGUI_ENUM_VALUE(Cond, Appearing)
-	EXP_IMGUI_ENUM_END(Cond)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_ENUM_VALUE(Cond, None)
+	LS_IMGUI_ENUM_VALUE(Cond, Always)
+	LS_IMGUI_ENUM_VALUE(Cond, Once)
+	LS_IMGUI_ENUM_VALUE(Cond, FirstUseEver)
+	LS_IMGUI_ENUM_VALUE(Cond, Appearing)
+	LS_IMGUI_ENUM_END(Cond)
 
-	EXP_IMGUI_ENUM_BEGIN()
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, None)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsDecimal)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsHexadecimal)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsUppercase)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsNoBlank)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AutoSelectAll)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EnterReturnsTrue)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, None)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CharsDecimal)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CharsHexadecimal)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CharsUppercase)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CharsNoBlank)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, AutoSelectAll)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, EnterReturnsTrue)
 	// TODO: Input text callback support
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCompletion)
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackHistory)
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackAlways)
-	//EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCharFilter)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AllowTabInput)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CtrlEnterForNewLine)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoHorizontalScroll)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, AlwaysOverwrite)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, ReadOnly)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, Password)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, NoUndoRedo)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CharsScientific)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackResize)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, CallbackEdit)
-	EXP_IMGUI_ENUM_VALUE(InputTextFlags, EscapeClearsAll)
-	EXP_IMGUI_ENUM_END(InputTextFlags)
+	//LS_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCompletion)
+	//LS_IMGUI_ENUM_VALUE(InputTextFlags, CallbackHistory)
+	//LS_IMGUI_ENUM_VALUE(InputTextFlags, CallbackAlways)
+	//LS_IMGUI_ENUM_VALUE(InputTextFlags, CallbackCharFilter)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, AllowTabInput)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CtrlEnterForNewLine)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, NoHorizontalScroll)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, AlwaysOverwrite)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, ReadOnly)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, Password)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, NoUndoRedo)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CharsScientific)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CallbackResize)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, CallbackEdit)
+	LS_IMGUI_ENUM_VALUE(InputTextFlags, EscapeClearsAll)
+	LS_IMGUI_ENUM_END(InputTextFlags)
 
-	EXP_IMGUI_ENUM_BEGIN()
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, None)
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, DontClosePopups)
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, SpanAllColumns)
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowDoubleClick)
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, Disabled)
-	EXP_IMGUI_ENUM_VALUE(SelectableFlags, AllowOverlap)
-	EXP_IMGUI_ENUM_END(SelectableFlags)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_ENUM_VALUE(SelectableFlags, None)
+	LS_IMGUI_ENUM_VALUE(SelectableFlags, DontClosePopups)
+	LS_IMGUI_ENUM_VALUE(SelectableFlags, SpanAllColumns)
+	LS_IMGUI_ENUM_VALUE(SelectableFlags, AllowDoubleClick)
+	LS_IMGUI_ENUM_VALUE(SelectableFlags, Disabled)
+	LS_IMGUI_ENUM_VALUE(SelectableFlags, AllowOverlap)
+	LS_IMGUI_ENUM_END(SelectableFlags)
 
-	EXP_IMGUI_ENUM_BEGIN()
-	EXP_IMGUI_ENUM_VALUE(TableFlags, None)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Resizable)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Reorderable)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Hideable)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Sortable)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoSavedSettings)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, ContextMenuInBody)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, RowBg)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInnerH)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuterH)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInnerV)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuterV)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersH)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersV)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersInner)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, BordersOuter)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, Borders)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBody)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBodyUntilResize)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingFixedFit)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingFixedSame)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingStretchProp)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SizingStretchSame)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendX)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendY)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoKeepColumnsVisible)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, PreciseWidths)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoClip)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, PadOuterX)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoPadOuterX)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, NoPadInnerX)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, ScrollX)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, ScrollY)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SortMulti)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, SortTristate)
-	EXP_IMGUI_ENUM_VALUE(TableFlags, HighlightHoveredColumn)
-	EXP_IMGUI_ENUM_END(TableFlags)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_ENUM_VALUE(TableFlags, None)
+	LS_IMGUI_ENUM_VALUE(TableFlags, Resizable)
+	LS_IMGUI_ENUM_VALUE(TableFlags, Reorderable)
+	LS_IMGUI_ENUM_VALUE(TableFlags, Hideable)
+	LS_IMGUI_ENUM_VALUE(TableFlags, Sortable)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoSavedSettings)
+	LS_IMGUI_ENUM_VALUE(TableFlags, ContextMenuInBody)
+	LS_IMGUI_ENUM_VALUE(TableFlags, RowBg)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersInnerH)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersOuterH)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersInnerV)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersOuterV)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersH)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersV)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersInner)
+	LS_IMGUI_ENUM_VALUE(TableFlags, BordersOuter)
+	LS_IMGUI_ENUM_VALUE(TableFlags, Borders)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBody)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoBordersInBodyUntilResize)
+	LS_IMGUI_ENUM_VALUE(TableFlags, SizingFixedFit)
+	LS_IMGUI_ENUM_VALUE(TableFlags, SizingFixedSame)
+	LS_IMGUI_ENUM_VALUE(TableFlags, SizingStretchProp)
+	LS_IMGUI_ENUM_VALUE(TableFlags, SizingStretchSame)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendX)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoHostExtendY)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoKeepColumnsVisible)
+	LS_IMGUI_ENUM_VALUE(TableFlags, PreciseWidths)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoClip)
+	LS_IMGUI_ENUM_VALUE(TableFlags, PadOuterX)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoPadOuterX)
+	LS_IMGUI_ENUM_VALUE(TableFlags, NoPadInnerX)
+	LS_IMGUI_ENUM_VALUE(TableFlags, ScrollX)
+	LS_IMGUI_ENUM_VALUE(TableFlags, ScrollY)
+	LS_IMGUI_ENUM_VALUE(TableFlags, SortMulti)
+	LS_IMGUI_ENUM_VALUE(TableFlags, SortTristate)
+	LS_IMGUI_ENUM_VALUE(TableFlags, HighlightHoveredColumn)
+	LS_IMGUI_ENUM_END(TableFlags)
 
-	EXP_IMGUI_ENUM_BEGIN()
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, None)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, Disabled)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultHide)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultSort)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthStretch)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, WidthFixed)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoResize)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoReorder)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHide)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoClip)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSort)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortAscending)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortDescending)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderLabel)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderWidth)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortAscending)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortDescending)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentEnable)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IndentDisable)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, AngledHeader)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsEnabled)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsVisible)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsSorted)
-	EXP_IMGUI_ENUM_VALUE(TableColumnFlags, IsHovered)
-	EXP_IMGUI_ENUM_END(TableColumnFlags)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, None)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, Disabled)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultHide)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, DefaultSort)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, WidthStretch)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, WidthFixed)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoResize)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoReorder)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoHide)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoClip)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoSort)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortAscending)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoSortDescending)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderLabel)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, NoHeaderWidth)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortAscending)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, PreferSortDescending)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, IndentEnable)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, IndentDisable)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, AngledHeader)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, IsEnabled)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, IsVisible)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, IsSorted)
+	LS_IMGUI_ENUM_VALUE(TableColumnFlags, IsHovered)
+	LS_IMGUI_ENUM_END(TableColumnFlags)
 
-	EXP_IMGUI_ENUM_BEGIN()
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, None)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoTitleBar)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoResize)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoMove)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoScrollbar)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoScrollWithMouse)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoCollapse)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, AlwaysAutoResize)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoBackground)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoSavedSettings)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoMouseInputs)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, MenuBar)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, HorizontalScrollbar)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoFocusOnAppearing)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoBringToFrontOnFocus)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, AlwaysVerticalScrollbar)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, AlwaysHorizontalScrollbar)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoNavInputs)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoNavFocus)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, UnsavedDocument)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoNav)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoDecoration)
-	EXP_IMGUI_ENUM_VALUE(WindowFlags, NoInputs)
-	EXP_IMGUI_ENUM_END(WindowFlags)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_ENUM_VALUE(WindowFlags, None)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoTitleBar)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoResize)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoMove)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoScrollbar)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoScrollWithMouse)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoCollapse)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, AlwaysAutoResize)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoBackground)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoSavedSettings)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoMouseInputs)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, MenuBar)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, HorizontalScrollbar)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoFocusOnAppearing)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoBringToFrontOnFocus)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, AlwaysVerticalScrollbar)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, AlwaysHorizontalScrollbar)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoNavInputs)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoNavFocus)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, UnsavedDocument)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoNav)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoDecoration)
+	LS_IMGUI_ENUM_VALUE(WindowFlags, NoInputs)
+	LS_IMGUI_ENUM_END(WindowFlags)
 
-#undef EXP_IMGUI_ENUM_END
-#undef EXP_IMGUI_ENUM_VALUE
-#undef EXP_IMGUI_ENUM_BEGIN
+#undef LS_IMGUI_ENUM_END
+#undef LS_IMGUI_ENUM_VALUE
+#undef LS_IMGUI_ENUM_BEGIN
 }
 
 static void LS_InitImGuiBindings(lua_State* state)
@@ -988,13 +984,13 @@ void EXP_Update()
 	}
 
 #ifdef USE_LUA_SCRIPTING
-	assert(!exp_framescope);
-	exp_framescope = true;
+	assert(!ls_framescope);
+	ls_framescope = true;
 
 	if (!LS_CallExpModeFunction("onupdate"))
 		EXP_ExitMode();
 
-	exp_framescope = false;
+	ls_framescope = false;
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();
