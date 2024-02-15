@@ -35,9 +35,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern "C"
 {
-
 #include "quakedef.h"
 #include "ls_common.h"
+
+extern qboolean keydown[MAX_KEYS];
+}
+
 
 #ifdef USE_LUA_SCRIPTING
 
@@ -901,7 +904,6 @@ static void EXP_EnterMode()
 	IN_Deactivate(true);
 
 	// Clear key down state, needed when ImGui is opened via bound key press
-	extern qboolean keydown[MAX_KEYS];
 	memset(keydown, 0, sizeof keydown);
 
 	// Remove event filter to allow mouse move events
@@ -916,6 +918,9 @@ static void EXP_EnterMode()
 	LS_CallExpModeFunction("onopen");
 #endif // USE_LUA_SCRIPTING
 }
+
+extern "C"
+{
 
 static void EXP_ExitMode()
 {
