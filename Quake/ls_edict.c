@@ -430,8 +430,13 @@ static int LS_global_edicts_references(lua_State* state)
 		{
 			if (type == ev_entity)
 			{
-				qboolean owner = strcmp(name, "owner") == 0;
-				LS_references_PushEdictIndex(state, owner ? 2 : 1, PROG_TO_EDICT(value->edict));
+				edict_t* refedict = PROG_TO_EDICT(value->edict);
+
+				if (refedict != edict)
+				{
+					qboolean owner = strcmp(name, "owner") == 0;
+					LS_references_PushEdictIndex(state, owner ? 2 : 1, refedict);
+				}
 			}
 			else if (type == ev_string)
 			{
@@ -450,7 +455,7 @@ static int LS_global_edicts_references(lua_State* state)
 		edict_t* probe = EDICT_NUM(e);
 		assert(probe);
 
-		if (probe->free)
+		if (probe->free || probe == edict)
 			continue;
 
 		for (int f = 1; f < progs->numfielddefs; ++f)
@@ -462,7 +467,10 @@ static int LS_global_edicts_references(lua_State* state)
 			if (ED_GetFieldByIndex(probe, f, &name, &type, &value))
 			{
 				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
-					LS_references_PushEdictIndex(state, 2, probe);
+				{
+					qboolean owner = strcmp(name, "owner") == 0;
+					LS_references_PushEdictIndex(state, owner ? 1 : 2, probe);
+				}
 				else if (type == ev_string)
 				{
 					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_references_StringsEqual(targetname, value->string))
