@@ -382,6 +382,18 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
+local function edictstable_tostring(entries, zerobasedindex)
+	local lines = {}
+
+	for row = 1, #entries do
+		local entry = entries[row]
+		local line = format('%d\t%s\t%s', zerobasedindex and row - 1 or row, entry.description, entry.location)
+		insert(lines, line)
+	end
+
+	return table.concat(lines, '\n')
+end
+
 local function edictstable(title, entries, zerobasedindex)
 	if imBeginTable(title, 3, defaulttableflags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
@@ -411,6 +423,9 @@ local function edictstable(title, entries, zerobasedindex)
 						end
 						if imSelectable('Copy row') then
 							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
+						end
+						if imSelectable('Copy table') then
+							imSetClipboardText(edictstable_tostring(entries, zerobasedindex))
 						end
 						imEndPopup()
 					end
