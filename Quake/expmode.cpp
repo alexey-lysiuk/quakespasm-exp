@@ -207,7 +207,7 @@ static int LS_PushImVec2(lua_State* state, const ImVec2& value)
 	return 1;
 }
 
-static int LS_NewImVec2(lua_State* state)
+static int LS_global_imgui_ImVec2(lua_State* state)
 {
 	const float x = luaL_optnumber(state, 1, 0.f);
 	const float y = luaL_optnumber(state, 2, 0.f);
@@ -896,6 +896,8 @@ static void LS_InitImGuiBindings(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "ImVec2", LS_global_imgui_ImVec2 },
+
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
 #ifndef NDEBUG
@@ -940,9 +942,6 @@ static void LS_InitImGuiBindings(lua_State* state)
 	lua_setglobal(state, "imgui");
 	LS_InitImGuiEnums(state);
 	lua_pop(state, 1);  // remove imgui table
-
-	lua_pushcfunction(state, LS_NewImVec2);
-	lua_setglobal(state, "ImVec2");
 }
 
 

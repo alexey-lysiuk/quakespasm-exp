@@ -153,6 +153,9 @@ int Scrap_AllocBlock (int w, int h, int *x, int *y)
 	int		best, best2;
 	int		texnum;
 
+	*x = 0;
+	*y = 0;
+
 	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++)
 	{
 		best = BLOCK_HEIGHT;
@@ -185,7 +188,6 @@ int Scrap_AllocBlock (int w, int h, int *x, int *y)
 	}
 
 	Sys_Error ("Scrap_AllocBlock: full"); //johnfitz -- correct function name
-	*x = 0; *y = 0;
 	return 0; //johnfitz -- shut up compiler
 }
 
