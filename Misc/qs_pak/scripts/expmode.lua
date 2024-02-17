@@ -565,11 +565,17 @@ local function edictrefs_onopen(self)
 		end
 	end
 
-	local references = {}
-	local referencedby = {}
-
 	outgoing, incoming = edicts.references(edict)
+
+	if #outgoing == 0 and #incoming == 0 then
+		windows[self.title] = nil
+		return
+	end
+
+	local references = {}
 	addentries(outgoing, references)
+
+	local referencedby = {}
 	addentries(incoming, referencedby)
 
 	self.references = references
