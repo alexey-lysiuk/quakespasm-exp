@@ -649,6 +649,33 @@ addtool('Scratchpad', function (self)
 
 	return opened
 end)
+addtool('Stats', function (self)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(320, 240, imCondFirstUseEver)
+
+	local visible, opened = imBegin(self.title, true)
+
+	if visible and opened then
+		local prevtime = self.realtime or 0
+		local curtime = host.realtime()
+
+		if prevtime + 0.1 <= curtime then
+			self.hoststats = format('framecount = %i\nframetime = %f\nrealtime = %f', 
+				host.framecount(), host.frametime(), curtime)
+			self.memstats = memstats()
+			self.realtime = curtime
+		end
+
+		imSeparatorText('Host stats')
+		imText(self.hoststats)
+		imSeparatorText('Lua memory stats')
+		imText(self.memstats)
+	end
+
+	imEnd()
+
+	return opened
+end)
 addtool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
