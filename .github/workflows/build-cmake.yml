@@ -17,8 +17,11 @@ jobs:
           - name: Linux GCC
             os: ubuntu-22.04
 
-          - name: macOS
+          - name: macOS Intel
             os: macos-13
+
+          - name: macOS ARM
+            os: macos-14
 
           - name: MSVC 32-bit
             os: windows-2022
