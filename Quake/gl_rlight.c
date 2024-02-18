@@ -171,8 +171,7 @@ void R_MarkLights (dlight_t *light, int num, mnode_t *node)
 	msurface_t	*surf;
 	vec3_t		impact;
 	float		dist, l, maxdist;
-	unsigned int i;
-	int			j, s, t;
+	int			i, j, s, t;
 
 start:
 	if (node->contents < 0)
@@ -309,8 +308,7 @@ loc0:
 		return true;	// hit something
 	else
 	{
-		unsigned int i;
-		int ds, dt;
+		int i, ds, dt;
 		msurface_t *surf;
 	// check for impact on this node
 		VectorCopy (mid, lightspot);

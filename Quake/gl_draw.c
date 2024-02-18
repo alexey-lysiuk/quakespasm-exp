@@ -225,13 +225,7 @@ qpic_t *Draw_PicFromWad (const char *name)
 	// load little ones into the scrap
 	if (p->width < 64 && p->height < 64)
 	{
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
 		int		x, y;
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
 		int		i, j, k;
 		int		texnum;
 

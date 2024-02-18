@@ -335,10 +335,11 @@ Otherwise, allocations with the same name will be totaled up before printing.
 void Hunk_Print (qboolean all)
 {
 	hunk_t	*h, *next, *endlow, *starthigh, *endhigh;
-	int		sum;
+	int		count, sum;
 	int		totalblocks;
 	char	name[HUNKNAME_LEN];
 
+	count = 0;
 	sum = 0;
 	totalblocks = 0;
 
@@ -378,6 +379,7 @@ void Hunk_Print (qboolean all)
 			Sys_Error ("Hunk_Check: bad size");
 
 		next = (hunk_t *)((byte *)h+h->size);
+		count++;
 		totalblocks++;
 		sum += h->size;
 
@@ -396,6 +398,7 @@ void Hunk_Print (qboolean all)
 		{
 			if (!all)
 				Con_Printf ("          :%8i %8s (TOTAL)\n",sum, name);
+			count = 0;
 			sum = 0;
 		}
 
