@@ -54,6 +54,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          patch --input .github/fix-warnings.diff --strip 1
           export MAKEFLAGS=--keep-going
           cmake --build build --config Release --parallel ${{ steps.cpu-cores.outputs.count }}
 
