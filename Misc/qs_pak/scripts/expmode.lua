@@ -613,7 +613,7 @@ function expmode.edictreferences(edict)
 			return
 		end
 
-		if #window.references == 0 and #window.referencedby == 0 then
+		if not window.references then
 			messagebox('No references', 'Edict has no references')
 		else
 			windows[title] = window
