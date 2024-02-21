@@ -432,7 +432,7 @@ static int LS_global_edicts_references(lua_State* state)
 			{
 				edict_t* refedict = PROG_TO_EDICT(value->edict);
 
-				if (refedict != edict)
+				if (!refedict->free && refedict != edict)
 				{
 					qboolean owner = strcmp(name, "owner") == 0;
 					LS_references_PushEdictIndex(state, owner ? 2 : 1, refedict);

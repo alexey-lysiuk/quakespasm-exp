@@ -63,6 +63,8 @@ set(COMMON_SOURCES
 	Quake/lodepng.h
 	Quake/ls_common.h
 	Quake/ls_edict.c
+	Quake/ls_imgui.cpp
+	Quake/ls_imgui.h
 	Quake/ls_main.c
 	Quake/ls_vec3.c
 	Quake/main_sdl.c
@@ -137,8 +139,6 @@ set(COMMON_SOURCES
 	Quake/sv_phys.c
 	Quake/sv_user.c
 	Quake/sys.h
-	Quake/tlsf.c
-	Quake/tlsf.h
 	Quake/vid.h
 	Quake/view.c
 	Quake/view.h
@@ -152,6 +152,11 @@ set(COMMON_SOURCES
 	Quake/default_cfg.h
 	Quake/miniz.c
 	Quake/miniz.h
+)
+
+set(TLSF_SOURCES
+	Quake/tlsf/tlsf.c
+	Quake/tlsf/tlsf.h
 )
 
 set(LUA_DIR Quake/lua)
@@ -326,6 +331,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_CODEC_WAVE
 	USE_IMGUI
 	USE_LUA_SCRIPTING
+	USE_TLSF
 )
 
 if(MSVC)
@@ -461,12 +467,14 @@ source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c
 source_group("Frozen" FILES ${FROZEN_SOURCES})
 source_group("ImGui" FILES ${IMGUI_SOURCES})
 source_group("Lua" FILES ${LUA_SOURCES})
+source_group("TLSF" FILES ${TLSF_SOURCES})
 
 target_sources(${PROJECT_NAME} PRIVATE
 	${ENGINE_SOURCES}
 	${FROZEN_SOURCES}
 	${IMGUI_SOURCES}
 	${LUA_SOURCES}
+	${TLSF_SOURCES}
 )
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)

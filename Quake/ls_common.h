@@ -24,6 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -55,5 +59,9 @@ vec_t* LS_GetVec3Value(lua_State* state, int index);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif // __cplusplus
 
 #endif // USE_LUA_SCRIPTING

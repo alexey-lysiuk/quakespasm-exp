@@ -26,14 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ls_common.h"
 #include "quakedef.h"
-#include "tlsf.h"
+
+#ifdef USE_TLSF
+#include "tlsf/tlsf.h"
+#endif // USE_TLSF
 
 
 static lua_State* ls_state;
 static size_t ls_quota;
-
-static tlsf_t ls_memory;
-static size_t ls_memorysize;
 
 typedef struct
 {
@@ -44,7 +44,12 @@ typedef struct
 } LS_MemoryStats;
 
 
-void* LS_TLSF_malloc(lua_State* state, size_t size)
+#ifdef USE_TLSF
+
+static tlsf_t ls_memory;
+static size_t ls_memorysize;
+
+static void* LS_tempalloc(lua_State* state, size_t size)
 {
 	void* result = tlsf_malloc(ls_memory, size);
 
@@ -53,6 +58,25 @@ void* LS_TLSF_malloc(lua_State* state, size_t size)
 
 	return result;
 }
+
+static void LS_tempfree(void* ptr)
+{
+	tlsf_free(ls_memory, ptr);
+}
+
+#else // !USE_TLSF
+
+static void* LS_tempalloc(lua_State* state, size_t size)
+{
+	return malloc(size);
+}
+
+static void LS_tempfree(void* ptr)
+{
+	free(ptr);
+}
+
+#endif // USE_TLSF
 
 
 void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
@@ -249,7 +273,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = LS_TLSF_malloc(state, length);
+	char* script = LS_tempalloc(state, length);
 	int bytesread = Sys_FileRead(handle, script, length);
 	COM_CloseFile(handle);
 
@@ -265,7 +289,7 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		result = LUA_ERRFILE;
 	}
 
-	tlsf_free(ls_memory, script);
+	LS_tempfree(script);
 
 	return result;
 }
@@ -375,7 +399,7 @@ int LS_ErrorHandler(lua_State* state)
 	assert(traceback);
 	assert(length > 0);
 
-	char* cleaned = LS_TLSF_malloc(state, length + 1);
+	char* cleaned = LS_tempalloc(state, length + 1);
 	assert(cleaned);
 
 	qboolean skipnextquote = false;
@@ -409,10 +433,12 @@ int LS_ErrorHandler(lua_State* state)
 	cleaned[d] = '\0';
 
 	Con_SafePrintf("%s\n", cleaned);
-	tlsf_free(ls_memory, cleaned);
+	LS_tempfree(cleaned);
 
 	return 0;
 }
+
+#ifdef USE_TLSF
 
 static void* LS_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
 {
@@ -467,6 +493,16 @@ static int LS_global_memstats(lua_State* state)
 	return 1;
 }
 
+#else // !USE_TLSF
+
+static int LS_global_memstats(lua_State* state)
+{
+	lua_pushstring(state, "");
+	return 1;
+}
+
+#endif // USE_TLSF
+
 static int LS_global_dprint(lua_State* state)
 {
 	if (developer.value)
@@ -498,7 +534,7 @@ static int LS_global_text_tint(lua_State* state)
 {
 	const char* string = luaL_checkstring(state, 1);
 	size_t length = strlen(string);
-	char* result = LS_TLSF_malloc(state, length + 1);
+	char* result = LS_tempalloc(state, length + 1);
 
 	for (size_t i = 0; i < length; ++i)
 	{
@@ -514,7 +550,7 @@ static int LS_global_text_tint(lua_State* state)
 	result[length] = 0;
 
 	lua_pushstring(state, result);
-	tlsf_free(ls_memory, result);
+	LS_tempfree(result);
 
 	return 1;
 }
@@ -528,11 +564,11 @@ static int LS_global_text_toascii(lua_State* state)
 
 	const char* string = luaL_checkstring(state, 1);
 	size_t buffersize = strlen(string) + 1;
-	char* result = LS_TLSF_malloc(state, buffersize);
+	char* result = LS_tempalloc(state, buffersize);
 
 	q_strtoascii(string, result, buffersize);
 	lua_pushstring(state, result);
-	tlsf_free(ls_memory, result);
+	LS_tempfree(result);
 
 	return 1;
 }
@@ -681,7 +717,7 @@ static void LS_ResetState(void)
 	lua_close(ls_state);
 	ls_state = NULL;
 
-#ifndef NDEBUG
+#if defined USE_TLSF && !defined NDEBUG
 	// check memory pool
 	LS_MemoryStats stats;
 	memset(&stats, 0, sizeof stats);
@@ -691,7 +727,7 @@ static void LS_ResetState(void)
 	assert(stats.usedblocks == 0);
 	assert(stats.freebytes + tlsf_size() + tlsf_pool_overhead() == ls_memorysize);
 	assert(stats.freeblocks == 1);
-#endif // !NDEBUG
+#endif // USE_TLSF && !NDEBUG
 }
 
 static size_t LS_CheckSizeArgument(const char* argname)
@@ -714,6 +750,7 @@ lua_State* LS_GetState(void)
 {
 	if (ls_state == NULL)
 	{
+#ifdef USE_TLSF
 		if (ls_memory == NULL)
 		{
 			if (ls_memorysize == 0)
@@ -726,6 +763,10 @@ lua_State* LS_GetState(void)
 		}
 
 		lua_State* state = lua_newstate(LS_alloc, NULL);
+#else
+		lua_State* state = luaL_newstate();
+#endif // USE_TLSF
+
 		assert(state);
 
 		lua_gc(state, LUA_GCSTOP);
@@ -874,8 +915,10 @@ void LS_Shutdown(void)
 	if (ls_state != NULL)
 		LS_ResetState();
 
+#ifdef USE_TLSF
 	free(ls_memory);
 	ls_memory = NULL;
+#endif // USE_TLSF
 }
 
 #endif // USE_LUA_SCRIPTING
