@@ -137,8 +137,6 @@ set(COMMON_SOURCES
 	Quake/sv_phys.c
 	Quake/sv_user.c
 	Quake/sys.h
-	Quake/tlsf.c
-	Quake/tlsf.h
 	Quake/vid.h
 	Quake/view.c
 	Quake/view.h
@@ -152,6 +150,11 @@ set(COMMON_SOURCES
 	Quake/default_cfg.h
 	Quake/miniz.c
 	Quake/miniz.h
+)
+
+set(TLSF_SOURCES
+	Quake/tlsf/tlsf.c
+	Quake/tlsf/tlsf.h
 )
 
 set(LUA_DIR Quake/lua)
@@ -443,11 +446,13 @@ set(ENGINE_SOURCES
 source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c)
 source_group("ImGui" FILES ${IMGUI_SOURCES})
 source_group("Lua" FILES ${LUA_SOURCES})
+source_group("TLSF" FILES ${TLSF_SOURCES})
 
 target_sources(${PROJECT_NAME} PRIVATE
 	${ENGINE_SOURCES}
 	${IMGUI_SOURCES}
 	${LUA_SOURCES}
+	${TLSF_SOURCES}
 )
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)

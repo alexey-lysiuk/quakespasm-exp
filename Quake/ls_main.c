@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ls_common.h"
 #include "quakedef.h"
-#include "tlsf.h"
+#include "tlsf/tlsf.h"
 
 
 static lua_State* ls_state;
