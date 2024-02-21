@@ -223,6 +223,17 @@ static int LS_global_host_realtime(lua_State* state)
 	return 1;
 }
 
+static int LS_global_host_realtimes(lua_State* state)
+{
+	lua_Number integer = floor(realtime);
+	lua_pushnumber(state, integer);
+
+	lua_Number fractional = realtime - integer;
+	lua_pushnumber(state, fractional);
+
+	return 2;
+}
+
 
 static void LS_InitStandardLibraries(lua_State* state)
 {
@@ -674,6 +685,7 @@ static void LS_InitGlobalTables(lua_State* state)
 			{ "framecount", LS_global_host_framecount },
 			{ "frametime", LS_global_host_frametime },
 			{ "realtime", LS_global_host_realtime },
+			{ "realtimes", LS_global_host_realtimes },
 			{ NULL, NULL }
 		};
 
