@@ -555,12 +555,13 @@ local function edictrefs_onopen(self)
 
 	local function addentries(source, list)
 		for _, edict in ipairs(source) do
+			local description, location, angles = isany(edict)
 			insert(list,
 			{
 				edict = edict,
-				description = getname(edict),
-				location = vec3mid(edict.absmin, edict.absmax),
-				angles = edict.angles
+				description = description,
+				location = location,
+				angles = angles
 			})
 		end
 	end
