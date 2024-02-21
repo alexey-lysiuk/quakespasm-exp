@@ -312,6 +312,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_CODEC_WAVE
 	USE_IMGUI
 	USE_LUA_SCRIPTING
+	USE_TLSF
 )
 
 if(MSVC)
