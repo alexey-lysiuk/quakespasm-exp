@@ -48,6 +48,7 @@ local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
+local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
 local tools = {}
 local windows = {}
@@ -61,11 +62,42 @@ function expmode.exit()
 	shouldexit = true
 end
 
+local function errorwindow_onupdate(self)
+	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.35, imCondFirstUseEver, 0.5, 0.5)
+
+	local visible, opened = imBegin(self.title, true, messageboxflags)
+
+	if visible and opened then
+		local message = self.message
+
+		imText('Error occurred when running a tool')
+		imSpacing()
+		imSeparator()
+		imSpacing()
+		imText(message)
+		imSpacing()
+
+		if imButton('Copy') then
+			imSetClipboardText(message)
+		end
+		imSameLine()
+		if imButton('Close') then
+			opened = false
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
 function expmode.safecall(func, ...)
 	local succeeded, result_or_error = xpcall(func, errorhandler, ...)
 
 	if not succeeded then
-		expmode.messagebox('Tool Error', 'Error occurred when running a tool\n\n' .. result_or_error)
+		expmode.window('Tool Error',
+			function (self) self.message = result_or_error end,
+			errorwindow_onupdate)
 	end
 
 	return succeeded, result_or_error
@@ -207,8 +239,6 @@ function expmode.window(title, construct, onupdate, onopen, onclose)
 end
 
 local window <const> = expmode.window
-
-local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
 local function messagebox_onupdate(self)
 	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.35, imCondFirstUseEver, 0.5, 0.5)
