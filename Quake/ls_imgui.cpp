@@ -704,6 +704,17 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	return 2;
 }
 
+static int LS_global_imgui_IsItemHovered(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int flags = luaL_optinteger(state, 1, 0);
+	const bool hovered = ImGui::IsItemHovered(flags);
+
+	lua_pushboolean(state, hovered);
+	return 1;
+}
+
 static int LS_global_imgui_Selectable(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -735,6 +746,15 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 
 	const char* const label = luaL_checkstring(state, 1);
 	ImGui::SeparatorText(label);
+	return 0;
+}
+
+static int LS_global_imgui_SetTooltip(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* const text = luaL_checkstring(state, 1);
+	ImGui::SetTooltip("%s", text);
 	return 0;
 }
 
@@ -800,6 +820,31 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_ENUM_VALUE(Cond, FirstUseEver)
 	LS_IMGUI_ENUM_VALUE(Cond, Appearing)
 	LS_IMGUI_ENUM_END(Cond)
+
+#define LS_IMGUI_HOVERED_FLAG(NAME) LS_IMGUI_ENUM_VALUE(HoveredFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_HOVERED_FLAG(None)
+	LS_IMGUI_HOVERED_FLAG(ChildWindows)
+	LS_IMGUI_HOVERED_FLAG(RootWindow)
+	LS_IMGUI_HOVERED_FLAG(AnyWindow)
+	LS_IMGUI_HOVERED_FLAG(NoPopupHierarchy)
+	LS_IMGUI_HOVERED_FLAG(AllowWhenBlockedByPopup)
+	LS_IMGUI_HOVERED_FLAG(AllowWhenBlockedByActiveItem)
+	LS_IMGUI_HOVERED_FLAG(AllowWhenOverlappedByItem)
+	LS_IMGUI_HOVERED_FLAG(AllowWhenOverlappedByWindow)
+	LS_IMGUI_HOVERED_FLAG(AllowWhenDisabled)
+	LS_IMGUI_HOVERED_FLAG(NoNavOverride)
+	LS_IMGUI_HOVERED_FLAG(AllowWhenOverlapped)
+	LS_IMGUI_HOVERED_FLAG(RectOnly)
+	LS_IMGUI_HOVERED_FLAG(RootAndChildWindows)
+	LS_IMGUI_HOVERED_FLAG(ForTooltip)
+	LS_IMGUI_HOVERED_FLAG(Stationary)
+	LS_IMGUI_HOVERED_FLAG(DelayNone)
+	LS_IMGUI_HOVERED_FLAG(DelayShort)
+	LS_IMGUI_HOVERED_FLAG(DelayNormal)
+	LS_IMGUI_HOVERED_FLAG(NoSharedDelay)
+	LS_IMGUI_ENUM_END(HoveredFlags)
+#undef LS_IMGUI_HOVERED_FLAG
 
 	LS_IMGUI_ENUM_BEGIN()
 	LS_IMGUI_ENUM_VALUE(InputTextFlags, None)
@@ -967,9 +1012,11 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
 		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
+		{ "IsItemHovered", LS_global_imgui_IsItemHovered },
 		{ "Selectable", LS_global_imgui_Selectable },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
+		{ "SetTooltip", LS_global_imgui_SetTooltip },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Text", LS_global_imgui_Text },
 

@@ -1,6 +1,7 @@
 
 local format <const> = string.format
 local insert <const> = table.insert
+local tostring <const> = tostring
 
 local imBegin <const> = imgui.Begin
 local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
@@ -14,6 +15,7 @@ local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
 local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
+local imIsItemHovered <const> = imgui.IsItemHovered
 local imSameLine <const> = imgui.SameLine
 local imSelectable <const> = imgui.Selectable
 local imSeparator <const> = imgui.Separator
@@ -22,6 +24,7 @@ local imSetClipboardText <const> = imgui.SetClipboardText
 local imSetNextWindowFocus <const> = imgui.SetNextWindowFocus
 local imSetNextWindowPos <const> = imgui.SetNextWindowPos
 local imSetNextWindowSize <const> = imgui.SetNextWindowSize
+local imSetTooltip <const> = imgui.SetTooltip
 local imShowDemoWindow <const> = imgui.ShowDemoWindow
 local imSpacing <const> = imgui.Spacing
 local imTableHeadersRow <const> = imgui.TableHeadersRow
@@ -437,6 +440,9 @@ local function edictstable(title, entries, zerobasedindex)
 
 				if imSelectable(descriptionid) then
 					edictinfo(entry.edict)
+				end
+				if imIsItemHovered(imgui.HoveredFlags.DelayNormal) then
+					imSetTooltip(tostring(entry.edict))
 				end
 				contextmenu(description)
 
