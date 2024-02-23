@@ -62,7 +62,13 @@ function expmode.exit()
 end
 
 function expmode.safecall(func, ...)
-	return xpcall(func, errorhandler, ...)
+	local succeeded, result_or_error = xpcall(func, errorhandler, ...)
+
+	if not succeeded then
+		expmode.messagebox('Tool Error', 'Error occurred when running a tool\n\n' .. result_or_error)
+	end
+
+	return succeeded, result_or_error
 end
 
 local safecall <const> = expmode.safecall

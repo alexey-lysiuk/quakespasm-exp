@@ -433,9 +433,10 @@ int LS_ErrorHandler(lua_State* state)
 	cleaned[d] = '\0';
 
 	Con_SafePrintf("%s\n", cleaned);
+	lua_pushlstring(state, cleaned, d);
 	LS_tempfree(cleaned);
 
-	return 0;
+	return 1;
 }
 
 #ifdef USE_TLSF
