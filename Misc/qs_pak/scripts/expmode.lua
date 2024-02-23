@@ -1,7 +1,11 @@
 
-local format <const> = string.format
-local insert <const> = table.insert
+local ipairs <const> = ipairs
 local tostring <const> = tostring
+
+local format <const> = string.format
+
+local concat <const> = table.concat
+local insert <const> = table.insert
 
 local imBegin <const> = imgui.Begin
 local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
@@ -37,6 +41,7 @@ local imTableFlags <const> = imgui.TableFlags
 local imWindowFlags <const> = imgui.WindowFlags
 
 local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
+local imHoveredFlagsDelayNormal <const> = imgui.HoveredFlags.DelayNormal
 local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
 local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
 local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
@@ -332,7 +337,7 @@ local function edictinfo_onupdate(self)
 				fields[i] = field.name .. ': ' .. field.value
 			end
 
-			imSetClipboardText(table.concat(fields, '\n'))
+			imSetClipboardText(concat(fields, '\n'))
 		end
 	end
 
@@ -394,7 +399,7 @@ local function edictstable_tostring(entries, zerobasedindex)
 		insert(lines, line)
 	end
 
-	return table.concat(lines, '\n')
+	return concat(lines, '\n')
 end
 
 local function edictstable(title, entries, zerobasedindex)
@@ -441,7 +446,7 @@ local function edictstable(title, entries, zerobasedindex)
 				if imSelectable(descriptionid) then
 					edictinfo(entry.edict)
 				end
-				if imIsItemHovered(imgui.HoveredFlags.DelayNormal) then
+				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					imSetTooltip(tostring(entry.edict))
 				end
 				contextmenu(description)
@@ -450,6 +455,16 @@ local function edictstable(title, entries, zerobasedindex)
 
 				if imSelectable(locationid) then
 					moveplayer(entry.edict, location, entry.angles)
+				end
+				if imIsItemHovered(imHoveredFlagsDelayNormal) then
+					local edict = entry.edict
+					local absmin = edict.absmin
+					local absmax = edict.absmax
+
+					if absmin and absmax then
+						local bounds = format('min: %s\nmax: %s', absmin, absmax)
+						imSetTooltip(bounds)
+					end
 				end
 				contextmenu(location)
 			end
