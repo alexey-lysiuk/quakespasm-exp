@@ -18,6 +18,7 @@ local imGetItemRectMax <const> = imgui.GetItemRectMax
 local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
 local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
+local imIndent <const> = imgui.Indent
 local imInputTextMultiline <const> = imgui.InputTextMultiline
 local imIsItemHovered <const> = imgui.IsItemHovered
 local imSameLine <const> = imgui.SameLine
@@ -36,6 +37,7 @@ local imTableNextColumn <const> = imgui.TableNextColumn
 local imTableNextRow <const> = imgui.TableNextRow
 local imTableSetupColumn <const> = imgui.TableSetupColumn
 local imText <const> = imgui.Text
+local imUnindent <const> = imgui.Unindent
 
 local imTableFlags <const> = imgui.TableFlags
 local imWindowFlags <const> = imgui.WindowFlags
@@ -73,8 +75,10 @@ local function errorwindow_onupdate(self)
 		imText('Error occurred when running a tool')
 		imSpacing()
 		imSeparator()
-		imSpacing()
+		imIndent(8)
 		imText(message)
+		imUnindent(8)
+		imSeparator()
 		imSpacing()
 
 		if imButton('Copy') then
