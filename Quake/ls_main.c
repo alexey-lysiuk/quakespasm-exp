@@ -383,15 +383,18 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 	luaL_error(state, "infinite loop detected, aborting");
 }
 
-int LS_ErrorHandler(lua_State* state)
+static int LS_global_stacktrace(lua_State* state)
 {
 	const char* message = NULL;
-	int top = lua_gettop(state);
+	const int top = lua_gettop(state);
 
 	if (top > 0)
 		message = lua_tostring(state, 1);
 
 	luaL_traceback(state, state, message, 1);
+  //luaL_gsub(state, luaL_checkstring(state, -1), "%[string \"([^\"]+)\"%]", "%1");
+//	luaL_gsub(state, luaL_checkstring(state, -1), "%[string \"([^\"]+)\"%]", "%1");
+	//luaL_gsub(state, luaL_checkstring(state, -1), "\t", " ");
 
 	size_t length = 0;
 	const char* traceback = lua_tolstring(state, top + 1, &length);
@@ -432,11 +435,17 @@ int LS_ErrorHandler(lua_State* state)
 
 	cleaned[d] = '\0';
 
-	Con_SafePrintf("%s\n", cleaned);
 	lua_pushlstring(state, cleaned, d);
 	LS_tempfree(cleaned);
 
 	return 1;
+}
+
+int LS_ErrorHandler(lua_State* state)
+{
+	LS_global_stacktrace(state);
+	Con_SafePrintf("%s\n", lua_tostring(state, -1));
+	return 0;
 }
 
 #ifdef USE_TLSF
@@ -623,9 +632,9 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
-		{ "errorhandler", LS_ErrorHandler },
-		{ "memstats", LS_global_memstats },
 		{ "dprint", LS_global_dprint },
+		{ "memstats", LS_global_memstats },
+		{ "stacktrace", LS_global_stacktrace },
 
 		{ NULL, NULL }
 	};
@@ -880,6 +889,8 @@ static void LS_Exec_f(void)
 
 		if (status == LUA_OK)
 			status = lua_pcall(state, 0, LUA_MULTRET, 1);
+//		else
+//			LS_ErrorHandler(state);
 
 		if (status == LUA_OK)
 		{

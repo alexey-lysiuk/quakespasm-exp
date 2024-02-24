@@ -3,6 +3,7 @@ local ipairs <const> = ipairs
 local tostring <const> = tostring
 
 local format <const> = string.format
+local gsub <const> = string.gsub
 
 local concat <const> = table.concat
 local insert <const> = table.insert
@@ -96,11 +97,15 @@ local function errorwindow_onupdate(self)
 end
 
 function expmode.safecall(func, ...)
-	local succeeded, result_or_error = xpcall(func, errorhandler, ...)
+	local succeeded, result_or_error = xpcall(func, stacktrace, ...)
 
 	if not succeeded then
+		local message = gsub(result_or_error, '%[string "([^"]+)"%]', '%1')
+		message = gsub(message, '\t', ' ')
+		print(message)
+
 		expmode.window('Tool Error',
-			function (self) self.message = result_or_error end,
+			function (self) self.message = message end,
 			errorwindow_onupdate)
 	end
 
@@ -738,7 +743,7 @@ addtool('Stats', function (self)
 
 	return opened
 end)
-addtool('Stop All Sounds', function () sound.stopall() end)
+addtool('Stop All Sounds', function () imEnd() sound.stopall() end)
 
 if imShowDemoWindow then
 	addseparator('Debug')
