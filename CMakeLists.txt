@@ -495,6 +495,16 @@ if(CMAKE_VERSION VERSION_GREATER 3.8)
 	endif()
 endif()
 
+option(QUAKE_WARNINGS_AS_ERRORS "Treat compilation warnings as errors" OFF)
+
+if(QUAKE_WARNINGS_AS_ERRORS)
+	if(MSVC)
+		target_compile_options(${PROJECT_NAME} PRIVATE /WX)
+	else()
+		target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
+	endif()
+endif()
+
 # Required dependencies
 
 set(OpenGL_GL_PREFERENCE GLVND)
