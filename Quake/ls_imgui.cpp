@@ -244,7 +244,7 @@ static int LS_global_imgui_SameLine(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	const float offset = luaL_optnumber(state, 1, 0.f);
-	const float spacing = luaL_optnumber(state, 2, 0.f);
+	const float spacing = luaL_optnumber(state, 2, -1.f);
 
 	ImGui::SameLine(offset, spacing);
 	return 0;
