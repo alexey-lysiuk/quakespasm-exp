@@ -3,7 +3,6 @@ local ipairs <const> = ipairs
 local tostring <const> = tostring
 
 local format <const> = string.format
-local gsub <const> = string.gsub
 
 local concat <const> = table.concat
 local insert <const> = table.insert
