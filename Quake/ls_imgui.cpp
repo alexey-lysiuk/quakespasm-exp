@@ -21,15 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ls_imgui.h"
 
+#include "imgui.h"
+
 extern "C"
 {
 #include "quakedef.h"
 #include "common.h"
 }
 
-#include "imgui.h"
-
-#define FROZEN_NO_EXCEPTIONS
 #include "frozen/string.h"
 #include "frozen/unordered_map.h"
 
