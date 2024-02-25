@@ -878,26 +878,31 @@ static void LS_Exec_f(void)
 		}
 
 		if (status == LUA_OK)
+		{
 			status = lua_pcall(state, 0, LUA_MULTRET, 1);
 
-		if (status == LUA_OK)
-		{
-			int resultcount = lua_gettop(state) - 1;  // exluding error handler
-
-			if (resultcount > 0)
+			if (status == LUA_OK)
 			{
-				luaL_checkstack(state, LUA_MINSTACK, "too many results to print");
+				int resultcount = lua_gettop(state) - 1;  // exluding error handler
 
-				// Print all results
-				lua_pushcfunction(state, LS_global_print);
-				lua_insert(state, 2);
-				lua_pcall(state, resultcount, 0, 0);
+				if (resultcount > 0)
+				{
+					luaL_checkstack(state, LUA_MINSTACK, "too many results to print");
+
+					// Print all results
+					lua_pushcfunction(state, LS_global_print);
+					lua_insert(state, 2);
+					lua_pcall(state, resultcount, 0, 0);
+				}
 			}
+			else
+				lua_pop(state, 1);  // remove nil returned by error handler
+
+			lua_pop(state, 1);  // remove error handler
 		}
 		else
-			lua_pop(state, 1);  // remove nil returned by error handler
+			lua_pcall(state, 1, 0, 0);  // call error handler directly
 
-		lua_pop(state, 1);  // remove error handler
 		assert(lua_gettop(state) == 0);
 	}
 	else
