@@ -54,7 +54,7 @@ function expmode.exit()
 end
 
 function expmode.safecall(func, ...)
-	return xpcall(func, errorhandler, ...)
+	return xpcall(func, function (message) print(stacktrace(message)) end, ...)
 end
 
 local safecall <const> = expmode.safecall

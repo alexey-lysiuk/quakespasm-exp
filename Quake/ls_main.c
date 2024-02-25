@@ -383,10 +383,10 @@ static void LS_global_hook(lua_State* state, lua_Debug* ar)
 	luaL_error(state, "infinite loop detected, aborting");
 }
 
-int LS_ErrorHandler(lua_State* state)
+static int LS_global_stacktrace(lua_State* state)
 {
 	const char* message = NULL;
-	int top = lua_gettop(state);
+	const int top = lua_gettop(state);
 
 	if (top > 0)
 		message = lua_tostring(state, 1);
@@ -432,9 +432,16 @@ int LS_ErrorHandler(lua_State* state)
 
 	cleaned[d] = '\0';
 
-	Con_SafePrintf("%s\n", cleaned);
+	lua_pushlstring(state, cleaned, d);
 	LS_tempfree(cleaned);
 
+	return 1;
+}
+
+int LS_ErrorHandler(lua_State* state)
+{
+	LS_global_stacktrace(state);
+	Con_SafePrintf("%s\n", lua_tostring(state, -1));
 	return 0;
 }
 
@@ -622,9 +629,9 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
-		{ "errorhandler", LS_ErrorHandler },
-		{ "memstats", LS_global_memstats },
 		{ "dprint", LS_global_dprint },
+		{ "memstats", LS_global_memstats },
+		{ "stacktrace", LS_global_stacktrace },
 
 		{ NULL, NULL }
 	};
