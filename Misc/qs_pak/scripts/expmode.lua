@@ -100,12 +100,10 @@ function expmode.safecall(func, ...)
 	local succeeded, result_or_error = xpcall(func, stacktrace, ...)
 
 	if not succeeded then
-		local message = gsub(result_or_error, '%[string "([^"]+)"%]', '%1')
-		message = gsub(message, '\t', ' ')
-		print(message)
+		print(result_or_error)
 
 		expmode.window('Tool Error',
-			function (self) self.message = message end,
+			function (self) self.message = result_or_error end,
 			errorwindow_onupdate)
 	end
 
@@ -743,11 +741,12 @@ addtool('Stats', function (self)
 
 	return opened
 end)
-addtool('Stop All Sounds', function () imEnd() sound.stopall() end)
+addtool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
 	addseparator('Debug')
 	addtool('Dear ImGui Demo', imShowDemoWindow)
+	addtool('Trigger Error', function () error('This error is intentional') end)
 end
 
 addseparator()
