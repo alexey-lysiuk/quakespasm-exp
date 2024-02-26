@@ -298,6 +298,8 @@ void LS_ClearImGuiStack()
 
 static int LS_value_ImGuiViewport_index(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	size_t length;
 	const char* key = luaL_checklstring(state, 2, &length);
 	assert(key);
@@ -309,22 +311,24 @@ static int LS_value_ImGuiViewport_index(lua_State* state)
 	if (ls_imguiviewport_members.end() == valueit)
 		luaL_error(state, "Unknown member '%s' of ImGuiViewport", key);
 
-	const LS_ImGuiMember member = valueit->second;
-	ImGuiViewport** viewportptr = static_cast<ImGuiViewport**>(LS_GetValueFromTypedUserData(state, 1, &ls_imguiviewport_type));
-	assert(viewportptr);
+	void* userdataptr = LS_GetValueFromTypedUserData(state, 1, &ls_imguiviewport_type);
+	assert(userdataptr);
 
-	const uint8_t* bytes = reinterpret_cast<uint8_t*>(*viewportptr);
+	const uint8_t* bytes = *reinterpret_cast<uint8_t**>(userdataptr);
 	assert(bytes);
+
+	const LS_ImGuiMember member = valueit->second;
+	const uint8_t* memberptr = bytes + member.offset;
 
 	switch (member.type)
 	{
 	case ImMemberType_int:
 	case ImMemberType_unsigned:
-		lua_pushinteger(state, *reinterpret_cast<const lua_Integer*>(bytes + member.offset));
+		lua_pushinteger(state, *reinterpret_cast<const lua_Integer*>(memberptr));
 		break;
 
 	case ImMemberType_ImVec2:
-		LS_PushImVec2(state, *reinterpret_cast<const ImVec2*>(bytes + member.offset));
+		LS_PushImVec2(state, *reinterpret_cast<const ImVec2*>(memberptr));
 		break;
 
 	default:
