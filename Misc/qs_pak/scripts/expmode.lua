@@ -1,5 +1,10 @@
 
+local ipairs <const> = ipairs
+local tostring <const> = tostring
+
 local format <const> = string.format
+
+local concat <const> = table.concat
 local insert <const> = table.insert
 
 local imBegin <const> = imgui.Begin
@@ -368,7 +373,7 @@ local function edictinfo_onupdate(self)
 				fields[i] = field.name .. ': ' .. field.value
 			end
 
-			imSetClipboardText(table.concat(fields, '\n'))
+			imSetClipboardText(concat(fields, '\n'))
 		end
 	end
 
@@ -430,7 +435,7 @@ local function edictstable_tostring(entries, zerobasedindex)
 		insert(lines, line)
 	end
 
-	return table.concat(lines, '\n')
+	return concat(lines, '\n')
 end
 
 local function edictstable(title, entries, zerobasedindex)
