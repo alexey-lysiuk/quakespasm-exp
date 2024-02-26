@@ -117,18 +117,11 @@ edicts.valuetypes =
 }
 
 
-function edicts.foreach(func, choice)
-	choice = choice and math.tointeger(choice) or 0
-	local current = 1
+local ipairs <const> = ipairs
 
-	for _, edict in ipairs(edicts) do
-		current = func(edict, current, choice)
+local format <const> = string.format
+local gsub <const> = string.gsub
 
-		if not current then
-			break
-		end
-	end
-end
 
 function edicts.isclass(edict, ...)
 	for _, classname in ipairs({...}) do
@@ -140,9 +133,6 @@ function edicts.isclass(edict, ...)
 	return nil
 end
 
-
-local format <const> = string.format
-local gsub <const> = string.gsub
 
 local localize <const> = text.localize
 
@@ -156,11 +146,9 @@ local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 local float <const> = edicts.valuetypes.float
 
-local foreach <const> = edicts.foreach
 local isclass <const> = edicts.isclass
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
-
 
 local function titlecase(str)
 	return str:gsub("(%a)([%w_']*)",

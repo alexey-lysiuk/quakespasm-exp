@@ -292,7 +292,6 @@ local addseparator <const> = expmode.addseparator
 local vec3mid <const> = vec3.mid
 local vec3origin <const> = vec3.new()
 
-local foreach <const> = edicts.foreach
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
@@ -530,24 +529,20 @@ local function edicts_onopen(self)
 	local filter = self.filter or isany
 	local entries = {}
 
-	foreach(function (edict, current)
+	for _, edict in ipairs(edicts) do
 		local description, location, angles = filter(edict)
 
-		if not description then
-			return current
+		if description then
+			insert(entries,
+			{
+				edict = edict,
+				isfree = isfree(edict),
+				description = toascii(description),
+				location = location or '',
+				angles = angles
+			})
 		end
-
-		insert(entries,
-		{
-			edict = edict,
-			isfree = isfree(edict),
-			description = toascii(description),
-			location = location or '',
-			angles = angles
-		})
-
-		return current + 1
-	end)
+	end
 
 	self.entries = entries
 end
