@@ -14,6 +14,7 @@ local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
 local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
+local imIsItemHovered <const> = imgui.IsItemHovered
 local imSameLine <const> = imgui.SameLine
 local imSelectable <const> = imgui.Selectable
 local imSeparator <const> = imgui.Separator
@@ -22,6 +23,7 @@ local imSetClipboardText <const> = imgui.SetClipboardText
 local imSetNextWindowFocus <const> = imgui.SetNextWindowFocus
 local imSetNextWindowPos <const> = imgui.SetNextWindowPos
 local imSetNextWindowSize <const> = imgui.SetNextWindowSize
+local imSetTooltip <const> = imgui.SetTooltip
 local imShowDemoWindow <const> = imgui.ShowDemoWindow
 local imSpacing <const> = imgui.Spacing
 local imTableHeadersRow <const> = imgui.TableHeadersRow
@@ -34,6 +36,7 @@ local imTableFlags <const> = imgui.TableFlags
 local imWindowFlags <const> = imgui.WindowFlags
 
 local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
+local imHoveredFlagsDelayNormal <const> = imgui.HoveredFlags.DelayNormal
 local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
 local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
 local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
@@ -474,12 +477,25 @@ local function edictstable(title, entries, zerobasedindex)
 				if imSelectable(descriptionid) then
 					edictinfo(entry.edict)
 				end
+				if imIsItemHovered(imHoveredFlagsDelayNormal) then
+					imSetTooltip(tostring(entry.edict))
+				end
 				contextmenu(description)
 
 				imTableNextColumn()
 
 				if imSelectable(locationid) then
 					moveplayer(entry.edict, location, entry.angles)
+				end
+				if imIsItemHovered(imHoveredFlagsDelayNormal) then
+					local edict = entry.edict
+					local absmin = edict.absmin
+					local absmax = edict.absmax
+
+					if absmin and absmax then
+						local bounds = format('min: %s\nmax: %s', absmin, absmax)
+						imSetTooltip(bounds)
+					end
 				end
 				contextmenu(location)
 			end
