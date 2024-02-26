@@ -542,6 +542,15 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetTooltip(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* const text = luaL_checkstring(state, 1);
+	ImGui::SetTooltip("%s", text);
+	return 0;
+}
+
 static int LS_global_imgui_Spacing(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -810,6 +819,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "Selectable", LS_global_imgui_Selectable },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
+		{ "SetTooltip", LS_global_imgui_SetTooltip },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Text", LS_global_imgui_Text },
 
