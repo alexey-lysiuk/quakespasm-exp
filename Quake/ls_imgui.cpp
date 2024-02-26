@@ -497,6 +497,17 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	return 2;
 }
 
+static int LS_global_imgui_IsItemHovered(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int flags = luaL_optinteger(state, 1, 0);
+	const bool hovered = ImGui::IsItemHovered(flags);
+
+	lua_pushboolean(state, hovered);
+	return 1;
+}
+
 static int LS_global_imgui_Selectable(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -795,6 +806,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
 		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
+		{ "IsItemHovered", LS_global_imgui_IsItemHovered },
 		{ "Selectable", LS_global_imgui_Selectable },
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
