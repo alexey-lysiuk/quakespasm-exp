@@ -22,25 +22,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "quakedef.h"
-//#include "bspfile.h"
 #include "zone.h"
 }
 
 enum EF_PatchOperation
 {
 	EF_COPY,
-	EF_REPLACE,
-	EF_DELETE,
+	//EF_REPLACE,
+	//EF_DELETE,
 	EF_INSERT,
 };
 
 struct EF_Patch
 {
 	EF_PatchOperation operation;
-	unsigned oldoffset;
-	unsigned newoffset;
+//	unsigned oldoffset;
+//	unsigned newoffset;
+	unsigned offset;
 	unsigned size;
-	const char* newdata;
+	const char* data;
 };
 
 struct EF_Fix
@@ -61,39 +61,62 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 	assert(entities);
 	assert(size > 0);
 
+	const char* mapfilename = COM_SkipPath(mapname);
+	char basemapname[MAX_QPATH];
+	COM_StripExtension(mapfilename, basemapname, sizeof basemapname);
+
 	char* newentities = nullptr;
 
 	for (const EF_Fix& fix : ef_fixes)
 	{
-		if (fix.crc != crc || fix.oldsize != size || strcmp(fix.mapname, mapname) != 0)
+		if (fix.crc != crc || fix.oldsize != size || q_strcasecmp(fix.mapname, basemapname) != 0)
 			continue;
 
 		const unsigned newsize = fix.newsize;
 		newentities = reinterpret_cast<char*>(Hunk_Alloc(newsize));
+		char* writeptr = newentities;
 
-		for (unsigned i = fix.patchindex; i < fix.patchcount; ++i)
+		for (unsigned i = 0; i < fix.patchcount; ++i)
 		{
-			const EF_Patch& patch = ef_patches[i];
+			const EF_Patch& patch = ef_patches[fix.patchindex + i];
 
 			switch (patch.operation)
 			{
-				case EF_COPY:
-					memcpy(newentities + patch.newoffset, entities + patch.oldoffset, patch.size);
-					break;
+			case EF_COPY:
+				memcpy(writeptr, entities + patch.offset, patch.size);
+				break;
 
-				case EF_INSERT:
-					memcpy(newentities + patch.newoffset, patch.newdata, patch.size);
-					break;
+			case EF_INSERT:
+				memcpy(writeptr, patch.data, patch.size);
+				break;
 
-				default:
-					assert(false);
-					break;
+			default:
+				assert(false);
+				break;
 			}
+
+			writeptr += patch.size;
 		}
 
-		newentities[newsize - 1] = '\0';
+		//newentities[newsize - 1] = '\0';
+		*writeptr = '\0';
 		break;
 	}
+
+#if 0
+	if (newentities)
+	{
+		char testname[MAX_QPATH];
+		q_snprintf(testname, sizeof(testname), "%s@%04x.ent", basemapname, crc);
+
+		FILE* testfile = fopen(testname, "w");
+		if (testfile)
+		{
+			fputs(newentities, testfile);
+			fclose(testfile);
+		}
+	}
+#endif
 
 	return newentities;
 }
