@@ -896,44 +896,11 @@ static void Mod_LoadEntities (lump_t *l)
 		crc = CRC_Block(mod_base + l->fileofs, l->filelen - 1);
 	}
 
-	//
-	do
-	{
-		ents = NULL;
-
-		unsigned oldcrc = 0xc49d;
-		if (oldcrc != crc)
-			break;
-
-		unsigned oldsize = 26284;  // 26283 + 1 '\0'
-		if (l->filelen != oldsize)
-			break;
-
-		const char* mapname = "maps/e1m1.bsp";
-		if (strcmp(mapname, loadmodel->name)!=0)
-			break;
-
-		unsigned newsize = 26335;  // 26334 + 1 '\0'
-		ents = (char *) Hunk_Alloc(newsize);
-		byte* oldptr = mod_base + l->fileofs;
-
-		// 'equal', 0, 9099, 0, 9099
-		memcpy(ents, oldptr, 9099);
-
-		// 'insert', 9099, 9099, 9099, 9150
-		const char* insert = "\"lip\" \"7\" // svdijk -- added to prevent z-fighting\n";
-		memcpy(ents + 9099, insert, 9150-9099);
-
-		// 'equal', 9099, 26283, 9150, 26334
-		memcpy(ents + 9150, oldptr + 9099, 26283-9099);
-
-		ents[26334] = '\0';
-	}
-	while (0);
-	//
-
 	q_strlcpy(basemapname, loadmodel->name, sizeof(basemapname));
 	COM_StripExtension(basemapname, basemapname, sizeof(basemapname));
+
+	char* EF_ApplyEntitiesFix(const char* mapname, const byte* oldents, unsigned oldsize, unsigned crc);
+	ents = EF_ApplyEntitiesFix(loadmodel->name, mod_base + l->fileofs, l->filelen, crc);
 
 	if (!ents)
 	{

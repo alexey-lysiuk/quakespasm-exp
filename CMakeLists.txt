@@ -33,6 +33,8 @@ set(COMMON_SOURCES
 	Quake/cvar.c
 	Quake/cvar.h
 	Quake/draw.h
+	Quake/entfixes.cpp
+	Quake/entfixes.h
 	Quake/filenames.h
 	Quake/gl_draw.c
 	Quake/gl_fog.c
