@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include "assert.h"
+
 extern "C"
 {
 #include "quakedef.h"
@@ -24,38 +26,74 @@ extern "C"
 #include "zone.h"
 }
 
+enum EF_PatchOperation
+{
+	EF_COPY,
+	EF_REPLACE,
+	EF_DELETE,
+	EF_INSERT,
+};
+
+struct EF_Patch
+{
+	EF_PatchOperation operation;
+	unsigned oldoffset;
+	unsigned newoffset;
+	unsigned size;
+	const char* newdata;
+};
+
+struct EF_Fix
+{
+	const char* mapname;
+	unsigned oldsize;
+	unsigned newsize;
+	unsigned crc;
+	unsigned patchindex;
+	unsigned patchcount;
+};
+
 #include "entfixes.h"
 
-//extern "C" char* EF_ApplyEntitiesFix(const lump_t* lump, unsigned crc)
-extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* oldents, unsigned oldsize, unsigned crc)
+extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, unsigned size, unsigned crc)
 {
-	unsigned oldcrc = 0xc49d;
-	if (oldcrc != crc)
-		return nullptr;
+	assert(mapname);
+	assert(entities);
+	assert(size > 0);
 
-	//unsigned oldsize = 26284;  // 26283 + 1 '\0'
-	if (oldsize != 26284)
-		return nullptr;
+	char* newentities = nullptr;
 
-	//const char* mapname = "maps/e1m1.bsp";
-	if (strcmp(mapname, "maps/e1m1.bsp") != 0)
-		return nullptr;
+	for (const EF_Fix& fix : ef_fixes)
+	{
+		if (fix.crc != crc || fix.oldsize != size || strcmp(fix.mapname, mapname) != 0)
+			continue;
 
-	unsigned newsize = 26335;  // 26334 + 1 '\0'
-	char* newents = (char *) Hunk_Alloc(newsize);
-	//byte* oldptr = mod_base + lump->fileofs;
+		const unsigned newsize = fix.newsize;
+		newentities = reinterpret_cast<char*>(Hunk_Alloc(newsize));
 
-	// 'equal', 0, 9099, 0, 9099
-	memcpy(newents, oldents, 9099);
+		for (unsigned i = fix.patchindex; i < fix.patchcount; ++i)
+		{
+			const EF_Patch& patch = ef_patches[i];
 
-	// 'insert', 9099, 9099, 9099, 9150
-	const char* insert = "\"lip\" \"7\" // svdijk -- added to prevent z-fighting\n";
-	memcpy(newents + 9099, insert, 9150-9099);
+			switch (patch.operation)
+			{
+				case EF_COPY:
+					memcpy(newentities + patch.newoffset, entities + patch.oldoffset, patch.size);
+					break;
 
-	// 'equal', 9099, 26283, 9150, 26334
-	memcpy(newents + 9150, oldents + 9099, 26283-9099);
+				case EF_INSERT:
+					memcpy(newentities + patch.newoffset, patch.newdata, patch.size);
+					break;
 
-	newents[26334] = '\0';
+				default:
+					assert(false);
+					break;
+			}
+		}
 
-	return newents;
+		newentities[newsize - 1] = '\0';
+		break;
+	}
+
+	return newentities;
 }
