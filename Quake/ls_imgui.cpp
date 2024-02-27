@@ -29,6 +29,123 @@ extern "C"
 #include "common.h"
 }
 
+
+static const LS_UserDataType ls_imvec2_type =
+{
+	{ {{'i', 'm', 'v', '2'}} },
+	sizeof(int) /* fourcc */ + sizeof(ImVec2)
+};
+
+// Gets value of 'ImVec2' from userdata at given index
+ImVec2& LS_GetImVec2Value(lua_State* state, int index)
+{
+	ImVec2* value = static_cast<ImVec2*>(LS_GetValueFromTypedUserData(state, index, &ls_imvec2_type));
+	assert(value);
+
+	return *value;
+}
+
+// Converts 'ImVec2' component at given stack index to ImVec2 integer index [0..1]
+// On Lua side, valid numeric component indices are 1, 2
+static int LS_GetImVec2Component(lua_State* state, int index)
+{
+	int comptype = lua_type(state, index);
+	int component = -1;
+
+	if (comptype == LUA_TSTRING)
+	{
+		const char* compstr = lua_tostring(state, 2);
+		assert(compstr);
+
+		char compchar = compstr[0];
+
+		if (compchar != '\0' && compstr[1] == '\0')
+			component = compchar - 'x';
+
+		if (component < 0 || component > 1)
+			luaL_error(state, "Invalid ImVec2 component '%s'", compstr);
+	}
+	else if (comptype == LUA_TNUMBER)
+	{
+		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
+
+		if (component < 0 || component > 1)
+			luaL_error(state, "ImVec2 component %d is out of range [1..2]", component + 1);  // on Lua side, indices start with 1
+	}
+	else
+		luaL_error(state, "Invalid type %s of ImVec2 component", lua_typename(state, comptype));
+
+	assert(component >= 0 && component <= 1);
+	return component;
+}
+
+// Pushes value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'
+static int LS_value_ImVec2_index(lua_State* state)
+{
+	const ImVec2& value = LS_GetImVec2Value(state, 1);
+	int component = LS_GetImVec2Component(state, 2);
+
+	lua_pushnumber(state, value[component]);
+	return 1;
+}
+
+// Sets new value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'
+static int LS_value_ImVec2_newindex(lua_State* state)
+{
+	ImVec2& value = LS_GetImVec2Value(state, 1);
+	int component = LS_GetImVec2Component(state, 2);
+
+	lua_Number compvalue = luaL_checknumber(state, 3);
+	value[component] = compvalue;
+
+	return 0;
+}
+
+// Pushes string built from 'ImVec2' value
+static int LS_value_ImVec2_tostring(lua_State* state)
+{
+	char buf[64];
+	const ImVec2& value = LS_GetImVec2Value(state, 1);
+	int length = q_snprintf(buf, sizeof buf, "%f %f", value[0], value[1]);
+
+	lua_pushlstring(state, buf, length);
+	return 1;
+}
+
+// Creates and pushes 'ImVec2' userdata built from ImVec2 value
+static int LS_PushImVec2(lua_State* state, const ImVec2& value)
+{
+	ImVec2* valueptr = static_cast<ImVec2*>(LS_CreateTypedUserData(state, &ls_imvec2_type));
+	assert(valueptr);
+
+	*valueptr = value;
+
+	// Create and set 'ImVec2' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_ImVec2_index },
+		{ "__newindex", LS_value_ImVec2_newindex },
+		{ "__tostring", LS_value_ImVec2_tostring },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "ImVec2"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
+static int LS_global_imgui_ImVec2(lua_State* state)
+{
+	const float x = luaL_optnumber(state, 1, 0.f);
+	const float y = luaL_optnumber(state, 2, 0.f);
+
+	LS_PushImVec2(state, ImVec2(x, y));
+	return 1;
+}
+
+
 static bool ls_framescope;
 
 static void LS_EnsureFrameScope(lua_State* state)
@@ -423,16 +540,6 @@ static int LS_global_imgui_Button(lua_State* state)
 	return 1;
 }
 
-static int LS_PushImVec2(lua_State* state, const ImVec2& value)
-{
-	lua_createtable(state, 0, 2);
-	lua_pushnumber(state, value.x);
-	lua_setfield(state, -2, "x");
-	lua_pushnumber(state, value.y);
-	lua_setfield(state, -2, "y");
-	return 1;
-}
-
 static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -805,6 +912,8 @@ void LS_InitImGuiBindings(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "ImVec2", LS_global_imgui_ImVec2 },
+
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
 #ifndef NDEBUG
