@@ -896,18 +896,21 @@ static void Mod_LoadEntities (lump_t *l)
 		crc = CRC_Block(mod_base + l->fileofs, l->filelen - 1);
 	}
 
-	q_strlcpy(basemapname, loadmodel->name, sizeof(basemapname));
-	COM_StripExtension(basemapname, basemapname, sizeof(basemapname));
-
 	//
 	do
 	{
 		ents = NULL;
-		const char* mapname = "maps/e1m1";
-		if (strcmp(mapname, basemapname)!=0)
+
+		unsigned oldcrc = 0xc49d;
+		if (oldcrc != crc)
 			break;
+
 		unsigned oldsize = 26284;  // 26283 + 1 '\0'
 		if (l->filelen != oldsize)
+			break;
+
+		const char* mapname = "maps/e1m1.bsp";
+		if (strcmp(mapname, loadmodel->name)!=0)
 			break;
 
 		unsigned newsize = 26335;  // 26334 + 1 '\0'
@@ -928,6 +931,9 @@ static void Mod_LoadEntities (lump_t *l)
 	}
 	while (0);
 	//
+
+	q_strlcpy(basemapname, loadmodel->name, sizeof(basemapname));
+	COM_StripExtension(basemapname, basemapname, sizeof(basemapname));
 
 	if (!ents)
 	{
