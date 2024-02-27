@@ -28,16 +28,12 @@ extern "C"
 enum EF_PatchOperation
 {
 	EF_COPY,
-	//EF_REPLACE,
-	//EF_DELETE,
 	EF_INSERT,
 };
 
 struct EF_Patch
 {
 	EF_PatchOperation operation;
-//	unsigned oldoffset;
-//	unsigned newoffset;
 	unsigned offset;
 	unsigned size;
 	const char* data;
@@ -72,9 +68,8 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 		if (fix.crc != crc || fix.oldsize != size || q_strcasecmp(fix.mapname, basemapname) != 0)
 			continue;
 
-		const unsigned newsize = fix.newsize;
-		newentities = reinterpret_cast<char*>(Hunk_Alloc(newsize));
-		char* writeptr = newentities;
+		char* writeptr = reinterpret_cast<char*>(Hunk_Alloc(fix.newsize));
+		newentities = writeptr;
 
 		for (unsigned i = 0; i < fix.patchcount; ++i)
 		{
@@ -98,7 +93,6 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 			writeptr += patch.size;
 		}
 
-		//newentities[newsize - 1] = '\0';
 		*writeptr = '\0';
 		break;
 	}

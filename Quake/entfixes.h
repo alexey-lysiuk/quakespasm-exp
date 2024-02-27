@@ -33,6 +33,10 @@ static constexpr EF_Patch ef_patches[] =
 	{ EF_INSERT, 0, 73, "5 280 104\" // svdijk -- changed to prevent z-fighting (was \"-16 280 104\")\n" },
 	{ EF_COPY, 19238, 7764 },
 
+	// hrim_sp1
+	{ EF_COPY, 0, 33506 },
+	{ EF_COPY, 33519, 77691 },
+
 	// ...
 };
 
@@ -41,4 +45,5 @@ static constexpr EF_Fix ef_fixes[] =
 {
 	{ "e1m1", 26284, 26335, 0xC49D, 0, 3 },
 	{ "e2m2", 27003, 27180, 0XFBFE, 3, 7 },
+	{ "hrim_sp1", 111211, 111197, 0xF054, 10, 2 },
 };
