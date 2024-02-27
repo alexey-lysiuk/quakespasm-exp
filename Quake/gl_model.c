@@ -899,9 +899,42 @@ static void Mod_LoadEntities (lump_t *l)
 	q_strlcpy(basemapname, loadmodel->name, sizeof(basemapname));
 	COM_StripExtension(basemapname, basemapname, sizeof(basemapname));
 
-	q_snprintf(entfilename, sizeof(entfilename), "%s@%04x.ent", basemapname, crc);
-	Con_DPrintf2("trying to load %s\n", entfilename);
-	ents = (char *) COM_LoadHunkFile (entfilename, &path_id);
+	//
+	do
+	{
+		ents = NULL;
+		const char* mapname = "maps/e1m1";
+		if (strcmp(mapname, basemapname)!=0)
+			break;
+		unsigned oldsize = 26284;  // 26283 + 1 '\0'
+		if (l->filelen != oldsize)
+			break;
+
+		unsigned newsize = 26335;  // 26334 + 1 '\0'
+		ents = (char *) Hunk_Alloc(newsize);
+		byte* oldptr = mod_base + l->fileofs;
+
+		// 'equal', 0, 9099, 0, 9099
+		memcpy(ents, oldptr, 9099);
+
+		// 'insert', 9099, 9099, 9099, 9150
+		const char* insert = "\"lip\" \"7\" // svdijk -- added to prevent z-fighting\n";
+		memcpy(ents + 9099, insert, 9150-9099);
+
+		// 'equal', 9099, 26283, 9150, 26334
+		memcpy(ents + 9150, oldptr + 9099, 26283-9099);
+
+		ents[26334] = '\0';
+	}
+	while (0);
+	//
+
+	if (!ents)
+	{
+		q_snprintf(entfilename, sizeof(entfilename), "%s@%04x.ent", basemapname, crc);
+		Con_DPrintf2("trying to load %s\n", entfilename);
+		ents = (char *) COM_LoadHunkFile (entfilename, &path_id);
+	}
 
 	if (!ents)
 	{
