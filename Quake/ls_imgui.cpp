@@ -447,6 +447,15 @@ static int LS_global_imgui_GetItemRectMin(lua_State* state)
 	return LS_PushImVec2(state, ImGui::GetItemRectMin());
 }
 
+static int LS_global_imgui_Indent(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const float indentw = luaL_optnumber(state, 1, 0.f);
+	ImGui::Indent(indentw);
+	return 0;
+}
+
 static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -566,6 +575,15 @@ static int LS_global_imgui_Text(lua_State* state)
 	// Format text is not supported for security reasons
 	const char* const text = luaL_checkstring(state, 1);
 	ImGui::TextUnformatted(text);
+	return 0;
+}
+
+static int LS_global_imgui_Unindent(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const float indentw = luaL_optnumber(state, 1, 0.f);
+	ImGui::Unindent(indentw);
 	return 0;
 }
 
@@ -814,6 +832,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "Button", LS_global_imgui_Button },
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
+		{ "Indent", LS_global_imgui_Indent },
 		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
 		{ "IsItemHovered", LS_global_imgui_IsItemHovered },
 		{ "Selectable", LS_global_imgui_Selectable },
@@ -822,6 +841,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "SetTooltip", LS_global_imgui_SetTooltip },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Text", LS_global_imgui_Text },
+		{ "Unindent", LS_global_imgui_Unindent },
 
 		// ...
 
