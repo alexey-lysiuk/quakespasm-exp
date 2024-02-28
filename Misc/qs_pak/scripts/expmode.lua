@@ -739,6 +739,7 @@ addtool('Stop All Sounds', function () sound.stopall() end)
 if imShowDemoWindow then
 	addseparator('Debug')
 	addtool('Dear ImGui Demo', imShowDemoWindow)
+	addtool('Trigger Error', function () error('This error is intentional') end)
 end
 
 addseparator()
