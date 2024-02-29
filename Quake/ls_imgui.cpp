@@ -33,43 +33,42 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
-static const LS_UserDataType ls_imvec2_type =
-{
-	{ {{'i', 'm', 'v', '2'}} },
-	sizeof(int) /* fourcc */ + sizeof(ImVec2)
-};
+template<typename T>
+const char* LS_GetImVecUserDataName();
 
-// Gets value of 'ImVec2' from userdata at given index
-ImVec2& LS_GetImVec2Value(lua_State* state, int index)
+template<typename T>
+const LS_UserDataType* LS_GetImVecUserDataType();
+
+template<typename T>
+int LS_GetImVecComponentCount();
+
+// Gets value of 'ImVec?' from userdata at given index
+template<typename T>
+static T& LS_GetImVecValue(lua_State* state, int index)
 {
-	ImVec2* value = static_cast<ImVec2*>(LS_GetValueFromTypedUserData(state, index, &ls_imvec2_type));
+	T* value = static_cast<T*>(LS_GetValueFromTypedUserData(state, index, LS_GetImVecUserDataType<T>()));
 	assert(value);
 
 	return *value;
 }
 
-// Converts 'ImVec2' component at given stack index to ImVec2 integer index [0..1]
-// On Lua side, valid numeric component indices are 1, 2
-static int LS_GetImVec2Component(lua_State* state, int index)
+// Pushes value of 'ImVec?' component, indexed by integer [0..?] or string 'x', 'y', ...
+template<typename T>
+static int LS_value_ImVec_index(lua_State* state)
 {
-	return LS_GetVectorComponent(state, index, 2);
-}
-
-// Pushes value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'
-static int LS_value_ImVec2_index(lua_State* state)
-{
-	const ImVec2& value = LS_GetImVec2Value(state, 1);
-	int component = LS_GetImVec2Component(state, 2);
+	const T& value = LS_GetImVecValue<T>(state, 1);
+	int component = LS_GetVectorComponent(state, 2, LS_GetImVecComponentCount<T>());
 
 	lua_pushnumber(state, value[component]);
 	return 1;
 }
 
-// Sets new value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'
-static int LS_value_ImVec2_newindex(lua_State* state)
+// Sets new value of 'ImVec?' component, indexed by integer [0..?] or string 'x', 'y', ...
+template<typename T>
+static int LS_value_ImVec_newindex(lua_State* state)
 {
-	ImVec2& value = LS_GetImVec2Value(state, 1);
-	int component = LS_GetImVec2Component(state, 2);
+	T& value = LS_GetImVecValue<T>(state, 1);
+	int component = LS_GetVectorComponent(state, 2, LS_GetImVecComponentCount<T>());
 
 	lua_Number compvalue = luaL_checknumber(state, 3);
 	value[component] = compvalue;
@@ -77,38 +76,52 @@ static int LS_value_ImVec2_newindex(lua_State* state)
 	return 0;
 }
 
-// Pushes string built from 'ImVec2' value
-static int LS_value_ImVec2_tostring(lua_State* state)
-{
-	char buf[64];
-	const ImVec2& value = LS_GetImVec2Value(state, 1);
-	int length = q_snprintf(buf, sizeof buf, "%f %f", value[0], value[1]);
+// Pushes string built from 'ImVec?' value
+template<typename T>
+static int LS_value_ImVec_tostring(lua_State* state);
 
-	lua_pushlstring(state, buf, length);
-	return 1;
-}
-
-// Creates and pushes 'ImVec2' userdata built from ImVec2 value
-static int LS_PushImVec2(lua_State* state, const ImVec2& value)
+// Creates and pushes 'ImVec?' userdata built from ImVec? value
+template<typename T>
+static int LS_PushImVec(lua_State* state, const T& value)
 {
-	ImVec2* valueptr = static_cast<ImVec2*>(LS_CreateTypedUserData(state, &ls_imvec2_type));
+	T* valueptr = static_cast<T*>(LS_CreateTypedUserData(state, LS_GetImVecUserDataType<T>()));
 	assert(valueptr);
 
 	*valueptr = value;
 
-	// Create and set 'ImVec2' metatable
+	// Create and set 'ImVec?' metatable
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_value_ImVec2_index },
-		{ "__newindex", LS_value_ImVec2_newindex },
-		{ "__tostring", LS_value_ImVec2_tostring },
+		{ "__index", LS_value_ImVec_index<T> },
+		{ "__newindex", LS_value_ImVec_newindex<T> },
+		{ "__tostring", LS_value_ImVec_tostring<T> },
 		{ NULL, NULL }
 	};
 
-	if (luaL_newmetatable(state, "ImVec2"))
+	if (luaL_newmetatable(state, LS_GetImVecUserDataName<T>()))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
+	return 1;
+}
+
+#define LS_DEFINE_IMVEC_TYPE(COMPONENTS) \
+	static const LS_UserDataType ls_imvec##COMPONENTS##_type = { { {{'i', 'm', 'v', '0' + COMPONENTS}} }, sizeof(int) /* fourcc */ + sizeof(ImVec##COMPONENTS) }; \
+	template<> const char* LS_GetImVecUserDataName<ImVec##COMPONENTS>() { return "ImVec"#COMPONENTS; } \
+	template<> const LS_UserDataType* LS_GetImVecUserDataType<ImVec##COMPONENTS>() { return &ls_imvec##COMPONENTS##_type; } \
+	template<> int LS_GetImVecComponentCount<ImVec##COMPONENTS>() { return COMPONENTS; }
+
+LS_DEFINE_IMVEC_TYPE(2)
+LS_DEFINE_IMVEC_TYPE(4)
+
+#undef LS_DEFINE_IMVEC_TYPE
+
+
+template <>
+int LS_value_ImVec_tostring<ImVec2>(lua_State* state)
+{
+	const ImVec2& value = LS_GetImVecValue<ImVec2>(state, 1);
+	lua_pushfstring(state, "%f %f", value.x, value.y);
 	return 1;
 }
 
@@ -117,7 +130,7 @@ static int LS_global_imgui_ImVec2(lua_State* state)
 	const float x = luaL_optnumber(state, 1, 0.f);
 	const float y = luaL_optnumber(state, 2, 0.f);
 
-	LS_PushImVec2(state, ImVec2(x, y));
+	LS_PushImVec(state, ImVec2(x, y));
 	return 1;
 }
 
@@ -285,7 +298,7 @@ static int LS_value_ImGuiViewport_index(lua_State* state)
 		break;
 
 	case ImMemberType_ImVec2:
-		LS_PushImVec2(state, *reinterpret_cast<const ImVec2*>(memberptr));
+		LS_PushImVec(state, *reinterpret_cast<const ImVec2*>(memberptr));
 		break;
 
 	default:
@@ -604,14 +617,14 @@ static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	return LS_PushImVec2(state, ImGui::GetItemRectMax());
+	return LS_PushImVec(state, ImGui::GetItemRectMax());
 }
 
 static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	return LS_PushImVec2(state, ImGui::GetItemRectMin());
+	return LS_PushImVec(state, ImGui::GetItemRectMin());
 }
 
 static int LS_global_imgui_Indent(lua_State* state)
