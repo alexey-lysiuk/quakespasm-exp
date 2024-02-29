@@ -21,6 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ls_imgui.h"
 
+// TODO: Find better place for this WITHOUT altering ImGui source code
+#define IM_VEC4_CLASS_EXTRA \
+	float& operator[] (size_t idx) { IM_ASSERT(idx >= 0 || idx <= 3); return reinterpret_cast<float*>(this)[idx]; } \
+	float operator[] (size_t idx) const { return (*const_cast<ImVec4*>(this))[idx]; } \
+
 #include "imgui.h"
 
 extern "C"
@@ -131,6 +136,26 @@ static int LS_global_imgui_ImVec2(lua_State* state)
 	const float y = luaL_optnumber(state, 2, 0.f);
 
 	LS_PushImVec(state, ImVec2(x, y));
+	return 1;
+}
+
+
+static int LS_global_imgui_ImVec4(lua_State* state)
+{
+	const float x = luaL_optnumber(state, 1, 0.f);
+	const float y = luaL_optnumber(state, 2, 0.f);
+	const float z = luaL_optnumber(state, 3, 0.f);
+	const float w = luaL_optnumber(state, 4, 0.f);
+
+	LS_PushImVec(state, ImVec4(x, y, z, w));
+	return 1;
+}
+
+template <>
+int LS_value_ImVec_tostring<ImVec4>(lua_State* state)
+{
+	const ImVec4& value = LS_GetImVecValue<ImVec4>(state, 1);
+	lua_pushfstring(state, "%f %f %f %f", value.x, value.y, value.z, value.w);
 	return 1;
 }
 
@@ -299,6 +324,10 @@ static int LS_value_ImGuiViewport_index(lua_State* state)
 
 	case ImMemberType_ImVec2:
 		LS_PushImVec(state, *reinterpret_cast<const ImVec2*>(memberptr));
+		break;
+
+	case ImMemberType_ImVec4:
+		LS_PushImVec(state, *reinterpret_cast<const ImVec4*>(memberptr));
 		break;
 
 	default:
@@ -986,6 +1015,7 @@ void LS_InitImGuiBindings(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "ImVec2", LS_global_imgui_ImVec2 },
+		{ "ImVec4", LS_global_imgui_ImVec4 },
 
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
