@@ -117,18 +117,8 @@ edicts.valuetypes =
 }
 
 
-function edicts.foreach(func, choice)
-	choice = choice and math.tointeger(choice) or 0
-	local current = 1
 
-	for _, edict in ipairs(edicts) do
-		current = func(edict, current, choice)
 
-		if not current then
-			break
-		end
-	end
-end
 
 function edicts.isclass(edict, ...)
 	for _, classname in ipairs({...}) do
@@ -156,7 +146,6 @@ local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 local float <const> = edicts.valuetypes.float
 
-local foreach <const> = edicts.foreach
 local isclass <const> = edicts.isclass
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
