@@ -52,34 +52,7 @@ ImVec2& LS_GetImVec2Value(lua_State* state, int index)
 // On Lua side, valid numeric component indices are 1, 2
 static int LS_GetImVec2Component(lua_State* state, int index)
 {
-	int comptype = lua_type(state, index);
-	int component = -1;
-
-	if (comptype == LUA_TSTRING)
-	{
-		const char* compstr = lua_tostring(state, 2);
-		assert(compstr);
-
-		char compchar = compstr[0];
-
-		if (compchar != '\0' && compstr[1] == '\0')
-			component = compchar - 'x';
-
-		if (component < 0 || component > 1)
-			luaL_error(state, "Invalid ImVec2 component '%s'", compstr);
-	}
-	else if (comptype == LUA_TNUMBER)
-	{
-		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
-
-		if (component < 0 || component > 1)
-			luaL_error(state, "ImVec2 component %d is out of range [1..2]", component + 1);  // on Lua side, indices start with 1
-	}
-	else
-		luaL_error(state, "Invalid type %s of ImVec2 component", lua_typename(state, comptype));
-
-	assert(component >= 0 && component <= 1);
-	return component;
+	return LS_GetVectorComponent(state, index, 2);
 }
 
 // Pushes value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'

@@ -36,38 +36,9 @@ static const LS_UserDataType ls_vec3_type =
 // Expose vec3_t as 'vec3' userdata
 //
 
-// Converts 'vec3' component at given stack index to vec3_t integer index [0..2]
-// On Lua side, valid numeric component indices are 1, 2, 3
 static int LS_Vec3GetComponent(lua_State* state, int index)
 {
-	int comptype = lua_type(state, index);
-	int component = -1;
-
-	if (comptype == LUA_TSTRING)
-	{
-		const char* compstr = lua_tostring(state, 2);
-		assert(compstr);
-
-		char compchar = compstr[0];
-
-		if (compchar != '\0' && compstr[1] == '\0')
-			component = compchar - 'x';
-
-		if (component < 0 || component > 2)
-			luaL_error(state, "Invalid vec3 component '%s'", compstr);
-	}
-	else if (comptype == LUA_TNUMBER)
-	{
-		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
-
-		if (component < 0 || component > 2)
-			luaL_error(state, "vec3 component %d is out of range [1..3]", component + 1);  // on Lua side, indices start with 1
-	}
-	else
-		luaL_error(state, "Invalid type %s of vec3 component", lua_typename(state, comptype));
-
-	assert(component >= 0 && component <= 2);
-	return component;
+	return LS_GetVectorComponent(state, index, 3);
 }
 
 // Gets value of 'vec3' from userdata at given index
