@@ -29,6 +29,9 @@ extern "C"
 #include "common.h"
 }
 
+#include "frozen/string.h"
+#include "frozen/unordered_map.h"
+
 
 static const LS_UserDataType ls_imvec2_type =
 {
@@ -146,6 +149,64 @@ static int LS_global_imgui_ImVec2(lua_State* state)
 }
 
 
+enum LS_ImGuiType
+{
+	ImMemberType_bool,
+	ImMemberType_int,
+	ImMemberType_unsigned,
+	ImMemberType_float,
+	ImMemberType_ImVec2,
+	ImMemberType_ImVec4,
+};
+
+struct LS_ImGuiMember
+{
+	size_t type:8;
+	size_t offset:24;
+};
+
+template <typename T>
+struct LS_ImGuiTypeHolder;
+
+#define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
+	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr LS_ImGuiType IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
+
+LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
+LS_IMGUI_DEFINE_MEMBER_TYPE(int);
+LS_IMGUI_DEFINE_MEMBER_TYPE(unsigned);
+LS_IMGUI_DEFINE_MEMBER_TYPE(float);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+
+#undef LS_IMGUI_DEFINE_MEMBER_TYPE
+
+#define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
+	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
+
+
+static const LS_UserDataType ls_imguiviewport_type =
+{
+	{ {{'i', 'm', 'v', 'p'}} },
+	sizeof(int) /* fourcc */ + sizeof(void*)
+};
+
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewport_members =
+{
+#define LS_IMGUI_VIEWPORT_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiViewport, NAME)
+
+	LS_IMGUI_VIEWPORT_MEMBER(ID),
+	LS_IMGUI_VIEWPORT_MEMBER(Flags),
+	LS_IMGUI_VIEWPORT_MEMBER(Pos),
+	LS_IMGUI_VIEWPORT_MEMBER(Size),
+	LS_IMGUI_VIEWPORT_MEMBER(WorkPos),
+	LS_IMGUI_VIEWPORT_MEMBER(WorkSize),
+
+#undef LS_IMGUI_VIEWPORT_MEMBER
+};
+
+#undef LS_IMGUI_MEMBER
+
+
 static bool ls_framescope;
 
 static void LS_EnsureFrameScope(lua_State* state)
@@ -219,47 +280,73 @@ void LS_ClearImGuiStack()
 	}
 }
 
+static int LS_value_ImGuiViewport_index(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	size_t length;
+	const char* key = luaL_checklstring(state, 2, &length);
+	assert(key);
+	assert(length > 0);
+
+	const frozen::string keystr(key, length);
+	const auto valueit = ls_imguiviewport_members.find(keystr);
+
+	if (ls_imguiviewport_members.end() == valueit)
+		luaL_error(state, "Unknown member '%s' of ImGuiViewport", key);
+
+	void* userdataptr = LS_GetValueFromTypedUserData(state, 1, &ls_imguiviewport_type);
+	assert(userdataptr);
+
+	const uint8_t* bytes = *reinterpret_cast<uint8_t**>(userdataptr);
+	assert(bytes);
+
+	const LS_ImGuiMember member = valueit->second;
+	const uint8_t* memberptr = bytes + member.offset;
+
+	switch (member.type)
+	{
+	case ImMemberType_int:
+	case ImMemberType_unsigned:
+		lua_pushinteger(state, *reinterpret_cast<const lua_Integer*>(memberptr));
+		break;
+
+	case ImMemberType_ImVec2:
+		LS_PushImVec2(state, *reinterpret_cast<const ImVec2*>(memberptr));
+		break;
+
+	default:
+		assert(false);
+		lua_pushnil(state);
+		break;
+	}
+
+	return 1;
+}
+
 static int LS_global_imgui_GetMainViewport(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
+	ImGuiViewport** viewportptr = static_cast<ImGuiViewport**>(LS_CreateTypedUserData(state, &ls_imguiviewport_type));
+	assert(viewportptr && *viewportptr);
+
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	assert(viewport);
 
-	// TODO: return userdata with fields accessible on demand instead of complete table
-	lua_createtable(state, 0, 5);
+	*viewportptr = viewport;
 
-	lua_pushnumber(state, viewport->Flags);
-	lua_setfield(state, -2, "Flags");
+	// Create and set 'ImGuiViewport' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_ImGuiViewport_index },
+		{ NULL, NULL }
+	};
 
-	lua_createtable(state, 0, 2);
-	lua_pushnumber(state, viewport->Pos.x);
-	lua_setfield(state, -2, "x");
-	lua_pushnumber(state, viewport->Pos.y);
-	lua_setfield(state, -2, "y");
-	lua_setfield(state, -2, "Pos");
+	if (luaL_newmetatable(state, "ImGuiViewport"))
+		luaL_setfuncs(state, functions, 0);
 
-	lua_createtable(state, 0, 2);
-	lua_pushnumber(state, viewport->Size.x);
-	lua_setfield(state, -2, "x");
-	lua_pushnumber(state, viewport->Size.y);
-	lua_setfield(state, -2, "y");
-	lua_setfield(state, -2, "Size");
-
-	lua_createtable(state, 0, 2);
-	lua_pushnumber(state, viewport->WorkPos.x);
-	lua_setfield(state, -2, "x");
-	lua_pushnumber(state, viewport->WorkPos.y);
-	lua_setfield(state, -2, "y");
-	lua_setfield(state, -2, "WorkPos");
-
-	lua_createtable(state, 0, 2);
-	lua_pushnumber(state, viewport->WorkSize.x);
-	lua_setfield(state, -2, "x");
-	lua_pushnumber(state, viewport->WorkSize.y);
-	lua_setfield(state, -2, "y");
-	lua_setfield(state, -2, "WorkSize");
-
+	lua_setmetatable(state, -2);
 	return 1;
 }
 
