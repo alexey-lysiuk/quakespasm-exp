@@ -21,6 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ls_imgui.h"
 
+// TODO: Find better place for this WITHOUT altering ImGui source code
+#define IM_VEC4_CLASS_EXTRA \
+	float& operator[] (size_t idx) { IM_ASSERT(idx >= 0 || idx <= 3); return reinterpret_cast<float*>(this)[idx]; } \
+	float operator[] (size_t idx) const { return (*const_cast<ImVec4*>(this))[idx]; } \
+
 #include "imgui.h"
 
 extern "C"
@@ -33,70 +38,42 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
-static const LS_UserDataType ls_imvec2_type =
-{
-	{ {{'i', 'm', 'v', '2'}} },
-	sizeof(int) /* fourcc */ + sizeof(ImVec2)
-};
+template<typename T>
+const char* LS_GetImVecUserDataName();
 
-// Gets value of 'ImVec2' from userdata at given index
-ImVec2& LS_GetImVec2Value(lua_State* state, int index)
+template<typename T>
+const LS_UserDataType* LS_GetImVecUserDataType();
+
+template<typename T>
+int LS_GetImVecComponentCount();
+
+// Gets value of 'ImVec?' from userdata at given index
+template<typename T>
+static T& LS_GetImVecValue(lua_State* state, int index)
 {
-	ImVec2* value = static_cast<ImVec2*>(LS_GetValueFromTypedUserData(state, index, &ls_imvec2_type));
+	T* value = static_cast<T*>(LS_GetValueFromTypedUserData(state, index, LS_GetImVecUserDataType<T>()));
 	assert(value);
 
 	return *value;
 }
 
-// Converts 'ImVec2' component at given stack index to ImVec2 integer index [0..1]
-// On Lua side, valid numeric component indices are 1, 2
-static int LS_GetImVec2Component(lua_State* state, int index)
+// Pushes value of 'ImVec?' component, indexed by integer [0..?] or string 'x', 'y', ...
+template<typename T>
+static int LS_value_ImVec_index(lua_State* state)
 {
-	int comptype = lua_type(state, index);
-	int component = -1;
-
-	if (comptype == LUA_TSTRING)
-	{
-		const char* compstr = lua_tostring(state, 2);
-		assert(compstr);
-
-		char compchar = compstr[0];
-
-		if (compchar != '\0' && compstr[1] == '\0')
-			component = compchar - 'x';
-
-		if (component < 0 || component > 1)
-			luaL_error(state, "Invalid ImVec2 component '%s'", compstr);
-	}
-	else if (comptype == LUA_TNUMBER)
-	{
-		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
-
-		if (component < 0 || component > 1)
-			luaL_error(state, "ImVec2 component %d is out of range [1..2]", component + 1);  // on Lua side, indices start with 1
-	}
-	else
-		luaL_error(state, "Invalid type %s of ImVec2 component", lua_typename(state, comptype));
-
-	assert(component >= 0 && component <= 1);
-	return component;
-}
-
-// Pushes value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'
-static int LS_value_ImVec2_index(lua_State* state)
-{
-	const ImVec2& value = LS_GetImVec2Value(state, 1);
-	int component = LS_GetImVec2Component(state, 2);
+	const T& value = LS_GetImVecValue<T>(state, 1);
+	int component = LS_GetVectorComponent(state, 2, LS_GetImVecComponentCount<T>());
 
 	lua_pushnumber(state, value[component]);
 	return 1;
 }
 
-// Sets new value of 'ImVec2' component, indexed by integer [0..1] or string 'x', 'y'
-static int LS_value_ImVec2_newindex(lua_State* state)
+// Sets new value of 'ImVec?' component, indexed by integer [0..?] or string 'x', 'y', ...
+template<typename T>
+static int LS_value_ImVec_newindex(lua_State* state)
 {
-	ImVec2& value = LS_GetImVec2Value(state, 1);
-	int component = LS_GetImVec2Component(state, 2);
+	T& value = LS_GetImVecValue<T>(state, 1);
+	int component = LS_GetVectorComponent(state, 2, LS_GetImVecComponentCount<T>());
 
 	lua_Number compvalue = luaL_checknumber(state, 3);
 	value[component] = compvalue;
@@ -104,38 +81,52 @@ static int LS_value_ImVec2_newindex(lua_State* state)
 	return 0;
 }
 
-// Pushes string built from 'ImVec2' value
-static int LS_value_ImVec2_tostring(lua_State* state)
-{
-	char buf[64];
-	const ImVec2& value = LS_GetImVec2Value(state, 1);
-	int length = q_snprintf(buf, sizeof buf, "%f %f", value[0], value[1]);
+// Pushes string built from 'ImVec?' value
+template<typename T>
+static int LS_value_ImVec_tostring(lua_State* state);
 
-	lua_pushlstring(state, buf, length);
-	return 1;
-}
-
-// Creates and pushes 'ImVec2' userdata built from ImVec2 value
-static int LS_PushImVec2(lua_State* state, const ImVec2& value)
+// Creates and pushes 'ImVec?' userdata built from ImVec? value
+template<typename T>
+static int LS_PushImVec(lua_State* state, const T& value)
 {
-	ImVec2* valueptr = static_cast<ImVec2*>(LS_CreateTypedUserData(state, &ls_imvec2_type));
+	T* valueptr = static_cast<T*>(LS_CreateTypedUserData(state, LS_GetImVecUserDataType<T>()));
 	assert(valueptr);
 
 	*valueptr = value;
 
-	// Create and set 'ImVec2' metatable
+	// Create and set 'ImVec?' metatable
 	static const luaL_Reg functions[] =
 	{
-		{ "__index", LS_value_ImVec2_index },
-		{ "__newindex", LS_value_ImVec2_newindex },
-		{ "__tostring", LS_value_ImVec2_tostring },
+		{ "__index", LS_value_ImVec_index<T> },
+		{ "__newindex", LS_value_ImVec_newindex<T> },
+		{ "__tostring", LS_value_ImVec_tostring<T> },
 		{ NULL, NULL }
 	};
 
-	if (luaL_newmetatable(state, "ImVec2"))
+	if (luaL_newmetatable(state, LS_GetImVecUserDataName<T>()))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
+	return 1;
+}
+
+#define LS_DEFINE_IMVEC_TYPE(COMPONENTS) \
+	static const LS_UserDataType ls_imvec##COMPONENTS##_type = { { {{'i', 'm', 'v', '0' + COMPONENTS}} }, sizeof(int) /* fourcc */ + sizeof(ImVec##COMPONENTS) }; \
+	template<> const char* LS_GetImVecUserDataName<ImVec##COMPONENTS>() { return "ImVec"#COMPONENTS; } \
+	template<> const LS_UserDataType* LS_GetImVecUserDataType<ImVec##COMPONENTS>() { return &ls_imvec##COMPONENTS##_type; } \
+	template<> int LS_GetImVecComponentCount<ImVec##COMPONENTS>() { return COMPONENTS; }
+
+LS_DEFINE_IMVEC_TYPE(2)
+LS_DEFINE_IMVEC_TYPE(4)
+
+#undef LS_DEFINE_IMVEC_TYPE
+
+
+template <>
+int LS_value_ImVec_tostring<ImVec2>(lua_State* state)
+{
+	const ImVec2& value = LS_GetImVecValue<ImVec2>(state, 1);
+	lua_pushfstring(state, "%f %f", value.x, value.y);
 	return 1;
 }
 
@@ -144,7 +135,27 @@ static int LS_global_imgui_ImVec2(lua_State* state)
 	const float x = luaL_optnumber(state, 1, 0.f);
 	const float y = luaL_optnumber(state, 2, 0.f);
 
-	LS_PushImVec2(state, ImVec2(x, y));
+	LS_PushImVec(state, ImVec2(x, y));
+	return 1;
+}
+
+
+static int LS_global_imgui_ImVec4(lua_State* state)
+{
+	const float x = luaL_optnumber(state, 1, 0.f);
+	const float y = luaL_optnumber(state, 2, 0.f);
+	const float z = luaL_optnumber(state, 3, 0.f);
+	const float w = luaL_optnumber(state, 4, 0.f);
+
+	LS_PushImVec(state, ImVec4(x, y, z, w));
+	return 1;
+}
+
+template <>
+int LS_value_ImVec_tostring<ImVec4>(lua_State* state)
+{
+	const ImVec4& value = LS_GetImVecValue<ImVec4>(state, 1);
+	lua_pushfstring(state, "%f %f %f %f", value.x, value.y, value.z, value.w);
 	return 1;
 }
 
@@ -180,25 +191,68 @@ LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
 
 #undef LS_IMGUI_DEFINE_MEMBER_TYPE
 
+template <typename T>
+static const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameoftype, const T& members)
+{
+	size_t length;
+	const char* key = luaL_checklstring(state, 2, &length);
+	assert(key);
+	assert(length > 0);
+
+	const frozen::string keystr(key, length);
+	const auto valueit = members.find(keystr);
+
+	if (members.end() == valueit)
+		luaL_error(state, "unknown member '%s' of %s", key, nameoftype);
+
+	return valueit->second;
+}
+
+static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_UserDataType& type, const LS_ImGuiMember& member)
+{
+	void* userdataptr = LS_GetValueFromTypedUserData(state, 1, &type);
+	assert(userdataptr);
+
+	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
+	assert(bytes);
+
+	const uint8_t* memberptr = bytes + member.offset;
+
+	switch (member.type)
+	{
+	case ImMemberType_bool:
+		lua_pushboolean(state, *reinterpret_cast<const bool*>(memberptr));
+		break;
+
+	case ImMemberType_int:
+	case ImMemberType_unsigned:
+		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
+		break;
+
+	case ImMemberType_float:
+		lua_pushnumber(state, *reinterpret_cast<const float*>(memberptr));
+		break;
+
+	case ImMemberType_ImVec2:
+		LS_PushImVec(state, *reinterpret_cast<const ImVec2*>(memberptr));
+		break;
+
+	case ImMemberType_ImVec4:
+		LS_PushImVec(state, *reinterpret_cast<const ImVec4*>(memberptr));
+		break;
+
+	default:
+		assert(false);
+		lua_pushnil(state);
+		break;
+	}
+
+	return 1;
+}
+
 #define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
 	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
 
-//constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 8> ls_imguistyle_members =
-//{
-//#define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
-//
-//	LS_IMGUI_STYLE_MEMBER(Alpha),
-//	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
-//	LS_IMGUI_STYLE_MEMBER(WindowPadding),
-//	LS_IMGUI_STYLE_MEMBER(WindowRounding),
-//	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
-//	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
-//	LS_IMGUI_STYLE_MEMBER(WindowTitleAlign),
-//	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
-//	// TODO: all members
-//
-//#undef LS_IMGUI_STYLE_MEMBER
-//};
 
 static const LS_UserDataType ls_imguiviewport_type =
 {
@@ -220,6 +274,72 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewp
 #undef LS_IMGUI_VIEWPORT_MEMBER
 };
 
+static const LS_UserDataType ls_imguistyle_type =
+{
+	{ {{'i', 'm', 's', 't'}} },
+	sizeof(int) /* fourcc */ + sizeof(void*)
+};
+
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 50> ls_imguistyle_members =
+{
+#define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
+
+	LS_IMGUI_STYLE_MEMBER(Alpha),
+	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
+	LS_IMGUI_STYLE_MEMBER(WindowPadding),
+	LS_IMGUI_STYLE_MEMBER(WindowRounding),
+	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
+	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
+	LS_IMGUI_STYLE_MEMBER(WindowTitleAlign),
+	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ChildRounding),
+	LS_IMGUI_STYLE_MEMBER(ChildBorderSize),
+	LS_IMGUI_STYLE_MEMBER(PopupRounding),
+	LS_IMGUI_STYLE_MEMBER(PopupBorderSize),
+	LS_IMGUI_STYLE_MEMBER(FramePadding),
+	LS_IMGUI_STYLE_MEMBER(FrameRounding),
+	LS_IMGUI_STYLE_MEMBER(FrameBorderSize),
+	LS_IMGUI_STYLE_MEMBER(ItemSpacing),
+	LS_IMGUI_STYLE_MEMBER(ItemInnerSpacing),
+	LS_IMGUI_STYLE_MEMBER(CellPadding),
+	LS_IMGUI_STYLE_MEMBER(TouchExtraPadding),
+	LS_IMGUI_STYLE_MEMBER(IndentSpacing),
+	LS_IMGUI_STYLE_MEMBER(ColumnsMinSpacing),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarSize),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarRounding),
+	LS_IMGUI_STYLE_MEMBER(GrabMinSize),
+	LS_IMGUI_STYLE_MEMBER(GrabRounding),
+	LS_IMGUI_STYLE_MEMBER(LogSliderDeadzone),
+	LS_IMGUI_STYLE_MEMBER(TabRounding),
+	LS_IMGUI_STYLE_MEMBER(TabBorderSize),
+	LS_IMGUI_STYLE_MEMBER(TabMinWidthForCloseButton),
+	LS_IMGUI_STYLE_MEMBER(TabBarBorderSize),
+	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
+	LS_IMGUI_STYLE_MEMBER(ColorButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ButtonTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextBorderSize),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextPadding),
+	LS_IMGUI_STYLE_MEMBER(DisplayWindowPadding),
+	LS_IMGUI_STYLE_MEMBER(DisplaySafeAreaPadding),
+	LS_IMGUI_STYLE_MEMBER(MouseCursorScale),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLines),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLinesUseTex),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedFill),
+	LS_IMGUI_STYLE_MEMBER(CurveTessellationTol),
+	LS_IMGUI_STYLE_MEMBER(CircleTessellationMaxError),
+	// TODO: Add support for arrays
+	// LS_IMGUI_STYLE_MEMBER(Colors),
+	LS_IMGUI_STYLE_MEMBER(HoverStationaryDelay),
+	LS_IMGUI_STYLE_MEMBER(HoverDelayShort),
+	LS_IMGUI_STYLE_MEMBER(HoverDelayNormal),
+	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipMouse),
+	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipNav),
+
+#undef LS_IMGUI_STYLE_MEMBER
+};
+
 #undef LS_IMGUI_MEMBER
 
 
@@ -228,7 +348,7 @@ static bool ls_framescope;
 static void LS_EnsureFrameScope(lua_State* state)
 {
 	if (!ls_framescope)
-		luaL_error(state, "Calling ImGui function outside of frame scope");
+		luaL_error(state, "calling ImGui function outside of frame scope");
 }
 
 void LS_MarkImGuiFrameStart()
@@ -248,7 +368,7 @@ static uint32_t ls_windowscope;
 static void LS_EnsureWindowScope(lua_State* state)
 {
 	if (ls_windowscope == 0)
-		luaL_error(state, "Calling ImGui function outside of window scope");
+		luaL_error(state, "calling ImGui function outside of window scope");
 }
 
 static uint32_t ls_popupscope;
@@ -256,7 +376,7 @@ static uint32_t ls_popupscope;
 static void LS_EnsurePopupScope(lua_State* state)
 {
 	if (ls_popupscope == 0)
-		luaL_error(state, "Calling ImGui function outside of popup scope");
+		luaL_error(state, "calling ImGui function outside of popup scope");
 }
 
 static uint32_t ls_tablescope;
@@ -264,7 +384,7 @@ static uint32_t ls_tablescope;
 static void LS_EnsureTableScope(lua_State* state)
 {
 	if (ls_tablescope == 0)
-		luaL_error(state, "Calling ImGui function outside of table scope");
+		luaL_error(state, "calling ImGui function outside of table scope");
 }
 
 using LS_ImGuiEndFunction = void(*)();
@@ -300,44 +420,8 @@ static int LS_value_ImGuiViewport_index(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	size_t length;
-	const char* key = luaL_checklstring(state, 2, &length);
-	assert(key);
-	assert(length > 0);
-
-	const frozen::string keystr(key, length);
-	const auto valueit = ls_imguiviewport_members.find(keystr);
-
-	if (ls_imguiviewport_members.end() == valueit)
-		luaL_error(state, "Unknown member '%s' of ImGuiViewport", key);
-
-	void* userdataptr = LS_GetValueFromTypedUserData(state, 1, &ls_imguiviewport_type);
-	assert(userdataptr);
-
-	const uint8_t* bytes = *reinterpret_cast<uint8_t**>(userdataptr);
-	assert(bytes);
-
-	const LS_ImGuiMember member = valueit->second;
-	const uint8_t* memberptr = bytes + member.offset;
-
-	switch (member.type)
-	{
-	case ImMemberType_int:
-	case ImMemberType_unsigned:
-		lua_pushinteger(state, *reinterpret_cast<const lua_Integer*>(memberptr));
-		break;
-
-	case ImMemberType_ImVec2:
-		LS_PushImVec2(state, *reinterpret_cast<const ImVec2*>(memberptr));
-		break;
-
-	default:
-		assert(false);
-		lua_pushnil(state);
-		break;
-	}
-
-	return 1;
+	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiViewport", ls_imguiviewport_members);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguiviewport_type, member);
 }
 
 static int LS_global_imgui_GetMainViewport(lua_State* state)
@@ -360,6 +444,38 @@ static int LS_global_imgui_GetMainViewport(lua_State* state)
 	};
 
 	if (luaL_newmetatable(state, "ImGuiViewport"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
+static int LS_value_ImGuiStyle_index(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiStyle", ls_imguistyle_members);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member);
+}
+
+static int LS_global_imgui_GetStyle(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiStyle** styleptr = static_cast<const ImGuiStyle**>(LS_CreateTypedUserData(state, &ls_imguistyle_type));
+	assert(styleptr && *styleptr);
+
+	const ImGuiStyle* style = &ImGui::GetStyle();
+	*styleptr = style;
+
+	// Create and set 'ImGuiStyle' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_ImGuiStyle_index },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "ImGuiStyle"))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
@@ -647,14 +763,14 @@ static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	return LS_PushImVec2(state, ImGui::GetItemRectMax());
+	return LS_PushImVec(state, ImGui::GetItemRectMax());
 }
 
 static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	return LS_PushImVec2(state, ImGui::GetItemRectMin());
+	return LS_PushImVec(state, ImGui::GetItemRectMin());
 }
 
 static int LS_global_imgui_Indent(lua_State* state)
@@ -1016,8 +1132,10 @@ void LS_InitImGuiBindings(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "ImVec2", LS_global_imgui_ImVec2 },
+		{ "ImVec4", LS_global_imgui_ImVec4 },
 
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
+		{ "GetStyle", LS_global_imgui_GetStyle },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
 #ifndef NDEBUG
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
