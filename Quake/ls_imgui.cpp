@@ -203,7 +203,7 @@ static const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char*
 	const auto valueit = members.find(keystr);
 
 	if (members.end() == valueit)
-		luaL_error(state, "Unknown member '%s' of %s", key, nameoftype);
+		luaL_error(state, "unknown member '%s' of %s", key, nameoftype);
 
 	return valueit->second;
 }
@@ -348,7 +348,7 @@ static bool ls_framescope;
 static void LS_EnsureFrameScope(lua_State* state)
 {
 	if (!ls_framescope)
-		luaL_error(state, "Calling ImGui function outside of frame scope");
+		luaL_error(state, "calling ImGui function outside of frame scope");
 }
 
 void LS_MarkImGuiFrameStart()
@@ -368,7 +368,7 @@ static uint32_t ls_windowscope;
 static void LS_EnsureWindowScope(lua_State* state)
 {
 	if (ls_windowscope == 0)
-		luaL_error(state, "Calling ImGui function outside of window scope");
+		luaL_error(state, "calling ImGui function outside of window scope");
 }
 
 static uint32_t ls_popupscope;
@@ -376,7 +376,7 @@ static uint32_t ls_popupscope;
 static void LS_EnsurePopupScope(lua_State* state)
 {
 	if (ls_popupscope == 0)
-		luaL_error(state, "Calling ImGui function outside of popup scope");
+		luaL_error(state, "calling ImGui function outside of popup scope");
 }
 
 static uint32_t ls_tablescope;
@@ -384,7 +384,7 @@ static uint32_t ls_tablescope;
 static void LS_EnsureTableScope(lua_State* state)
 {
 	if (ls_tablescope == 0)
-		luaL_error(state, "Calling ImGui function outside of table scope");
+		luaL_error(state, "calling ImGui function outside of table scope");
 }
 
 using LS_ImGuiEndFunction = void(*)();

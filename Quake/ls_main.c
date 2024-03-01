@@ -51,7 +51,7 @@ static void* LS_tempalloc(lua_State* state, size_t size)
 	void* result = tlsf_malloc(ls_memory, size);
 
 	if (!result)
-		luaL_error(state, "Unable to allocation %I bytes", size);
+		luaL_error(state, "unable to allocation %I bytes", size);
 
 	return result;
 }
@@ -103,7 +103,7 @@ void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDat
 		memcpy(actual, result, 4);
 		actual[4] = '\0';
 
-		luaL_error(state, "Invalid userdata type, expected '%s', got '%s'", expected, actual);
+		luaL_error(state, "invalid userdata type, expected '%s', got '%s'", expected, actual);
 	}
 
 	result += 1;

@@ -203,7 +203,7 @@ static int LS_value_edict_index(lua_State* state)
 			lua_pushnil(state);  // no such index
 	}
 	else
-		luaL_error(state, "Invalid type %s of edict index", lua_typename(state, indextype));
+		luaL_error(state, "invalid type %s of edict index", lua_typename(state, indextype));
 
 	return 1;
 }
@@ -323,7 +323,7 @@ static edict_t* LS_GetEdictFromParameter(lua_State* state)
 		else if (indextype == LUA_TUSERDATA)
 			return LS_GetEdictFromUserData(state);
 		else
-			luaL_error(state, "Invalid type %s of edicts key", lua_typename(state, indextype));
+			luaL_error(state, "invalid type %s of edicts key", lua_typename(state, indextype));
 	}
 
 	return edict;
