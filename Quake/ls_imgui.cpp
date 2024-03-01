@@ -274,6 +274,72 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewp
 #undef LS_IMGUI_VIEWPORT_MEMBER
 };
 
+static const LS_UserDataType ls_imguistyle_type =
+{
+	{ {{'i', 'm', 's', 't'}} },
+	sizeof(int) /* fourcc */ + sizeof(void*)
+};
+
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 50> ls_imguistyle_members =
+{
+#define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
+
+	LS_IMGUI_STYLE_MEMBER(Alpha),
+	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
+	LS_IMGUI_STYLE_MEMBER(WindowPadding),
+	LS_IMGUI_STYLE_MEMBER(WindowRounding),
+	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
+	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
+	LS_IMGUI_STYLE_MEMBER(WindowTitleAlign),
+	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ChildRounding),
+	LS_IMGUI_STYLE_MEMBER(ChildBorderSize),
+	LS_IMGUI_STYLE_MEMBER(PopupRounding),
+	LS_IMGUI_STYLE_MEMBER(PopupBorderSize),
+	LS_IMGUI_STYLE_MEMBER(FramePadding),
+	LS_IMGUI_STYLE_MEMBER(FrameRounding),
+	LS_IMGUI_STYLE_MEMBER(FrameBorderSize),
+	LS_IMGUI_STYLE_MEMBER(ItemSpacing),
+	LS_IMGUI_STYLE_MEMBER(ItemInnerSpacing),
+	LS_IMGUI_STYLE_MEMBER(CellPadding),
+	LS_IMGUI_STYLE_MEMBER(TouchExtraPadding),
+	LS_IMGUI_STYLE_MEMBER(IndentSpacing),
+	LS_IMGUI_STYLE_MEMBER(ColumnsMinSpacing),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarSize),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarRounding),
+	LS_IMGUI_STYLE_MEMBER(GrabMinSize),
+	LS_IMGUI_STYLE_MEMBER(GrabRounding),
+	LS_IMGUI_STYLE_MEMBER(LogSliderDeadzone),
+	LS_IMGUI_STYLE_MEMBER(TabRounding),
+	LS_IMGUI_STYLE_MEMBER(TabBorderSize),
+	LS_IMGUI_STYLE_MEMBER(TabMinWidthForCloseButton),
+	LS_IMGUI_STYLE_MEMBER(TabBarBorderSize),
+	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
+	LS_IMGUI_STYLE_MEMBER(ColorButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ButtonTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextBorderSize),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextPadding),
+	LS_IMGUI_STYLE_MEMBER(DisplayWindowPadding),
+	LS_IMGUI_STYLE_MEMBER(DisplaySafeAreaPadding),
+	LS_IMGUI_STYLE_MEMBER(MouseCursorScale),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLines),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLinesUseTex),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedFill),
+	LS_IMGUI_STYLE_MEMBER(CurveTessellationTol),
+	LS_IMGUI_STYLE_MEMBER(CircleTessellationMaxError),
+	// TODO: Add support for arrays
+	// LS_IMGUI_STYLE_MEMBER(Colors),
+	LS_IMGUI_STYLE_MEMBER(HoverStationaryDelay),
+	LS_IMGUI_STYLE_MEMBER(HoverDelayShort),
+	LS_IMGUI_STYLE_MEMBER(HoverDelayNormal),
+	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipMouse),
+	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipNav),
+
+#undef LS_IMGUI_STYLE_MEMBER
+};
+
 #undef LS_IMGUI_MEMBER
 
 
@@ -378,6 +444,38 @@ static int LS_global_imgui_GetMainViewport(lua_State* state)
 	};
 
 	if (luaL_newmetatable(state, "ImGuiViewport"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
+static int LS_value_ImGuiStyle_index(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiStyle", ls_imguistyle_members);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member);
+}
+
+static int LS_global_imgui_GetStyle(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiStyle** styleptr = static_cast<const ImGuiStyle**>(LS_CreateTypedUserData(state, &ls_imguistyle_type));
+	assert(styleptr && *styleptr);
+
+	const ImGuiStyle* style = &ImGui::GetStyle();
+	*styleptr = style;
+
+	// Create and set 'ImGuiStyle' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_ImGuiStyle_index },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "ImGuiStyle"))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
@@ -1037,6 +1135,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "ImVec4", LS_global_imgui_ImVec4 },
 
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
+		{ "GetStyle", LS_global_imgui_GetStyle },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
 #ifndef NDEBUG
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
