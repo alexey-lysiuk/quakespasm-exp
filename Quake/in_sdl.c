@@ -1029,7 +1029,10 @@ void IN_SendKeyEvents (void)
 				S_BlockSound();
 
 				if (key_dest == key_game)
+				{
 					M_Menu_Main_f();
+					m_entersound = false;
+				}
 			}
 			break;
 #else
@@ -1047,7 +1050,10 @@ void IN_SendKeyEvents (void)
 					S_BlockSound();
 
 					if (key_dest == key_game)
+					{
 						M_Menu_Main_f();
+						m_entersound = false;
+					}
 				}
 			}
 			break;
