@@ -636,17 +636,19 @@ if(CMAKE_CROSSCOMPILING)
 else()
 	set(GENENTFIXES_DIR Misc/entfixes/generator)
 	set(OPENVCDIFF_DIR ${GENENTFIXES_DIR}/open-vcdiff)
+	set(OPENVCDIFF_GOOGLE_DIR ${OPENVCDIFF_DIR}/google)
+	set(OPENVCDIFF_ZLIB_DIR ${OPENVCDIFF_DIR}/zlib)
 
 	add_executable(entfixesgenerator
-		${OPENVCDIFF_DIR}/google/codetablewriter_interface.h
-		${OPENVCDIFF_DIR}/google/encodetable.h
-		${OPENVCDIFF_DIR}/google/format_extension_flags.h
-		${OPENVCDIFF_DIR}/google/jsonwriter.h
-		${OPENVCDIFF_DIR}/google/output_string.h
-		${OPENVCDIFF_DIR}/google/vcencoder.h
-		${OPENVCDIFF_DIR}/zlib/adler32.c
-		${OPENVCDIFF_DIR}/zlib/zconf.h
-		${OPENVCDIFF_DIR}/zlib/zlib.h
+		${OPENVCDIFF_GOOGLE_DIR}/codetablewriter_interface.h
+		${OPENVCDIFF_GOOGLE_DIR}/encodetable.h
+		${OPENVCDIFF_GOOGLE_DIR}/format_extension_flags.h
+		${OPENVCDIFF_GOOGLE_DIR}/jsonwriter.h
+		${OPENVCDIFF_GOOGLE_DIR}/output_string.h
+		${OPENVCDIFF_GOOGLE_DIR}/vcencoder.h
+		${OPENVCDIFF_ZLIB_DIR}/adler32.c
+		${OPENVCDIFF_ZLIB_DIR}/zconf.h
+		${OPENVCDIFF_ZLIB_DIR}/zlib.h
 		${OPENVCDIFF_DIR}/addrcache.cc
 		${OPENVCDIFF_DIR}/blockhash.cc
 		${OPENVCDIFF_DIR}/codetable.cc
@@ -672,8 +674,15 @@ else()
 		${OPENVCDIFF_DIR}/vcdiffengine.h
 		${GENENTFIXES_DIR}/generator.cpp
 	)
+	set_target_properties(entfixesgenerator PROPERTIES
+		EXCLUDE_FROM_ALL YES
+		C_STANDARD 90  # prevents Clang from issuing 'warning: a function definition without a prototype is deprecated' 
+	)
 	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_DIR})
-	set_target_properties(entfixesgenerator PROPERTIES EXCLUDE_FROM_ALL YES)
+
+	if(MSVC)
+		target_include_directories(entfixesgenerator PRIVATE ${GENENTFIXES_DIR}/dirent ${OPENVCDIFF_ZLIB_DIR})
+	endif()
 
 	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
 endif()
