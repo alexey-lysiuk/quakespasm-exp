@@ -643,18 +643,6 @@ if(QUAKE_BUILD_ENGINE_PAK)
 
 	set(ENGINE_PAK_SOURCES
 		gfx/conback.lmp
-		maps/blitz1000@e5bb.ent
-		maps/e1m1@c49d.ent
-		maps/e1m2@0caa.ent
-		maps/e1m4@958e.ent
-		maps/e2m2@fbfe.ent
-		maps/e2m3@237a.ent
-		maps/e2m7@10a8.ent
-		maps/eoem7@3ea8.ent
-		maps/hrim_sp1@f054.ent
-		maps/sm100_zwiffle@c897.ent
-		maps/sm212_naitelveni@a835.ent
-		maps/sm27_bear@92ba.ent
 		scripts/edicts.lua
 		scripts/expmode.lua
 		default.cfg
