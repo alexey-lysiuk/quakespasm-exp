@@ -55,7 +55,7 @@ jobs:
         shell: bash
         run: |
           export MAKEFLAGS=--keep-going
-          cmake --build build --config Release --target GenEntFixes
+          cmake --build build --config Release --target genentfixes
           cat Quake/entfixes.h
           cmake --build build --config Release --parallel ${{ steps.cpu-cores.outputs.count }}
 
