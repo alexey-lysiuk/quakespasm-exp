@@ -1,6 +1,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -38,19 +39,59 @@ enum EF_PatchOperation
 struct EF_Patch
 {
 	EF_PatchOperation operation;
-	std::string data;
 	size_t size;
+	std::string data;
 	int32_t offset;
 	unsigned char byte;
+
+	EF_Patch(EF_PatchOperation operation, size_t size, std::string&& data)
+	: EF_Patch(operation, size)
+	{
+		this->data = std::move(data);
+	}
+
+	EF_Patch(EF_PatchOperation operation, size_t size, int32_t offset)
+	: EF_Patch(operation, size)
+	{
+		this->offset = offset;
+	}
+
+	EF_Patch(EF_PatchOperation operation, size_t size, unsigned char byte)
+	: EF_Patch(operation, size)
+	{
+		this->byte = byte;
+	}
+
+private:
+	EF_Patch(EF_PatchOperation operation, size_t size)
+	: operation(operation)
+	, size(size)
+	{
+	}
 };
 
 struct EF_Fix
 {
+	EF_Fix(std::string&& mapname, std::string&& crc, std::vector<EF_Patch>&& patches, size_t oldsize, size_t newsize)
+	: mapname(std::move(mapname))
+	, crc(std::move(crc))
+	, patches(std::move(patches))
+	, oldsize(oldsize)
+	, newsize(newsize)
+	{
+	}
+
 	std::string mapname;
 	std::string crc;
 	std::vector<EF_Patch> patches;
 	size_t oldsize;
 	size_t newsize;
+
+	EF_Fix() = default;
+	EF_Fix(const EF_Fix&) = default;
+	EF_Fix(EF_Fix&&) = default;
+	EF_Fix& operator=(const EF_Fix&) = default;
+	EF_Fix& operator=(EF_Fix&&) = default;
 };
 
 static std::vector<EF_Fix> fixes;
@@ -97,18 +138,17 @@ public:
 
 	void Add(const char* data, size_t size) override
 	{
-		const std::string escaped = EscapeCString(data, size);
-		patches.push_back({ .operation = EF_ADD, .size = size, .data = escaped });
+		patches.emplace_back(EF_ADD, size, EscapeCString(data, size));
 	}
 
 	void Copy(int32_t offset, size_t size) override
 	{
-		patches.push_back({ .operation = EF_COPY, .size = size, .offset = offset });
+		patches.emplace_back(EF_COPY, size, offset);
 	}
 
 	void Run(size_t size, unsigned char byte) override
 	{
-		patches.push_back({ .operation = EF_RUN, .size = size, .byte = byte });
+		patches.emplace_back(EF_RUN, size, byte);
 	}
 
 	bool Init(size_t dictionary_size) override { return true; }
@@ -194,14 +234,7 @@ static void ProcessEntPatch(const std::string& filename)
 	std::string crc{ filename.c_str() + atpos + 1, dotpos - atpos - 1 };
 	EFG_VERIFY(crc.size() == 4);  // 16-bit hex CRC
 
-	fixes.push_back(
-	{
-		.mapname = std::move(mapname),
-		.crc = std::move(crc),
-		.patches = std::move(writer->patches),
-		.oldsize = oldsize,
-		.newsize = newsize
-	});
+	fixes.emplace_back(std::move(mapname), std::move(crc), std::move(writer->patches), oldsize, newsize);
 }
 
 static void Generate(const char* rootpath)
@@ -227,42 +260,4 @@ int main(int argc, const char* argv[])
 
 	Generate(argv[1]);
 	return EXIT_SUCCESS;
-
-//	if (argc < 4)
-//		return 1;
-//
-//	std::string original_path = argv[1];
-//	original_path += '/';
-//
-//	std::string fixed_path = argv[2];
-//	fixed_path += '/';
-//
-//	puts(header);
-//	puts("\nstatic constexpr EF_Patch ef_patches[] =\n{");
-//
-//	for (int i = 3; i < argc; ++i)
-//	{
-//		if (i > 3)
-//			puts("");
-//
-//		printf("\t// %s\n", argv[i]);
-//
-//		const std::string olddata = ReadFile(original_path + argv[i]);
-//		const std::string newdata = ReadFile(fixed_path + argv[i]);
-//
-//		HashedDictionary dictionary(olddata.data(), olddata.size());
-//		dictionary.Init();
-//
-//		auto writer = new EntFixCodeTableWriter;
-//		VCDiffStreamingEncoder encoder(&dictionary, VCD_STANDARD_FORMAT, false, writer);
-//
-//		std::string output;
-//		bool res = encoder.StartEncoding(&output);
-//		res = encoder.EncodeChunk(newdata.data(), newdata.size(), &output);
-//		res = encoder.FinishEncoding(&output);
-//	}
-//
-//	puts("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{");
-//
-//	return 0;
 }
