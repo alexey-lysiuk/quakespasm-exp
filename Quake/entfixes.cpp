@@ -25,26 +25,26 @@ extern "C"
 #include "zone.h"
 }
 
-enum EF_PatchOperation
+enum EF_Operation
 {
+	EF_ADD,
 	EF_COPY,
-	EF_INSERT,
+	EF_RUN,
 };
 
 struct EF_Patch
 {
-	EF_PatchOperation operation;
-	unsigned offset;
+	EF_Operation operation;
 	unsigned size;
-	const char* data;
+	unsigned value;
 };
 
 struct EF_Fix
 {
 	const char* mapname;
+	unsigned crc;
 	unsigned oldsize;
 	unsigned newsize;
-	unsigned crc;
 	unsigned patchindex;
 	unsigned patchcount;
 };
@@ -78,11 +78,15 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 			switch (patch.operation)
 			{
 			case EF_COPY:
-				memcpy(writeptr, entities + patch.offset, patch.size);
+				memcpy(writeptr, entities + patch.value, patch.size);
 				break;
 
-			case EF_INSERT:
-				memcpy(writeptr, patch.data, patch.size);
+			case EF_ADD:
+				memcpy(writeptr, addeddata[patch.value], patch.size);
+				break;
+
+			case EF_RUN:
+				memset(writeptr, patch.value, patch.size);
 				break;
 
 			default:

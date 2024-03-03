@@ -1,16 +1,4 @@
-
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <string>
-#include <vector>
-
-#include <dirent.h>
-
-#include "google/vcencoder.h"
-#include "google/codetablewriter_interface.h"
-
-static const char* header = R"(/*
+/*
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -27,9 +15,21 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-*/)";
+*/
 
-enum EF_PatchOperation
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <vector>
+
+#include <dirent.h>
+
+#include "google/vcencoder.h"
+#include "google/codetablewriter_interface.h"
+
+
+enum EF_Operation
 {
 	EF_ADD,
 	EF_COPY,
@@ -38,36 +38,9 @@ enum EF_PatchOperation
 
 struct EF_Patch
 {
-	EF_PatchOperation operation;
+	EF_Operation operation;
+	size_t value;
 	size_t size;
-	std::string data;
-	int32_t offset;
-	unsigned char byte;
-
-	EF_Patch(EF_PatchOperation operation, size_t size, std::string&& data)
-	: EF_Patch(operation, size)
-	{
-		this->data = std::move(data);
-	}
-
-	EF_Patch(EF_PatchOperation operation, size_t size, int32_t offset)
-	: EF_Patch(operation, size)
-	{
-		this->offset = offset;
-	}
-
-	EF_Patch(EF_PatchOperation operation, size_t size, unsigned char byte)
-	: EF_Patch(operation, size)
-	{
-		this->byte = byte;
-	}
-
-private:
-	EF_Patch(EF_PatchOperation operation, size_t size)
-	: operation(operation)
-	, size(size)
-	{
-	}
 };
 
 struct EF_Fix
@@ -94,6 +67,7 @@ struct EF_Fix
 	EF_Fix& operator=(EF_Fix&&) = default;
 };
 
+static std::vector<std::string> addeddata;
 static std::vector<EF_Fix> fixes;
 
 using namespace open_vcdiff;
@@ -138,17 +112,34 @@ public:
 
 	void Add(const char* data, size_t size) override
 	{
-		patches.emplace_back(EF_ADD, size, EscapeCString(data, size));
+		std::string escaped = EscapeCString(data, size);
+
+		const size_t count = addeddata.size();
+		size_t index = count;
+
+		for (size_t i = 0; i < count; ++i)
+		{
+			if (addeddata[i] == escaped)
+			{
+				index = i;
+				break;
+			}
+		}
+
+		if (addeddata.size() == index)
+			addeddata.push_back(std::move(escaped));
+
+		patches.push_back({ EF_ADD, index, size });
 	}
 
 	void Copy(int32_t offset, size_t size) override
 	{
-		patches.emplace_back(EF_COPY, size, offset);
+		patches.push_back({ EF_COPY, size_t(offset), size });
 	}
 
 	void Run(size_t size, unsigned char byte) override
 	{
-		patches.emplace_back(EF_RUN, size, byte);
+		patches.push_back({ EF_RUN, byte, size });
 	}
 
 	bool Init(size_t dictionary_size) override { return true; }
@@ -202,7 +193,7 @@ static void GatherFileList()
 	EFG_VERIFY(!filenames.empty());
 }
 
-static void ProcessEntPatch(const std::string& filename)
+static void ProcessEntFix(const std::string& filename)
 {
 	size_t oldsize, newsize;
 	const std::string olddata = ReadFile(oldpath + filename, oldsize);
@@ -237,6 +228,91 @@ static void ProcessEntPatch(const std::string& filename)
 	fixes.emplace_back(std::move(mapname), std::move(crc), std::move(writer->patches), oldsize, newsize);
 }
 
+static void ProcessEntFixes()
+{
+	std::for_each(filenames.begin(), filenames.end(), ProcessEntFix);
+}
+
+static const char* header = R"(/*
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+
+)";
+
+static void WriteEntFixes(const char* rootpath)
+{
+	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
+	{
+		return (lhs.mapname < rhs.mapname)
+			|| (lhs.mapname == rhs.mapname && lhs.crc < rhs.crc)
+			|| (lhs.crc == rhs.crc && lhs.oldsize < rhs.oldsize);
+	});
+
+	std::string outputpath(rootpath);
+	outputpath += "Quake/entfixes.h";
+
+	FILE* file = fopen(outputpath.c_str(), "wb");
+	EFG_VERIFY(file);
+	EFG_VERIFY(fputs(header, file) > 0);
+	EFG_VERIFY(fputs("static constexpr const char* addeddata[] =\n{\n", file) > 0);
+
+	for (size_t i = 0, e = addeddata.size(); i < e; ++i)
+		EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\",\n", i, addeddata[i].c_str()) > 0);
+
+	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) > 0);
+
+	bool first = true;
+
+	for (const EF_Fix& fix : fixes)
+	{
+		if (first)
+			first = false;
+		else
+			fputs("\n", file);
+
+		EFG_VERIFY(fprintf(file, "\t// %s@%s\n", fix.mapname.c_str(), fix.crc.c_str()) > 0);
+
+		for (const EF_Patch& patch : fix.patches)
+		{
+			const EF_Operation op = patch.operation;
+			const char* opstr = op == EF_ADD ? "EF_ADD" : (op == EF_COPY ? "EF_COPY" : "EF_RUN");
+			EFG_VERIFY(fprintf(file, "\t{ %s, %zu, %zu },\n", opstr, patch.size, patch.value) > 0);
+		}
+	}
+
+	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) > 0);
+
+	size_t patchindex = 0;
+
+	for (const EF_Fix& fix : fixes)
+	{
+		const size_t patchcount = fix.patches.size();
+
+		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
+			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, patchindex, patchindex) > 0);
+
+		patchindex += patchcount;
+	}
+
+	EFG_VERIFY(fputs("};\n", file) > 0);
+	EFG_VERIFY(fclose(file) == 0);
+}
+
 static void Generate(const char* rootpath)
 {
 	std::string entpath(rootpath);
@@ -246,8 +322,8 @@ static void Generate(const char* rootpath)
 	newpath = entpath + "new/";
 
 	GatherFileList();
-
-	std::for_each(filenames.begin(), filenames.end(), ProcessEntPatch);
+	ProcessEntFixes();
+	WriteEntFixes(rootpath);
 }
 
 int main(int argc, const char* argv[])
