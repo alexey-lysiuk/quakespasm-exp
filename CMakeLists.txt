@@ -33,6 +33,8 @@ set(COMMON_SOURCES
 	Quake/cvar.c
 	Quake/cvar.h
 	Quake/draw.h
+	Quake/entfixes.cpp
+	Quake/entfixes.h
 	Quake/filenames.h
 	Quake/gl_draw.c
 	Quake/gl_fog.c
@@ -627,6 +629,64 @@ find_codec(NAME XMP
 	HEADER xmp.h
 	LIBRARIES xmp
 	DEFINE USE_CODEC_XMP
+)
+
+if(CMAKE_CROSSCOMPILING)
+	find_package(EntFixesGenerator)
+else()
+	set(GENENTFIXES_DIR Misc/entfixes/generator)
+	set(OPENVCDIFF_DIR ${GENENTFIXES_DIR}/open-vcdiff)
+	set(OPENVCDIFF_GOOGLE_DIR ${OPENVCDIFF_DIR}/google)
+	set(OPENVCDIFF_ZLIB_DIR ${OPENVCDIFF_DIR}/zlib)
+
+	add_executable(entfixesgenerator
+		${OPENVCDIFF_GOOGLE_DIR}/codetablewriter_interface.h
+		${OPENVCDIFF_GOOGLE_DIR}/encodetable.h
+		${OPENVCDIFF_GOOGLE_DIR}/format_extension_flags.h
+		${OPENVCDIFF_GOOGLE_DIR}/jsonwriter.h
+		${OPENVCDIFF_GOOGLE_DIR}/output_string.h
+		${OPENVCDIFF_GOOGLE_DIR}/vcencoder.h
+		${OPENVCDIFF_ZLIB_DIR}/adler32.c
+		${OPENVCDIFF_ZLIB_DIR}/zconf.h
+		${OPENVCDIFF_ZLIB_DIR}/zlib.h
+		${OPENVCDIFF_DIR}/addrcache.cc
+		${OPENVCDIFF_DIR}/blockhash.cc
+		${OPENVCDIFF_DIR}/codetable.cc
+		${OPENVCDIFF_DIR}/encodetable.cc
+		${OPENVCDIFF_DIR}/instruction_map.cc
+		${OPENVCDIFF_DIR}/jsonwriter.cc
+		${OPENVCDIFF_DIR}/logging.cc
+		${OPENVCDIFF_DIR}/varint_bigendian.cc
+		${OPENVCDIFF_DIR}/vcdiffengine.cc
+		${OPENVCDIFF_DIR}/vcencoder.cc
+		${OPENVCDIFF_DIR}/addrcache.h
+		${OPENVCDIFF_DIR}/blockhash.h
+		${OPENVCDIFF_DIR}/checksum.h
+		${OPENVCDIFF_DIR}/codetable.h
+		${OPENVCDIFF_DIR}/compile_assert.h
+		${OPENVCDIFF_DIR}/config.h
+		${OPENVCDIFF_DIR}/instruction_map.h
+		${OPENVCDIFF_DIR}/logging.h
+		${OPENVCDIFF_DIR}/rolling_hash.h
+		${OPENVCDIFF_DIR}/unique_ptr.h
+		${OPENVCDIFF_DIR}/varint_bigendian.h
+		${OPENVCDIFF_DIR}/vcdiff_defs.h
+		${OPENVCDIFF_DIR}/vcdiffengine.h
+		${GENENTFIXES_DIR}/generator.cpp
+	)
+	set_target_properties(entfixesgenerator PROPERTIES EXCLUDE_FROM_ALL YES)
+	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_ZLIB_DIR} ${OPENVCDIFF_DIR})
+
+	if(MSVC)
+		target_include_directories(entfixesgenerator PRIVATE ${GENENTFIXES_DIR}/dirent)
+	endif()
+
+	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
+endif()
+
+add_custom_target(genentfixes
+	COMMAND entfixesgenerator "${CMAKE_SOURCE_DIR}"
+	DEPENDS entfixesgenerator
 )
 
 option(QUAKE_BUILD_ENGINE_PAK "Build engine .pak file from individual files" ON)
