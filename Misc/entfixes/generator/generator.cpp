@@ -144,43 +144,57 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */)";
 
+static int Generate(const char* reporoot)
+{
+	// TODO: ...
+	return 0;
+}
+
 int main(int argc, const char* argv[])
 {
-	if (argc < 4)
-		return 1;
-
-	std::string original_path = argv[1];
-	original_path += '/';
-
-	std::string fixed_path = argv[2];
-	fixed_path += '/';
-
-	puts(header);
-	puts("\nstatic constexpr EF_Patch ef_patches[] =\n{");
-
-	for (int i = 3; i < argc; ++i)
+	if (argc != 2)
 	{
-		if (i > 3)
-			puts("");
-
-		printf("\t// %s\n", argv[i]);
-
-		const std::string olddata = ReadFile(original_path + argv[i]);
-		const std::string newdata = ReadFile(fixed_path + argv[i]);
-
-		HashedDictionary dictionary(olddata.data(), olddata.size());
-		dictionary.Init();
-
-		auto writer = new EntFixCodeTableWriter;
-		VCDiffStreamingEncoder encoder(&dictionary, VCD_STANDARD_FORMAT, false, writer);
-
-		std::string output;
-		bool res = encoder.StartEncoding(&output);
-		res = encoder.EncodeChunk(newdata.data(), newdata.size(), &output);
-		res = encoder.FinishEncoding(&output);
+		printf("Usage: %s repo-root-dir", argv[0]);
+		return EXIT_FAILURE;
 	}
 
-	puts("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{");
+	return Generate(argv[1]);
 
-	return 0;
+//	if (argc < 4)
+//		return 1;
+//
+//	std::string original_path = argv[1];
+//	original_path += '/';
+//
+//	std::string fixed_path = argv[2];
+//	fixed_path += '/';
+//
+//	puts(header);
+//	puts("\nstatic constexpr EF_Patch ef_patches[] =\n{");
+//
+//	for (int i = 3; i < argc; ++i)
+//	{
+//		if (i > 3)
+//			puts("");
+//
+//		printf("\t// %s\n", argv[i]);
+//
+//		const std::string olddata = ReadFile(original_path + argv[i]);
+//		const std::string newdata = ReadFile(fixed_path + argv[i]);
+//
+//		HashedDictionary dictionary(olddata.data(), olddata.size());
+//		dictionary.Init();
+//
+//		auto writer = new EntFixCodeTableWriter;
+//		VCDiffStreamingEncoder encoder(&dictionary, VCD_STANDARD_FORMAT, false, writer);
+//
+//		std::string output;
+//		bool res = encoder.StartEncoding(&output);
+//		res = encoder.EncodeChunk(newdata.data(), newdata.size(), &output);
+//		res = encoder.FinishEncoding(&output);
+//	}
+//
+//	puts("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{");
+//
+//	return 0;
 }
