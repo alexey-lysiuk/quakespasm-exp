@@ -631,6 +631,58 @@ find_codec(NAME XMP
 	DEFINE USE_CODEC_XMP
 )
 
+if(CMAKE_CROSSCOMPILING)
+	find_package(EntFixesGenerator)
+else()
+	set(GENENTFIXES_DIR Misc/entfixes/generator)
+	set(OPENVCDIFF_DIR ${GENENTFIXES_DIR}/open-vcdiff)
+
+	add_executable(entfixesgenerator
+		${OPENVCDIFF_DIR}/google/codetablewriter_interface.h
+		${OPENVCDIFF_DIR}/google/encodetable.h
+		${OPENVCDIFF_DIR}/google/format_extension_flags.h
+		${OPENVCDIFF_DIR}/google/jsonwriter.h
+		${OPENVCDIFF_DIR}/google/output_string.h
+		${OPENVCDIFF_DIR}/google/vcencoder.h
+		${OPENVCDIFF_DIR}/zlib/adler32.c
+		${OPENVCDIFF_DIR}/zlib/zconf.h
+		${OPENVCDIFF_DIR}/zlib/zlib.h
+		${OPENVCDIFF_DIR}/addrcache.cc
+		${OPENVCDIFF_DIR}/blockhash.cc
+		${OPENVCDIFF_DIR}/codetable.cc
+		${OPENVCDIFF_DIR}/encodetable.cc
+		${OPENVCDIFF_DIR}/instruction_map.cc
+		${OPENVCDIFF_DIR}/jsonwriter.cc
+		${OPENVCDIFF_DIR}/logging.cc
+		${OPENVCDIFF_DIR}/varint_bigendian.cc
+		${OPENVCDIFF_DIR}/vcdiffengine.cc
+		${OPENVCDIFF_DIR}/vcencoder.cc
+		${OPENVCDIFF_DIR}/addrcache.h
+		${OPENVCDIFF_DIR}/blockhash.h
+		${OPENVCDIFF_DIR}/checksum.h
+		${OPENVCDIFF_DIR}/codetable.h
+		${OPENVCDIFF_DIR}/compile_assert.h
+		${OPENVCDIFF_DIR}/config.h
+		${OPENVCDIFF_DIR}/instruction_map.h
+		${OPENVCDIFF_DIR}/logging.h
+		${OPENVCDIFF_DIR}/rolling_hash.h
+		${OPENVCDIFF_DIR}/unique_ptr.h
+		${OPENVCDIFF_DIR}/varint_bigendian.h
+		${OPENVCDIFF_DIR}/vcdiff_defs.h
+		${OPENVCDIFF_DIR}/vcdiffengine.h
+		${GENENTFIXES_DIR}/generator.cpp
+	)
+	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_DIR})
+	set_target_properties(entfixesgenerator PROPERTIES EXCLUDE_FROM_ALL YES)
+
+	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
+endif()
+
+add_custom_target(GenEntFixes
+	COMMAND entfixesgenerator "${CMAKE_SOURCE_DIR}"
+	DEPENDS entfixesgenerator
+)
+
 option(QUAKE_BUILD_ENGINE_PAK "Build engine .pak file from individual files" ON)
 
 set(ENGINE_PAK_FILENAME quakespasm-exp.pak)
