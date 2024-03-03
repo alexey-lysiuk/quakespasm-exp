@@ -684,7 +684,7 @@ else()
 	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
 endif()
 
-add_custom_target(GenEntFixes
+add_custom_target(genentfixes
 	COMMAND entfixesgenerator "${CMAKE_SOURCE_DIR}"
 	DEPENDS entfixesgenerator
 )

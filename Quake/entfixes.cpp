@@ -17,7 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "assert.h"
+#include <algorithm>
+#include <cassert>
 
 extern "C"
 {
@@ -62,6 +63,9 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 	COM_StripExtension(mapfilename, basemapname, sizeof basemapname);
 
 	char* newentities = nullptr;
+
+	//std::binary_search(ef_fixes, ef_fixes + Q_COUNTOF(ef_fixes), <#const Tp &value#>, <#Compare comp#>)
+	//std::find
 
 	for (const EF_Fix& fix : ef_fixes)
 	{

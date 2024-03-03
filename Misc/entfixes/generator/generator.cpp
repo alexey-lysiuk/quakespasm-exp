@@ -266,15 +266,15 @@ static void WriteEntFixes()
 
 	const std::string outputpath = rootpath + "Quake/entfixes.h";
 
-	FILE* file = fopen(outputpath.c_str(), "w");
+	FILE* file = fopen(outputpath.c_str(), "wb");
 	EFG_VERIFY(file);
-	EFG_VERIFY(fputs(header, file) > 0);
-	EFG_VERIFY(fputs("static constexpr const char* addeddata[] =\n{\n", file) > 0);
+	EFG_VERIFY(fputs(header, file) >= 0);
+	EFG_VERIFY(fputs("static constexpr const char* addeddata[] =\n{\n", file) >= 0);
 
 	for (size_t i = 0, e = addeddata.size(); i < e; ++i)
 		EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\",\n", i, addeddata[i].c_str()) > 0);
 
-	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) > 0);
+	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) >= 0);
 
 	bool first = true;
 
@@ -283,7 +283,7 @@ static void WriteEntFixes()
 		if (first)
 			first = false;
 		else
-			fputs("\n", file);
+			EFG_VERIFY(fputs("\n", file) >= 0);
 
 		EFG_VERIFY(fprintf(file, "\t// %s@%s\n", fix.mapname.c_str(), fix.crc.c_str()) > 0);
 
@@ -295,7 +295,7 @@ static void WriteEntFixes()
 		}
 	}
 
-	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) > 0);
+	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) >= 0);
 
 	size_t patchindex = 0;
 
