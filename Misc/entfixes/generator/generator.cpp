@@ -266,7 +266,7 @@ static void WriteEntFixes()
 
 	const std::string outputpath = rootpath + "Quake/entfixes.h";
 
-	FILE* file = fopen(outputpath.c_str(), "wb");
+	FILE* file = fopen(outputpath.c_str(), "w");
 	EFG_VERIFY(file);
 	EFG_VERIFY(fputs(header, file) >= 0);
 	EFG_VERIFY(fputs("static constexpr const char* addeddata[] =\n{\n", file) >= 0);
