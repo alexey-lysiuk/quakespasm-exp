@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -97,17 +98,17 @@ public:
 	void Add(const char* data, size_t size) override
 	{
 		const std::string escaped = EscapeCString(data, size);
-		patches.push_back({ .operation = EF_ADD, .data = escaped, .size = size });
+		patches.push_back({ .operation = EF_ADD, .size = size, .data = escaped });
 	}
 
 	void Copy(int32_t offset, size_t size) override
 	{
-		patches.push_back({ .operation = EF_COPY, .offset = offset, .size = size });
+		patches.push_back({ .operation = EF_COPY, .size = size, .offset = offset });
 	}
 
 	void Run(size_t size, unsigned char byte) override
 	{
-		patches.push_back({ .operation = EF_RUN, .byte = byte, .size = size });
+		patches.push_back({ .operation = EF_RUN, .size = size, .byte = byte });
 	}
 
 	bool Init(size_t dictionary_size) override { return true; }
@@ -206,7 +207,7 @@ static void ProcessEntPatch(const std::string& filename)
 static void Generate(const char* rootpath)
 {
 	std::string entpath(rootpath);
-	entpath += "Misc/entfixes/entities/";
+	entpath += "/Misc/entfixes/entities/";
 
 	oldpath = entpath + "old/";
 	newpath = entpath + "new/";
