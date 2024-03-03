@@ -1,9 +1,58 @@
 
 #include <cstdio>
 #include <string>
+#include <vector>
+
+#include <dirent.h>
 
 #include "google/vcencoder.h"
 #include "google/codetablewriter_interface.h"
+
+static const char* header = R"(/*
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/)";
+
+enum EF_PatchOperation
+{
+	EF_ADD,
+	EF_COPY,
+	EF_RUN,
+};
+
+struct EF_Patch
+{
+	EF_PatchOperation operation;
+	std::string data;
+	size_t size;
+	int32_t offset;
+	unsigned char byte;
+};
+
+struct EF_Fix
+{
+	std::string mapname;
+	std::string crc;
+	std::vector<EF_Patch> patches;
+	size_t oldsize;
+	size_t newsize;
+};
+
+static std::vector<EF_Fix> fixes;
 
 using namespace open_vcdiff;
 
@@ -43,111 +92,128 @@ static std::string EscapeCString(const char* data, size_t size)
 class EntFixCodeTableWriter : public CodeTableWriterInterface
 {
 public:
-	// Initializes the writer.
-	bool Init(size_t dictionary_size) override
-	{
-		//puts(__FUNCTION__);
-		return true;
-	}
+	std::vector<EF_Patch> patches;
 
-	// Encode an ADD opcode with the "size" bytes starting at data
 	void Add(const char* data, size_t size) override
 	{
 		const std::string escaped = EscapeCString(data, size);
-		//printf("add: data = \"%s\", size = %zu\n", escaped.data(), size);
-		printf("\t{ EF_INSERT, 0, %zu, \"%s\" },\n", size, escaped.data());
+		patches.push_back({ .operation = EF_ADD, .data = escaped, .size = size });
 	}
 
-	// Encode a COPY opcode with args "offset" (into dictionary) and "size" bytes.
 	void Copy(int32_t offset, size_t size) override
 	{
-		//printf("copy: offset = %i, size = %zu\n", offset, size);
-		printf("\t{ EF_COPY, %i, %zu },\n", offset, size);
+		patches.push_back({ .operation = EF_COPY, .offset = offset, .size = size });
 	}
 
-	// Encode a RUN opcode for "size" copies of the value "byte".
 	void Run(size_t size, unsigned char byte) override
 	{
-		//puts(__FUNCTION__);
+		patches.push_back({ .operation = EF_RUN, .byte = byte, .size = size });
 	}
 
-	// Writes the header to the output string.
-	void WriteHeader(OutputStringInterface* out, VCDiffFormatExtensionFlags format_extensions) override
-	{
-		//puts(__FUNCTION__);
-	}
-
-	void AddChecksum(VCDChecksum) override
-	{
-		//puts(__FUNCTION__);
-	}
-
-	// Appends the encoded delta window to the output
-	// string.  The output string is not null-terminated.
-	void Output(OutputStringInterface* out) override
-	{
-		//puts(__FUNCTION__);
-	}
-
-	// Finishes the encoding.
-	void FinishEncoding(OutputStringInterface *out) override
-	{
-		//puts(__FUNCTION__);
-	}
-
-	// Verifies dictionary is compatible with writer.
-	bool VerifyDictionary(const char *dictionary, size_t size) const override
-	{
-		//puts(__FUNCTION__);
-		return true;
-	}
-
-	// Verifies target chunk is compatible with writer.
-	bool VerifyChunk(const char *chunk, size_t size) const override
-	{
-		//puts(__FUNCTION__);
-		return true;
-	}
+	bool Init(size_t dictionary_size) override { return true; }
+	void WriteHeader(OutputStringInterface* out, VCDiffFormatExtensionFlags format_extensions) override	{}
+	void AddChecksum(VCDChecksum) override {}
+	void Output(OutputStringInterface* out) override {}
+	void FinishEncoding(OutputStringInterface *out) override {}
+	bool VerifyDictionary(const char *dictionary, size_t size) const override { return true; }
+	bool VerifyChunk(const char *chunk, size_t size) const override { return true; }
 };
 
-static std::string ReadFile(const std::string& filename)
+#define EFG_VERIFY(EXPR) { if (!(EXPR)) { printf("ERROR: '%s' failed at line %i\n", #EXPR, __LINE__); exit(__LINE__); } }
+
+static std::string ReadFile(const std::string& filename, size_t& size)
 {
-	FILE* in = fopen(filename.c_str(), "rb");
-	if (!in)
-		return std::string();
-	fseek(in, 0, SEEK_END);
-	long size = ftell(in);
-	fseek(in, 0, SEEK_SET);
-	std::string inbuf;
-	inbuf.resize(size);
-	fread(&inbuf[0], size, 1, in);
-	fclose(in);
-	return inbuf;
+	FILE* file = fopen(filename.c_str(), "rb");
+	EFG_VERIFY(file);
+	EFG_VERIFY(fseek(file, 0, SEEK_END) == 0);
+
+	size = ftell(file);
+	EFG_VERIFY(size > 0);
+	EFG_VERIFY(fseek(file, 0, SEEK_SET) == 0);
+
+	std::string buffer;
+	buffer.resize(size);
+	EFG_VERIFY(fread(&buffer[0], 1, size, file) == size);
+	EFG_VERIFY(fclose(file) == 0);
+
+	return buffer;
 }
 
-static const char* header = R"(/*
+static std::string oldpath, newpath;
+static std::vector<std::string> filenames;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/)";
-
-static int Generate(const char* reporoot)
+static void GatherFileList()
 {
-	// TODO: ...
-	return 0;
+	DIR* olddir = opendir(oldpath.c_str());
+	EFG_VERIFY(olddir);
+
+	while (dirent* entry = readdir(olddir))
+	{
+		const char* filename = entry->d_name;
+
+		if (strcmp(filename, ".") == 0 || strcmp(filename, "..") == 0)
+			continue;
+
+		filenames.emplace_back(filename);
+	}
+
+	EFG_VERIFY(closedir(olddir) == 0);
+	EFG_VERIFY(!filenames.empty());
+}
+
+static void ProcessEntPatch(const std::string& filename)
+{
+	size_t oldsize, newsize;
+	const std::string olddata = ReadFile(oldpath + filename, oldsize);
+	const std::string newdata = ReadFile(newpath + filename, newsize);
+
+	HashedDictionary dictionary(olddata.data(), olddata.size());
+	dictionary.Init();
+
+	auto writer = new EntFixCodeTableWriter;
+	VCDiffStreamingEncoder encoder(&dictionary, VCD_STANDARD_FORMAT, false, writer);
+
+	std::string output;
+	EFG_VERIFY(encoder.StartEncoding(&output));
+	EFG_VERIFY(encoder.EncodeChunk(newdata.data(), newdata.size(), &output));
+	EFG_VERIFY(encoder.FinishEncoding(&output));
+
+	const size_t atpos = filename.find('@');
+	EFG_VERIFY(atpos != std::string::npos);
+	EFG_VERIFY(atpos < filename.size());
+
+	const size_t dotpos = filename.find('.');
+	EFG_VERIFY(dotpos != std::string::npos);
+	EFG_VERIFY(dotpos != filename.size());
+	EFG_VERIFY(dotpos > atpos);
+
+	std::string mapname{ filename.c_str(), atpos };
+	EFG_VERIFY(!mapname.empty());
+
+	std::string crc{ filename.c_str() + atpos + 1, dotpos - atpos - 1 };
+	EFG_VERIFY(crc.size() == 4);  // 16-bit hex CRC
+
+	fixes.push_back(
+	{
+		.mapname = std::move(mapname),
+		.crc = std::move(crc),
+		.patches = std::move(writer->patches),
+		.oldsize = oldsize,
+		.newsize = newsize
+	});
+}
+
+static void Generate(const char* rootpath)
+{
+	std::string entpath(rootpath);
+	entpath += "Misc/entfixes/entities/";
+
+	oldpath = entpath + "old/";
+	newpath = entpath + "new/";
+
+	GatherFileList();
+
+	std::for_each(filenames.begin(), filenames.end(), ProcessEntPatch);
 }
 
 int main(int argc, const char* argv[])
@@ -158,7 +224,8 @@ int main(int argc, const char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	return Generate(argv[1]);
+	Generate(argv[1]);
+	return EXIT_SUCCESS;
 
 //	if (argc < 4)
 //		return 1;
