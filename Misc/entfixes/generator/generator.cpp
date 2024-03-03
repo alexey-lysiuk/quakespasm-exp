@@ -309,7 +309,7 @@ static void WriteEntFixes()
 		patchindex += patchcount;
 	}
 
-	EFG_VERIFY(fputs("};\n", file) > 0);
+	EFG_VERIFY(fputs("};\n", file) >= 0);
 	EFG_VERIFY(fclose(file) == 0);
 }
 
