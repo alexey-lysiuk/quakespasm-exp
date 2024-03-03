@@ -55,6 +55,7 @@ jobs:
         shell: bash
         run: |
           export MAKEFLAGS=--keep-going
+          cmake --build build --config Release --target genentfixes
           cmake --build build --config Release --parallel ${{ steps.cpu-cores.outputs.count }}
 
       - name: List Build Directory
