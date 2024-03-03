@@ -637,7 +637,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 	if(CMAKE_CROSSCOMPILING)
 		find_package(MakeQuakePak)
 	else()
-		add_executable(makeqpak Quake/makeqpak.c)
+		add_executable(makeqpak Misc/makeqpak.c)
 		export(TARGETS makeqpak FILE "${CMAKE_BINARY_DIR}/MakeQuakePakConfig.cmake")
 	endif()
 
