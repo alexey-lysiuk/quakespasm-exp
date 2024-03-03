@@ -171,6 +171,7 @@ static std::string ReadFile(const std::string& filename, size_t& size)
 	return buffer;
 }
 
+static std::string rootpath;
 static std::string oldpath, newpath;
 static std::vector<std::string> filenames;
 
@@ -254,7 +255,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 )";
 
-static void WriteEntFixes(const char* rootpath)
+static void WriteEntFixes()
 {
 	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
 	{
@@ -263,8 +264,7 @@ static void WriteEntFixes(const char* rootpath)
 			|| (lhs.crc == rhs.crc && lhs.oldsize < rhs.oldsize);
 	});
 
-	std::string outputpath(rootpath);
-	outputpath += "Quake/entfixes.h";
+	const std::string outputpath = rootpath + "Quake/entfixes.h";
 
 	FILE* file = fopen(outputpath.c_str(), "wb");
 	EFG_VERIFY(file);
@@ -315,15 +315,17 @@ static void WriteEntFixes(const char* rootpath)
 
 static void Generate(const char* rootpath)
 {
-	std::string entpath(rootpath);
-	entpath += "/Misc/entfixes/entities/";
+	::rootpath = rootpath;
+	::rootpath += '/';
+
+	const std::string entpath = ::rootpath + "Misc/entfixes/entities/";
 
 	oldpath = entpath + "old/";
 	newpath = entpath + "new/";
 
 	GatherFileList();
 	ProcessEntFixes();
-	WriteEntFixes(rootpath);
+	WriteEntFixes();
 }
 
 int main(int argc, const char* argv[])
