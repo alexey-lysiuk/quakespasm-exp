@@ -1,9 +1,9 @@
 
-#include "google/vcencoder.h"
-#include "google/codetablewriter_interface.h"
-
 #include <cstdio>
 #include <string>
+
+#include "google/vcencoder.h"
+#include "google/codetablewriter_interface.h"
 
 using namespace open_vcdiff;
 

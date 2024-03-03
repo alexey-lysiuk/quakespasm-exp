@@ -674,14 +674,11 @@ else()
 		${OPENVCDIFF_DIR}/vcdiffengine.h
 		${GENENTFIXES_DIR}/generator.cpp
 	)
-	set_target_properties(entfixesgenerator PROPERTIES
-		EXCLUDE_FROM_ALL YES
-		C_STANDARD 90  # prevents Clang from issuing 'warning: a function definition without a prototype is deprecated' 
-	)
-	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_DIR})
+	set_target_properties(entfixesgenerator PROPERTIES EXCLUDE_FROM_ALL YES)
+	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_ZLIB_DIR} ${OPENVCDIFF_DIR})
 
 	if(MSVC)
-		target_include_directories(entfixesgenerator PRIVATE ${GENENTFIXES_DIR}/dirent ${OPENVCDIFF_ZLIB_DIR})
+		target_include_directories(entfixesgenerator PRIVATE ${GENENTFIXES_DIR}/dirent)
 	endif()
 
 	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
