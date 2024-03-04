@@ -192,6 +192,8 @@ static void GatherFileList()
 
 	EFG_VERIFY(closedir(olddir) == 0);
 	EFG_VERIFY(!filenames.empty());
+
+	std::sort(filenames.begin(), filenames.end());
 }
 
 static void ProcessEntFix(const std::string& filename)
