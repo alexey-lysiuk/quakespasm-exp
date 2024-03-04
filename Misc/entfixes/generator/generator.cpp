@@ -23,8 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <vector>
 
-#include <dirent.h>
-
 #include "google/vcencoder.h"
 #include "google/codetablewriter_interface.h"
 
@@ -172,35 +170,37 @@ static std::string ReadFile(const std::string& filename, size_t& size)
 }
 
 static std::string rootpath;
-static std::string oldpath, newpath;
+static std::string entitiespath;
 static std::vector<std::string> filenames;
 
 static void GatherFileList()
 {
-	DIR* olddir = opendir(oldpath.c_str());
-	EFG_VERIFY(olddir);
+	size_t filelistsize;
+	const std::string filelist = ReadFile(entitiespath + "filelist.txt", filelistsize);
+	EFG_VERIFY(!filelist.empty());
+	EFG_VERIFY(filelistsize > 0);
 
-	while (dirent* entry = readdir(olddir))
+	size_t startindex = 0;
+
+	for (size_t i = 0; i < filelistsize; ++i)
 	{
-		const char* filename = entry->d_name;
+		if (filelist[i] == '\n')
+		{
+			if (i != startindex)
+				filenames.emplace_back(&filelist[startindex], i - startindex);
 
-		if (strcmp(filename, ".") == 0 || strcmp(filename, "..") == 0)
-			continue;
-
-		filenames.emplace_back(filename);
+			startindex = i + 1;
+		}
 	}
 
-	EFG_VERIFY(closedir(olddir) == 0);
 	EFG_VERIFY(!filenames.empty());
-
-	std::sort(filenames.begin(), filenames.end());
 }
 
 static void ProcessEntFix(const std::string& filename)
 {
 	size_t oldsize, newsize;
-	const std::string olddata = ReadFile(oldpath + filename, oldsize);
-	const std::string newdata = ReadFile(newpath + filename, newsize);
+	const std::string olddata = ReadFile(entitiespath + "old/" + filename, oldsize);
+	const std::string newdata = ReadFile(entitiespath + "new/" + filename, newsize);
 
 	HashedDictionary dictionary(olddata.data(), olddata.size());
 	dictionary.Init();
@@ -319,11 +319,7 @@ static void Generate(const char* rootpath)
 {
 	::rootpath = rootpath;
 	::rootpath += '/';
-
-	const std::string entpath = ::rootpath + "Misc/entfixes/entities/";
-
-	oldpath = entpath + "old/";
-	newpath = entpath + "new/";
+	entitiespath = ::rootpath + "Misc/entfixes/entities/";
 
 	GatherFileList();
 	ProcessEntFixes();
