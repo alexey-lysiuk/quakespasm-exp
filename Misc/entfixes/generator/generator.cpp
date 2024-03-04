@@ -304,7 +304,7 @@ static void WriteEntFixes()
 		const size_t patchcount = fix.patches.size();
 
 		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
-			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, patchindex, patchindex) > 0);
+			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, patchindex, patchcount) > 0);
 
 		patchindex += patchcount;
 	}
