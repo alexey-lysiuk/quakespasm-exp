@@ -899,9 +899,15 @@ static void Mod_LoadEntities (lump_t *l)
 	q_strlcpy(basemapname, loadmodel->name, sizeof(basemapname));
 	COM_StripExtension(basemapname, basemapname, sizeof(basemapname));
 
-	q_snprintf(entfilename, sizeof(entfilename), "%s@%04x.ent", basemapname, crc);
-	Con_DPrintf2("trying to load %s\n", entfilename);
-	ents = (char *) COM_LoadHunkFile (entfilename, &path_id);
+	char* EF_ApplyEntitiesFix(const char* mapname, const byte* oldents, unsigned oldsize, unsigned crc);
+	ents = EF_ApplyEntitiesFix(loadmodel->name, mod_base + l->fileofs, l->filelen, crc);
+
+	if (!ents)
+	{
+		q_snprintf(entfilename, sizeof(entfilename), "%s@%04x.ent", basemapname, crc);
+		Con_DPrintf2("trying to load %s\n", entfilename);
+		ents = (char *) COM_LoadHunkFile (entfilename, &path_id);
+	}
 
 	if (!ents)
 	{
