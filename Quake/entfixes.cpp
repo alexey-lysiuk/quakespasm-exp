@@ -64,9 +64,6 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 
 	char* newentities = nullptr;
 
-	//std::binary_search(ef_fixes, ef_fixes + Q_COUNTOF(ef_fixes), <#const Tp &value#>, <#Compare comp#>)
-	//std::find
-
 	for (const EF_Fix& fix : ef_fixes)
 	{
 		if (fix.crc != crc || fix.oldsize != size || q_strcasecmp(fix.mapname, basemapname) != 0)

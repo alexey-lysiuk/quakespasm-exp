@@ -192,6 +192,8 @@ static void GatherFileList()
 
 	EFG_VERIFY(closedir(olddir) == 0);
 	EFG_VERIFY(!filenames.empty());
+
+	std::sort(filenames.begin(), filenames.end());
 }
 
 static void ProcessEntFix(const std::string& filename)
@@ -226,7 +228,7 @@ static void ProcessEntFix(const std::string& filename)
 	std::string crc{ filename.c_str() + atpos + 1, dotpos - atpos - 1 };
 	EFG_VERIFY(crc.size() == 4);  // 16-bit hex CRC
 
-	fixes.emplace_back(std::move(mapname), std::move(crc), std::move(writer->patches), oldsize, newsize);
+	fixes.emplace_back(std::move(mapname), std::move(crc), std::move(writer->patches), oldsize + 1, newsize + 1);
 }
 
 static void ProcessEntFixes()
@@ -304,7 +306,7 @@ static void WriteEntFixes()
 		const size_t patchcount = fix.patches.size();
 
 		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
-			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, patchindex, patchindex) > 0);
+			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, patchindex, patchcount) > 0);
 
 		patchindex += patchcount;
 	}
