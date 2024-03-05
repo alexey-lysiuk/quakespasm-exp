@@ -261,9 +261,9 @@ static void WriteEntFixes()
 {
 	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
 	{
-		return (lhs.mapname < rhs.mapname)
-			|| (lhs.mapname == rhs.mapname && lhs.crc < rhs.crc)
-			|| (lhs.crc == rhs.crc && lhs.oldsize < rhs.oldsize);
+		return (lhs.crc < rhs.crc)
+			|| (lhs.crc == rhs.crc && lhs.oldsize < rhs.oldsize)
+			|| (lhs.oldsize == rhs.oldsize && lhs.mapname < rhs.mapname);
 	});
 
 	const std::string outputpath = rootpath + "Quake/entfixes.h";
