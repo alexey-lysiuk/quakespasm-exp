@@ -48,9 +48,30 @@ struct EF_Fix
 	unsigned newsize;
 	unsigned patchindex;
 	unsigned patchcount;
+
+	bool operator==(const EF_Fix& other) const
+	{
+		return crc == other.crc && oldsize == other.oldsize && q_strcasecmp(mapname, other.mapname) == 0;
+	}
+
+	bool operator<(const EF_Fix& other) const
+	{
+		return (crc < other.crc) 
+			|| (crc == other.crc && oldsize < other.oldsize)
+			|| (oldsize == other.oldsize && q_strcasecmp(mapname, other.mapname) < 0);
+	}
 };
 
 #include "entfixes.h"
+
+// Binary search for entities fix as ef_fixes array is sorted by crc, size, and name
+static const EF_Fix* EF_FindEntitiesFix(const char* mapname, unsigned size, unsigned crc)
+{
+	const EF_Fix* last = ef_fixes + Q_COUNTOF(ef_fixes);
+	const EF_Fix probe{ mapname, crc, size };
+	const EF_Fix* fix = std::lower_bound(ef_fixes, last, probe);
+	return (fix != last && probe == *fix) ? fix : nullptr;
+}
 
 extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, unsigned size, unsigned crc)
 {
@@ -62,58 +83,51 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 	char basemapname[MAX_QPATH];
 	COM_StripExtension(mapfilename, basemapname, sizeof basemapname);
 
-	char* newentities = nullptr;
+	const EF_Fix* fix = EF_FindEntitiesFix(basemapname, size, crc);
 
-	for (const EF_Fix& fix : ef_fixes)
+	if (!fix)
+		return nullptr;
+
+	char* writeptr = reinterpret_cast<char*>(Hunk_Alloc(fix->newsize));
+	char* newentities = writeptr;
+
+	for (unsigned i = 0; i < fix->patchcount; ++i)
 	{
-		if (fix.crc != crc || fix.oldsize != size || q_strcasecmp(fix.mapname, basemapname) != 0)
-			continue;
+		const EF_Patch& patch = ef_patches[fix->patchindex + i];
 
-		char* writeptr = reinterpret_cast<char*>(Hunk_Alloc(fix.newsize));
-		newentities = writeptr;
-
-		for (unsigned i = 0; i < fix.patchcount; ++i)
+		switch (patch.operation)
 		{
-			const EF_Patch& patch = ef_patches[fix.patchindex + i];
+		case EF_COPY:
+			memcpy(writeptr, entities + patch.value, patch.size);
+			break;
 
-			switch (patch.operation)
-			{
-			case EF_COPY:
-				memcpy(writeptr, entities + patch.value, patch.size);
-				break;
+		case EF_ADD:
+			memcpy(writeptr, &addeddata[patch.value], patch.size);
+			break;
 
-			case EF_ADD:
-				memcpy(writeptr, addeddata + patch.value, patch.size);
-				break;
+		case EF_RUN:
+			memset(writeptr, patch.value, patch.size);
+			break;
 
-			case EF_RUN:
-				memset(writeptr, patch.value, patch.size);
-				break;
-
-			default:
-				assert(false);
-				break;
-			}
-
-			writeptr += patch.size;
+		default:
+			assert(false);
+			break;
 		}
 
-		*writeptr = '\0';
-		break;
+		writeptr += patch.size;
 	}
 
-#if 0
-	if (newentities)
-	{
-		char testname[MAX_QPATH];
-		q_snprintf(testname, sizeof(testname), "%s@%04x.ent", basemapname, crc);
+	*writeptr = '\0';
 
-		FILE* testfile = fopen(testname, "w");
-		if (testfile)
-		{
-			fputs(newentities, testfile);
-			fclose(testfile);
-		}
+#if 0
+	char testname[MAX_QPATH];
+	q_snprintf(testname, sizeof(testname), "%s@%04x.ent", basemapname, crc);
+
+	FILE* testfile = fopen(testname, "w");
+	if (testfile)
+	{
+		fputs(newentities, testfile);
+		fclose(testfile);
 	}
 #endif
 
