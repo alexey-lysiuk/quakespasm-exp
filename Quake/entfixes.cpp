@@ -83,7 +83,7 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 				break;
 
 			case EF_ADD:
-				memcpy(writeptr, addeddata[patch.value], patch.size);
+				memcpy(writeptr, addeddata + patch.value, patch.size);
 				break;
 
 			case EF_RUN:

@@ -66,6 +66,9 @@ struct EF_Fix
 };
 
 static std::vector<std::string> addeddata;
+static std::vector<size_t> addedsizes;
+static std::vector<size_t> addedoffsets;
+
 static std::vector<EF_Fix> fixes;
 
 using namespace open_vcdiff;
@@ -125,7 +128,10 @@ public:
 		}
 
 		if (addeddata.size() == index)
+		{
 			addeddata.push_back(std::move(escaped));
+			addedsizes.push_back(size);  // unescaped data size
+		}
 
 		patches.push_back({ EF_ADD, index, size });
 	}
@@ -234,6 +240,29 @@ static void ProcessEntFix(const std::string& filename)
 static void ProcessEntFixes()
 {
 	std::for_each(filenames.begin(), filenames.end(), ProcessEntFix);
+
+	const size_t addedcount = addeddata.size();
+	EFG_VERIFY(addedsizes.size() == addedcount);
+
+	addedoffsets.resize(addeddata.size());
+	size_t offset = 0;
+
+	for (size_t i = 0; i < addedcount; ++i)
+	{
+		addedoffsets[i] = offset;
+		offset += addedsizes[i];
+	}
+
+	for (EF_Fix& fix : fixes)
+	{
+		for (EF_Patch& patch : fix.patches)
+		{
+			if (patch.operation != EF_ADD)
+				continue;
+
+			patch.value = addedoffsets[patch.value];
+		}
+	}
 }
 
 static const char* header = R"(/*
@@ -271,12 +300,12 @@ static void WriteEntFixes()
 	FILE* file = fopen(outputpath.c_str(), "w");
 	EFG_VERIFY(file);
 	EFG_VERIFY(fputs(header, file) >= 0);
-	EFG_VERIFY(fputs("static constexpr const char* addeddata[] =\n{\n", file) >= 0);
+	EFG_VERIFY(fputs("static const char* const addeddata =\n", file) >= 0);
 
 	for (size_t i = 0, e = addeddata.size(); i < e; ++i)
-		EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\",\n", i, addeddata[i].c_str()) > 0);
+		EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\"\n", addedoffsets[i], addeddata[i].c_str()) > 0);
 
-	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) >= 0);
+	EFG_VERIFY(fputs(";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) >= 0);
 
 	bool first = true;
 
