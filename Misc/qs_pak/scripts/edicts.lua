@@ -117,7 +117,10 @@ edicts.valuetypes =
 }
 
 
+local ipairs <const> = ipairs
 
+local format <const> = string.format
+local gsub <const> = string.gsub
 
 
 function edicts.isclass(edict, ...)
@@ -130,9 +133,6 @@ function edicts.isclass(edict, ...)
 	return nil
 end
 
-
-local format <const> = string.format
-local gsub <const> = string.gsub
 
 local localize <const> = text.localize
 
@@ -149,7 +149,6 @@ local float <const> = edicts.valuetypes.float
 local isclass <const> = edicts.isclass
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
-
 
 local function titlecase(str)
 	return str:gsub("(%a)([%w_']*)",
