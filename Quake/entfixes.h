@@ -20,25 +20,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static const char* const addeddata =
 	/* 0 */ "4"
 	/* 1 */ "808 44"
-	/* 7 */ "\"lip\" \"7\" // svdijk -- added to prevent z-fighting"
-	/* 57 */ "1\" // svdijk -- changed to prevent z-fighting (was \"90\")"
-	/* 113 */ "69\" // svdijk -- changed to prevent z-fighting (was \"270\")"
-	/* 171 */ "\"t_length\" \"73\" // svdijk -- added to prevent z-fighting"
-	/* 227 */ "\"lip\" \"7\" // svdijk -- added to prevent z-fighting\n}\n{"
-	/* 281 */ "5 280 104\" // svdijk -- changed to prevent z-fighting (was \"-16 280 104\")"
-	/* 354 */ "\"t_length\" \"65\" // svdijk -- added to prevent z-fighting"
-	/* 410 */ "\"origin\" \"-1 0 0\" // svdijk -- added to prevent z-fighting"
-	/* 468 */ "spawnflags\" \"256"
-	/* 484 */ "1\"\n\"origin\" \"776 1240 -136"
-	/* 510 */ "cellar\"\n\"targetname\" \"bob\"\n}\n"
-	/* 539 */ "40"
-	/* 541 */ "616 14"
-	/* 547 */ "61"
-	/* 549 */ "696 153"
-	/* 556 */ "48"
-	/* 558 */ "16"
-	/* 560 */ "sm74_necros"
-	/* 571 */ "\"angle\" \"-1\"\n\"lip\" \"64"
+	/* 7 */ "\"lip\" \"7"
+	/* 15 */ "1"
+	/* 16 */ "69"
+	/* 18 */ "\"t_length\" \"73"
+	/* 32 */ "\"lip\" \"7\"\n}\n{"
+	/* 45 */ "5"
+	/* 46 */ "\"t_length\" \"65"
+	/* 60 */ "\"origin\" \"-1 0 "
+	/* 75 */ "spawnflags\" \"256"
+	/* 91 */ "1\"\n\"origin\" \"776 1240 -136"
+	/* 117 */ "40"
+	/* 119 */ "616 14"
+	/* 125 */ "61"
+	/* 127 */ "696 153"
+	/* 134 */ "48"
+	/* 136 */ "16"
+	/* 138 */ "sm74_necros"
+	/* 149 */ "\"angle\" \"-1\"\n\"lip\" \"64"
 ;
 
 static constexpr EF_Patch ef_patches[] =
@@ -60,66 +59,65 @@ static constexpr EF_Patch ef_patches[] =
 
 	// e1m1@c49d
 	{ EF_COPY, 9099, 0 },
-	{ EF_ADD, 50, 7 },
-	{ EF_COPY, 47, 18927 },
+	{ EF_ADD, 8, 7 },
+	{ EF_COPY, 48, 18926 },
 	{ EF_COPY, 17138, 9145 },
 
 	// e1m2@0caa
 	{ EF_COPY, 21484, 0 },
-	{ EF_ADD, 56, 57 },
-	{ EF_COPY, 98, 21486 },
-	{ EF_ADD, 58, 113 },
-	{ EF_COPY, 19591, 21587 },
+	{ EF_ADD, 1, 15 },
+	{ EF_COPY, 99, 21485 },
+	{ EF_ADD, 2, 16 },
+	{ EF_COPY, 19592, 21586 },
 
 	// e1m4@958e
 	{ EF_COPY, 28919, 0 },
-	{ EF_ADD, 56, 171 },
-	{ EF_COPY, 67, 23838 },
+	{ EF_ADD, 14, 18 },
+	{ EF_COPY, 68, 23837 },
 	{ EF_COPY, 679, 28985 },
-	{ EF_ADD, 56, 171 },
-	{ EF_COPY, 13958, 29663 },
+	{ EF_ADD, 14, 18 },
+	{ EF_COPY, 13959, 29662 },
 
 	// e2m2@fbfe
 	{ EF_COPY, 12165, 0 },
-	{ EF_ADD, 54, 227 },
+	{ EF_ADD, 13, 32 },
 	{ EF_COPY, 52, 21484 },
 	{ EF_COPY, 6935, 12220 },
-	{ EF_ADD, 73, 281 },
-	{ EF_COPY, 63, 19165 },
-	{ EF_ADD, 73, 281 },
-	{ EF_COPY, 32, 19503 },
-	{ EF_COPY, 7732, 19270 },
+	{ EF_ADD, 1, 45 },
+	{ EF_COPY, 72, 19156 },
+	{ EF_ADD, 1, 45 },
+	{ EF_COPY, 7773, 19229 },
 
 	// e2m3@237a
 	{ EF_COPY, 16020, 0 },
-	{ EF_ADD, 54, 227 },
+	{ EF_ADD, 13, 32 },
 	{ EF_COPY, 33, 4688 },
 	{ EF_COPY, 62, 16056 },
-	{ EF_ADD, 56, 354 },
-	{ EF_COPY, 36, 14784 },
+	{ EF_ADD, 14, 46 },
+	{ EF_COPY, 37, 29536 },
 	{ EF_COPY, 9732, 16153 },
-	{ EF_ADD, 56, 354 },
-	{ EF_COPY, 37, 7312 },
+	{ EF_ADD, 14, 46 },
+	{ EF_COPY, 38, 8368 },
 	{ EF_COPY, 381, 25921 },
-	{ EF_ADD, 56, 354 },
-	{ EF_COPY, 9517, 26301 },
-	{ EF_ADD, 56, 354 },
-	{ EF_COPY, 47, 28864 },
-	{ EF_COPY, 2830, 35864 },
+	{ EF_ADD, 14, 46 },
+	{ EF_COPY, 9518, 26300 },
+	{ EF_ADD, 14, 46 },
+	{ EF_COPY, 38, 36800 },
+	{ EF_COPY, 2840, 35854 },
 
 	// e2m7@10a8
 	{ EF_COPY, 19569, 0 },
-	{ EF_ADD, 58, 410 },
-	{ EF_COPY, 30934, 19568 },
+	{ EF_ADD, 15, 60 },
+	{ EF_COPY, 30936, 19566 },
 
 	// eoem7@3ea8
 	{ EF_COPY, 37059, 0 },
-	{ EF_ADD, 16, 468 },
-	{ EF_COPY, 18846, 37056 },
-	{ EF_COPY, 41, 53518 },
-	{ EF_ADD, 26, 484 },
+	{ EF_ADD, 16, 75 },
+	{ EF_COPY, 44, 37056 },
+	{ EF_COPY, 38, 40511 },
+	{ EF_ADD, 26, 91 },
 	{ EF_COPY, 32, 40680 },
-	{ EF_ADD, 29, 510 },
+	{ EF_COPY, 18834, 37068 },
 
 	// hrim_sp1@f054
 	{ EF_COPY, 33506, 0 },
@@ -127,23 +125,23 @@ static constexpr EF_Patch ef_patches[] =
 
 	// sm100_zwiffle@c897
 	{ EF_COPY, 117, 0 },
-	{ EF_ADD, 2, 539 },
+	{ EF_ADD, 2, 117 },
 	{ EF_COPY, 12924, 119 },
 
 	// sm212_naitelveni@a835
 	{ EF_COPY, 48917, 0 },
-	{ EF_ADD, 6, 541 },
+	{ EF_ADD, 6, 119 },
 	{ EF_COPY, 36, 72431 },
 	{ EF_COPY, 44, 5264 },
-	{ EF_ADD, 2, 547 },
+	{ EF_ADD, 2, 125 },
 	{ EF_COPY, 84, 5310 },
-	{ EF_ADD, 7, 549 },
+	{ EF_ADD, 7, 127 },
 	{ EF_COPY, 99, 43392 },
 	{ EF_COPY, 90874, 49195 },
 
 	// sm27_bear@92ba
 	{ EF_COPY, 5097, 0 },
-	{ EF_ADD, 2, 556 },
+	{ EF_ADD, 2, 134 },
 	{ EF_COPY, 1502, 5099 },
 
 	// dmc3m8@8411
@@ -153,17 +151,17 @@ static constexpr EF_Patch ef_patches[] =
 
 	// sm51_fat@dee3
 	{ EF_COPY, 2049, 0 },
-	{ EF_ADD, 2, 558 },
+	{ EF_ADD, 2, 136 },
 	{ EF_COPY, 3097, 2051 },
 
 	// sm74_necros@29a9
 	{ EF_COPY, 5638, 0 },
-	{ EF_ADD, 11, 560 },
+	{ EF_ADD, 11, 138 },
 	{ EF_COPY, 2905, 5649 },
 
 	// sm98_zwiffle@35f8
 	{ EF_COPY, 198, 0 },
-	{ EF_ADD, 22, 571 },
+	{ EF_ADD, 22, 149 },
 	{ EF_COPY, 47, 196 },
 	{ EF_COPY, 2210, 244 },
 	{ EF_COPY, 35, 4992 },
@@ -178,23 +176,23 @@ static constexpr EF_Patch ef_patches[] =
 
 static constexpr EF_Fix ef_fixes[] =
 {
-	{ "e1m2", 0x0caa, 41179, 41288, 13, 5 },
-	{ "e2m7", 0x10a8, 50503, 50562, 48, 3 },
+	{ "e1m2", 0x0caa, 41179, 41179, 13, 5 },
+	{ "e2m7", 0x10a8, 50503, 50521, 47, 3 },
 	{ "coe1", 0x175a, 53514, 53501, 7, 2 },
-	{ "e2m3", 0x237a, 38695, 38974, 33, 15 },
-	{ "sm74_necros", 0x29a9, 8555, 8555, 81, 3 },
+	{ "e2m3", 0x237a, 38695, 38769, 32, 15 },
+	{ "sm74_necros", 0x29a9, 8555, 8555, 80, 3 },
 	{ "bbelief6", 0x324b, 64996, 64996, 0, 3 },
-	{ "sm98_zwiffle", 0x35f8, 12603, 12626, 84, 8 },
-	{ "eoem7", 0x3ea8, 55903, 56050, 51, 7 },
-	{ "dmc3m8", 0x8411, 83565, 83564, 75, 3 },
-	{ "sm27_bear", 0x92ba, 6602, 6602, 72, 3 },
-	{ "e1m4", 0x958e, 43622, 43736, 18, 6 },
-	{ "sm212_naitelveni", 0xa835, 140070, 140070, 63, 9 },
-	{ "e1m1", 0xc49d, 26284, 26335, 9, 4 },
-	{ "sm100_zwiffle", 0xc897, 13044, 13044, 60, 3 },
-	{ "sm51_fat", 0xdee3, 5149, 5149, 78, 3 },
-	{ "sop1", 0xe37d, 44013, 44000, 92, 2 },
+	{ "sm98_zwiffle", 0x35f8, 12603, 12626, 83, 8 },
+	{ "eoem7", 0x3ea8, 55903, 56050, 50, 7 },
+	{ "dmc3m8", 0x8411, 83565, 83564, 74, 3 },
+	{ "sm27_bear", 0x92ba, 6602, 6602, 71, 3 },
+	{ "e1m4", 0x958e, 43622, 43654, 18, 6 },
+	{ "sm212_naitelveni", 0xa835, 140070, 140070, 62, 9 },
+	{ "e1m1", 0xc49d, 26284, 26294, 9, 4 },
+	{ "sm100_zwiffle", 0xc897, 13044, 13044, 59, 3 },
+	{ "sm51_fat", 0xdee3, 5149, 5149, 77, 3 },
+	{ "sop1", 0xe37d, 44013, 44000, 91, 2 },
 	{ "blitz1000", 0xe5bb, 22368, 22368, 3, 4 },
-	{ "hrim_sp1", 0xf054, 111211, 111198, 58, 2 },
-	{ "e2m2", 0xfbfe, 27003, 27180, 24, 9 },
+	{ "hrim_sp1", 0xf054, 111211, 111198, 57, 2 },
+	{ "e2m2", 0xfbfe, 27003, 27013, 24, 8 },
 };

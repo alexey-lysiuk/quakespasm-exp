@@ -1571,7 +1571,7 @@
 }
 {
 "classname" "func_door"
-"angle" "91" // svdijk -- changed to prevent z-fighting (was "90")
+"angle" "91"
 "targetname" "t110"
 "wait" "-1"
 "model" "*33"
@@ -1579,7 +1579,7 @@
 {
 "sounds" "3"
 "classname" "func_door"
-"angle" "269" // svdijk -- changed to prevent z-fighting (was "270")
+"angle" "269"
 "wait" "-1"
 "model" "*34"
 }

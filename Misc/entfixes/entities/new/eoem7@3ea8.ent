@@ -2966,6 +2966,14 @@
 "targetname" "bob"
 }
 {
+"classname" "trigger_counter"
+"count" "1"
+"origin" "776 1240 -136"
+"spawnflags" "1536"
+"target" "cellar"
+"targetname" "bob"
+}
+{
 "angle" "180"
 "classname" "monster_shalrath"
 "origin" "1488 808 -436"
@@ -4380,12 +4388,4 @@
 "light" "187"
 "origin" "1464 360 64"
 "wait" "5"
-}
-{
-"classname" "trigger_counter"
-"count" "1"
-"origin" "776 1240 -136"
-"spawnflags" "1536"
-"target" "cellar"
-"targetname" "bob"
 }

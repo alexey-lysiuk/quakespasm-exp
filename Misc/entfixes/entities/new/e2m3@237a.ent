@@ -1230,7 +1230,7 @@
 "targetname" "t11"
 "wait" "10"
 "model" "*25"
-"lip" "7" // svdijk -- added to prevent z-fighting
+"lip" "7"
 }
 {
 "classname" "func_door_secret"
@@ -1238,7 +1238,7 @@
 "spawnflags" "8"
 "targetname" "t11"
 "model" "*26"
-"t_length" "65" // svdijk -- added to prevent z-fighting
+"t_length" "65"
 }
 {
 "classname" "light"
@@ -1913,7 +1913,7 @@
 "targetname" "t36"
 "angle" "90"
 "model" "*37"
-"t_length" "65" // svdijk -- added to prevent z-fighting
+"t_length" "65"
 }
 {
 "classname" "light"
@@ -1946,7 +1946,7 @@
 "angle" "270"
 "spawnflags" "2049"
 "model" "*38"
-"t_length" "65" // svdijk -- added to prevent z-fighting
+"t_length" "65"
 }
 {
 "classname" "item_armor2"
@@ -2651,7 +2651,7 @@
 "spawnflags" "2"
 "targetname" "t41"
 "model" "*66"
-"t_length" "65" // svdijk -- added to prevent z-fighting
+"t_length" "65"
 }
 {
 "classname" "trigger_multiple"

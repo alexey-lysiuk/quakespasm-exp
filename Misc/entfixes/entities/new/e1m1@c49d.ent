@@ -719,7 +719,7 @@
 "spawnflags" "1"
 "sounds" "2"
 "model" "*15"
-"lip" "7" // svdijk -- added to prevent z-fighting
+"lip" "7"
 }
 {
 "classname" "trigger_multiple"
