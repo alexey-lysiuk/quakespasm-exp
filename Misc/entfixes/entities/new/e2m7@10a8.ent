@@ -1455,7 +1455,7 @@
 "message" "Go for a swim first..."
 "sounds" "3"
 "model" "*40"
-"origin" "-1 0 0" // svdijk -- added to prevent z-fighting
+"origin" "-1 0 0"
 }
 {
 "classname" "func_button"
