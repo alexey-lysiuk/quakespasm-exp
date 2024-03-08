@@ -57,6 +57,7 @@ struct EF_Fix
 	std::vector<EF_Patch> patches;
 	size_t oldsize;
 	size_t newsize;
+	size_t patchindex;
 
 	EF_Fix() = default;
 	EF_Fix(const EF_Fix&) = default;
@@ -253,6 +254,8 @@ static void ProcessEntFixes()
 		offset += addedsizes[i];
 	}
 
+	size_t patchindex = 0;
+
 	for (EF_Fix& fix : fixes)
 	{
 		for (EF_Patch& patch : fix.patches)
@@ -262,6 +265,9 @@ static void ProcessEntFixes()
 
 			patch.value = addedoffsets[patch.value];
 		}
+
+		fix.patchindex = patchindex;
+		patchindex += fix.patches.size();
 	}
 }
 
@@ -288,13 +294,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static void WriteEntFixes()
 {
-	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
-	{
-		return (lhs.crc < rhs.crc)
-			|| (lhs.crc == rhs.crc && lhs.oldsize < rhs.oldsize)
-			|| (lhs.oldsize == rhs.oldsize && lhs.mapname < rhs.mapname);
-	});
-
 	const std::string outputpath = rootpath + "Quake/entfixes.h";
 
 	FILE* file = fopen(outputpath.c_str(), "w");
@@ -328,16 +327,17 @@ static void WriteEntFixes()
 
 	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) >= 0);
 
-	size_t patchindex = 0;
+	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
+	{
+		return (lhs.crc < rhs.crc)
+			|| (lhs.crc == rhs.crc && lhs.oldsize < rhs.oldsize)
+			|| (lhs.oldsize == rhs.oldsize && lhs.mapname < rhs.mapname);
+	});
 
 	for (const EF_Fix& fix : fixes)
 	{
-		const size_t patchcount = fix.patches.size();
-
 		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
-			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, patchindex, patchcount) > 0);
-
-		patchindex += patchcount;
+			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, fix.patchindex, fix.patches.size()) > 0);
 	}
 
 	EFG_VERIFY(fputs("};\n", file) >= 0);
