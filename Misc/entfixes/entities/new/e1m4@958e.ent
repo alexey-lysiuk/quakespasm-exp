@@ -1565,7 +1565,6 @@
 "wait" "-1"
 "angle" "-1"
 "classname" "func_door"
-"spawnflags" "1"
 "targetname" "t39"
 "lip" "-24"
 "model" "*33"
