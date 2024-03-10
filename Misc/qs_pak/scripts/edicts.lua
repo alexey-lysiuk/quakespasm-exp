@@ -121,6 +121,7 @@ local ipairs <const> = ipairs
 
 local format <const> = string.format
 local gsub <const> = string.gsub
+local sub <const> = string.sub
 
 
 function edicts.isclass(edict, ...)
@@ -504,6 +505,28 @@ function edicts.ismessage(edict)
 	end
 
 	local description = '"' .. gsub(localize(message), '\n+', ' ') .. '"'
+	local location = vec3mid(edict.absmin, edict.absmax)
+
+	return description, location
+end
+
+
+--
+-- Edicts with messages
+--
+
+function edicts.ismodel(edict)
+	if not edict or isfree(edict) then
+		return
+	end
+
+	local model = edict.model
+
+	if not model or #model == 0 then
+		return
+	end
+
+	local description = sub(model, 1, 1) == '*' and 'Level model ' .. sub(model, 2) or model
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location

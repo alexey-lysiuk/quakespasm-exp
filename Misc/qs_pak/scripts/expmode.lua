@@ -685,6 +685,7 @@ addedictstool('Items', edicts.isitem)
 addedictstool('Buttons', edicts.isbutton)
 addedictstool('Exits', edicts.isexit)
 addedictstool('Messages', edicts.ismessage)
+addedictstool('Models', edicts.ismodel)
 addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
