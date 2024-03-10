@@ -1526,6 +1526,7 @@
 "spawnflags" "1"
 "targetname" "t51"
 "model" "*44"
+"origin" "0 0 -1"
 }
 {
 "wait" "5"
@@ -1535,6 +1536,7 @@
 "spawnflags" "1"
 "targetname" "t51"
 "model" "*45"
+"origin" "0 0 -1"
 }
 {
 "sounds" "3"
