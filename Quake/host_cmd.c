@@ -2403,6 +2403,8 @@ static void Host_Ghost_f(void)
 	if (newstate != -1)
 	{
 		qboolean isghost = newstate == 1;
+		noclip_anglehack = isghost;
+
 		player->takedamage = isghost ? DAMAGE_NO : DAMAGE_AIM;
 		player->solid = isghost ? SOLID_NOT : SOLID_SLIDEBOX;
 		player->movetype = isghost ? MOVETYPE_NOCLIP : MOVETYPE_WALK;
