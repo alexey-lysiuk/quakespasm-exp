@@ -40,6 +40,9 @@ static const char* const addeddata =
 	/* 204 */ "61"
 	/* 206 */ "696 153"
 	/* 213 */ "48"
+	/* 215 */ "16"
+	/* 217 */ "sm74_necros"
+	/* 228 */ "\"angle\" \"-1\"\n\"lip\" \"64"
 ;
 
 static constexpr EF_Patch ef_patches[] =
@@ -163,6 +166,35 @@ static constexpr EF_Patch ef_patches[] =
 	{ EF_COPY, 5097, 0 },
 	{ EF_ADD, 2, 213 },
 	{ EF_COPY, 1502, 5099 },
+
+	// dmc3m8@8411
+	{ EF_COPY, 60499, 0 },
+	{ EF_COPY, 73, 60379 },
+	{ EF_COPY, 22991, 60573 },
+
+	// sm51_fat@dee3
+	{ EF_COPY, 2049, 0 },
+	{ EF_ADD, 2, 215 },
+	{ EF_COPY, 3097, 2051 },
+
+	// sm74_necros@29a9
+	{ EF_COPY, 5638, 0 },
+	{ EF_ADD, 11, 217 },
+	{ EF_COPY, 2905, 5649 },
+
+	// sm98_zwiffle@35f8
+	{ EF_COPY, 198, 0 },
+	{ EF_ADD, 22, 228 },
+	{ EF_COPY, 47, 196 },
+	{ EF_COPY, 2210, 244 },
+	{ EF_COPY, 35, 4992 },
+	{ EF_COPY, 7521, 2510 },
+	{ EF_COPY, 38, 2454 },
+	{ EF_COPY, 2554, 10048 },
+
+	// sop1@e37d
+	{ EF_COPY, 16331, 0 },
+	{ EF_COPY, 27668, 16344 },
 };
 
 static constexpr EF_Fix ef_fixes[] =
@@ -171,13 +203,18 @@ static constexpr EF_Fix ef_fixes[] =
 	{ "e2m7", 0x10a8, 50503, 50557, 61, 7 },
 	{ "coe1", 0x175a, 53514, 53501, 7, 2 },
 	{ "e2m3", 0x237a, 38695, 38860, 33, 28 },
+	{ "sm74_necros", 0x29a9, 8555, 8555, 98, 3 },
 	{ "bbelief6", 0x324b, 64996, 64996, 0, 3 },
+	{ "sm98_zwiffle", 0x35f8, 12603, 12626, 101, 8 },
 	{ "eoem7", 0x3ea8, 55903, 56050, 68, 7 },
+	{ "dmc3m8", 0x8411, 83565, 83564, 92, 3 },
 	{ "sm27_bear", 0x92ba, 6602, 6602, 89, 3 },
 	{ "e1m4", 0x958e, 43622, 43637, 18, 7 },
 	{ "sm212_naitelveni", 0xa835, 140070, 140070, 80, 9 },
 	{ "e1m1", 0xc49d, 26284, 26294, 9, 4 },
 	{ "sm100_zwiffle", 0xc897, 13044, 13044, 77, 3 },
+	{ "sm51_fat", 0xdee3, 5149, 5149, 95, 3 },
+	{ "sop1", 0xe37d, 44013, 44000, 109, 2 },
 	{ "blitz1000", 0xe5bb, 22368, 22368, 3, 4 },
 	{ "hrim_sp1", 0xf054, 111211, 111198, 75, 2 },
 	{ "e2m2", 0xfbfe, 27003, 27013, 25, 8 },
