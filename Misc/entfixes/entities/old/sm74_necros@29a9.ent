@@ -1,0 +1,589 @@
+{
+"message" "haw haw haw x4"
+"classname" "worldspawn"
+"light" "100"
+"wad" "ne_rerun.wad"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "2"
+"model" "*1"
+}
+{
+"target" "ep1"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+"model" "*2"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "4"
+"model" "*3"
+}
+{
+"classname" "trigger_teleport"
+"spawnflags" "2"
+"target" "ep2"
+"model" "*4"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "8"
+"model" "*5"
+}
+{
+"target" "ep3"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+"model" "*6"
+}
+{
+"classname" "trigger_teleport"
+"spawnflags" "2"
+"target" "last"
+"model" "*7"
+}
+{
+"targetname" "ep1"
+"origin" "368 64 -368"
+"classname" "info_teleport_destination"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "2208 224 -416"
+"targetname" "ep2"
+"angle" "225"
+}
+{
+"targetname" "ep3"
+"origin" "336 64 336"
+"classname" "info_teleport_destination"
+}
+{
+"targetname" "last"
+"origin" "352 64 592"
+"classname" "info_teleport_destination"
+}
+{
+"spawnflags" "2"
+"message" "now jump to your death..."
+"origin" "1696 64 -336"
+"classname" "item_sigil"
+"targetname" "rune2"
+}
+{
+"classname" "item_sigil"
+"origin" "1568 608 2592"
+"spawnflags" "4"
+"message" "now, jump jump jump!!!"
+}
+{
+"angle" "360"
+"origin" "400 64 -256"
+"classname" "info_player_start"
+}
+{
+"message" "HAHA! I'm USING THE INTERNET!"
+"target" "flip"
+"classname" "trigger_once"
+"model" "*8"
+}
+{
+"lip" "-16"
+"targetname" "flip"
+"sounds" "2"
+"speed" "500"
+"wait" "-1"
+"angle" "-1"
+"classname" "func_door"
+"model" "*9"
+}
+{
+"sounds" "1"
+"speed" "600"
+"target" "train1"
+"classname" "func_train"
+"model" "*10"
+}
+{
+"wait" "3"
+"targetname" "train1"
+"target" "train2"
+"origin" "576 128 -400"
+"classname" "path_corner"
+}
+{
+"wait" "0.1"
+"classname" "path_corner"
+"origin" "800 192 -400"
+"target" "train3"
+"targetname" "train2"
+}
+{
+"wait" "3"
+"targetname" "train3"
+"target" "train4"
+"origin" "1408 128 -400"
+"classname" "path_corner"
+}
+{
+"wait" "0.1"
+"classname" "path_corner"
+"origin" "1024 64 -400"
+"target" "train1"
+"targetname" "train4"
+}
+{
+"targetname" "runetrain"
+"sounds" "1"
+"speed" "256"
+"target" "runetrain1"
+"classname" "func_train"
+"model" "*11"
+}
+{
+"target" "runetrain_start"
+"classname" "trigger_once"
+"model" "*12"
+}
+{
+"target" "runetrain"
+"targetname" "runetrain_start"
+"classname" "trigger_relay"
+"model" "*13"
+}
+{
+"delay" "4"
+"killtarget" "runetrain"
+"classname" "trigger_relay"
+"targetname" "runetrain_start"
+"target" "runetrain"
+"model" "*14"
+}
+{
+"targetname" "runetrain1"
+"target" "runetrain2"
+"origin" "1664 32 -384"
+"classname" "path_corner"
+}
+{
+"classname" "path_corner"
+"origin" "1456 112 -64"
+"target" "runetrain3"
+"targetname" "runetrain2"
+}
+{
+"wait" "1000"
+"targetname" "runetrain3"
+"target" "runetrain3"
+"origin" "1280 336 320"
+"classname" "path_corner"
+}
+{
+"wait" "-1"
+"target" "blinky1"
+"angle" "-2"
+"classname" "func_button"
+"speed" "256"
+"targetname" "r2_button"
+"model" "*15"
+}
+{
+"light" "200"
+"origin" "1888 736 -160"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "1984 800 -288"
+"light" "200"
+}
+{
+"light" "200"
+"origin" "1824 864 -288"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "1712 976 -288"
+"light" "200"
+}
+{
+"light" "200"
+"origin" "2016 1008 -288"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "1904 1120 -224"
+"light" "150"
+}
+{
+"light" "150"
+"origin" "2032 1184 -240"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "2064 1248 -272"
+"light" "150"
+}
+{
+"light" "200"
+"origin" "1744 656 -272"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "1856 656 -288"
+"light" "200"
+}
+{
+"light" "200"
+"origin" "1920 400 -352"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "2080 320 -352"
+"light" "200"
+}
+{
+"light" "200"
+"origin" "2032 112 -400"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "1888 32 -368"
+"light" "200"
+}
+{
+"light" "200"
+"origin" "1664 144 -368"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "1504 0 -368"
+"light" "200"
+}
+{
+"light" "200"
+"origin" "528 16 -368"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "352 144 -368"
+"light" "200"
+}
+{
+"lip" "-16"
+"speed" "512"
+"wait" "5"
+"targetname" "sungod"
+"angle" "360"
+"classname" "func_door"
+"model" "*16"
+}
+{
+"message" "the sun god is not pleased"
+"health" "1"
+"target" "sungod"
+"wait" "5"
+"classname" "trigger_multiple"
+"model" "*17"
+}
+{
+"origin" "1568 800 -112"
+"classname" "item_armor1"
+}
+{
+"classname" "trigger_secret"
+"model" "*18"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "1"
+"targetname" "rune2"
+"model" "*19"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "1"
+"targetname" "rune2"
+"model" "*20"
+}
+{
+"classname" "item_armor1"
+"origin" "800 -224 -384"
+}
+{
+"classname" "trigger_push"
+"angle" "-1"
+"speed" "1800"
+"targetname" "rune2"
+"model" "*21"
+}
+{
+"classname" "info_player_start2"
+"origin" "64 64 448"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "1"
+"targetname" "rune2"
+"model" "*22"
+}
+{
+"speed" "1800"
+"angle" "-1"
+"classname" "trigger_push"
+"targetname" "rune2"
+"model" "*23"
+}
+{
+"classname" "trigger_push"
+"angle" "-1"
+"speed" "1800"
+"targetname" "rune2"
+"model" "*24"
+}
+{
+"classname" "trigger_once"
+"target" "runetrain_start"
+"model" "*25"
+}
+{
+"target" "rune2_stuff"
+"classname" "trigger_once"
+"model" "*26"
+}
+{
+"classname" "func_train"
+"target" "wallpath1"
+"speed" "512"
+"dmg" "1"
+"sounds" "1"
+"targetname" "blinky1"
+"model" "*27"
+}
+{
+"classname" "path_corner"
+"origin" "1600 704 -320"
+"target" "wallpath2"
+"targetname" "wallpath1"
+}
+{
+"targetname" "wallpath2"
+"target" "wallpath3"
+"origin" "896 704 -320"
+"classname" "path_corner"
+}
+{
+"classname" "path_corner"
+"origin" "896 704 64"
+"target" "wallpath3"
+"targetname" "wallpath3"
+"wait" "1000"
+}
+{
+"classname" "trigger_changelevel"
+"map" "ne_rerun_q1"
+"spawnflags" "1"
+"light" "200"
+"model" "*28"
+}
+{
+"classname" "item_sigil"
+"origin" "1088 1024 224"
+"spawnflags" "1"
+"message" "HAHAhahAH now killll yourselffF!!!"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "2"
+"model" "*29"
+}
+{
+"classname" "func_wall"
+"targetname" "rune2"
+"model" "*30"
+}
+{
+"spawnflags" "2"
+"classname" "func_episodegate"
+"model" "*31"
+}
+{
+"classname" "func_wall"
+"targetname" "rune2"
+"model" "*32"
+}
+{
+"classname" "light"
+"origin" "1792 1392 -256"
+"light" "300"
+}
+{
+"classname" "func_button"
+"angle" "270"
+"target" "eatme"
+"message" "eatme"
+"model" "*33"
+}
+{
+"killtarget" "rune2"
+"classname" "trigger_relay"
+"target" "rune2"
+"targetname" "rune2_stuff"
+"model" "*34"
+}
+{
+"classname" "trigger_relay"
+"killtarget" "r2_button"
+"target" "r2_button"
+"targetname" "rune2_stuff"
+"model" "*35"
+}
+{
+"targetname" "rune2_stuff"
+"target" "blinky1"
+"killtarget" "blinky1"
+"classname" "trigger_relay"
+"model" "*36"
+}
+{
+"targetname" "r3_button"
+"speed" "256"
+"classname" "func_button"
+"angle" "-2"
+"target" "blinky2"
+"wait" "-1"
+"model" "*37"
+}
+{
+"targetname" "blinky2"
+"sounds" "1"
+"dmg" "1"
+"speed" "1024"
+"target" "wallpatha1"
+"classname" "func_train"
+"model" "*38"
+}
+{
+"classname" "trigger_once"
+"target" "rune3_stuff"
+"model" "*39"
+}
+{
+"targetname" "rune3_stuff"
+"target" "r3_button"
+"killtarget" "r3_button"
+"classname" "trigger_relay"
+"model" "*40"
+}
+{
+"classname" "trigger_relay"
+"killtarget" "blinky2"
+"target" "blinky2"
+"targetname" "rune3_stuff"
+"model" "*41"
+}
+{
+"targetname" "wallpatha1"
+"target" "wallpatha2"
+"origin" "1600 704 -320"
+"classname" "path_corner"
+}
+{
+"classname" "path_corner"
+"origin" "1600 576 -320"
+"target" "wallpatha3"
+"targetname" "wallpatha2"
+"wait" "1"
+}
+{
+"wait" "1000"
+"targetname" "wallpatha3"
+"target" "wallpatha3"
+"origin" "1600 576 2432"
+"classname" "path_corner"
+}
+{
+"classname" "func_door"
+"angle" "-2"
+"wait" "-1"
+"targetname" "eatme"
+"message" "u ned ot prsse t3h butoon haw haw"
+"model" "*42"
+}
+{
+"classname" "item_armorInv"
+"origin" "1504 608 2704"
+}
+{
+"classname" "trigger_secret"
+"model" "*43"
+}
+{
+"classname" "item_artifact_invulnerability"
+"origin" "528 64 368"
+"message" "i eat broken glass!!111"
+}
+{
+"classname" "item_sigil"
+"origin" "-512 32 -352"
+"spawnflags" "8"
+"message" "yeah... you know the drill by now."
+}
+{
+"classname" "trigger_changelevel"
+"map" "e3m4"
+"model" "*44"
+}
+{
+"map" "e3m4"
+"classname" "trigger_changelevel"
+"model" "*45"
+}
+{
+"classname" "trigger_changelevel"
+"map" "e3m4"
+"model" "*46"
+}
+{
+"map" "e3m4"
+"classname" "trigger_changelevel"
+"model" "*47"
+}
+{
+"classname" "func_episodegate"
+"spawnflags" "8"
+"model" "*48"
+}
+{
+"classname" "light"
+"origin" "816 -272 800"
+"light" "150"
+"wait" "0.25"
+}
+{
+"light" "150"
+"origin" "816 416 800"
+"classname" "light"
+"wait" "0.25"
+}
+{
+"classname" "light"
+"origin" "816 416 432"
+"light" "150"
+"wait" "0.25"
+}
+{
+"light" "150"
+"origin" "816 -256 448"
+"classname" "light"
+"wait" "0.25"
+}
