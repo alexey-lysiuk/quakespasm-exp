@@ -15,3 +15,4 @@ sm27_bear@92ba.ent
 dmc3m8@8411.ent
 sm51_fat@dee3.ent
 sm74_necros@29a9.ent
+sm98_zwiffle@35f8.ent
