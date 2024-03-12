@@ -512,7 +512,7 @@ end
 
 
 --
--- Edicts with messages
+-- Edicts with models
 --
 
 function edicts.ismodel(edict)
