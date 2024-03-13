@@ -202,6 +202,11 @@ static int LS_PlayerCheatCommand(lua_State* state, const char* command)
 	return 0;
 }
 
+static int LS_global_player_ghost(lua_State* state)
+{
+	return LS_PlayerCheatCommand(state, "ghost");
+}
+
 static int LS_global_player_god(lua_State* state)
 {
 	return LS_PlayerCheatCommand(state, "god");
@@ -683,6 +688,7 @@ static void LS_InitGlobalTables(lua_State* state)
 	{
 		static const luaL_Reg functions[] =
 		{
+			{ "ghost", LS_global_player_ghost },
 			{ "god", LS_global_player_god },
 			{ "noclip", LS_global_player_noclip },
 			{ "notarget", LS_global_player_notarget },
