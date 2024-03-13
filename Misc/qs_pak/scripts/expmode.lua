@@ -298,8 +298,7 @@ local getname <const> = edicts.getname
 local float <const> = edicts.valuetypes.float
 local string <const> = edicts.valuetypes.string
 
-local god <const> = player.god
-local notarget <const> = player.notarget
+local ghost <const> = player.ghost
 local setpos <const> = player.setpos
 
 local localize <const> = text.localize
@@ -315,8 +314,7 @@ local function moveplayer(edict, location, angles)
 			location.z = location.z + 20
 		end
 
-		god(true)
-		notarget(true)
+		ghost(true)
 		setpos(location, angles or edict.angles)
 
 		shouldexit = true
