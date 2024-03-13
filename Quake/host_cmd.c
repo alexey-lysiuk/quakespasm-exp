@@ -2373,6 +2373,49 @@ static void Host_Massacre_f(void)
 	}
 }
 
+static void Host_Ghost_f(void)
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (pr_global_struct->deathmatch)
+		return;
+
+	entvars_t* player = &sv_player->v;
+	int newstate = -1;
+
+	switch (Cmd_Argc())
+	{
+	case 1:
+		newstate = player->solid > SOLID_NOT && player->health > 0;
+		break;
+	case 2:
+		newstate = Q_atof(Cmd_Argv(1));
+		break;
+	default:
+		Con_Printf("ghost [value] : toggle ghost mode. values: 0 = off, 1 = on\n");
+		break;
+	}
+
+	if (newstate != -1)
+	{
+		qboolean isghost = newstate == 1;
+		noclip_anglehack = isghost;
+
+		player->takedamage = isghost ? DAMAGE_NO : DAMAGE_AIM;
+		player->solid = isghost ? SOLID_NOT : SOLID_SLIDEBOX;
+		player->movetype = isghost ? MOVETYPE_NOCLIP : MOVETYPE_WALK;
+
+		int flags = player->flags;
+		player->flags = isghost
+			? (flags | FL_NOTARGET | FL_GODMODE)
+			: (flags & ~(FL_NOTARGET | FL_GODMODE));
+	}
+}
+
 //=============================================================================
 
 /*
@@ -2403,6 +2446,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("setpos", Host_SetPos_f); //QuakeSpasm
 	Cmd_AddCommand ("mdk", Host_MDK_f);
 	Cmd_AddCommand ("massacre", Host_Massacre_f);
+	Cmd_AddCommand ("ghost", Host_Ghost_f);
 
 	Cmd_AddCommand ("say", Host_Say_f);
 	Cmd_AddCommand ("say_team", Host_Say_Team_f);
