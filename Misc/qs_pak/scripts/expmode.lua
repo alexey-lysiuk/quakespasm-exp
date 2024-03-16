@@ -11,6 +11,7 @@ local imBegin <const> = imgui.Begin
 local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
 local imBeginTable <const> = imgui.BeginTable
 local imButton <const> = imgui.Button
+local imCalcTextSize <const> = imgui.CalcTextSize
 local imEnd <const> = imgui.End
 local imEndPopup <const> = imgui.EndPopup
 local imEndTable <const> = imgui.EndTable
@@ -110,18 +111,9 @@ local safecall <const> = expmode.safecall
 local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local function updatetoolwindow()
-	-- Maximum widget width calculation needs two frames
-	-- 1. Widget are rendered with default sizes except buttons that are aligned to the rigth
-	-- 2. All widgets are auto-sized again, and separators have appropriate widths
-	--    because of window size that was adjusted on the previous frame
-
-	-- TODO:
-	-- Avoid visible change of button sizes after first two frames by using
-	-- one of techniques described in https://github.com/ocornut/imgui/issues/3714
-	-- This requires exposure of currently unusupported GetStyle() or GetWindowDrawList()
-
-	local calcwidth = toolwidgedwidth == 0
-	local maxwidth = 0
+	if not toolwidgedwidth then
+		toolwidgedwidth = imCalcTextSize(string.rep('a', 20)).x
+	end
 
 	imSetNextWindowPos(0, 0, imCondFirstUseEver)
 	imBegin("Tools", nil, toolswindowflags)
@@ -147,21 +139,9 @@ local function updatetoolwindow()
 			imSeparator()
 			imSpacing()
 		end
-
-		if calcwidth then
-			local min = imGetItemRectMin()
-			local max = imGetItemRectMax()
-			maxwidth = math.max(maxwidth, max.x - min.x)
-		end
 	end
 
 	imEnd()
-
-	if calcwidth then
-		toolwidgedwidth = maxwidth
-	elseif toolwidgedwidth == -1 then
-		toolwidgedwidth = 0
-	end
 end
 
 local function updatewindows()
@@ -197,8 +177,6 @@ function expmode.onupdate()
 end
 
 function expmode.onopen()
-	screenwidth = nil
-	toolwidgedwidth = -1
 	shouldexit = false
 
 	for _, window in pairs(windows) do
@@ -210,6 +188,9 @@ function expmode.onclose()
 	for _, window in pairs(windows) do
 		safecall(window.onclose, window)
 	end
+
+	screenwidth = nil
+	toolwidgedwidth = nil
 end
 
 function expmode.window(title, construct, onupdate, onopen, onclose)
