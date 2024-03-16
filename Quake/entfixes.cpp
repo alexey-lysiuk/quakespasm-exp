@@ -73,8 +73,16 @@ static const EF_Fix* EF_FindEntitiesFix(const char* mapname, unsigned size, unsi
 	return (fix != last && probe == *fix) ? fix : nullptr;
 }
 
-extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, unsigned size, unsigned crc)
+extern "C"
 {
+
+cvar_t sv_entfixes = { "sv_entfixes", "1", CVAR_NONE };
+
+char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, unsigned size, unsigned crc)
+{
+	if (sv_entfixes.value == 0)
+		return nullptr;
+
 	assert(mapname);
 	assert(entities);
 	assert(size > 0);
@@ -133,3 +141,5 @@ extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, 
 
 	return newentities;
 }
+
+} // extern "C"
