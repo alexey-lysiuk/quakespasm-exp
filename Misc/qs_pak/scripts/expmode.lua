@@ -115,7 +115,7 @@ local function updatetoolwindow()
 		toolwidgedwidth = imCalcTextSize(string.rep('a', 20)).x
 	end
 
-	imSetNextWindowPos(0, 0, imCondFirstUseEver)
+	imSetNextWindowPos(screenwidth * 0.0025, screenheight * 0.005, imCondFirstUseEver)
 	imBegin("Tools", nil, toolswindowflags)
 
 	for _, tool in ipairs(tools) do
@@ -163,14 +163,13 @@ local function updatewindows()
 end
 
 function expmode.onupdate()
-	updatetoolwindow()
-
 	if not screenwidth then
 		local viewport = imGetMainViewport()
 		screenwidth = viewport.Size.x
 		screenheight = viewport.Size.y
 	end
 
+	updatetoolwindow()
 	updatewindows()
 
 	return not shouldexit
