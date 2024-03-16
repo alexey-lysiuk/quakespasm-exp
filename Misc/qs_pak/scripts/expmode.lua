@@ -37,6 +37,7 @@ local imTableNextColumn <const> = imgui.TableNextColumn
 local imTableNextRow <const> = imgui.TableNextRow
 local imTableSetupColumn <const> = imgui.TableSetupColumn
 local imText <const> = imgui.Text
+local imVec2 <const> = imgui.ImVec2
 
 local imTableFlags <const> = imgui.TableFlags
 local imWindowFlags <const> = imgui.WindowFlags
@@ -51,6 +52,11 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
+local defaultmessageboxpos
+local defaulttoolwindowpos
+local defaultwindowpos
+local centerpivot <const> = imVec2(0.5, 0.5)
+
 local tools = {}
 local windows = {}
 
@@ -64,7 +70,7 @@ function expmode.exit()
 end
 
 local function errorwindow_onupdate(self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.35, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
 
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
@@ -115,7 +121,7 @@ local function updatetoolwindow()
 		toolwidgedwidth = imCalcTextSize(string.rep('a', 20)).x
 	end
 
-	imSetNextWindowPos(screensize.x * 0.0025, screensize.y * 0.005, imCondFirstUseEver)
+	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
 	imBegin("Tools", nil, toolswindowflags)
 
 	for _, tool in ipairs(tools) do
@@ -165,6 +171,9 @@ end
 function expmode.onupdate()
 	if not screensize then
 		screensize = imGetMainViewport().Size
+		defaultmessageboxpos = imVec2(screensize.x * 0.5, screensize.y * 0.35)
+		defaulttoolwindowpos = imVec2(screensize.x * 0.0025, screensize.y * 0.005)
+		defaultwindowpos = imVec2(screensize.x * 0.5, screensize.y * 0.5)
 	end
 
 	updatetoolwindow()
@@ -221,7 +230,7 @@ end
 local window <const> = expmode.window
 
 local function messagebox_onupdate(self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.35, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
 
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
@@ -300,7 +309,7 @@ local function moveplayer(edict, location, angles)
 end
 
 local function edictinfo_onupdate(self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
 	imSetNextWindowSize(320, 0, imCondFirstUseEver)
 
 	local title = self.title
@@ -486,7 +495,7 @@ local function edictstable(title, entries, zerobasedindex)
 end
 
 local function edicts_onupdate(self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
 	imSetNextWindowSize(480, screensize.y * 0.8, imCondFirstUseEver)
 
 	local title = self.title
@@ -545,7 +554,7 @@ local function traceentity_onopen(self)
 end
 
 local function edictrefs_onupdate(self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
 	imSetNextWindowSize(480, screensize.y * 0.8, imCondFirstUseEver)
 
 	local title = self.title
@@ -666,7 +675,7 @@ addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
 	imSetNextWindowSize(320, 240, imCondFirstUseEver)
 
 	local visible, opened = imBegin(self.title, true)
@@ -680,7 +689,7 @@ addtool('Scratchpad', function (self)
 	return opened
 end)
 addtool('Stats', function (self)
-	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
 	imSetNextWindowSize(320, 240, imCondFirstUseEver)
 
 	local visible, opened = imBegin(self.title, true)

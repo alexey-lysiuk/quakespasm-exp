@@ -614,15 +614,9 @@ static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const float posx = luaL_checknumber(state, 1);
-	const float posy = luaL_checknumber(state, 2);
-	const ImVec2 pos(posx, posy);
-
-	const int cond = luaL_optinteger(state, 3, 0);
-
-	const float pivotx = luaL_optnumber(state, 4, 0.f);
-	const float pivoty = luaL_optnumber(state, 5, 0.f);
-	const ImVec2 pivot(pivotx, pivoty);
+	const ImVec2 pos = LS_GetImVecValue<ImVec2>(state, 1);
+	const int cond = luaL_optinteger(state, 2, 0);
+	const ImVec2 pivot = luaL_opt(state, LS_GetImVecValue<ImVec2>, 3, ImVec2());
 
 	ImGui::SetNextWindowPos(pos, cond, pivot);
 	return 0;
