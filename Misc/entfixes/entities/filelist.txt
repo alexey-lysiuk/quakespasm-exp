@@ -17,10 +17,10 @@ sm51_fat@dee3.ent
 sm74_necros@29a9.ent
 sm98_zwiffle@35f8.ent
 sop1@e37d.ent
+sm58_rpg1@e76b.ent
 e1m5@fc76.ent
 e2m1@3789.ent
 e2m4@2f38.ent
 e2m5@691a.ent
 e3m2@e4a8.ent
 e3m3@36e2.ent
-sm58_rpg1@e76b.ent

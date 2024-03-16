@@ -416,6 +416,22 @@ void LS_ClearImGuiStack()
 	}
 }
 
+static int LS_global_imgui_CalcTextSize(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	size_t length;
+	const char* text = luaL_checklstring(state, 1, &length);
+
+	const bool hideafterhashes = luaL_opt(state, lua_toboolean, 2, false);
+	const float wrapwidth = luaL_optnumber(state, 3, -1.f);
+
+	const ImVec2 textsize = ImGui::CalcTextSize(text, text + length, hideafterhashes, wrapwidth);
+
+	LS_PushImVec(state, textsize);
+	return 1;
+}
+
 static int LS_value_ImGuiViewport_index(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1134,6 +1150,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "ImVec2", LS_global_imgui_ImVec2 },
 		{ "ImVec4", LS_global_imgui_ImVec4 },
 
+		{ "CalcTextSize", LS_global_imgui_CalcTextSize },
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
 		{ "GetStyle", LS_global_imgui_GetStyle },
 		{ "SetClipboardText", LS_global_imgui_SetClipboardText },

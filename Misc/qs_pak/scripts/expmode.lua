@@ -11,6 +11,7 @@ local imBegin <const> = imgui.Begin
 local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
 local imBeginTable <const> = imgui.BeginTable
 local imButton <const> = imgui.Button
+local imCalcTextSize <const> = imgui.CalcTextSize
 local imEnd <const> = imgui.End
 local imEndPopup <const> = imgui.EndPopup
 local imEndTable <const> = imgui.EndTable
@@ -53,7 +54,7 @@ local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.N
 local tools = {}
 local windows = {}
 
-local screenwidth, screenheight
+local screensize
 local toolwidgedwidth
 local shouldexit
 local wintofocus
@@ -63,7 +64,7 @@ function expmode.exit()
 end
 
 local function errorwindow_onupdate(self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.35, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.35, imCondFirstUseEver, 0.5, 0.5)
 
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
@@ -110,20 +111,11 @@ local safecall <const> = expmode.safecall
 local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local function updatetoolwindow()
-	-- Maximum widget width calculation needs two frames
-	-- 1. Widget are rendered with default sizes except buttons that are aligned to the rigth
-	-- 2. All widgets are auto-sized again, and separators have appropriate widths
-	--    because of window size that was adjusted on the previous frame
+	if not toolwidgedwidth then
+		toolwidgedwidth = imCalcTextSize(string.rep('a', 20)).x
+	end
 
-	-- TODO:
-	-- Avoid visible change of button sizes after first two frames by using
-	-- one of techniques described in https://github.com/ocornut/imgui/issues/3714
-	-- This requires exposure of currently unusupported GetStyle() or GetWindowDrawList()
-
-	local calcwidth = toolwidgedwidth == 0
-	local maxwidth = 0
-
-	imSetNextWindowPos(0, 0, imCondFirstUseEver)
+	imSetNextWindowPos(screensize.x * 0.0025, screensize.y * 0.005, imCondFirstUseEver)
 	imBegin("Tools", nil, toolswindowflags)
 
 	for _, tool in ipairs(tools) do
@@ -147,21 +139,9 @@ local function updatetoolwindow()
 			imSeparator()
 			imSpacing()
 		end
-
-		if calcwidth then
-			local min = imGetItemRectMin()
-			local max = imGetItemRectMax()
-			maxwidth = math.max(maxwidth, max.x - min.x)
-		end
 	end
 
 	imEnd()
-
-	if calcwidth then
-		toolwidgedwidth = maxwidth
-	elseif toolwidgedwidth == -1 then
-		toolwidgedwidth = 0
-	end
 end
 
 local function updatewindows()
@@ -183,22 +163,17 @@ local function updatewindows()
 end
 
 function expmode.onupdate()
-	updatetoolwindow()
-
-	if not screenwidth then
-		local viewport = imGetMainViewport()
-		screenwidth = viewport.Size.x
-		screenheight = viewport.Size.y
+	if not screensize then
+		screensize = imGetMainViewport().Size
 	end
 
+	updatetoolwindow()
 	updatewindows()
 
 	return not shouldexit
 end
 
 function expmode.onopen()
-	screenwidth = nil
-	toolwidgedwidth = -1
 	shouldexit = false
 
 	for _, window in pairs(windows) do
@@ -210,6 +185,9 @@ function expmode.onclose()
 	for _, window in pairs(windows) do
 		safecall(window.onclose, window)
 	end
+
+	screensize = nil
+	toolwidgedwidth = nil
 end
 
 function expmode.window(title, construct, onupdate, onopen, onclose)
@@ -243,7 +221,7 @@ end
 local window <const> = expmode.window
 
 local function messagebox_onupdate(self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.35, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.35, imCondFirstUseEver, 0.5, 0.5)
 
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
@@ -322,7 +300,7 @@ local function moveplayer(edict, location, angles)
 end
 
 local function edictinfo_onupdate(self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
 	imSetNextWindowSize(320, 0, imCondFirstUseEver)
 
 	local title = self.title
@@ -508,8 +486,8 @@ local function edictstable(title, entries, zerobasedindex)
 end
 
 local function edicts_onupdate(self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
-	imSetNextWindowSize(480, screenheight * 0.8, imCondFirstUseEver)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(480, screensize.y * 0.8, imCondFirstUseEver)
 
 	local title = self.title
 	local visible, opened = imBegin(title, true)
@@ -567,8 +545,8 @@ local function traceentity_onopen(self)
 end
 
 local function edictrefs_onupdate(self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
-	imSetNextWindowSize(480, screenheight * 0.8, imCondFirstUseEver)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowSize(480, screensize.y * 0.8, imCondFirstUseEver)
 
 	local title = self.title
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
@@ -688,7 +666,7 @@ addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
 	imSetNextWindowSize(320, 240, imCondFirstUseEver)
 
 	local visible, opened = imBegin(self.title, true)
@@ -702,7 +680,7 @@ addtool('Scratchpad', function (self)
 	return opened
 end)
 addtool('Stats', function (self)
-	imSetNextWindowPos(screenwidth * 0.5, screenheight * 0.5, imCondFirstUseEver, 0.5, 0.5)
+	imSetNextWindowPos(screensize.x * 0.5, screensize.y * 0.5, imCondFirstUseEver, 0.5, 0.5)
 	imSetNextWindowSize(320, 240, imCondFirstUseEver)
 
 	local visible, opened = imBegin(self.title, true)
