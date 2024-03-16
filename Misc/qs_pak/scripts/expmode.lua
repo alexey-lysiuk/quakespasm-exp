@@ -247,9 +247,9 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	window(title,
-		function (self) self.text = text end,
-		messagebox_onupdate)
+	local messagebox = window(title, nil, messagebox_onupdate)
+	messagebox.text = text
+	return messagebox
 end
 
 local messagebox <const> = expmode.messagebox
@@ -446,6 +446,10 @@ local function edictstable(title, entries, zerobasedindex)
 
 				local function contextmenu(cellvalue)
 					if imBeginPopupContextItem() then
+						if imSelectable('References') then
+							expmode.edictreferences(entry.edict)
+						end
+						imSeparator()
 						if imSelectable('Copy cell') then
 							imSetClipboardText(tostring(cellvalue))
 						end
@@ -652,7 +656,7 @@ function expmode.edictreferences(edict)
 		end
 
 		if not window.references then
-			messagebox('No references', 'Edict has no references')
+			messagebox('No references', format("'%s' has no references", edict))
 		else
 			windows[title] = window
 		end
