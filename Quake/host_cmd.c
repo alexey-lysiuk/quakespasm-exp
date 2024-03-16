@@ -2038,6 +2038,16 @@ static void Host_Give_f (void)
 		}
 		break;
 		//johnfitz
+
+	case 'i':
+		if (v > 0 && v < 5)
+			sv_player->v.items = (int)sv_player->v.items | (IT_SIGIL1 << (v - 1));
+		break;
+
+	case 'k':
+		if (v == 1 || v == 2)
+			sv_player->v.items = (int)sv_player->v.items | (IT_KEY1 << (v - 1));
+		break;
 	}
 
 	//johnfitz -- update currentammo to match new ammo (so statusbar updates correctly)
