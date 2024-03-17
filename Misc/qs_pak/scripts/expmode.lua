@@ -51,6 +51,7 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
+local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local tools = {}
 local windows = {}
@@ -59,7 +60,7 @@ local centerpivot <const> = imVec2(0.5, 0.5)
 local defaultedictinfowindowsize <const> = imVec2(320, 0)
 local defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
-local screensize, shouldexit, toolwidgedwidth, wintofocus
+local screensize, shouldexit, toolwidgedsize, wintofocus
 
 function expmode.exit()
 	shouldexit = true
@@ -110,13 +111,7 @@ end
 
 local safecall <const> = expmode.safecall
 
-local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
-
 local function updatetoolwindow()
-	if not toolwidgedwidth then
-		toolwidgedwidth = imCalcTextSize(string.rep('a', 20)).x
-	end
-
 	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
 	imBegin("Tools", nil, toolswindowflags)
 
@@ -125,7 +120,7 @@ local function updatetoolwindow()
 
 		if tool.onupdate then
 			-- Real tool
-			if imButton(title, toolwidgedwidth, 0) then
+			if imButton(title, toolwidgedsize) then
 				if windows[title] then
 					wintofocus = title
 				elseif safecall(tool.onopen, tool) then
@@ -171,6 +166,7 @@ function expmode.onupdate()
 		defaultmessageboxpos = imVec2(screensize.x * 0.5, screensize.y * 0.35)
 		defaulttoolwindowpos = imVec2(screensize.x * 0.0025, screensize.y * 0.005)
 		defaultwindowpos = imVec2(screensize.x * 0.5, screensize.y * 0.5)
+		toolwidgedsize = imVec2(imCalcTextSize(string.rep('a', 20)).x, 0)
 	end
 
 	updatetoolwindow()
@@ -193,7 +189,6 @@ function expmode.onclose()
 	end
 
 	screensize = nil
-	toolwidgedwidth = nil
 end
 
 function expmode.window(title, construct, onupdate, onopen, onclose)
@@ -335,19 +330,19 @@ local function edictinfo_onupdate(self)
 
 		local buttoncount = 3
 		local buttonspacing = 4
-		local buttonwidth = (imGetWindowContentRegionMax() - buttonspacing) / buttoncount - buttonspacing
+		local buttonsize = imVec2((imGetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing, 0)
 
-		if imButton('Move to', buttonwidth, 0) then
+		if imButton('Move to', buttonsize) then
 			moveplayer(self.edict)
 		end
 		imSameLine(0, buttonspacing)
 
-		if imButton('References', buttonwidth, 0) then
+		if imButton('References', buttonsize) then
 			expmode.edictreferences(self.edict)
 		end
 		imSameLine(0, buttonspacing)
 
-		if imButton('Copy', buttonwidth, 0) then
+		if imButton('Copy', buttonsize) then
 			local fields = {}
 
 			for i, field in ipairs(self.fields) do

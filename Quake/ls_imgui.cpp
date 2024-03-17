@@ -585,10 +585,8 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const ImVec2 region = ImGui::GetWindowContentRegionMax();
-	lua_pushnumber(state, region.x);
-	lua_pushnumber(state, region.y);
-	return 2;
+	LS_PushImVec(state, ImGui::GetWindowContentRegionMax());
+	return 1;
 }
 
 static int LS_global_imgui_SameLine(lua_State* state)
@@ -684,10 +682,8 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 	const int columncount = luaL_checkinteger(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
-	const float sizex = luaL_optnumber(state, 4, 0.f);
-	const float sizey = luaL_optnumber(state, 5, 0.f);
-	const ImVec2 outersize(sizex, sizey);
-	const float innerwidth = luaL_optnumber(state, 6, 0.f);
+	const ImVec2 outersize = luaL_opt(state, LS_GetImVecValue<ImVec2>, 4, ImVec2());
+	const float innerwidth = luaL_optnumber(state, 5, 0.f);
 
 	const bool visible = ImGui::BeginTable(strid, columncount, flags, outersize, innerwidth);
 	lua_pushboolean(state, visible);
@@ -757,9 +753,7 @@ static int LS_global_imgui_Button(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
-	const float sizex = luaL_optnumber(state, 2, 0.f);
-	const float sizey = luaL_optnumber(state, 3, 0.f);
-	const ImVec2 size(sizex, sizey);
+	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 2, ImVec2());
 
 	const bool result = ImGui::Button(label, size);
 	lua_pushboolean(state, result);
