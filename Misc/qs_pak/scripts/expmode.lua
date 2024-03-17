@@ -58,10 +58,23 @@ local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultedictinfowindowsize <const> = imVec2(320, 0)
-local defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowpos
+local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, nextwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
+
+local function setnextwindowpos(self)
+	if self.wasopened then
+		return
+	end
+
+	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
+	
+	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.0625
+	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.0625
+	-- todo: wrap
+	print(nextwindowpos)
+	self.wasopened = true
+end
 
 function expmode.exit()
 	shouldexit = true
@@ -163,11 +176,21 @@ end
 function expmode.onupdate()
 	if not screensize then
 		screensize = imGetMainViewport().Size
-		defaultedictswindowsize = imVec2(480, screensize.y * 0.8)
-		defaultmessageboxpos = imVec2(screensize.x * 0.5, screensize.y * 0.35)
-		defaulttoolwindowpos = imVec2(screensize.x * 0.0025, screensize.y * 0.005)
-		defaultwindowpos = imVec2(screensize.x * 0.5, screensize.y * 0.5)
-		toolwidgedsize = imVec2(imCalcTextSize(string.rep('a', 20)).x, 0)
+
+		local sx = screensize.x
+		local sy = screensize.y
+		local charwidth = imCalcTextSize('a').x
+
+		defaultedictinfowindowsize = imVec2(charwidth * 48, sy * 0.5)
+		defaultedictswindowsize = imVec2(charwidth * 64, sy * 0.5)
+		defaultmessageboxpos = imVec2(sx * 0.5, sy * 0.35)
+		defaulttoolwindowpos = imVec2(sx * 0.0025, sy * 0.005)
+--		defaultwindowpos = imVec2(sx * 0.5, sy * 0.5)
+		toolwidgedsize = imVec2(charwidth * 20, 0)
+
+		if not nextwindowpos then
+			nextwindowpos = imVec2(toolwidgedsize.x + charwidth * 5, sy * 0.0125)
+		end
 	end
 
 	updatetoolwindow()
@@ -302,7 +325,8 @@ local function moveplayer(edict, location, angles)
 end
 
 local function edictinfo_onupdate(self)
-	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+--	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+	setnextwindowpos(self)
 	imSetNextWindowSize(defaultedictinfowindowsize, imCondFirstUseEver)
 
 	local title = self.title
@@ -492,7 +516,8 @@ local function edictstable(title, entries, zerobasedindex)
 end
 
 local function edicts_onupdate(self)
-	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+--	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+	setnextwindowpos(self)
 	imSetNextWindowSize(defaultedictswindowsize, imCondFirstUseEver)
 
 	local title = self.title
@@ -551,7 +576,8 @@ local function traceentity_onopen(self)
 end
 
 local function edictrefs_onupdate(self)
-	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+--	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+	setnextwindowpos(self)
 	imSetNextWindowSize(defaultedictswindowsize, imCondFirstUseEver)
 
 	local title = self.title
@@ -672,7 +698,8 @@ addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
-	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+--	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+	setnextwindowpos(self)
 	imSetNextWindowSize(defaultwindowsize, imCondFirstUseEver)
 
 	local visible, opened = imBegin(self.title, true)
@@ -686,7 +713,8 @@ addtool('Scratchpad', function (self)
 	return opened
 end)
 addtool('Stats', function (self)
-	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+--	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
+	setnextwindowpos(self)
 	imSetNextWindowSize(defaultwindowsize, imCondFirstUseEver)
 
 	local visible, opened = imBegin(self.title, true)
