@@ -626,11 +626,8 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const float sizex = luaL_checknumber(state, 1);
-	const float sizey = luaL_checknumber(state, 2);
-	const ImVec2 size(sizex, sizey);
-
-	const int cond = luaL_optinteger(state, 3, 0);
+	const ImVec2 size = LS_GetImVecValue<ImVec2>(state, 1);
+	const int cond = luaL_optinteger(state, 2, 0);
 
 	ImGui::SetNextWindowSize(size, cond);
 	return 0;
