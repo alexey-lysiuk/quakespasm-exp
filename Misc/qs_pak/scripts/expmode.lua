@@ -446,6 +446,10 @@ local function edictstable(title, entries, zerobasedindex)
 
 				local function contextmenu(cellvalue)
 					if imBeginPopupContextItem() then
+						if imSelectable('References') then
+							expmode.edictreferences(entry.edict)
+						end
+						imSeparator()
 						if imSelectable('Copy cell') then
 							imSetClipboardText(tostring(cellvalue))
 						end
