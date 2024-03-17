@@ -247,9 +247,9 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	window(title,
-		function (self) self.text = text end,
-		messagebox_onupdate)
+	local messagebox = window(title, nil, messagebox_onupdate)
+	messagebox.text = text
+	return messagebox
 end
 
 local messagebox <const> = expmode.messagebox
