@@ -335,7 +335,7 @@ local function edictinfo_onupdate(self)
 
 		local buttoncount = 3
 		local buttonspacing = 4
-		local buttonwidth = (imGetWindowContentRegionMax() - buttonspacing) / buttoncount - buttonspacing
+		local buttonwidth = (imGetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing
 
 		if imButton('Move to', buttonwidth, 0) then
 			moveplayer(self.edict)

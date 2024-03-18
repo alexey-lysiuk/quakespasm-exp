@@ -585,10 +585,8 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const ImVec2 region = ImGui::GetWindowContentRegionMax();
-	lua_pushnumber(state, region.x);
-	lua_pushnumber(state, region.y);
-	return 2;
+	LS_PushImVec(state, ImGui::GetWindowContentRegionMax());
+	return 1;
 }
 
 static int LS_global_imgui_SameLine(lua_State* state)
