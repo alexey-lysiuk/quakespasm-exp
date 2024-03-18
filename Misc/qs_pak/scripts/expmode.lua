@@ -53,28 +53,15 @@ local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | 
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
+local placedwindows = {}
 local tools = {}
 local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, nextwindowpos
+local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowposx, nextwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
-
-local function setnextwindowpos(self)
-	if self.wasopened then
-		return
-	end
-
-	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
-	
-	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.0625
-	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.0625
-	-- todo: wrap
-	print(nextwindowpos)
-	self.wasopened = true
-end
 
 function expmode.exit()
 	shouldexit = true
@@ -185,11 +172,11 @@ function expmode.onupdate()
 		defaultedictswindowsize = imVec2(charwidth * 64, sy * 0.5)
 		defaultmessageboxpos = imVec2(sx * 0.5, sy * 0.35)
 		defaulttoolwindowpos = imVec2(sx * 0.0025, sy * 0.005)
---		defaultwindowpos = imVec2(sx * 0.5, sy * 0.5)
+		defaultwindowposx = charwidth * 25
 		toolwidgedsize = imVec2(charwidth * 20, 0)
 
 		if not nextwindowpos then
-			nextwindowpos = imVec2(toolwidgedsize.x + charwidth * 5, sy * 0.0125)
+			nextwindowpos = imVec2(defaultwindowposx, sy * 0.05)
 		end
 	end
 
@@ -307,6 +294,28 @@ local setpos <const> = player.setpos
 local localize <const> = text.localize
 local toascii <const> = text.toascii
 
+local function placewindow(title, size)
+	if placedwindows[title] then
+		return
+	end
+
+	placedwindows[title] = true
+
+	if nextwindowpos.x + size.x >= screensize.x then
+		nextwindowpos.x = defaultwindowposx
+	end
+
+	if nextwindowpos.y + size.y >= screensize.y then
+		nextwindowpos.y = screensize.x * 0.05
+	end
+
+	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
+	imSetNextWindowSize(size)
+
+	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
+	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
+end
+
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
 
@@ -325,11 +334,9 @@ local function moveplayer(edict, location, angles)
 end
 
 local function edictinfo_onupdate(self)
---	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
-	setnextwindowpos(self)
-	imSetNextWindowSize(defaultedictinfowindowsize, imCondFirstUseEver)
-
 	local title = self.title
+	placewindow(title, defaultedictinfowindowsize)
+
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
@@ -516,11 +523,9 @@ local function edictstable(title, entries, zerobasedindex)
 end
 
 local function edicts_onupdate(self)
---	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
-	setnextwindowpos(self)
-	imSetNextWindowSize(defaultedictswindowsize, imCondFirstUseEver)
-
 	local title = self.title
+	placewindow(title, defaultedictswindowsize)
+
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
@@ -576,11 +581,9 @@ local function traceentity_onopen(self)
 end
 
 local function edictrefs_onupdate(self)
---	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
-	setnextwindowpos(self)
-	imSetNextWindowSize(defaultedictswindowsize, imCondFirstUseEver)
-
 	local title = self.title
+	placewindow(title, defaultedictswindowsize)
+
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
@@ -698,11 +701,10 @@ addtool('Trace Entity', nil, traceentity_onopen)
 
 addseparator('Misc')
 addtool('Scratchpad', function (self)
---	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
-	setnextwindowpos(self)
-	imSetNextWindowSize(defaultwindowsize, imCondFirstUseEver)
+	local title = self.title
+	placewindow(title, defaultwindowsize)
 
-	local visible, opened = imBegin(self.title, true)
+	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
 		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
@@ -713,11 +715,10 @@ addtool('Scratchpad', function (self)
 	return opened
 end)
 addtool('Stats', function (self)
---	imSetNextWindowPos(defaultwindowpos, imCondFirstUseEver, centerpivot)
-	setnextwindowpos(self)
-	imSetNextWindowSize(defaultwindowsize, imCondFirstUseEver)
+	local title = self.title
+	placewindow(title, defaultwindowsize)
 
-	local visible, opened = imBegin(self.title, true)
+	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
 		local prevtime = self.realtime or 0
