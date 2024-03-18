@@ -611,8 +611,15 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 	if (!r_drawentities.value)
 		return;
 
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(gl_polyoffset_factor.value, gl_polyoffset_units.value);
+	float factor = gl_polyoffset_factor.value;
+	float units = gl_polyoffset_units.value;
+	qboolean polyoffset = factor != 0.f && units != 0.f;
+
+	if (polyoffset)
+	{
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(factor, units);
+	}
 
 	//johnfitz -- sprites are not a special case
 	for (i=0 ; i<cl_numvisedicts ; i++)
@@ -644,7 +651,8 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 		}
 	}
 
-	glDisable(GL_POLYGON_OFFSET_FILL);
+	if (polyoffset)
+		glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 /*
