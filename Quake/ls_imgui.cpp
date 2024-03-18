@@ -753,9 +753,7 @@ static int LS_global_imgui_Button(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
-	const float sizex = luaL_optnumber(state, 2, 0.f);
-	const float sizey = luaL_optnumber(state, 3, 0.f);
-	const ImVec2 size(sizex, sizey);
+	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 2, ImVec2());
 
 	const bool result = ImGui::Button(label, size);
 	lua_pushboolean(state, result);
