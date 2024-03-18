@@ -112,6 +112,9 @@ qboolean r_drawflat_cheatsafe, r_fullbright_cheatsafe, r_lightmap_cheatsafe, r_d
 
 cvar_t	r_scale = {"r_scale", "1", CVAR_ARCHIVE};
 
+cvar_t	gl_polyoffset_factor = { "gl_polyoffset_factor", "0.5", CVAR_ARCHIVE };
+cvar_t	gl_polyoffset_units = { "gl_polyoffset_units", "1.0", CVAR_ARCHIVE };
+
 //==============================================================================
 //
 // GLSL GAMMA CORRECTION
@@ -608,6 +611,9 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 	if (!r_drawentities.value)
 		return;
 
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(gl_polyoffset_factor.value, gl_polyoffset_units.value);
+
 	//johnfitz -- sprites are not a special case
 	for (i=0 ; i<cl_numvisedicts ; i++)
 	{
@@ -637,6 +643,8 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 				break;
 		}
 	}
+
+	glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 /*

@@ -231,6 +231,10 @@ void R_Init (void)
 	Cvar_SetCallback (&r_telealpha, R_SetTelealpha_f);
 	Cvar_SetCallback (&r_slimealpha, R_SetSlimealpha_f);
 
+	extern cvar_t gl_polyoffset_factor, gl_polyoffset_units;
+	Cvar_RegisterVariable (&gl_polyoffset_factor);
+	Cvar_RegisterVariable (&gl_polyoffset_units);
+
 	R_InitParticles ();
 	R_SetClearColor_f (&r_clearcolor); //johnfitz
 
