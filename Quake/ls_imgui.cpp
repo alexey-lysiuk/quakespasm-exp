@@ -532,6 +532,18 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 }
 #endif // !NDEBUG
 
+static int LS_global_imgui_IsMouseReleased(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const int flags = luaL_checkinteger(state, 1);
+	// TODO: ImGuiMouseButton enum
+	const bool result = ImGui::IsMouseReleased(flags);
+
+	lua_pushboolean(state, result);
+	return 1;
+}
+
 static void LS_EndWindowScope()
 {
 	assert(ls_windowscope > 0);
@@ -639,6 +651,26 @@ static void LS_EndPopupScope()
 	ImGui::EndPopup();
 }
 
+static int LS_global_imgui_BeginPopup(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+	const bool visible = ImGui::BeginPopup(strid, flags);
+
+	lua_pushboolean(state, visible);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+	{
+		LS_AddToImGuiStack(LS_EndPopupScope);
+		++ls_popupscope;
+	}
+
+	return 1;
+}
+
 static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -663,6 +695,18 @@ static int LS_global_imgui_EndPopup(lua_State* state)
 	LS_EnsurePopupScope(state);
 
 	LS_RemoveFromImGuiStack(state, LS_EndPopupScope);
+	return 0;
+}
+
+static int LS_global_imgui_OpenPopup(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_checkstring(state, 1);
+	// TODO: ImGuiPopupFlags enum
+	const int flags = luaL_optinteger(state, 2, 0);
+
+	ImGui::OpenPopup(strid, flags);
 	return 0;
 }
 
@@ -879,6 +923,17 @@ static int LS_global_imgui_SetTooltip(lua_State* state)
 	const char* const text = luaL_checkstring(state, 1);
 	ImGui::SetTooltip("%s", text);
 	return 0;
+}
+
+static int LS_global_imgui_SmallButton(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	const bool result = ImGui::SmallButton(label);
+
+	lua_pushboolean(state, result);
+	return 1;
 }
 
 static int LS_global_imgui_Spacing(lua_State* state)
@@ -1137,6 +1192,8 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
 #endif // !NDEBUG
 
+		{ "IsMouseReleased", LS_global_imgui_IsMouseReleased },
+
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
 		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
@@ -1145,8 +1202,10 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
 
+		{ "BeginPopup", LS_global_imgui_BeginPopup },
 		{ "BeginPopupContextItem", LS_global_imgui_BeginPopupContextItem },
 		{ "EndPopup", LS_global_imgui_EndPopup },
+		{ "OpenPopup", LS_global_imgui_OpenPopup },
 
 		{ "BeginTable", LS_global_imgui_BeginTable },
 		{ "EndTable", LS_global_imgui_EndTable },
@@ -1165,6 +1224,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
 		{ "SetTooltip", LS_global_imgui_SetTooltip },
+		{ "SmallButton", LS_global_imgui_SmallButton },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Text", LS_global_imgui_Text },
 		{ "Unindent", LS_global_imgui_Unindent },
