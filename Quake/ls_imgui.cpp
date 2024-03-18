@@ -682,10 +682,8 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 	const int columncount = luaL_checkinteger(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
-	const float sizex = luaL_optnumber(state, 4, 0.f);
-	const float sizey = luaL_optnumber(state, 5, 0.f);
-	const ImVec2 outersize(sizex, sizey);
-	const float innerwidth = luaL_optnumber(state, 6, 0.f);
+	const ImVec2 outersize = luaL_opt(state, LS_GetImVecValue<ImVec2>, 4, ImVec2());
+	const float innerwidth = luaL_optnumber(state, 5, 0.f);
 
 	const bool visible = ImGui::BeginTable(strid, columncount, flags, outersize, innerwidth);
 	lua_pushboolean(state, visible);
