@@ -56,6 +56,7 @@ local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollap
 local tools = {}
 local windows = {}
 
+local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
 local defaultedictinfowindowsize <const> = imVec2(320, 0)
 local defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowpos
@@ -677,7 +678,7 @@ addtool('Scratchpad', function (self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, -1, -1, imInputTextAllowTabInput)
+		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
 	end
 
 	imEnd()
