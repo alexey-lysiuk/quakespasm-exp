@@ -848,10 +848,7 @@ static int LS_global_imgui_Selectable(lua_State* state)
 	const char* const label = luaL_checkstring(state, 1);
 	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
 	const int flags = luaL_optinteger(state, 3, 0);
-
-	const float sizex = luaL_optnumber(state, 4, 0.f);
-	const float sizey = luaL_optnumber(state, 5, 0.f);
-	const ImVec2 size(sizex, sizey);
+	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 4, ImVec2());
 
 	const bool pressed = ImGui::Selectable(label, selected, flags, size);
 	lua_pushboolean(state, pressed);
