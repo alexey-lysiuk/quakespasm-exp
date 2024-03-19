@@ -1347,7 +1347,6 @@
 "classname" "func_door"
 "spawnflags" "2048"
 "model" "*13"
-"origin" "0 1 0"
 }
 {
 "origin" "1392 2784 456"
