@@ -31,7 +31,6 @@ local imSetNextWindowPos <const> = imgui.SetNextWindowPos
 local imSetNextWindowSize <const> = imgui.SetNextWindowSize
 local imSetTooltip <const> = imgui.SetTooltip
 local imShowDemoWindow <const> = imgui.ShowDemoWindow
-local imSmallButton <const> = imgui.SmallButton
 local imSpacing <const> = imgui.Spacing
 local imTableHeadersRow <const> = imgui.TableHeadersRow
 local imTableNextColumn <const> = imgui.TableNextColumn
@@ -342,28 +341,6 @@ local function edictinfo_onupdate(self)
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
---		local buttonspacing = 4
---
---		if imButton('Move to') then
---			moveplayer(self.edict)
---		end
---		imSameLine(0, buttonspacing)
---
---		if imButton('References') then
---			expmode.edictreferences(self.edict)
---		end
---		imSameLine(0, buttonspacing)
---
---		if imButton('Copy') then
---			local fields = {}
---
---			for i, field in ipairs(self.fields) do
---				fields[i] = field.name .. ': ' .. field.value
---			end
---
---			imSetClipboardText(concat(fields, '\n'))
---		end
-
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaultscrollytableflags) then
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
@@ -378,8 +355,7 @@ local function edictinfo_onupdate(self)
 				imText(field.value)
 			end
 
---			if imBeginPopupContextItem(title) then
-			if imgui.IsMouseReleased(1) then
+			if not imgui.IsAnyItemHovered() and imgui.IsMouseReleased(1) then
 				imgui.OpenPopup("EdictInfoContextMenu")
 			end
 
@@ -404,33 +380,6 @@ local function edictinfo_onupdate(self)
 
 			imEndTable()
 		end
-
---		-- Tool buttons
---		imSeparator()
-
---		local buttoncount = 3
---		local buttonspacing = 4
---		local buttonsize = imVec2((imGetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing, 0)
---
---		if imButton('Move to', buttonsize) then
---			moveplayer(self.edict)
---		end
---		imSameLine(0, buttonspacing)
---
---		if imButton('References', buttonsize) then
---			expmode.edictreferences(self.edict)
---		end
---		imSameLine(0, buttonspacing)
---
---		if imButton('Copy', buttonsize) then
---			local fields = {}
---
---			for i, field in ipairs(self.fields) do
---				fields[i] = field.name .. ': ' .. field.value
---			end
---
---			imSetClipboardText(concat(fields, '\n'))
---		end
 	end
 
 	imEnd()
@@ -449,18 +398,9 @@ local function edictinfo_onopen(self)
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
-		local value = field.value
-		local type = field.type
-
---		if type == float then
---			field.value = format('%.1f', value)
---		else
-		if type == string then
-			field.value = toascii(localize(value))
-		else
-			field.value = tostring(value)
-		end
-
+		field.value = field.type == string 
+			and toascii(localize(field.value))
+			or tostring(field.value)
 		fields[i] = field
 	end
 

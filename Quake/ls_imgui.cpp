@@ -532,6 +532,14 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 }
 #endif // !NDEBUG
 
+static int LS_global_imgui_IsAnyItemHovered(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	lua_pushboolean(state, ImGui::IsAnyItemHovered());
+	return 1;
+}
+
 static int LS_global_imgui_IsMouseReleased(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1192,6 +1200,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
 #endif // !NDEBUG
 
+		{ "IsAnyItemHovered", LS_global_imgui_IsAnyItemHovered },
 		{ "IsMouseReleased", LS_global_imgui_IsMouseReleased },
 
 		{ "Begin", LS_global_imgui_Begin },
