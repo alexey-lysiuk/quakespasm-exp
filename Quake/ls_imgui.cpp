@@ -545,7 +545,6 @@ static int LS_global_imgui_IsMouseReleased(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	const int flags = luaL_checkinteger(state, 1);
-	// TODO: ImGuiMouseButton enum
 	const bool result = ImGui::IsMouseReleased(flags);
 
 	lua_pushboolean(state, result);
@@ -711,7 +710,6 @@ static int LS_global_imgui_OpenPopup(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	const char* strid = luaL_checkstring(state, 1);
-	// TODO: ImGuiPopupFlags enum
 	const int flags = luaL_optinteger(state, 2, 0);
 
 	ImGui::OpenPopup(strid, flags);
@@ -1070,6 +1068,30 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_INPUT_TEXT_FLAG(EscapeClearsAll)
 	LS_IMGUI_ENUM_END(InputTextFlags)
 #undef LS_IMGUI_INPUT_TEXT_FLAG
+
+#define LS_IMGUI_MOUSE_BUTTON(NAME) LS_IMGUI_ENUM_VALUE(MouseButton, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_MOUSE_BUTTON(Left)
+	LS_IMGUI_MOUSE_BUTTON(Right)
+	LS_IMGUI_MOUSE_BUTTON(Middle)
+	LS_IMGUI_MOUSE_BUTTON(COUNT)
+	LS_IMGUI_ENUM_END(MouseButton)
+#undef LS_IMGUI_MOUSE_BUTTON
+
+#define LS_IMGUI_POPUP_FLAGS(NAME) LS_IMGUI_ENUM_VALUE(PopupFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_POPUP_FLAGS(None)
+	LS_IMGUI_POPUP_FLAGS(MouseButtonLeft)
+	LS_IMGUI_POPUP_FLAGS(MouseButtonRight)
+	LS_IMGUI_POPUP_FLAGS(MouseButtonMiddle)
+	LS_IMGUI_POPUP_FLAGS(NoReopen)
+	LS_IMGUI_POPUP_FLAGS(NoOpenOverExistingPopup)
+	LS_IMGUI_POPUP_FLAGS(NoOpenOverItems)
+	LS_IMGUI_POPUP_FLAGS(AnyPopupId)
+	LS_IMGUI_POPUP_FLAGS(AnyPopupLevel)
+	LS_IMGUI_POPUP_FLAGS(AnyPopup)
+	LS_IMGUI_ENUM_END(PopupFlags)
+#undef LS_IMGUI_POPUP_FLAGS
 
 #define LS_IMGUI_SELECTABLE_FLAG(NAME) LS_IMGUI_ENUM_VALUE(SelectableFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()

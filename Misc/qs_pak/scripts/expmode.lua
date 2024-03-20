@@ -355,7 +355,7 @@ local function edictinfo_onupdate(self)
 				imText(field.value)
 			end
 
-			if not imgui.IsAnyItemHovered() and imgui.IsMouseReleased(1) then
+			if not imgui.IsAnyItemHovered() and imgui.IsMouseReleased(imgui.MouseButton.Right) then
 				imgui.OpenPopup("EdictInfoContextMenu")
 			end
 
