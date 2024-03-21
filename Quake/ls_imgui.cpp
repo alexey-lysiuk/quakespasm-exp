@@ -881,6 +881,17 @@ static int LS_global_imgui_SetTooltip(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SmallButton(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	const bool result = ImGui::SmallButton(label);
+
+	lua_pushboolean(state, result);
+	return 1;
+}
+
 static int LS_global_imgui_Spacing(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -1165,6 +1176,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "Separator", LS_global_imgui_Separator },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
 		{ "SetTooltip", LS_global_imgui_SetTooltip },
+		{ "SmallButton", LS_global_imgui_SmallButton },
 		{ "Spacing", LS_global_imgui_Spacing },
 		{ "Text", LS_global_imgui_Text },
 		{ "Unindent", LS_global_imgui_Unindent },
