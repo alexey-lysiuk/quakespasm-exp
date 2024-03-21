@@ -639,6 +639,26 @@ static void LS_EndPopupScope()
 	ImGui::EndPopup();
 }
 
+static int LS_global_imgui_BeginPopup(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+	const bool visible = ImGui::BeginPopup(strid, flags);
+
+	lua_pushboolean(state, visible);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+	{
+		LS_AddToImGuiStack(LS_EndPopupScope);
+		++ls_popupscope;
+	}
+
+	return 1;
+}
+
 static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -1171,6 +1191,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
 
+		{ "BeginPopup", LS_global_imgui_BeginPopup },
 		{ "BeginPopupContextItem", LS_global_imgui_BeginPopupContextItem },
 		{ "EndPopup", LS_global_imgui_EndPopup },
 
