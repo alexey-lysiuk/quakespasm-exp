@@ -686,6 +686,17 @@ static int LS_global_imgui_EndPopup(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_OpenPopup(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+
+	ImGui::OpenPopup(strid, flags);
+	return 0;
+}
+
 static void LS_EndTableScope()
 {
 	assert(ls_tablescope > 0);
@@ -1194,6 +1205,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "BeginPopup", LS_global_imgui_BeginPopup },
 		{ "BeginPopupContextItem", LS_global_imgui_BeginPopupContextItem },
 		{ "EndPopup", LS_global_imgui_EndPopup },
+		{ "OpenPopup", LS_global_imgui_OpenPopup },
 
 		{ "BeginTable", LS_global_imgui_BeginTable },
 		{ "EndTable", LS_global_imgui_EndTable },
