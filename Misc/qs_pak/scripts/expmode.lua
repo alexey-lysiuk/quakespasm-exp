@@ -401,17 +401,9 @@ local function edictinfo_onopen(self)
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
-		local value = field.value
-		local type = field.type
-
-		if type == float then
-			field.value = format('%.1f', value)
-		elseif type == string then
-			field.value = toascii(localize(value))
-		else
-			field.value = tostring(value)
-		end
-
+		field.value = field.type == string 
+			and toascii(localize(field.value))
+			or tostring(field.value)
 		fields[i] = field
 	end
 
