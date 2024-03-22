@@ -447,8 +447,8 @@ void LS_InitImGuiBindings(lua_State* state)
 {
 	LS_InitImGuiFuncs(state);
 	LS_InitImGuiEnums(state);
-	lua_setglobal(state, "imgui");
 
+	lua_setglobal(state, "imgui");
 	assert(lua_gettop(state) == 0);
 }
 
