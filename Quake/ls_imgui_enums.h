@@ -25,7 +25,7 @@ struct ImGuiEnumValue
 
 static void LS_InitImGuiEnum(lua_State* state, const char* name, const ImGuiEnumValue* values, size_t valuecount)
 {
-	assert(lua_gettop(state) > 0);  // imgui table must be on top of the stack
+	assert(lua_gettop(state) == 1);  // imgui table must be on top of the stack
 
 	lua_pushstring(state, name);
 	lua_createtable(state, 0, valuecount);
@@ -43,7 +43,7 @@ static void LS_InitImGuiEnum(lua_State* state, const char* name, const ImGuiEnum
 
 static void LS_InitImGuiEnums(lua_State* state)
 {
-	assert(lua_gettop(state) == 1);
+	assert(lua_gettop(state) == 1);  // imgui table must be on top of the stack
 
 #define LS_IMGUI_ENUM_BEGIN() \
 	{ static const ImGuiEnumValue values[] = {
