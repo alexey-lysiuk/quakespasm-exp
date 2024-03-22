@@ -49,7 +49,8 @@ local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
 local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
-local defaulttableflags <const> = imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.Borders
+local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
+local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
@@ -438,8 +439,8 @@ local function edictstable_tostring(entries, zerobasedindex)
 	return concat(lines, '\n')
 end
 
-local function edictstable(title, entries, zerobasedindex)
-	if imBeginTable(title, 3, defaulttableflags) then
+local function edictstable(title, entries, zerobasedindex, tableflags)
+	if imBeginTable(title, 3, tableflags or defaulttableflags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
 		imTableSetupColumn('Location')
@@ -521,7 +522,7 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		edictstable(title, self.entries, not self.filter)
+		edictstable(title, self.entries, not self.filter, defaultscrollytableflags)
 	end
 
 	imEnd()
