@@ -619,6 +619,17 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_IsWindowFocused(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int flags = luaL_optinteger(state, 1, 0);
+	const bool focused = ImGui::IsWindowFocused(flags);
+
+	lua_pushboolean(state, focused);
+	return 1;
+}
+
 static int LS_global_imgui_SameLine(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -1240,6 +1251,7 @@ void LS_InitImGuiBindings(lua_State* state)
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
 		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
+		{ "IsWindowFocused", LS_global_imgui_IsWindowFocused },
 		{ "SameLine", LS_global_imgui_SameLine },
 		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
