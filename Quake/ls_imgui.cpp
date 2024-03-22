@@ -532,6 +532,14 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 }
 #endif // !NDEBUG
 
+static int LS_global_imgui_IsAnyItemHovered(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	lua_pushboolean(state, ImGui::IsAnyItemHovered());
+	return 1;
+}
+
 static void LS_EndWindowScope()
 {
 	assert(ls_windowscope > 0);
@@ -1202,6 +1210,8 @@ void LS_InitImGuiBindings(lua_State* state)
 #ifndef NDEBUG
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
 #endif // !NDEBUG
+
+		{ "IsAnyItemHovered", LS_global_imgui_IsAnyItemHovered },
 
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
