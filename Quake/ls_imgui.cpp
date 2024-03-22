@@ -540,6 +540,17 @@ static int LS_global_imgui_IsAnyItemHovered(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_IsItemClicked(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const int button = luaL_checkinteger(state, 1);
+	const bool clicked = ImGui::IsItemClicked(button);
+
+	lua_pushboolean(state, clicked);
+	return 1;
+}
+
 static int LS_global_imgui_IsMouseReleased(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -605,6 +616,17 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	LS_PushImVec(state, ImGui::GetWindowContentRegionMax());
+	return 1;
+}
+
+static int LS_global_imgui_IsWindowFocused(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int flags = luaL_optinteger(state, 1, 0);
+	const bool focused = ImGui::IsWindowFocused(flags);
+
+	lua_pushboolean(state, focused);
 	return 1;
 }
 
@@ -1016,6 +1038,17 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_ENUM_END(Cond)
 #undef LS_IMGUI_COND_FLAG
 
+#define LS_IMGUI_FOCUSED_FLAG(NAME) LS_IMGUI_ENUM_VALUE(FocusedFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_FOCUSED_FLAG(None)
+	LS_IMGUI_FOCUSED_FLAG(ChildWindows)
+	LS_IMGUI_FOCUSED_FLAG(RootWindow)
+	LS_IMGUI_FOCUSED_FLAG(AnyWindow)
+	LS_IMGUI_FOCUSED_FLAG(NoPopupHierarchy)
+	LS_IMGUI_FOCUSED_FLAG(RootAndChildWindows)
+	LS_IMGUI_ENUM_END(FocusedFlags)
+#undef LS_IMGUI_FOCUSED_FLAG
+
 #define LS_IMGUI_HOVERED_FLAG(NAME) LS_IMGUI_ENUM_VALUE(HoveredFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
 	LS_IMGUI_HOVERED_FLAG(None)
@@ -1223,11 +1256,13 @@ void LS_InitImGuiBindings(lua_State* state)
 #endif // !NDEBUG
 
 		{ "IsAnyItemHovered", LS_global_imgui_IsAnyItemHovered },
+		{ "IsItemClicked", LS_global_imgui_IsItemClicked },
 		{ "IsMouseReleased", LS_global_imgui_IsMouseReleased },
 
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
 		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
+		{ "IsWindowFocused", LS_global_imgui_IsWindowFocused },
 		{ "SameLine", LS_global_imgui_SameLine },
 		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },

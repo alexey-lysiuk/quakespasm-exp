@@ -436,7 +436,7 @@ local function edictstable_tostring(entries, zerobasedindex)
 end
 
 local function edictstable(title, entries, zerobasedindex, tableflags)
-	if imBeginTable(title, 3, tableflags) then
+	if imBeginTable(title, 3, tableflags or defaulttableflags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
 		imTableSetupColumn('Location')
@@ -580,7 +580,7 @@ local function edictrefs_onupdate(self)
 
 		if #references > 0 then
 			imText('References')
-			edictstable('##refs', references, false, defaulttableflags)
+			edictstable('', references)
 			imSpacing()
 		end
 
@@ -588,7 +588,7 @@ local function edictrefs_onupdate(self)
 
 		if #referencedby > 0 then
 			imText('Referenced by')
-			edictstable('##refby', referencedby, false, defaulttableflags)
+			edictstable('', referencedby)
 		end
 	end
 
