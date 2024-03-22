@@ -67,6 +67,8 @@ set(COMMON_SOURCES
 	Quake/ls_edict.c
 	Quake/ls_imgui.cpp
 	Quake/ls_imgui.h
+	Quake/ls_imgui_enums.h
+	Quake/ls_imgui_funcs.h
 	Quake/ls_main.c
 	Quake/ls_vec3.c
 	Quake/main_sdl.c
