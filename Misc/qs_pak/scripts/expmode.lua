@@ -8,6 +8,7 @@ local concat <const> = table.concat
 local insert <const> = table.insert
 
 local imBegin <const> = imgui.Begin
+local imBeginPopup <const> = imgui.BeginPopup
 local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
 local imBeginTable <const> = imgui.BeginTable
 local imButton <const> = imgui.Button
@@ -20,7 +21,11 @@ local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
 local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
+local imIsAnyItemHovered <const> = imgui.IsAnyItemHovered
 local imIsItemHovered <const> = imgui.IsItemHovered
+local imIsMouseReleased <const> = imgui.IsMouseReleased
+local imIsWindowFocused <const> = imgui.IsWindowFocused
+local imOpenPopup <const> = imgui.OpenPopup
 local imSameLine <const> = imgui.SameLine
 local imSelectable <const> = imgui.Selectable
 local imSeparator <const> = imgui.Separator
@@ -45,6 +50,7 @@ local imWindowFlags <const> = imgui.WindowFlags
 local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
 local imHoveredFlagsDelayNormal <const> = imgui.HoveredFlags.DelayNormal
 local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
+local imMouseButtonRight <const> = imgui.MouseButton.Right
 local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
 local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
@@ -342,7 +348,7 @@ local function edictinfo_onupdate(self)
 
 	if visible and opened then
 		-- Table of fields names and values
-		if imBeginTable(title, 2, defaultscrollytableflags) then
+		if imBeginTable(title, 2, defaulttableflags) then
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
@@ -355,11 +361,18 @@ local function edictinfo_onupdate(self)
 				imText(field.value)
 			end
 
-			if not imgui.IsAnyItemHovered() and imgui.IsMouseReleased(imgui.MouseButton.Right) then
-				imgui.OpenPopup("EdictInfoContextMenu")
+--			local popupname = tostring(self.edict)
+			local popupname = "EdictInfoContextMenu"
+
+--			if imIsWindowFocused(3) and not imIsAnyItemHovered() and imIsMouseReleased(imMouseButtonRight) then
+--			if not imIsAnyItemHovered() and imIsMouseReleased(imMouseButtonRight) then
+			if imgui.IsItemClicked(imMouseButtonRight) then
+				imOpenPopup(popupname)
+				print(self.edict)
+--				print(popupname)
 			end
 
-			if imgui.BeginPopup("EdictInfoContextMenu") then
+			if imBeginPopup(popupname) then
 				if imSelectable('Move to') then
 					moveplayer(self.edict)
 				end
