@@ -54,15 +54,95 @@ static void LS_InitImGuiEnums(lua_State* state)
 #define LS_IMGUI_ENUM_END(ENUMNAME) \
 	}; LS_InitImGuiEnum(state, #ENUMNAME, values, Q_COUNTOF(values)); }
 
-#define LS_IMGUI_COND_FLAG(NAME) LS_IMGUI_ENUM_VALUE(Cond, NAME)
+#define LS_IMGUI_WINDOW_FLAG(NAME) LS_IMGUI_ENUM_VALUE(WindowFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
-	LS_IMGUI_COND_FLAG(None)
-	LS_IMGUI_COND_FLAG(Always)
-	LS_IMGUI_COND_FLAG(Once)
-	LS_IMGUI_COND_FLAG(FirstUseEver)
-	LS_IMGUI_COND_FLAG(Appearing)
-	LS_IMGUI_ENUM_END(Cond)
-#undef LS_IMGUI_COND_FLAG
+	LS_IMGUI_WINDOW_FLAG(None)
+	LS_IMGUI_WINDOW_FLAG(NoTitleBar)
+	LS_IMGUI_WINDOW_FLAG(NoResize)
+	LS_IMGUI_WINDOW_FLAG(NoMove)
+	LS_IMGUI_WINDOW_FLAG(NoScrollbar)
+	LS_IMGUI_WINDOW_FLAG(NoScrollWithMouse)
+	LS_IMGUI_WINDOW_FLAG(NoCollapse)
+	LS_IMGUI_WINDOW_FLAG(AlwaysAutoResize)
+	LS_IMGUI_WINDOW_FLAG(NoBackground)
+	LS_IMGUI_WINDOW_FLAG(NoSavedSettings)
+	LS_IMGUI_WINDOW_FLAG(NoMouseInputs)
+	LS_IMGUI_WINDOW_FLAG(MenuBar)
+	LS_IMGUI_WINDOW_FLAG(HorizontalScrollbar)
+	LS_IMGUI_WINDOW_FLAG(NoFocusOnAppearing)
+	LS_IMGUI_WINDOW_FLAG(NoBringToFrontOnFocus)
+	LS_IMGUI_WINDOW_FLAG(AlwaysVerticalScrollbar)
+	LS_IMGUI_WINDOW_FLAG(AlwaysHorizontalScrollbar)
+	LS_IMGUI_WINDOW_FLAG(NoNavInputs)
+	LS_IMGUI_WINDOW_FLAG(NoNavFocus)
+	LS_IMGUI_WINDOW_FLAG(UnsavedDocument)
+	LS_IMGUI_WINDOW_FLAG(NoNav)
+	LS_IMGUI_WINDOW_FLAG(NoDecoration)
+	LS_IMGUI_WINDOW_FLAG(NoInputs)
+	LS_IMGUI_ENUM_END(WindowFlags)
+#undef LS_IMGUI_WINDOW_FLAG
+
+	// * ImGuiChildFlags
+
+#define LS_IMGUI_INPUT_TEXT_FLAG(NAME) LS_IMGUI_ENUM_VALUE(InputTextFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_INPUT_TEXT_FLAG(None)
+	LS_IMGUI_INPUT_TEXT_FLAG(CharsDecimal)
+	LS_IMGUI_INPUT_TEXT_FLAG(CharsHexadecimal)
+	LS_IMGUI_INPUT_TEXT_FLAG(CharsUppercase)
+	LS_IMGUI_INPUT_TEXT_FLAG(CharsNoBlank)
+	LS_IMGUI_INPUT_TEXT_FLAG(AutoSelectAll)
+	LS_IMGUI_INPUT_TEXT_FLAG(EnterReturnsTrue)
+	// TODO: Input text callback support
+	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackCompletion)
+	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackHistory)
+	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackAlways)
+	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackCharFilter)
+	LS_IMGUI_INPUT_TEXT_FLAG(AllowTabInput)
+	LS_IMGUI_INPUT_TEXT_FLAG(CtrlEnterForNewLine)
+	LS_IMGUI_INPUT_TEXT_FLAG(NoHorizontalScroll)
+	LS_IMGUI_INPUT_TEXT_FLAG(AlwaysOverwrite)
+	LS_IMGUI_INPUT_TEXT_FLAG(ReadOnly)
+	LS_IMGUI_INPUT_TEXT_FLAG(Password)
+	LS_IMGUI_INPUT_TEXT_FLAG(NoUndoRedo)
+	LS_IMGUI_INPUT_TEXT_FLAG(CharsScientific)
+	LS_IMGUI_INPUT_TEXT_FLAG(CallbackResize)
+	LS_IMGUI_INPUT_TEXT_FLAG(CallbackEdit)
+	LS_IMGUI_INPUT_TEXT_FLAG(EscapeClearsAll)
+	LS_IMGUI_ENUM_END(InputTextFlags)
+#undef LS_IMGUI_INPUT_TEXT_FLAG
+
+	// * ImGuiTreeNodeFlags
+
+#define LS_IMGUI_POPUP_FLAGS(NAME) LS_IMGUI_ENUM_VALUE(PopupFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_POPUP_FLAGS(None)
+	LS_IMGUI_POPUP_FLAGS(MouseButtonLeft)
+	LS_IMGUI_POPUP_FLAGS(MouseButtonRight)
+	LS_IMGUI_POPUP_FLAGS(MouseButtonMiddle)
+	LS_IMGUI_POPUP_FLAGS(NoReopen)
+	LS_IMGUI_POPUP_FLAGS(NoOpenOverExistingPopup)
+	LS_IMGUI_POPUP_FLAGS(NoOpenOverItems)
+	LS_IMGUI_POPUP_FLAGS(AnyPopupId)
+	LS_IMGUI_POPUP_FLAGS(AnyPopupLevel)
+	LS_IMGUI_POPUP_FLAGS(AnyPopup)
+	LS_IMGUI_ENUM_END(PopupFlags)
+#undef LS_IMGUI_POPUP_FLAGS
+
+#define LS_IMGUI_SELECTABLE_FLAG(NAME) LS_IMGUI_ENUM_VALUE(SelectableFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_SELECTABLE_FLAG(None)
+	LS_IMGUI_SELECTABLE_FLAG(DontClosePopups)
+	LS_IMGUI_SELECTABLE_FLAG(SpanAllColumns)
+	LS_IMGUI_SELECTABLE_FLAG(AllowDoubleClick)
+	LS_IMGUI_SELECTABLE_FLAG(Disabled)
+	LS_IMGUI_SELECTABLE_FLAG(AllowOverlap)
+	LS_IMGUI_ENUM_END(SelectableFlags)
+#undef LS_IMGUI_SELECTABLE_FLAG
+
+	// * ImGuiComboFlags
+	// * ImGuiTabBarFlags
+	// * ImGuiTabItemFlags
 
 #define LS_IMGUI_FOCUSED_FLAG(NAME) LS_IMGUI_ENUM_VALUE(FocusedFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
@@ -100,33 +180,19 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_ENUM_END(HoveredFlags)
 #undef LS_IMGUI_HOVERED_FLAG
 
-#define LS_IMGUI_INPUT_TEXT_FLAG(NAME) LS_IMGUI_ENUM_VALUE(InputTextFlags, NAME)
-	LS_IMGUI_ENUM_BEGIN()
-	LS_IMGUI_INPUT_TEXT_FLAG(None)
-	LS_IMGUI_INPUT_TEXT_FLAG(CharsDecimal)
-	LS_IMGUI_INPUT_TEXT_FLAG(CharsHexadecimal)
-	LS_IMGUI_INPUT_TEXT_FLAG(CharsUppercase)
-	LS_IMGUI_INPUT_TEXT_FLAG(CharsNoBlank)
-	LS_IMGUI_INPUT_TEXT_FLAG(AutoSelectAll)
-	LS_IMGUI_INPUT_TEXT_FLAG(EnterReturnsTrue)
-	// TODO: Input text callback support
-	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackCompletion)
-	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackHistory)
-	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackAlways)
-	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackCharFilter)
-	LS_IMGUI_INPUT_TEXT_FLAG(AllowTabInput)
-	LS_IMGUI_INPUT_TEXT_FLAG(CtrlEnterForNewLine)
-	LS_IMGUI_INPUT_TEXT_FLAG(NoHorizontalScroll)
-	LS_IMGUI_INPUT_TEXT_FLAG(AlwaysOverwrite)
-	LS_IMGUI_INPUT_TEXT_FLAG(ReadOnly)
-	LS_IMGUI_INPUT_TEXT_FLAG(Password)
-	LS_IMGUI_INPUT_TEXT_FLAG(NoUndoRedo)
-	LS_IMGUI_INPUT_TEXT_FLAG(CharsScientific)
-	LS_IMGUI_INPUT_TEXT_FLAG(CallbackResize)
-	LS_IMGUI_INPUT_TEXT_FLAG(CallbackEdit)
-	LS_IMGUI_INPUT_TEXT_FLAG(EscapeClearsAll)
-	LS_IMGUI_ENUM_END(InputTextFlags)
-#undef LS_IMGUI_INPUT_TEXT_FLAG
+	// * ImGuiDragDropFlags
+	// * ImGuiDataType
+	// * ImGuiDir
+	// * ImGuiSortDirection
+	// * ImGuiKey
+	// * ImGuiNavInput
+	// * ImGuiConfigFlags
+	// * ImGuiBackendFlags
+	// * ImGuiCol
+	// * ImGuiStyleVar
+	// * ImGuiButtonFlags
+	// * ImGuiColorEditFlags
+	// * ImGuiSliderFlags
 
 #define LS_IMGUI_MOUSE_BUTTON(NAME) LS_IMGUI_ENUM_VALUE(MouseButton, NAME)
 	LS_IMGUI_ENUM_BEGIN()
@@ -137,31 +203,18 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_ENUM_END(MouseButton)
 #undef LS_IMGUI_MOUSE_BUTTON
 
-#define LS_IMGUI_POPUP_FLAGS(NAME) LS_IMGUI_ENUM_VALUE(PopupFlags, NAME)
-	LS_IMGUI_ENUM_BEGIN()
-	LS_IMGUI_POPUP_FLAGS(None)
-	LS_IMGUI_POPUP_FLAGS(MouseButtonLeft)
-	LS_IMGUI_POPUP_FLAGS(MouseButtonRight)
-	LS_IMGUI_POPUP_FLAGS(MouseButtonMiddle)
-	LS_IMGUI_POPUP_FLAGS(NoReopen)
-	LS_IMGUI_POPUP_FLAGS(NoOpenOverExistingPopup)
-	LS_IMGUI_POPUP_FLAGS(NoOpenOverItems)
-	LS_IMGUI_POPUP_FLAGS(AnyPopupId)
-	LS_IMGUI_POPUP_FLAGS(AnyPopupLevel)
-	LS_IMGUI_POPUP_FLAGS(AnyPopup)
-	LS_IMGUI_ENUM_END(PopupFlags)
-#undef LS_IMGUI_POPUP_FLAGS
+	// * ImGuiMouseCursor
+	// * ImGuiMouseSource
 
-#define LS_IMGUI_SELECTABLE_FLAG(NAME) LS_IMGUI_ENUM_VALUE(SelectableFlags, NAME)
+#define LS_IMGUI_COND_FLAG(NAME) LS_IMGUI_ENUM_VALUE(Cond, NAME)
 	LS_IMGUI_ENUM_BEGIN()
-	LS_IMGUI_SELECTABLE_FLAG(None)
-	LS_IMGUI_SELECTABLE_FLAG(DontClosePopups)
-	LS_IMGUI_SELECTABLE_FLAG(SpanAllColumns)
-	LS_IMGUI_SELECTABLE_FLAG(AllowDoubleClick)
-	LS_IMGUI_SELECTABLE_FLAG(Disabled)
-	LS_IMGUI_SELECTABLE_FLAG(AllowOverlap)
-	LS_IMGUI_ENUM_END(SelectableFlags)
-#undef LS_IMGUI_SELECTABLE_FLAG
+	LS_IMGUI_COND_FLAG(None)
+	LS_IMGUI_COND_FLAG(Always)
+	LS_IMGUI_COND_FLAG(Once)
+	LS_IMGUI_COND_FLAG(FirstUseEver)
+	LS_IMGUI_COND_FLAG(Appearing)
+	LS_IMGUI_ENUM_END(Cond)
+#undef LS_IMGUI_COND_FLAG
 
 #define LS_IMGUI_TABLE_FLAG(NAME) LS_IMGUI_ENUM_VALUE(TableFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
@@ -233,33 +286,13 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_ENUM_END(TableColumnFlags)
 #undef LS_IMGUI_TABLE_COLUMN_FLAG
 
-#define LS_IMGUI_WINDOW_FLAG(NAME) LS_IMGUI_ENUM_VALUE(WindowFlags, NAME)
-	LS_IMGUI_ENUM_BEGIN()
-	LS_IMGUI_WINDOW_FLAG(None)
-	LS_IMGUI_WINDOW_FLAG(NoTitleBar)
-	LS_IMGUI_WINDOW_FLAG(NoResize)
-	LS_IMGUI_WINDOW_FLAG(NoMove)
-	LS_IMGUI_WINDOW_FLAG(NoScrollbar)
-	LS_IMGUI_WINDOW_FLAG(NoScrollWithMouse)
-	LS_IMGUI_WINDOW_FLAG(NoCollapse)
-	LS_IMGUI_WINDOW_FLAG(AlwaysAutoResize)
-	LS_IMGUI_WINDOW_FLAG(NoBackground)
-	LS_IMGUI_WINDOW_FLAG(NoSavedSettings)
-	LS_IMGUI_WINDOW_FLAG(NoMouseInputs)
-	LS_IMGUI_WINDOW_FLAG(MenuBar)
-	LS_IMGUI_WINDOW_FLAG(HorizontalScrollbar)
-	LS_IMGUI_WINDOW_FLAG(NoFocusOnAppearing)
-	LS_IMGUI_WINDOW_FLAG(NoBringToFrontOnFocus)
-	LS_IMGUI_WINDOW_FLAG(AlwaysVerticalScrollbar)
-	LS_IMGUI_WINDOW_FLAG(AlwaysHorizontalScrollbar)
-	LS_IMGUI_WINDOW_FLAG(NoNavInputs)
-	LS_IMGUI_WINDOW_FLAG(NoNavFocus)
-	LS_IMGUI_WINDOW_FLAG(UnsavedDocument)
-	LS_IMGUI_WINDOW_FLAG(NoNav)
-	LS_IMGUI_WINDOW_FLAG(NoDecoration)
-	LS_IMGUI_WINDOW_FLAG(NoInputs)
-	LS_IMGUI_ENUM_END(WindowFlags)
-#undef LS_IMGUI_WINDOW_FLAG
+	// * ImGuiTableRowFlags
+	// * ImGuiTableBgTarget
+	// * ImDrawFlags
+	// * ImDrawListFlags
+	// * ImFontAtlasFlags
+	// * ImGuiViewportFlags
+	// * ImGuiModFlags
 
 #undef LS_IMGUI_ENUM_END
 #undef LS_IMGUI_ENUM_VALUE
