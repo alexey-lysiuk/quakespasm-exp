@@ -163,6 +163,15 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_PushItemWidth(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const float itemwidth = luaL_checknumber(state, 1);
+	ImGui::PushItemWidth(itemwidth);
+	return 1;
+}
+
 static int LS_global_imgui_Separator(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -473,6 +482,17 @@ static int LS_global_imgui_TableHeadersRow(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_GetColumnWidth(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int columnindex = luaL_optinteger(state, 1, -1);
+	const float width = ImGui::GetColumnWidth(columnindex);
+
+	lua_pushnumber(state, width);
+	return 1;
+}
+
 static int LS_global_imgui_IsItemHovered(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -688,7 +708,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PopButtonRepeat
 
 		// Parameters stacks
-		// * PushItemWidth
+		{ "PushItemWidth", LS_global_imgui_PushItemWidth },
 		// * PopItemWidth
 		// * SetNextItemWidth
 		// * CalcItemWidth
@@ -909,7 +929,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * Columns
 		// * NextColumn
 		// * GetColumnIndex
-		// * GetColumnWidth
+		{ "GetColumnWidth", LS_global_imgui_GetColumnWidth },
 		// * SetColumnWidth
 		// * GetColumnOffset
 		// * SetColumnOffset

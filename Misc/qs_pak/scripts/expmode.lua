@@ -349,46 +349,73 @@ local function edictinfo_onupdate(self)
 	if visible and opened then
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaulttableflags) then
-			local popupname = "EdictInfoContextMenu"
+--			local popupname = "EdictInfoContextMenu"
 
---			imTableSetupColumn('Name', imTableColumnWidthFixed)
---			imTableSetupColumn('Value')
---			imTableHeadersRow()
-			imgui.TableNextRow(imgui.TableRowFlags.Headers)
-			imgui.TableSetColumnIndex(0)
-			imgui.TableHeader('Name')
-			imgui.TableSetColumnIndex(1)
-			imgui.TableHeader('Value')
-			imgui.SameLine()
-			if imgui.SmallButton('..') then
-				imBeginPopup(popupname)
-			end
+			imTableSetupColumn('Name', imTableColumnWidthFixed)
+			imTableSetupColumn('Value')
+			imTableHeadersRow()
+--			imgui.TableNextRow(imgui.TableRowFlags.Headers)
+--			imgui.TableSetColumnIndex(0)
+--			imgui.TableHeader('Name')
+--			imgui.TableSetColumnIndex(1)
+--			imgui.TableHeader('Value')
+----			imgui.SameLine(0, imgui.GetColumnWidth() - charwidth * 3)
+----			imgui.SameLine()
+----			imgui.PushItemWidth(-1)
+--			if imgui.SmallButton('...') then
+--				imOpenPopup(popupname)
+--			end
 
-			if imBeginPopup(popupname) then
-				if imSelectable('Move to') then
-					moveplayer(self.edict)
-				end
-				if imSelectable('References') then
-					expmode.edictreferences(self.edict)
-				end
-				if imSelectable('Copy all') then
-					local fields = {}
-				
-					for i, field in ipairs(self.fields) do
-						fields[i] = field.name .. ': ' .. field.value
-					end
-				
-					imSetClipboardText(concat(fields, '\n'))
-				end
-				imEndPopup()
-			end
+--			if imBeginPopup(popupname) then
+--				if imSelectable('Move to') then
+--					moveplayer(self.edict)
+--				end
+--				if imSelectable('References') then
+--					expmode.edictreferences(self.edict)
+--				end
+--				if imSelectable('Copy all') then
+--					local fields = {}
+--				
+--					for i, field in ipairs(self.fields) do
+--						fields[i] = field.name .. ': ' .. field.value
+--					end
+--				
+--					imSetClipboardText(concat(fields, '\n'))
+--				end
+--				imEndPopup()
+--			end
 
 			for _, field in ipairs(self.fields) do
+--				local function contextmenu()
+--					if imBeginPopupContextItem('EdictInfoContextMenu') then
+--						if imSelectable('Move to') then
+--							moveplayer(self.edict)
+--						end
+--						if imSelectable('References') then
+--							expmode.edictreferences(self.edict)
+--						end
+--						if imSelectable('Copy all') then
+--							local fields = {}
+--						
+--							for i, field in ipairs(self.fields) do
+--								fields[i] = field.name .. ': ' .. field.value
+--							end
+--						
+--							imSetClipboardText(concat(fields, '\n'))
+--						end
+--						imEndPopup()
+--					end
+--				end
+
 				imTableNextRow()
 				imTableNextColumn()
+--				imgui.PushItemWidth(-1)
 				imText(field.name)
+--				contextmenu()
 				imTableNextColumn()
+--				imgui.PushItemWidth(-1)
 				imText(field.value)
+--				contextmenu()
 			end
 
 ----			local popupname = tostring(self.edict)
