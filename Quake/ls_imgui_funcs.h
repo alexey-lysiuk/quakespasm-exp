@@ -432,6 +432,17 @@ static int LS_global_imgui_TableNextColumn(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_TableSetColumnIndex(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const int column = luaL_checkinteger(state, 1);
+	const bool visible = ImGui::TableSetColumnIndex(column);
+
+	lua_pushboolean(state, visible);
+	return 1;
+}
+
 static int LS_global_imgui_TableSetupColumn(lua_State* state)
 {
 	LS_EnsureTableScope(state);
@@ -442,6 +453,15 @@ static int LS_global_imgui_TableSetupColumn(lua_State* state)
 	const ImGuiID userid = luaL_optinteger(state, 4, 0);
 
 	ImGui::TableSetupColumn(label, flags, initwidthorweight, userid);
+	return 0;
+}
+
+static int LS_global_imgui_TableHeader(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const char* label = luaL_checkstring(state, 1);
+	ImGui::TableHeader(label);
 	return 0;
 }
 
@@ -866,12 +886,12 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "EndTable", LS_global_imgui_EndTable },
 		{ "TableNextRow", LS_global_imgui_TableNextRow },
 		{ "TableNextColumn", LS_global_imgui_TableNextColumn },
-		// * TableSetColumnIndex
+		{ "TableSetColumnIndex", LS_global_imgui_TableSetColumnIndex },
 
 		// Tables: Headers & Columns declaration
 		{ "TableSetupColumn", LS_global_imgui_TableSetupColumn },
 		// * TableSetupScrollFreeze
-		// * TableHeader
+		{ "TableHeader", LS_global_imgui_TableHeader },
 		{ "TableHeadersRow", LS_global_imgui_TableHeadersRow },
 		// * TableAngledHeadersRow
 
