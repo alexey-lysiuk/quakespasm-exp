@@ -17,56 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-static int LS_global_imgui_CalcTextSize(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	size_t length;
-	const char* text = luaL_checklstring(state, 1, &length);
-
-	const bool hideafterhashes = luaL_opt(state, lua_toboolean, 2, false);
-	const float wrapwidth = luaL_optnumber(state, 3, -1.f);
-
-	const ImVec2 textsize = ImGui::CalcTextSize(text, text + length, hideafterhashes, wrapwidth);
-
-	LS_PushImVec(state, textsize);
-	return 1;
-}
-
-static int LS_value_ImGuiViewport_index(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiViewport", ls_imguiviewport_members);
-	return LS_ImGuiTypeOperatorIndex(state, ls_imguiviewport_type, member);
-}
-
-static int LS_global_imgui_GetMainViewport(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	ImGuiViewport** viewportptr = static_cast<ImGuiViewport**>(LS_CreateTypedUserData(state, &ls_imguiviewport_type));
-	assert(viewportptr && *viewportptr);
-
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	assert(viewport);
-
-	*viewportptr = viewport;
-
-	// Create and set 'ImGuiViewport' metatable
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_ImGuiViewport_index },
-		{ NULL, NULL }
-	};
-
-	if (luaL_newmetatable(state, "ImGuiViewport"))
-		luaL_setfuncs(state, functions, 0);
-
-	lua_setmetatable(state, -2);
-	return 1;
-}
-
 static int LS_value_ImGuiStyle_index(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -99,17 +49,6 @@ static int LS_global_imgui_GetStyle(lua_State* state)
 	return 1;
 }
 
-static int LS_global_imgui_SetClipboardText(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	const char* text = luaL_checkstring(state, 1);
-	assert(text);
-
-	ImGui::SetClipboardText(text);
-	return 0;
-}
-
 #ifndef NDEBUG
 static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 {
@@ -132,36 +71,6 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 	return 1;
 }
 #endif // !NDEBUG
-
-static int LS_global_imgui_IsAnyItemHovered(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	lua_pushboolean(state, ImGui::IsAnyItemHovered());
-	return 1;
-}
-
-static int LS_global_imgui_IsItemClicked(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	const int button = luaL_checkinteger(state, 1);
-	const bool clicked = ImGui::IsItemClicked(button);
-
-	lua_pushboolean(state, clicked);
-	return 1;
-}
-
-static int LS_global_imgui_IsMouseReleased(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	const int flags = luaL_checkinteger(state, 1);
-	const bool result = ImGui::IsMouseReleased(flags);
-
-	lua_pushboolean(state, result);
-	return 1;
-}
 
 static int LS_global_imgui_Begin(lua_State* state)
 {
@@ -204,14 +113,6 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
-static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	LS_PushImVec(state, ImGui::GetWindowContentRegionMax());
-	return 1;
-}
-
 static int LS_global_imgui_IsWindowFocused(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -221,25 +122,6 @@ static int LS_global_imgui_IsWindowFocused(lua_State* state)
 
 	lua_pushboolean(state, focused);
 	return 1;
-}
-
-static int LS_global_imgui_SameLine(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	const float offset = luaL_optnumber(state, 1, 0.f);
-	const float spacing = luaL_optnumber(state, 2, -1.f);
-
-	ImGui::SameLine(offset, spacing);
-	return 0;
-}
-
-static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	ImGui::SetNextWindowFocus();
-	return 0;
 }
 
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
@@ -265,137 +147,85 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 	return 0;
 }
 
-static int LS_global_imgui_BeginPopup(lua_State* state)
+static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	ImGui::SetNextWindowFocus();
+	return 0;
+}
+
+static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
-	const int flags = luaL_optinteger(state, 2, 0);
-	const bool visible = ImGui::BeginPopup(strid, flags);
-
-	lua_pushboolean(state, visible);
-	lua_pushboolean(state, visible);
-
-	if (visible)
-	{
-		LS_AddToImGuiStack(LS_EndPopupScope);
-		++ls_popupscope;
-	}
-
+	LS_PushImVec(state, ImGui::GetWindowContentRegionMax());
 	return 1;
 }
 
-static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
+static int LS_global_imgui_Separator(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
-	const int flags = luaL_optinteger(state, 2, 1);
-
-	const bool visible = ImGui::BeginPopupContextItem(strid, flags);
-	lua_pushboolean(state, visible);
-
-	if (visible)
-	{
-		LS_AddToImGuiStack(LS_EndPopupScope);
-		++ls_popupscope;
-	}
-
-	return 1;
-}
-
-static int LS_global_imgui_EndPopup(lua_State* state)
-{
-	LS_EnsurePopupScope(state);
-
-	LS_RemoveFromImGuiStack(state, LS_EndPopupScope);
+	ImGui::Separator();
 	return 0;
 }
 
-static int LS_global_imgui_OpenPopup(lua_State* state)
+static int LS_global_imgui_SameLine(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
-	const int flags = luaL_optinteger(state, 2, 0);
+	const float offset = luaL_optnumber(state, 1, 0.f);
+	const float spacing = luaL_optnumber(state, 2, -1.f);
 
-	ImGui::OpenPopup(strid, flags);
+	ImGui::SameLine(offset, spacing);
 	return 0;
 }
 
-static int LS_global_imgui_BeginTable(lua_State* state)
+static int LS_global_imgui_Spacing(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
-	const int columncount = luaL_checkinteger(state, 2);
-	const int flags = luaL_optinteger(state, 3, 0);
-
-	const ImVec2 outersize = luaL_opt(state, LS_GetImVecValue<ImVec2>, 4, ImVec2());
-	const float innerwidth = luaL_optnumber(state, 5, 0.f);
-
-	const bool visible = ImGui::BeginTable(strid, columncount, flags, outersize, innerwidth);
-	lua_pushboolean(state, visible);
-
-	if (visible)
-	{
-		LS_AddToImGuiStack(LS_EndTableScope);
-		++ls_tablescope;
-	}
-
-	return 1;
-}
-
-static int LS_global_imgui_EndTable(lua_State* state)
-{
-	LS_EnsureTableScope(state);
-
-	LS_RemoveFromImGuiStack(state, LS_EndTableScope);
+	ImGui::Spacing();
 	return 0;
 }
 
-static int LS_global_imgui_TableHeadersRow(lua_State* state)
+static int LS_global_imgui_Indent(lua_State* state)
 {
-	LS_EnsureTableScope(state);
+	LS_EnsureWindowScope(state);
 
-	ImGui::TableHeadersRow();
+	const float indentw = luaL_optnumber(state, 1, 0.f);
+	ImGui::Indent(indentw);
 	return 0;
 }
 
-static int LS_global_imgui_TableNextColumn(lua_State* state)
+static int LS_global_imgui_Unindent(lua_State* state)
 {
-	LS_EnsureTableScope(state);
+	LS_EnsureWindowScope(state);
 
-	const bool visible = ImGui::TableNextColumn();
-	lua_pushboolean(state, visible);
-	return 1;
-}
-
-static int LS_global_imgui_TableNextRow(lua_State* state)
-{
-	LS_EnsureTableScope(state);
-
-	const int flags = luaL_optinteger(state, 1, 0);
-	const float minrowheight = luaL_optnumber(state, 2, 0.f);
-
-	ImGui::TableNextRow(flags, minrowheight);
+	const float indentw = luaL_optnumber(state, 1, 0.f);
+	ImGui::Unindent(indentw);
 	return 0;
 }
 
-static int LS_global_imgui_TableSetupColumn(lua_State* state)
+static int LS_global_imgui_Text(lua_State* state)
 {
-	LS_EnsureTableScope(state);
+	LS_EnsureWindowScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
-	const int flags = luaL_optinteger(state, 2, 0);
-	const float initwidthorweight = luaL_optnumber(state, 3, 0.f);
-	const ImGuiID userid = luaL_optinteger(state, 4, 0);
-
-	ImGui::TableSetupColumn(label, flags, initwidthorweight, userid);
+	// Format text is not supported for security reasons
+	const char* const text = luaL_checkstring(state, 1);
+	ImGui::TextUnformatted(text);
 	return 0;
 }
 
-static ImVector<char> ls_inputtextbuffer;
+static int LS_global_imgui_SeparatorText(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	ImGui::SeparatorText(label);
+	return 0;
+}
 
 static int LS_global_imgui_Button(lua_State* state)
 {
@@ -409,28 +239,18 @@ static int LS_global_imgui_Button(lua_State* state)
 	return 1;
 }
 
-static int LS_global_imgui_GetItemRectMax(lua_State* state)
+static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	return LS_PushImVec(state, ImGui::GetItemRectMax());
+	const char* const label = luaL_checkstring(state, 1);
+	const bool result = ImGui::SmallButton(label);
+
+	lua_pushboolean(state, result);
+	return 1;
 }
 
-static int LS_global_imgui_GetItemRectMin(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	return LS_PushImVec(state, ImGui::GetItemRectMin());
-}
-
-static int LS_global_imgui_Indent(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	const float indentw = luaL_optnumber(state, 1, 0.f);
-	ImGui::Indent(indentw);
-	return 0;
-}
+static ImVector<char> ls_inputtextbuffer;
 
 static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
@@ -479,17 +299,6 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	return 2;
 }
 
-static int LS_global_imgui_IsItemHovered(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	const int flags = luaL_optinteger(state, 1, 0);
-	const bool hovered = ImGui::IsItemHovered(flags);
-
-	lua_pushboolean(state, hovered);
-	return 1;
-}
-
 static int LS_global_imgui_Selectable(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -504,23 +313,6 @@ static int LS_global_imgui_Selectable(lua_State* state)
 	return 1;
 }
 
-static int LS_global_imgui_Separator(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	ImGui::Separator();
-	return 0;
-}
-
-static int LS_global_imgui_SeparatorText(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	const char* const label = luaL_checkstring(state, 1);
-	ImGui::SeparatorText(label);
-	return 0;
-}
-
 static int LS_global_imgui_SetTooltip(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -530,41 +322,250 @@ static int LS_global_imgui_SetTooltip(lua_State* state)
 	return 0;
 }
 
-static int LS_global_imgui_SmallButton(lua_State* state)
+static int LS_global_imgui_BeginPopup(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
-	const bool result = ImGui::SmallButton(label);
+	const char* strid = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+	const bool visible = ImGui::BeginPopup(strid, flags);
+
+	lua_pushboolean(state, visible);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+	{
+		LS_AddToImGuiStack(LS_EndPopupScope);
+		++ls_popupscope;
+	}
+
+	return 1;
+}
+
+static int LS_global_imgui_EndPopup(lua_State* state)
+{
+	LS_EnsurePopupScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndPopupScope);
+	return 0;
+}
+
+static int LS_global_imgui_OpenPopup(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+
+	ImGui::OpenPopup(strid, flags);
+	return 0;
+}
+
+static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
+	const int flags = luaL_optinteger(state, 2, 1);
+
+	const bool visible = ImGui::BeginPopupContextItem(strid, flags);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+	{
+		LS_AddToImGuiStack(LS_EndPopupScope);
+		++ls_popupscope;
+	}
+
+	return 1;
+}
+
+
+static int LS_global_imgui_BeginTable(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* strid = luaL_checkstring(state, 1);
+	const int columncount = luaL_checkinteger(state, 2);
+	const int flags = luaL_optinteger(state, 3, 0);
+
+	const ImVec2 outersize = luaL_opt(state, LS_GetImVecValue<ImVec2>, 4, ImVec2());
+	const float innerwidth = luaL_optnumber(state, 5, 0.f);
+
+	const bool visible = ImGui::BeginTable(strid, columncount, flags, outersize, innerwidth);
+	lua_pushboolean(state, visible);
+
+	if (visible)
+	{
+		LS_AddToImGuiStack(LS_EndTableScope);
+		++ls_tablescope;
+	}
+
+	return 1;
+}
+
+static int LS_global_imgui_EndTable(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndTableScope);
+	return 0;
+}
+
+static int LS_global_imgui_TableNextRow(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const int flags = luaL_optinteger(state, 1, 0);
+	const float minrowheight = luaL_optnumber(state, 2, 0.f);
+
+	ImGui::TableNextRow(flags, minrowheight);
+	return 0;
+}
+
+static int LS_global_imgui_TableNextColumn(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const bool visible = ImGui::TableNextColumn();
+	lua_pushboolean(state, visible);
+	return 1;
+}
+
+static int LS_global_imgui_TableSetupColumn(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const char* label = luaL_checkstring(state, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
+	const float initwidthorweight = luaL_optnumber(state, 3, 0.f);
+	const ImGuiID userid = luaL_optinteger(state, 4, 0);
+
+	ImGui::TableSetupColumn(label, flags, initwidthorweight, userid);
+	return 0;
+}
+
+static int LS_global_imgui_TableHeadersRow(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	ImGui::TableHeadersRow();
+	return 0;
+}
+
+static int LS_global_imgui_IsItemHovered(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int flags = luaL_optinteger(state, 1, 0);
+	const bool hovered = ImGui::IsItemHovered(flags);
+
+	lua_pushboolean(state, hovered);
+	return 1;
+}
+
+static int LS_global_imgui_IsItemClicked(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const int button = luaL_checkinteger(state, 1);
+	const bool clicked = ImGui::IsItemClicked(button);
+
+	lua_pushboolean(state, clicked);
+	return 1;
+}
+
+static int LS_global_imgui_IsAnyItemHovered(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	lua_pushboolean(state, ImGui::IsAnyItemHovered());
+	return 1;
+}
+
+static int LS_global_imgui_GetItemRectMin(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	return LS_PushImVec(state, ImGui::GetItemRectMin());
+}
+
+static int LS_global_imgui_GetItemRectMax(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	return LS_PushImVec(state, ImGui::GetItemRectMax());
+}
+
+static int LS_value_ImGuiViewport_index(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiViewport", ls_imguiviewport_members);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguiviewport_type, member);
+}
+
+static int LS_global_imgui_GetMainViewport(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	ImGuiViewport** viewportptr = static_cast<ImGuiViewport**>(LS_CreateTypedUserData(state, &ls_imguiviewport_type));
+	assert(viewportptr && *viewportptr);
+
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	assert(viewport);
+
+	*viewportptr = viewport;
+
+	// Create and set 'ImGuiViewport' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_ImGuiViewport_index },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "ImGuiViewport"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
+static int LS_global_imgui_CalcTextSize(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	size_t length;
+	const char* text = luaL_checklstring(state, 1, &length);
+
+	const bool hideafterhashes = luaL_opt(state, lua_toboolean, 2, false);
+	const float wrapwidth = luaL_optnumber(state, 3, -1.f);
+
+	const ImVec2 textsize = ImGui::CalcTextSize(text, text + length, hideafterhashes, wrapwidth);
+
+	LS_PushImVec(state, textsize);
+	return 1;
+}
+
+static int LS_global_imgui_IsMouseReleased(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const int flags = luaL_checkinteger(state, 1);
+	const bool result = ImGui::IsMouseReleased(flags);
 
 	lua_pushboolean(state, result);
 	return 1;
 }
 
-static int LS_global_imgui_Spacing(lua_State* state)
+static int LS_global_imgui_SetClipboardText(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
-	ImGui::Spacing();
-	return 0;
-}
+	const char* text = luaL_checkstring(state, 1);
+	assert(text);
 
-static int LS_global_imgui_Text(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	// Format text is not supported for security reasons
-	const char* const text = luaL_checkstring(state, 1);
-	ImGui::TextUnformatted(text);
-	return 0;
-}
-
-static int LS_global_imgui_Unindent(lua_State* state)
-{
-	LS_EnsureWindowScope(state);
-
-	const float indentw = luaL_optnumber(state, 1, 0.f);
-	ImGui::Unindent(indentw);
+	ImGui::SetClipboardText(text);
 	return 0;
 }
 
@@ -577,55 +578,442 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "ImVec2", LS_global_imgui_ImVec2 },
 		{ "ImVec4", LS_global_imgui_ImVec4 },
 
-		{ "CalcTextSize", LS_global_imgui_CalcTextSize },
-		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
+		// Context creation and access
+		// * should not be exposed
+
+		// Main
 		{ "GetStyle", LS_global_imgui_GetStyle },
-		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
+		// * should not be exposed
+
+		// Demo, Debug, Information
 #ifndef NDEBUG
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
+		// * should not be exposed
 #endif // !NDEBUG
 
-		{ "IsAnyItemHovered", LS_global_imgui_IsAnyItemHovered },
-		{ "IsItemClicked", LS_global_imgui_IsItemClicked },
-		{ "IsMouseReleased", LS_global_imgui_IsMouseReleased },
+		// Styles
+		// * StyleColorsDark
+		// * StyleColorsLight
+		// * StyleColorsClassic
 
+		// Windows
 		{ "Begin", LS_global_imgui_Begin },
 		{ "End", LS_global_imgui_End },
-		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
+
+		// Child Windows
+		// * BeginChild
+		// * BeginChild
+		// * EndChild
+
+		// Windows Utilities
+		// * IsWindowAppearing
+		// * IsWindowCollapsed
 		{ "IsWindowFocused", LS_global_imgui_IsWindowFocused },
-		{ "SameLine", LS_global_imgui_SameLine },
-		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
+		// * IsWindowHovered
+		// * GetWindowDrawList
+		// * GetWindowPos
+		// * GetWindowSize
+		// * GetWindowWidth
+		// * GetWindowHeight
+
+		// Window manipulation
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
+		// * SetNextWindowSizeConstraints
+		// * SetNextWindowContentSize
+		// * SetNextWindowCollapsed
+		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
+		// * SetNextWindowScroll
+		// * SetNextWindowBgAlpha
+		// * SetWindowPos
+		// * SetWindowSize
+		// * SetWindowCollapsed
+		// * SetWindowFocus
+		// * SetWindowFontScale
+		// * SetWindowPos
+		// * SetWindowSize
+		// * SetWindowCollapsed
+		// * SetWindowFocus
 
+		// Content region
+		// * GetContentRegionAvail
+		// * GetContentRegionMax
+		// * GetWindowContentRegionMin
+		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
+
+		// Windows Scrolling
+		// * GetScrollX
+		// * GetScrollY
+		// * SetScrollX
+		// * SetScrollY
+		// * GetScrollMaxX
+		// * GetScrollMaxY
+		// * SetScrollHereX
+		// * SetScrollHereY
+		// * SetScrollFromPosX
+		// * SetScrollFromPosY
+
+		// Parameters stacks
+		// * PushFont
+		// * PopFont
+		// * PushStyleColor
+		// * PushStyleColor
+		// * PopStyleColor
+		// * PushStyleVar
+		// * PushStyleVar
+		// * PopStyleVar
+		// * PushTabStop
+		// * PopTabStop
+		// * PushButtonRepeat
+		// * PopButtonRepeat
+
+		// Parameters stacks
+		// * PushItemWidth
+		// * PopItemWidth
+		// * SetNextItemWidth
+		// * CalcItemWidth
+		// * PushTextWrapPos
+		// * PopTextWrapPos
+
+		// Style read access
+		// * GetFont
+		// * GetFontSize
+		// * GetFontTexUvWhitePixel
+		// * GetColorU32
+		// * GetColorU32
+		// * GetColorU32
+		// * GetStyleColorVec4
+
+		// Layout cursor positioning
+		// * GetCursorScreenPos
+		// * SetCursorScreenPos
+		// * GetCursorPos
+		// * GetCursorPosX
+		// * GetCursorPosY
+		// * SetCursorPos
+		// * SetCursorPosX
+		// * SetCursorPosY
+		// * GetCursorStartPos
+
+		// Other layout functions
+		{ "Separator", LS_global_imgui_Separator },
+		{ "SameLine", LS_global_imgui_SameLine },
+		// * NewLine
+		{ "Spacing", LS_global_imgui_Spacing },
+		// * Dummy
+		{ "Indent", LS_global_imgui_Indent },
+		{ "Unindent", LS_global_imgui_Unindent },
+		// * BeginGroup
+		// * EndGroup
+		// * AlignTextToFramePadding
+		// * GetTextLineHeight
+		// * GetTextLineHeightWithSpacing
+		// * GetFrameHeight
+		// * GetFrameHeightWithSpacing
+
+		// ID stack/scopes
+		// * PushID
+		// * PopID
+		// * GetID
+
+		// Widgets: Text
+		{ "Text", LS_global_imgui_Text },
+		// * TextColored
+		// * TextDisabled
+		// * TextWrapped
+		// * LabelText
+		// * BulletText
+		{ "SeparatorText", LS_global_imgui_SeparatorText },
+
+		// Widgets: Main
+		{ "Button", LS_global_imgui_Button },
+		{ "SmallButton", LS_global_imgui_SmallButton },
+		// * InvisibleButton
+		// * ArrowButton
+		// * Checkbox
+		// * CheckboxFlags
+		// * CheckboxFlags
+		// * RadioButton
+		// * RadioButton
+		// * ProgressBar
+		// * Bullet
+
+		// Widgets: Images
+		// * Image
+		// * ImageButton
+
+		// Widgets: Combo Box
+		// * BeginCombo
+		// * EndCombo
+		// * Combo
+
+		// Widgets: Drag Sliders
+		// * DragFloat
+		// * DragFloat2
+		// * DragFloat3
+		// * DragFloat4
+		// * DragFloatRange2
+		// * DragInt
+		// * DragInt2
+		// * DragInt3
+		// * DragInt4
+		// * DragIntRange2
+		// * DragScalar
+		// * DragScalarN
+
+		// Widgets: Regular Sliders
+		// * SliderFloat
+		// * SliderFloat2
+		// * SliderFloat3
+		// * SliderFloat4
+		// * SliderAngle
+		// * SliderInt
+		// * SliderInt2
+		// * SliderInt3
+		// * SliderInt4
+		// * SliderScalar
+		// * SliderScalarN
+		// * VSliderFloat
+		// * VSliderInt
+		// * VSliderScalar
+
+		// Widgets: Input with Keyboard
+		// * InputText
+		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
+		// * InputTextWithHint
+		// * InputFloat
+		// * InputFloat2
+		// * InputFloat3
+		// * InputFloat4
+		// * InputInt
+		// * InputInt2
+		// * InputInt3
+		// * InputInt4
+		// * InputDouble
+		// * InputScalar
+		// * InputScalarN
+
+		// Widgets: Color Editor/Picker
+		// * ColorEdit3
+		// * ColorEdit4
+		// * ColorPicker3
+		// * ColorPicker4
+		// * ColorButton
+		// * SetColorEditOptions
+
+		// Widgets: Trees
+		// * TreeNode
+		// * TreeNodeEx
+		// * TreePush
+		// * TreePop
+		// * GetTreeNodeToLabelSpacing
+		// * CollapsingHeader
+		// * SetNextItemOpen
+
+		// Widgets: Selectables
+		{ "Selectable", LS_global_imgui_Selectable },
+
+		// Widgets: List Boxes
+		// * BeginListBox
+		// * EndListBox
+		// * ListBox
+
+		// Widgets: Data Plotting
+		// * PlotLines
+		// * PlotHistogram
+
+		// Widgets: Value
+		// * Value
+
+		// Widgets: Menus
+		// * BeginMenuBar
+		// * EndMenuBar
+		// * BeginMainMenuBar
+		// * EndMainMenuBar
+		// * BeginMenu
+		// * EndMenu
+		// * MenuItem
+
+		// Tooltips
+		// * BeginTooltip
+		// * EndTooltip
+		{ "SetTooltip", LS_global_imgui_SetTooltip },
+
+		// Tooltips: helpers for showing a tooltip when hovering an item
+		// * BeginItemTooltip
+		// * SetItemTooltip
+
+		// Popups, Modals
 		{ "BeginPopup", LS_global_imgui_BeginPopup },
-		{ "BeginPopupContextItem", LS_global_imgui_BeginPopupContextItem },
+		// * BeginPopupModal
 		{ "EndPopup", LS_global_imgui_EndPopup },
-		{ "OpenPopup", LS_global_imgui_OpenPopup },
 
+		// Popups: open/close functions
+		{ "OpenPopup", LS_global_imgui_OpenPopup },
+		// * OpenPopupOnItemClick
+		// * CloseCurrentPopup
+
+		// Popups: open+begin combined functions helpers
+		{ "BeginPopupContextItem", LS_global_imgui_BeginPopupContextItem },
+		// * BeginPopupContextWindow
+		// * BeginPopupContextVoid
+
+		// Popups: query functions
+		// * IsPopupOpen
+
+		// Tables
 		{ "BeginTable", LS_global_imgui_BeginTable },
 		{ "EndTable", LS_global_imgui_EndTable },
-		{ "TableHeadersRow", LS_global_imgui_TableHeadersRow },
-		{ "TableNextColumn", LS_global_imgui_TableNextColumn },
 		{ "TableNextRow", LS_global_imgui_TableNextRow },
+		{ "TableNextColumn", LS_global_imgui_TableNextColumn },
+		// * TableSetColumnIndex
+
+		// Tables: Headers & Columns declaration
 		{ "TableSetupColumn", LS_global_imgui_TableSetupColumn },
+		// * TableSetupScrollFreeze
+		// * TableHeader
+		{ "TableHeadersRow", LS_global_imgui_TableHeadersRow },
+		// * TableAngledHeadersRow
 
-		{ "Button", LS_global_imgui_Button },
-		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
-		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
-		{ "Indent", LS_global_imgui_Indent },
-		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
+		// Tables: Sorting & Miscellaneous functions
+		// * TableGetSortSpecs
+		// * TableGetColumnCount
+		// * TableGetColumnIndex
+		// * TableGetRowIndex
+		// * TableGetColumnName
+		// * TableGetColumnFlags
+		// * TableSetColumnEnabled
+		// * TableSetBgColor
+
+		// Legacy Columns API
+		// * Columns
+		// * NextColumn
+		// * GetColumnIndex
+		// * GetColumnWidth
+		// * SetColumnWidth
+		// * GetColumnOffset
+		// * SetColumnOffset
+		// * GetColumnsCount
+
+		// Tab Bars, Tabs
+		// * BeginTabBar
+		// * EndTabBar
+		// * BeginTabItem
+		// * EndTabItem
+		// * TabItemButton
+		// * SetTabItemClosed
+
+		// Logging/Capture
+		// * should not be exposed
+
+		// Drag and Drop
+		// * BeginDragDropSource
+		// * SetDragDropPayload
+		// * EndDragDropSource
+		// * BeginDragDropTarget
+		// * AcceptDragDropPayload
+		// * EndDragDropTarget
+		// * GetDragDropPayload
+
+		// Disabling [BETA API]
+		// * BeginDisabled
+		// * EndDisabled
+
+		// Clipping
+		// * PushClipRect
+		// * PopClipRect
+
+		// Focus, Activation
+		// * SetItemDefaultFocus
+		// * SetKeyboardFocusHere
+
+		// Overlapping mode
+		// * SetNextItemAllowOverlap
+
+		// Item/Widgets Utilities and Query Functions
 		{ "IsItemHovered", LS_global_imgui_IsItemHovered },
-		{ "Selectable", LS_global_imgui_Selectable },
-		{ "Separator", LS_global_imgui_Separator },
-		{ "SeparatorText", LS_global_imgui_SeparatorText },
-		{ "SetTooltip", LS_global_imgui_SetTooltip },
-		{ "SmallButton", LS_global_imgui_SmallButton },
-		{ "Spacing", LS_global_imgui_Spacing },
-		{ "Text", LS_global_imgui_Text },
-		{ "Unindent", LS_global_imgui_Unindent },
+		// * IsItemActive
+		// * IsItemFocused
+		{ "IsItemClicked", LS_global_imgui_IsItemClicked },
+		// * IsItemVisible
+		// * IsItemEdited
+		// * IsItemActivated
+		// * IsItemDeactivated
+		// * IsItemDeactivatedAfterEdit
+		// * IsItemToggledOpen
+		{ "IsAnyItemHovered", LS_global_imgui_IsAnyItemHovered },
+		// * IsAnyItemActive
+		// * IsAnyItemFocused
+		// * GetItemID
+		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
+		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
+		// * GetItemRectSize
 
-		// ...
+		// Viewports
+		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
+
+		// Background/Foreground Draw Lists
+		// * GetBackgroundDrawList
+		// * GetForegroundDrawList
+
+		// Miscellaneous Utilities
+		// * IsRectVisible
+		// * IsRectVisible
+		// * GetTime
+		// * GetFrameCount
+		// * GetDrawListSharedData
+		// * GetStyleColorName
+		// * SetStateStorage
+		// * GetStateStorage
+
+		// Text Utilities
+		{ "CalcTextSize", LS_global_imgui_CalcTextSize },
+
+		// Color Utilities
+		// * ColorConvertU32ToFloat4
+		// * ColorConvertFloat4ToU32
+		// * ColorConvertRGBtoHSV
+		// * ColorConvertHSVtoRGB
+
+		// Inputs Utilities: Keyboard/Mouse/Gamepad
+		// * IsKeyDown
+		// * IsKeyPressed
+		// * IsKeyReleased
+		// * IsKeyChordPressed
+		// * GetKeyPressedAmount
+		// * GetKeyName
+		// * SetNextFrameWantCaptureKeyboard
+
+		// Inputs Utilities: Mouse specific
+		// * IsMouseDown
+		// * IsMouseClicked
+		{ "IsMouseReleased", LS_global_imgui_IsMouseReleased },
+		// * IsMouseDoubleClicked
+		// * GetMouseClickedCount
+		// * IsMouseHoveringRect
+		// * IsMousePosValid
+		// * IsAnyMouseDown
+		// * GetMousePos
+		// * GetMousePosOnOpeningCurrentPopup
+		// * IsMouseDragging
+		// * GetMouseDragDelta
+		// * ResetMouseDragDelta
+		// * GetMouseCursor
+		// * SetMouseCursor
+		// * SetNextFrameWantCaptureMouse
+
+		// Clipboard Utilities
+		// * GetClipboardText
+		{ "SetClipboardText", LS_global_imgui_SetClipboardText },
+
+		// Settings/.Ini Utilities
+		// * should not be exposed
+
+		// Debug Utilities
+		// * should not be exposed
+
+		// Memory Allocators
+		// * should not be exposed
 
 		{ nullptr, nullptr }
 	};
