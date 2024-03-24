@@ -347,6 +347,25 @@ local function edictinfo_onupdate(self)
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		if imgui.BeginMenu('Actions') then
+			if imgui.MenuItem('Move to') then
+				moveplayer(self.edict)
+			end
+			if imgui.MenuItem('References') then
+				expmode.edictreferences(self.edict)
+			end
+			if imgui.MenuItem('Copy all') then
+				local fields = {}
+			
+				for i, field in ipairs(self.fields) do
+					fields[i] = field.name .. ': ' .. field.value
+				end
+			
+				imSetClipboardText(concat(fields, '\n'))
+			end
+			imgui.EndMenu()
+		end
+
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaulttableflags) then
 --			local popupname = "EdictInfoContextMenu"

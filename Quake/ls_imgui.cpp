@@ -411,6 +411,22 @@ static void LS_EndTableScope()
 	ImGui::EndTable();
 }
 
+static uint32_t ls_menuscope;
+
+static void LS_EnsureMenuScope(lua_State* state)
+{
+	if (ls_menuscope == 0)
+		luaL_error(state, "calling ImGui function outside of menu scope");
+}
+
+static void LS_EndMenuScope()
+{
+	assert(ls_menuscope > 0);
+	--ls_menuscope;
+
+	ImGui::EndMenu();
+}
+
 using LS_ImGuiEndFunction = void(*)();
 
 static ImVector<LS_ImGuiEndFunction> ls_endfuncstack;

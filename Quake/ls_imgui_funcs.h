@@ -331,6 +331,46 @@ static int LS_global_imgui_SetTooltip(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_BeginMenu(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	const bool enabled = luaL_opt(state, lua_toboolean, 2, true);
+	const bool opened = ImGui::BeginMenu(label, enabled);
+
+	if (opened)
+	{
+		LS_AddToImGuiStack(LS_EndMenuScope);
+		++ls_menuscope;
+	}
+
+	lua_pushboolean(state, opened);
+	return 1;
+}
+
+static int LS_global_imgui_EndMenu(lua_State* state)
+{
+	LS_EnsureMenuScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndMenuScope);
+	return 0;
+}
+
+static int LS_global_imgui_MenuItem(lua_State* state)
+{
+	LS_EnsureMenuScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	const char* const shortcut = luaL_optstring(state, 2, nullptr);
+	const bool selected = luaL_opt(state, lua_toboolean, 3, false);
+	const bool enabled = luaL_opt(state, lua_toboolean, 4, true);
+	const bool pressed = ImGui::MenuItem(label, shortcut, selected, enabled);
+
+	lua_pushboolean(state, pressed);
+	return 1;
+}
+
 static int LS_global_imgui_BeginPopup(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -870,9 +910,9 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * EndMenuBar
 		// * BeginMainMenuBar
 		// * EndMainMenuBar
-		// * BeginMenu
-		// * EndMenu
-		// * MenuItem
+		{ "BeginMenu", LS_global_imgui_BeginMenu },
+		{ "EndMenu", LS_global_imgui_EndMenu },
+		{ "MenuItem", LS_global_imgui_MenuItem },
 
 		// Tooltips
 		// * BeginTooltip
