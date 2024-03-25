@@ -473,6 +473,14 @@ static int LS_global_imgui_TableHeadersRow(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetItemDefaultFocus(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	ImGui::SetItemDefaultFocus();
+	return 0;
+}
+
 static int LS_global_imgui_IsItemHovered(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -944,7 +952,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PopClipRect
 
 		// Focus, Activation
-		// * SetItemDefaultFocus
+		{ "SetItemDefaultFocus", LS_global_imgui_SetItemDefaultFocus },
 		// * SetKeyboardFocusHere
 
 		// Overlapping mode
