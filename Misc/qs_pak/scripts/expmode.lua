@@ -311,7 +311,7 @@ local function placewindow(title, size)
 	end
 
 	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
-	imSetNextWindowSize(size)
+	imSetNextWindowSize(size, imCondFirstUseEver)
 
 	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
 	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
