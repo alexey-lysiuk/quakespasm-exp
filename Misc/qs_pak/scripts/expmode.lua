@@ -21,7 +21,6 @@ local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
 local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
-local imIsAnyItemHovered <const> = imgui.IsAnyItemHovered
 local imIsItemHovered <const> = imgui.IsItemHovered
 local imIsMouseReleased <const> = imgui.IsMouseReleased
 local imOpenPopup <const> = imgui.OpenPopup
@@ -52,6 +51,7 @@ local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
 local imHoveredFlagsDelayNormal <const> = imgui.HoveredFlags.DelayNormal
 local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
 local imMouseButtonRight <const> = imgui.MouseButton.Right
+local imNoOpenOverExistingPopup <const> = imgui.PopupFlags.NoOpenOverExistingPopup
 local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
 local imTableColumnIsHovered <const> = imTableColumnFlags.IsHovered
 local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
@@ -363,14 +363,14 @@ local function edictinfo_onupdate(self)
 				imText(field.value)
 			end
 
-			local popupname = 'EdictInfoContextMenu'
+			local popupname = 'edictinfo_popup'
 
 			for column = 0, 1 do
 				local ispopup = (imTableGetColumnFlags(column) & imTableColumnIsHovered) ~= 0
-					and not imIsAnyItemHovered() and imIsMouseReleased(imMouseButtonRight)
+					and imIsMouseReleased(imMouseButtonRight)
 
 				if ispopup then
-					imOpenPopup(popupname)
+					imOpenPopup(popupname, imNoOpenOverExistingPopup)
 					break
 				end
 			end
