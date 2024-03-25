@@ -286,7 +286,13 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_ENUM_END(TableColumnFlags)
 #undef LS_IMGUI_TABLE_COLUMN_FLAG
 
-	// * ImGuiTableRowFlags
+#define LS_IMGUI_TABLE_ROW_FLAG(NAME) LS_IMGUI_ENUM_VALUE(TableRowFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_TABLE_ROW_FLAG(None)
+	LS_IMGUI_TABLE_ROW_FLAG(Headers)
+	LS_IMGUI_ENUM_END(TableRowFlags)
+#undef LS_IMGUI_TABLE_ROW_FLAG
+
 	// * ImGuiTableBgTarget
 	// * ImDrawFlags
 	// * ImDrawListFlags
