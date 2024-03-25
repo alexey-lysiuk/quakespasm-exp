@@ -473,6 +473,17 @@ static int LS_global_imgui_TableHeadersRow(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_TableGetColumnFlags(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const int columnindex = luaL_optinteger(state, 1, -1);
+	const ImGuiTableColumnFlags flags = ImGui::TableGetColumnFlags(columnindex);
+
+	lua_pushinteger(state, flags);
+	return 1;
+}
+
 static int LS_global_imgui_SetItemDefaultFocus(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -918,7 +929,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * TableGetColumnIndex
 		// * TableGetRowIndex
 		// * TableGetColumnName
-		// * TableGetColumnFlags
+		{ "TableGetColumnFlags", LS_global_imgui_TableGetColumnFlags },
 		// * TableSetColumnEnabled
 		// * TableSetBgColor
 
