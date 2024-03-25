@@ -432,6 +432,17 @@ static int LS_global_imgui_TableNextColumn(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_TableSetColumnIndex(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const int column = luaL_checkinteger(state, 1);
+	const bool visible = ImGui::TableSetColumnIndex(column);
+
+	lua_pushboolean(state, visible);
+	return 1;
+}
+
 static int LS_global_imgui_TableSetupColumn(lua_State* state)
 {
 	LS_EnsureTableScope(state);
@@ -866,7 +877,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "EndTable", LS_global_imgui_EndTable },
 		{ "TableNextRow", LS_global_imgui_TableNextRow },
 		{ "TableNextColumn", LS_global_imgui_TableNextColumn },
-		// * TableSetColumnIndex
+		{ "TableSetColumnIndex", LS_global_imgui_TableSetColumnIndex },
 
 		// Tables: Headers & Columns declaration
 		{ "TableSetupColumn", LS_global_imgui_TableSetupColumn },
