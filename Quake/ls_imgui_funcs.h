@@ -481,6 +481,15 @@ static int LS_global_imgui_SetItemDefaultFocus(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetKeyboardFocusHere(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const int offset = luaL_optinteger(state, 1, 0);
+	ImGui::SetKeyboardFocusHere(offset);
+	return 0;
+}
+
 static int LS_global_imgui_IsItemHovered(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -953,7 +962,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 
 		// Focus, Activation
 		{ "SetItemDefaultFocus", LS_global_imgui_SetItemDefaultFocus },
-		// * SetKeyboardFocusHere
+		{ "SetKeyboardFocusHere", LS_global_imgui_SetKeyboardFocusHere },
 
 		// Overlapping mode
 		// * SetNextItemAllowOverlap
