@@ -8,6 +8,7 @@ local concat <const> = table.concat
 local insert <const> = table.insert
 
 local imBegin <const> = imgui.Begin
+local imBeginPopup <const> = imgui.BeginPopup
 local imBeginPopupContextItem <const> = imgui.BeginPopupContextItem
 local imBeginTable <const> = imgui.BeginTable
 local imButton <const> = imgui.Button
@@ -18,9 +19,10 @@ local imEndTable <const> = imgui.EndTable
 local imGetItemRectMax <const> = imgui.GetItemRectMax
 local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
-local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
 local imIsItemHovered <const> = imgui.IsItemHovered
+local imIsMouseReleased <const> = imgui.IsMouseReleased
+local imOpenPopup <const> = imgui.OpenPopup
 local imSameLine <const> = imgui.SameLine
 local imSelectable <const> = imgui.Selectable
 local imSeparator <const> = imgui.Separator
@@ -32,6 +34,7 @@ local imSetNextWindowSize <const> = imgui.SetNextWindowSize
 local imSetTooltip <const> = imgui.SetTooltip
 local imShowDemoWindow <const> = imgui.ShowDemoWindow
 local imSpacing <const> = imgui.Spacing
+local imTableGetColumnFlags <const> = imgui.TableGetColumnFlags
 local imTableHeadersRow <const> = imgui.TableHeadersRow
 local imTableNextColumn <const> = imgui.TableNextColumn
 local imTableNextRow <const> = imgui.TableNextRow
@@ -39,14 +42,18 @@ local imTableSetupColumn <const> = imgui.TableSetupColumn
 local imText <const> = imgui.Text
 local imVec2 <const> = imgui.ImVec2
 
+local imTableColumnFlags <const> = imgui.TableColumnFlags
 local imTableFlags <const> = imgui.TableFlags
 local imWindowFlags <const> = imgui.WindowFlags
 
 local imCondFirstUseEver <const> = imgui.Cond.FirstUseEver
 local imHoveredFlagsDelayNormal <const> = imgui.HoveredFlags.DelayNormal
 local imInputTextAllowTabInput <const> = imgui.InputTextFlags.AllowTabInput
+local imMouseButtonRight <const> = imgui.MouseButton.Right
+local imNoOpenOverExistingPopup <const> = imgui.PopupFlags.NoOpenOverExistingPopup
 local imSelectableDisabled <const> = imgui.SelectableFlags.Disabled
-local imTableColumnWidthFixed <const> = imgui.TableColumnFlags.WidthFixed
+local imTableColumnIsHovered <const> = imTableColumnFlags.IsHovered
+local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
@@ -342,7 +349,7 @@ local function edictinfo_onupdate(self)
 
 	if visible and opened then
 		-- Table of fields names and values
-		if imBeginTable(title, 2, defaulttableflags) then
+		if imBeginTable(title, 2, defaultscrollytableflags) then
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
@@ -355,34 +362,38 @@ local function edictinfo_onupdate(self)
 				imText(field.value)
 			end
 
-			imEndTable()
-		end
+			local popupname = 'edictinfo_popup'
 
-		-- Tool buttons
-		imSeparator()
+			for column = 0, 1 do
+				local ispopup = (imTableGetColumnFlags(column) & imTableColumnIsHovered) ~= 0
+					and imIsMouseReleased(imMouseButtonRight)
 
-		local buttoncount = 3
-		local buttonspacing = 4
-		local buttonsize = imVec2((imGetWindowContentRegionMax().x - buttonspacing) / buttoncount - buttonspacing, 0)
-
-		if imButton('Move to', buttonsize) then
-			moveplayer(self.edict)
-		end
-		imSameLine(0, buttonspacing)
-
-		if imButton('References', buttonsize) then
-			expmode.edictreferences(self.edict)
-		end
-		imSameLine(0, buttonspacing)
-
-		if imButton('Copy', buttonsize) then
-			local fields = {}
-
-			for i, field in ipairs(self.fields) do
-				fields[i] = field.name .. ': ' .. field.value
+				if ispopup then
+					imOpenPopup(popupname, imNoOpenOverExistingPopup)
+					break
+				end
 			end
 
-			imSetClipboardText(concat(fields, '\n'))
+			if imBeginPopup(popupname) then
+				if imSelectable('Move to') then
+					moveplayer(self.edict)
+				end
+				if imSelectable('References') then
+					expmode.edictreferences(self.edict)
+				end
+				if imSelectable('Copy all') then
+					local fields = {}
+				
+					for i, field in ipairs(self.fields) do
+						fields[i] = field.name .. ': ' .. field.value
+					end
+				
+					imSetClipboardText(concat(fields, '\n'))
+				end
+				imEndPopup()
+			end
+
+			imEndTable()
 		end
 	end
 
