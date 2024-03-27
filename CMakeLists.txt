@@ -240,6 +240,12 @@ set(IMGUI_SOURCES
 	${IMGUI_DIR}/imgui_widgets.cpp
 )
 
+set(HELLO_IMGUI_DIR Quake/hello_imgui)
+set(HELLO_IMGUI_SOURCES
+	${HELLO_IMGUI_DIR}/impl/imgui_theme.cpp
+	${HELLO_IMGUI_DIR}/imgui_theme.h
+)
+
 set(FROZEN_DIR Quake/frozen)
 
 set(FROZEN_SOURCES
@@ -470,6 +476,7 @@ set(ENGINE_SOURCES
 
 source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c)
 source_group("Frozen" FILES ${FROZEN_SOURCES})
+source_group("Hello ImGui" FILES ${HELLO_IMGUI_SOURCES})
 source_group("ImGui" FILES ${IMGUI_SOURCES})
 source_group("Lua" FILES ${LUA_SOURCES})
 source_group("TLSF" FILES ${TLSF_SOURCES})
@@ -477,6 +484,7 @@ source_group("TLSF" FILES ${TLSF_SOURCES})
 target_sources(${PROJECT_NAME} PRIVATE
 	${ENGINE_SOURCES}
 	${FROZEN_SOURCES}
+	${HELLO_IMGUI_SOURCES}
 	${IMGUI_SOURCES}
 	${LUA_SOURCES}
 	${TLSF_SOURCES}
