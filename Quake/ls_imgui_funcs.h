@@ -337,11 +337,11 @@ static int LS_global_imgui_BeginMainMenuBar(lua_State* state)
 
 	const bool opened = ImGui::BeginMainMenuBar();
 
-	if (opened)
-	{
-		LS_AddToImGuiStack(LS_EndMenuScope);
-		++ls_menuscope;  // TODO: menu bar scope
-	}
+//	if (opened)
+//	{
+//		LS_AddToImGuiStack(LS_EndMenuScope);
+//		++ls_menuscope;  // TODO: menu bar scope
+//	}
 
 	lua_pushboolean(state, opened);
 	return 1;
@@ -357,7 +357,7 @@ static int LS_global_imgui_EndMainMenuBar(lua_State* state)
 
 static int LS_global_imgui_BeginMenu(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
 	const bool enabled = luaL_opt(state, lua_toboolean, 2, true);
