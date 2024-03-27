@@ -494,6 +494,7 @@ static void LS_InitImGuiTheme(lua_State* state)
 
 		LS_IMGUI_THEME(ImGuiColorsClassic)
 		LS_IMGUI_THEME(ImGuiColorsDark)
+		LS_IMGUI_THEME(ImGuiColorsLight)
 		LS_IMGUI_THEME(MaterialFlat)
 		LS_IMGUI_THEME(PhotoshopStyle)
 		LS_IMGUI_THEME(GrayVariations)
