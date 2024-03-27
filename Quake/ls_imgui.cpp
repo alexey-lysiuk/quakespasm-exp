@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "imgui.h"
 
+#ifndef NDEBUG
+#include "hello_imgui/imgui_theme.h"
+#endif // !NDEBUG
+
 extern "C"
 {
 #include "quakedef.h"
@@ -459,6 +463,62 @@ void LS_ClearImGuiStack()
 #include "ls_imgui_enums.h"
 #include "ls_imgui_funcs.h"
 
+#ifndef NDEBUG
+
+static int LS_global_ImGuiTheme_ApplyTheme(lua_State* state)
+{
+	const int theme = luaL_checkinteger(state, 1);
+
+	if (theme >= 0 && theme < ImGuiTheme::ImGuiTheme_Count)
+		ImGuiTheme::ApplyTheme(ImGuiTheme::ImGuiTheme_(theme));
+
+	return 0;
+}
+
+static void LS_InitImGuiTheme(lua_State* state)
+{
+	assert(lua_gettop(state) == 0);
+
+	static const luaL_Reg functions[] =
+	{
+		{ "ApplyTheme", LS_global_ImGuiTheme_ApplyTheme },
+		{ nullptr, nullptr }
+	};
+
+	luaL_newlib(state, functions);
+	//lua_pushvalue(state, 1);  // copy for lua_setglobal()
+
+	static const ImGuiEnumValue themes[] =
+	{
+#define LS_IMGUI_THEME(NAME) { #NAME, ImGuiTheme::ImGuiTheme_##NAME },
+
+		LS_IMGUI_THEME(ImGuiColorsClassic)
+		LS_IMGUI_THEME(ImGuiColorsDark)
+		LS_IMGUI_THEME(MaterialFlat)
+		LS_IMGUI_THEME(PhotoshopStyle)
+		LS_IMGUI_THEME(GrayVariations)
+		LS_IMGUI_THEME(GrayVariations_Darker)
+		LS_IMGUI_THEME(MicrosoftStyle)
+		LS_IMGUI_THEME(Cherry)
+		LS_IMGUI_THEME(Darcula)
+		LS_IMGUI_THEME(DarculaDarker)
+		LS_IMGUI_THEME(LightRounded)
+		LS_IMGUI_THEME(SoDark_AccentBlue)
+		LS_IMGUI_THEME(SoDark_AccentYellow)
+		LS_IMGUI_THEME(SoDark_AccentRed)
+		LS_IMGUI_THEME(BlackIsBlack)
+		LS_IMGUI_THEME(WhiteIsWhite)
+
+#undef LS_IMGUI_THEME
+	};
+
+	LS_InitImGuiEnum(state, "Themes", themes, Q_COUNTOF(themes));
+
+	lua_setglobal(state, "ImGuiTheme");
+}
+
+#endif // !NDEBUG
+
 void LS_InitImGuiBindings(lua_State* state)
 {
 	LS_InitImGuiFuncs(state);
@@ -466,6 +526,10 @@ void LS_InitImGuiBindings(lua_State* state)
 
 	lua_setglobal(state, "imgui");
 	assert(lua_gettop(state) == 0);
+
+#ifndef NDEBUG
+	LS_InitImGuiTheme(state);
+#endif // !NDEBUG
 }
 
 #endif // USE_LUA_SCRIPTING && USE_IMGUI
