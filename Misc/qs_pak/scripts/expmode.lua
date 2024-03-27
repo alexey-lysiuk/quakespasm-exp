@@ -192,9 +192,15 @@ function expmode.onupdate()
 	if imShowDemoWindow then 
 		if imgui.BeginMainMenuBar() then
 			if imgui.BeginMenu('Themes') then
+				local sortedthemes = {}
+
 				for name, value in pairs(ImGuiTheme.Themes) do
-					if imgui.MenuItem(name) then
-						ImGuiTheme.ApplyTheme(value)
+					sortedthemes[value] = name
+				end
+
+				for i = 0, #sortedthemes do
+					if imgui.MenuItem(sortedthemes[i]) then
+						ImGuiTheme.ApplyTheme(i)
 					end
 				end
 
