@@ -189,6 +189,22 @@ function expmode.onupdate()
 		end
 	end
 
+	if imShowDemoWindow then 
+		if imgui.BeginMainMenuBar() then
+			if imgui.BeginMenu('Themes') then
+				for name, value in pairs(ImGuiTheme.Themes) do
+					if imgui.MenuItem(name) then
+						ImGuiTheme.ApplyTheme(value)
+					end
+				end
+
+				imgui.EndMenu()
+			end
+
+			imgui.EndMainMenuBar()
+		end
+	end
+
 	updatetoolwindow()
 	updatewindows()
 
