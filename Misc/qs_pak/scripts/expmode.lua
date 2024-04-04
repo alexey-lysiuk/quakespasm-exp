@@ -2,6 +2,8 @@
 local ipairs <const> = ipairs
 local tostring <const> = tostring
 
+local floor <const> = math.floor
+
 local format <const> = string.format
 
 local concat <const> = table.concat
@@ -729,8 +731,13 @@ addtool('Stats', function (self)
 		local curtime = host.realtime()
 
 		if prevtime + 0.1 <= curtime then
-			self.hoststats = format('framecount = %i\nframetime = %f\nrealtime = %f', 
-				host.framecount(), host.frametime(), curtime)
+			local frametime = host.frametime()
+			local hours = floor(curtime / 3600)
+			local minutes = floor(curtime % 3600 / 60)
+			local seconds = floor(curtime % 60)
+
+			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
 		end
