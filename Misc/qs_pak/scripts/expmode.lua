@@ -774,6 +774,33 @@ if imShowDemoWindow then
 	addseparator('Debug')
 	addtool('Dear ImGui Demo', imShowDemoWindow)
 	addtool('Trigger Error', function () error('This error is intentional') end)
+	addtool('Scope Test', function ()
+--		if imgui.BeginMainMenuBar() then
+----			if imgui.BeginMainMenuBar() then
+----				imgui.EndMainMenuBar()
+----			end
+--
+----			if imgui.BeginMenuBar() then
+----				imgui.EndMenuBar()
+----			end
+--
+--			imgui.EndMainMenuBar()
+--		end
+
+		if imgui.BeginMenuBar() then
+			imgui.EndMenuBar()
+		end
+
+		if imgui.BeginMenu('Test Menu') then
+			if imgui.BeginMenu('Test Submenu') then
+				imgui.EndMenu()
+			end
+
+			imgui.EndMenu()
+		end
+		imgui.MenuItem('Test Menu Item')
+		return true
+	end)
 end
 
 addseparator()
