@@ -34,7 +34,7 @@ static void LS_InitImGuiEnum(lua_State* state, const char* name, const ImGuiEnum
 	{
 		const ImGuiEnumValue& value = values[i];
 		lua_pushstring(state, value.name);
-		lua_pushnumber(state, value.value);
+		lua_pushinteger(state, value.value);
 		lua_rawset(state, -3);
 	}
 
