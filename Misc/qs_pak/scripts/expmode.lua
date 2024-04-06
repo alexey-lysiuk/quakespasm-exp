@@ -191,15 +191,15 @@ local function updatewindows()
 			wintofocus = nil
 		end
 
+		if windowsmenuopen then
+			if imgui.MenuItem(title) then
+				imSetNextWindowFocus()
+			end
+		end
+
 		local status, keepopen = safecall(window.onupdate, window)
 
-		if status and keepopen then
-			if windowsmenuopen then
-				if imgui.MenuItem(title) then
-					--ImGuiTheme.ApplyTheme(i)
-				end
-			end
-		else
+		if not status or not keepopen then
 --			windows[title] = nil
 			removewindow(window)
 			window:onclose()
