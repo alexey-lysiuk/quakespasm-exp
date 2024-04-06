@@ -12,7 +12,7 @@ jobs:
         config:
           - name: Linux Clang
             os: ubuntu-22.04
-            extra_options: -DCMAKE_C_COMPILER=clang
+            extra_options: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
           - name: Linux GCC
             os: ubuntu-22.04

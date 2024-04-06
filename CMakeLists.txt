@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.9)
 
 project(quakespasm-exp LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(COMMON_SOURCES
 	Quake/anorm_dots.h
@@ -492,19 +492,16 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
-if(CMAKE_VERSION VERSION_GREATER 3.8)
-	# CheckIPOSupported module is required for proper checking of LTO support
-	option(QUAKE_LTO "Enable link-time optimization if supported by compiler" OFF)
+option(QUAKE_LTO "Enable link-time optimization if supported by compiler" OFF)
 
-	if(QUAKE_LTO)
-		include(CheckIPOSupported)
-		check_ipo_supported(RESULT QUAKE_LTO_SUPPORTED OUTPUT QUAKE_LTO_ERROR)
+if(QUAKE_LTO)
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT QUAKE_LTO_SUPPORTED OUTPUT QUAKE_LTO_ERROR)
 
-		if(QUAKE_LTO_SUPPORTED)
-			set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
-		else()
-			message("Link-time optimization was not enabled because of error: ${QUAKE_LTO_ERROR}")
-		endif()
+	if(QUAKE_LTO_SUPPORTED)
+		set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+	else()
+		message("Link-time optimization was not enabled because of error: ${QUAKE_LTO_ERROR}")
 	endif()
 endif()
 
@@ -686,10 +683,6 @@ else()
 	)
 	set_target_properties(entfixesgenerator PROPERTIES EXCLUDE_FROM_ALL YES)
 	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_ZLIB_DIR} ${OPENVCDIFF_DIR})
-
-	if(MSVC)
-		target_include_directories(entfixesgenerator PRIVATE ${GENENTFIXES_DIR}/dirent)
-	endif()
 
 	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
 endif()
