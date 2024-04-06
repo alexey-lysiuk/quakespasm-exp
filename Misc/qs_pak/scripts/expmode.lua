@@ -2,6 +2,8 @@
 local ipairs <const> = ipairs
 local tostring <const> = tostring
 
+local floor <const> = math.floor
+
 local format <const> = string.format
 
 local concat <const> = table.concat
@@ -19,7 +21,6 @@ local imEndTable <const> = imgui.EndTable
 local imGetItemRectMax <const> = imgui.GetItemRectMax
 local imGetItemRectMin <const> = imgui.GetItemRectMin
 local imGetMainViewport <const> = imgui.GetMainViewport
-local imGetWindowContentRegionMax <const> = imgui.GetWindowContentRegionMax
 local imInputTextMultiline <const> = imgui.InputTextMultiline
 local imIsItemHovered <const> = imgui.IsItemHovered
 local imIsMouseReleased <const> = imgui.IsMouseReleased
@@ -71,6 +72,27 @@ local centerpivot <const> = imVec2(0.5, 0.5)
 local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowposx, nextwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
+
+local function addwindow(window)
+	insert(windows, window)
+end
+
+local function removewindow(window)
+	for i, probe in ipairs(windows) do
+		if window == probe then
+			windows[i] = nil
+			break
+		end
+	end
+end
+
+local function findwindow(title)
+	for _, window in ipairs(windows) do
+		if window.title == title then
+			return window
+		end
+	end
+end
 
 function expmode.exit()
 	shouldexit = true
@@ -131,10 +153,11 @@ local function updatetoolwindow()
 		if tool.onupdate then
 			-- Real tool
 			if imButton(title, toolwidgedsize) then
-				if windows[title] then
+				if findwindow(title) then
 					wintofocus = title
 				elseif safecall(tool.onopen, tool) then
-					windows[title] = tool
+--					windows[title] = tool
+					addwindow(tool)
 				end
 			end
 		elseif title then
@@ -152,9 +175,17 @@ local function updatetoolwindow()
 end
 
 local function updatewindows()
+	if #windows == 0 then
+		return
+	end
+
+	local haswindowsmenu = imgui.BeginMainMenuBar()
+	local windowsmenuopen = haswindowsmenu and imgui.BeginMenu('Windows')
+
 	for _, window in pairs(windows) do
 		local title = window.title
-	
+
+		-- TODO: wintofocus - window instead of title
 		if wintofocus == title then
 			imSetNextWindowFocus()
 			wintofocus = nil
@@ -162,10 +193,25 @@ local function updatewindows()
 
 		local status, keepopen = safecall(window.onupdate, window)
 
-		if not status or not keepopen then
-			windows[title] = nil
+		if status and keepopen then
+			if windowsmenuopen then
+				if imgui.MenuItem(title) then
+					--ImGuiTheme.ApplyTheme(i)
+				end
+			end
+		else
+--			windows[title] = nil
+			removewindow(window)
 			window:onclose()
 		end
+	end
+
+	if windowsmenuopen then
+		imgui.EndMenu()
+	end
+
+	if haswindowsmenu then
+		imgui.EndMainMenuBar()
 	end
 end
 
@@ -234,7 +280,8 @@ function expmode.onclose()
 end
 
 function expmode.window(title, construct, onupdate, onopen, onclose)
-	local window = windows[title]
+	--local window = windows[title]
+	local window = findwindow(title)
 
 	if window then
 		wintofocus = title
@@ -252,7 +299,8 @@ function expmode.window(title, construct, onupdate, onopen, onclose)
 		end
 
 		if safecall(window.onopen, window) then
-			windows[title] = window
+--			windows[title] = window
+			addwindow(window)
 		else
 			return
 		end
@@ -372,7 +420,7 @@ local function edictinfo_onupdate(self)
 
 	if visible and opened then
 		-- Table of fields names and values
-		if imBeginTable(title, 2, defaulttableflags) then
+		if imBeginTable(title, 2, defaultscrollytableflags) then
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
@@ -429,7 +477,8 @@ local function edictinfo_onopen(self)
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
-		windows[title] = nil
+--		windows[title] = nil
+		removewindow(window)
 		return
 	end
 
@@ -639,7 +688,8 @@ local function edictrefs_onopen(self)
 	local edict = self.edict
 
 	if tostring(self.edict) ~= self.edictid then
-		windows[self.title] = nil
+--		windows[self.title] = nil
+		removewindow(window)
 		return
 	end
 
@@ -659,7 +709,8 @@ local function edictrefs_onopen(self)
 	outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
-		windows[self.title] = nil
+--		windows[self.title] = nil
+		removewindow(window)
 		return
 	end
 
@@ -704,10 +755,11 @@ function expmode.edictreferences(edict)
 			return
 		end
 
-		if not window.references then
-			messagebox('No references', format("'%s' has no references", edict))
+		if window.references then
+--			windows[title] = window
+			addwindow(window)
 		else
-			windows[title] = window
+			messagebox('No references', format("'%s' has no references", edict))
 		end
 	end
 end
@@ -752,8 +804,13 @@ addtool('Stats', function (self)
 		local curtime = host.realtime()
 
 		if prevtime + 0.1 <= curtime then
-			self.hoststats = format('framecount = %i\nframetime = %f\nrealtime = %f', 
-				host.framecount(), host.frametime(), curtime)
+			local frametime = host.frametime()
+			local hours = floor(curtime / 3600)
+			local minutes = floor(curtime % 3600 / 60)
+			local seconds = floor(curtime % 60)
+
+			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
 		end
