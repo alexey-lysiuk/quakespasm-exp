@@ -486,7 +486,6 @@ static void LS_InitImGuiTheme(lua_State* state)
 	};
 
 	luaL_newlib(state, functions);
-	//lua_pushvalue(state, 1);  // copy for lua_setglobal()
 
 	static const ImGuiEnumValue themes[] =
 	{
