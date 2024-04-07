@@ -322,6 +322,30 @@ static int LS_global_imgui_SetTooltip(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_BeginMenuBar(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const bool opened = ImGui::BeginMenuBar();
+
+	if (opened)
+	{
+		LS_AddToImGuiStack(LS_EndMenuBarScope);
+		ls_menubarscope = true;
+	}
+
+	lua_pushboolean(state, opened);
+	return 1;
+}
+
+static int LS_global_imgui_EndMenuBar(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndMenuBarScope);
+	return 1;
+}
+
 static int LS_global_imgui_BeginPopup(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -874,8 +898,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * Value
 
 		// Widgets: Menus
-		// * BeginMenuBar
-		// * EndMenuBar
+		{ "BeginMenuBar", LS_global_imgui_BeginMenuBar },
+		{ "EndMenuBar", LS_global_imgui_EndMenuBar },
 		// * BeginMainMenuBar
 		// * EndMainMenuBar
 		// * BeginMenu

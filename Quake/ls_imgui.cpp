@@ -415,6 +415,16 @@ static void LS_EndTableScope()
 	ImGui::EndTable();
 }
 
+static bool ls_menubarscope;
+
+static void LS_EndMenuBarScope()
+{
+	assert(ls_menubarscope);
+	ls_menubarscope = false;
+
+	ImGui::EndMenuBar();
+}
+
 using LS_ImGuiEndFunction = void(*)();
 
 static ImVector<LS_ImGuiEndFunction> ls_endfuncstack;
