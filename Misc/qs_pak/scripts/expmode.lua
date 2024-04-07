@@ -8,6 +8,7 @@ local format <const> = string.format
 
 local concat <const> = table.concat
 local insert <const> = table.insert
+local remove <const> = table.remove
 
 local imBegin <const> = imgui.Begin
 local imBeginPopup <const> = imgui.BeginPopup
@@ -73,14 +74,14 @@ local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos,
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
 
-local function addwindow(window)
+local function register(window)
 	insert(windows, window)
 end
 
-local function removewindow(window)
+local function unregister(window)
 	for i, probe in ipairs(windows) do
 		if window == probe then
-			windows[i] = nil
+			remove(windows, i)
 			break
 		end
 	end
@@ -153,11 +154,12 @@ local function updatetoolwindow()
 		if tool.onupdate then
 			-- Real tool
 			if imButton(title, toolwidgedsize) then
-				if findwindow(title) then
-					wintofocus = title
+				local window = findwindow(title)
+
+				if window then
+					wintofocus = window
 				elseif safecall(tool.onopen, tool) then
---					windows[title] = tool
-					addwindow(tool)
+					register(tool)
 				end
 			end
 		elseif title then
@@ -175,43 +177,18 @@ local function updatetoolwindow()
 end
 
 local function updatewindows()
-	if #windows == 0 then
-		return
-	end
-
-	local haswindowsmenu = imgui.BeginMainMenuBar()
-	local windowsmenuopen = haswindowsmenu and imgui.BeginMenu('Windows')
-
 	for _, window in pairs(windows) do
-		local title = window.title
-
-		-- TODO: wintofocus - window instead of title
-		if wintofocus == title then
+		if wintofocus == window then
 			imSetNextWindowFocus()
 			wintofocus = nil
-		end
-
-		if windowsmenuopen then
-			if imgui.MenuItem(title) then
-				imSetNextWindowFocus()
-			end
 		end
 
 		local status, keepopen = safecall(window.onupdate, window)
 
 		if not status or not keepopen then
---			windows[title] = nil
-			removewindow(window)
+			unregister(window)
 			window:onclose()
 		end
-	end
-
-	if windowsmenuopen then
-		imgui.EndMenu()
-	end
-
-	if haswindowsmenu then
-		imgui.EndMainMenuBar()
 	end
 end
 
@@ -232,28 +209,6 @@ function expmode.onupdate()
 
 		if not nextwindowpos then
 			nextwindowpos = imVec2(defaultwindowposx, sy * 0.05)
-		end
-	end
-
-	if imShowDemoWindow then 
-		if imgui.BeginMainMenuBar() then
-			if imgui.BeginMenu('Themes') then
-				local sortedthemes = {}
-
-				for name, value in pairs(ImGuiTheme.Themes) do
-					sortedthemes[value] = name
-				end
-
-				for i = 0, #sortedthemes do
-					if imgui.MenuItem(sortedthemes[i]) then
-						ImGuiTheme.ApplyTheme(i)
-					end
-				end
-
-				imgui.EndMenu()
-			end
-
-			imgui.EndMainMenuBar()
 		end
 	end
 
@@ -280,11 +235,10 @@ function expmode.onclose()
 end
 
 function expmode.window(title, construct, onupdate, onopen, onclose)
-	--local window = windows[title]
 	local window = findwindow(title)
 
 	if window then
-		wintofocus = title
+		wintofocus = window
 	else
 		window =
 		{
@@ -299,8 +253,7 @@ function expmode.window(title, construct, onupdate, onopen, onclose)
 		end
 
 		if safecall(window.onopen, window) then
---			windows[title] = window
-			addwindow(window)
+			register(window)
 		else
 			return
 		end
@@ -477,8 +430,7 @@ local function edictinfo_onopen(self)
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
---		windows[title] = nil
-		removewindow(window)
+		unregister(window)
 		return
 	end
 
@@ -688,8 +640,7 @@ local function edictrefs_onopen(self)
 	local edict = self.edict
 
 	if tostring(self.edict) ~= self.edictid then
---		windows[self.title] = nil
-		removewindow(window)
+		unregister(window)
 		return
 	end
 
@@ -709,8 +660,7 @@ local function edictrefs_onopen(self)
 	outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
---		windows[self.title] = nil
-		removewindow(window)
+		unregister(window)
 		return
 	end
 
@@ -739,7 +689,7 @@ function expmode.edictreferences(edict)
 	local window = windows[title]
 
 	if window then
-		wintofocus = title
+		wintofocus = window
 	else
 		window =
 		{
@@ -756,8 +706,7 @@ function expmode.edictreferences(edict)
 		end
 
 		if window.references then
---			windows[title] = window
-			addwindow(window)
+			register(window)
 		else
 			messagebox('No references', format("'%s' has no references", edict))
 		end
@@ -831,33 +780,6 @@ if imShowDemoWindow then
 	addseparator('Debug')
 	addtool('Dear ImGui Demo', imShowDemoWindow)
 	addtool('Trigger Error', function () error('This error is intentional') end)
-	addtool('Scope Test', function ()
---		if imgui.BeginMainMenuBar() then
-----			if imgui.BeginMainMenuBar() then
-----				imgui.EndMainMenuBar()
-----			end
---
-----			if imgui.BeginMenuBar() then
-----				imgui.EndMenuBar()
-----			end
---
---			imgui.EndMainMenuBar()
---		end
-
-		if imgui.BeginMenuBar() then
-			imgui.EndMenuBar()
-		end
-
-		if imgui.BeginMenu('Test Menu') then
-			if imgui.BeginMenu('Test Submenu') then
-				imgui.EndMenu()
-			end
-
-			imgui.EndMenu()
-		end
-		imgui.MenuItem('Test Menu Item')
-		return true
-	end)
 end
 
 addseparator()
