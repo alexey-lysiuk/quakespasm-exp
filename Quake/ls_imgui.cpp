@@ -415,6 +415,26 @@ static void LS_EndTableScope()
 	ImGui::EndTable();
 }
 
+static bool ls_menubarscope;
+
+static void LS_EndMenuBarScope()
+{
+	assert(ls_menubarscope);
+	ls_menubarscope = false;
+
+	ImGui::EndMenuBar();
+}
+
+static bool ls_mainmenubarscope;
+
+static void LS_EndMainMenuBarScope()
+{
+	assert(ls_mainmenubarscope);
+	ls_mainmenubarscope = false;
+
+	ImGui::EndMainMenuBar();
+}
+
 static uint32_t ls_menuscope;
 
 static void LS_EnsureMenuScope(lua_State* state)

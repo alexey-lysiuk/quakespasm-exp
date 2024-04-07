@@ -337,11 +337,11 @@ static int LS_global_imgui_BeginMenuBar(lua_State* state)
 
 	const bool opened = ImGui::BeginMenuBar();
 
-//	if (opened)
-//	{
-//		LS_AddToImGuiStack(LS_EndMenuScope);
-//		++ls_menuscope;  // TODO: menu bar scope
-//	}
+	if (opened)
+	{
+		LS_AddToImGuiStack(LS_EndMenuBarScope);
+		ls_menubarscope = true;
+	}
 
 	lua_pushboolean(state, opened);
 	return 1;
@@ -351,7 +351,7 @@ static int LS_global_imgui_EndMenuBar(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	ImGui::EndMenuBar(); // TODO: menu bar scope
+	LS_RemoveFromImGuiStack(state, LS_EndMenuBarScope);
 	return 1;
 }
 
@@ -361,11 +361,11 @@ static int LS_global_imgui_BeginMainMenuBar(lua_State* state)
 
 	const bool opened = ImGui::BeginMainMenuBar();
 
-//	if (opened)
-//	{
-//		LS_AddToImGuiStack(LS_EndMenuScope);
-//		++ls_menuscope;  // TODO: menu bar scope
-//	}
+	if (opened)
+	{
+		LS_AddToImGuiStack(LS_EndMainMenuBarScope);
+		ls_mainmenubarscope = true;
+	}
 
 	lua_pushboolean(state, opened);
 	return 1;
@@ -375,7 +375,7 @@ static int LS_global_imgui_EndMainMenuBar(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	ImGui::EndMainMenuBar(); // TODO: menu bar scope
+	LS_RemoveFromImGuiStack(state, LS_EndMainMenuBarScope);
 	return 1;
 }
 
@@ -407,7 +407,6 @@ static int LS_global_imgui_EndMenu(lua_State* state)
 
 static int LS_global_imgui_MenuItem(lua_State* state)
 {
-	//LS_EnsureMenuScope(state);
 	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
