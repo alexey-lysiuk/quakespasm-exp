@@ -326,6 +326,9 @@ static int LS_global_imgui_BeginMenuBar(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
+	if (ls_menubarscope)
+		luaL_error(state, "calling BeginMenuBar() twice");
+
 	const bool opened = ImGui::BeginMenuBar();
 
 	if (opened)
@@ -340,7 +343,8 @@ static int LS_global_imgui_BeginMenuBar(lua_State* state)
 
 static int LS_global_imgui_EndMenuBar(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
+	if (!ls_menubarscope)
+		luaL_error(state, "calling EndMenuBar() without BeginMenuBar()");
 
 	LS_RemoveFromImGuiStack(state, LS_EndMenuBarScope);
 	return 1;
@@ -349,6 +353,9 @@ static int LS_global_imgui_EndMenuBar(lua_State* state)
 static int LS_global_imgui_BeginMainMenuBar(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
+
+	if (ls_mainmenubarscope)
+		luaL_error(state, "calling BeginMainMenuBar() twice");
 
 	const bool opened = ImGui::BeginMainMenuBar();
 
@@ -364,7 +371,8 @@ static int LS_global_imgui_BeginMainMenuBar(lua_State* state)
 
 static int LS_global_imgui_EndMainMenuBar(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
+	if (!ls_mainmenubarscope)
+		luaL_error(state, "calling EndMainMenuBar() without BeginMainMenuBar()");
 
 	LS_RemoveFromImGuiStack(state, LS_EndMainMenuBarScope);
 	return 1;
@@ -390,7 +398,8 @@ static int LS_global_imgui_BeginMenu(lua_State* state)
 
 static int LS_global_imgui_EndMenu(lua_State* state)
 {
-	LS_EnsureMenuScope(state);
+	if (ls_menuscope == 0)
+		luaL_error(state, "calling EndMenu() without BeginMenu()");
 
 	LS_RemoveFromImGuiStack(state, LS_EndMenuScope);
 	return 0;
