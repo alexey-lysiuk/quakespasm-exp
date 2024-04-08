@@ -8,6 +8,7 @@ local format <const> = string.format
 
 local concat <const> = table.concat
 local insert <const> = table.insert
+local remove <const> = table.remove
 
 local imBegin <const> = imgui.Begin
 local imBeginPopup <const> = imgui.BeginPopup
@@ -73,6 +74,27 @@ local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos,
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
 
+local function register(window)
+	insert(windows, window)
+end
+
+local function unregister(window)
+	for i, probe in ipairs(windows) do
+		if window == probe then
+			remove(windows, i)
+			break
+		end
+	end
+end
+
+local function findwindow(title)
+	for _, window in ipairs(windows) do
+		if window.title == title then
+			return window
+		end
+	end
+end
+
 function expmode.exit()
 	shouldexit = true
 end
@@ -132,10 +154,12 @@ local function updatetoolwindow()
 		if tool.onupdate then
 			-- Real tool
 			if imButton(title, toolwidgedsize) then
-				if windows[title] then
-					wintofocus = title
+				local window = findwindow(title)
+
+				if window then
+					wintofocus = window
 				elseif safecall(tool.onopen, tool) then
-					windows[title] = tool
+					register(tool)
 				end
 			end
 		elseif title then
@@ -154,9 +178,7 @@ end
 
 local function updatewindows()
 	for _, window in pairs(windows) do
-		local title = window.title
-	
-		if wintofocus == title then
+		if wintofocus == window then
 			imSetNextWindowFocus()
 			wintofocus = nil
 		end
@@ -164,7 +186,7 @@ local function updatewindows()
 		local status, keepopen = safecall(window.onupdate, window)
 
 		if not status or not keepopen then
-			windows[title] = nil
+			unregister(window)
 			window:onclose()
 		end
 	end
@@ -213,10 +235,10 @@ function expmode.onclose()
 end
 
 function expmode.window(title, construct, onupdate, onopen, onclose)
-	local window = windows[title]
+	local window = findwindow(title)
 
 	if window then
-		wintofocus = title
+		wintofocus = window
 	else
 		window =
 		{
@@ -231,7 +253,7 @@ function expmode.window(title, construct, onupdate, onopen, onclose)
 		end
 
 		if safecall(window.onopen, window) then
-			windows[title] = window
+			register(window)
 		else
 			return
 		end
@@ -408,7 +430,7 @@ local function edictinfo_onopen(self)
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
-		windows[title] = nil
+		unregister(window)
 		return
 	end
 
@@ -618,7 +640,7 @@ local function edictrefs_onopen(self)
 	local edict = self.edict
 
 	if tostring(self.edict) ~= self.edictid then
-		windows[self.title] = nil
+		unregister(window)
 		return
 	end
 
@@ -638,7 +660,7 @@ local function edictrefs_onopen(self)
 	outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
-		windows[self.title] = nil
+		unregister(window)
 		return
 	end
 
@@ -667,7 +689,7 @@ function expmode.edictreferences(edict)
 	local window = windows[title]
 
 	if window then
-		wintofocus = title
+		wintofocus = window
 	else
 		window =
 		{
@@ -683,10 +705,10 @@ function expmode.edictreferences(edict)
 			return
 		end
 
-		if not window.references then
-			messagebox('No references', format("'%s' has no references", edict))
+		if window.references then
+			register(window)
 		else
-			windows[title] = window
+			messagebox('No references', format("'%s' has no references", edict))
 		end
 	end
 end
