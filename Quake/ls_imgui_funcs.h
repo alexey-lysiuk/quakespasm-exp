@@ -157,7 +157,7 @@ static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
 
 static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	LS_PushImVec(state, ImGui::GetWindowContentRegionMax());
 	return 1;
@@ -165,7 +165,7 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 
 static int LS_global_imgui_PushItemWidth(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const float itemwidth = luaL_checknumber(state, 1);
 	ImGui::PushItemWidth(itemwidth);
@@ -174,7 +174,7 @@ static int LS_global_imgui_PushItemWidth(lua_State* state)
 
 static int LS_global_imgui_Separator(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	ImGui::Separator();
 	return 0;
@@ -182,7 +182,7 @@ static int LS_global_imgui_Separator(lua_State* state)
 
 static int LS_global_imgui_SameLine(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const float offset = luaL_optnumber(state, 1, 0.f);
 	const float spacing = luaL_optnumber(state, 2, -1.f);
@@ -193,7 +193,7 @@ static int LS_global_imgui_SameLine(lua_State* state)
 
 static int LS_global_imgui_Spacing(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	ImGui::Spacing();
 	return 0;
@@ -201,7 +201,7 @@ static int LS_global_imgui_Spacing(lua_State* state)
 
 static int LS_global_imgui_Indent(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const float indentw = luaL_optnumber(state, 1, 0.f);
 	ImGui::Indent(indentw);
@@ -210,7 +210,7 @@ static int LS_global_imgui_Indent(lua_State* state)
 
 static int LS_global_imgui_Unindent(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const float indentw = luaL_optnumber(state, 1, 0.f);
 	ImGui::Unindent(indentw);
@@ -219,7 +219,7 @@ static int LS_global_imgui_Unindent(lua_State* state)
 
 static int LS_global_imgui_Text(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	// Format text is not supported for security reasons
 	const char* const text = luaL_checkstring(state, 1);
@@ -229,7 +229,7 @@ static int LS_global_imgui_Text(lua_State* state)
 
 static int LS_global_imgui_SeparatorText(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
 	ImGui::SeparatorText(label);
@@ -238,7 +238,7 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 
 static int LS_global_imgui_Button(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
 	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 2, ImVec2());
@@ -250,7 +250,7 @@ static int LS_global_imgui_Button(lua_State* state)
 
 static int LS_global_imgui_SmallButton(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
 	const bool result = ImGui::SmallButton(label);
@@ -263,7 +263,7 @@ static ImVector<char> ls_inputtextbuffer;
 
 static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* label = luaL_checkstring(state, 1);
 	assert(label);
@@ -310,7 +310,7 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 
 static int LS_global_imgui_Selectable(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
 	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
@@ -324,7 +324,7 @@ static int LS_global_imgui_Selectable(lua_State* state)
 
 static int LS_global_imgui_SetTooltip(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* const text = luaL_checkstring(state, 1);
 	ImGui::SetTooltip("%s", text);
@@ -430,7 +430,7 @@ static int LS_global_imgui_MenuItem(lua_State* state)
 
 static int LS_global_imgui_BeginPopup(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* strid = luaL_checkstring(state, 1);
 	const int flags = luaL_optinteger(state, 2, 0);
@@ -458,7 +458,7 @@ static int LS_global_imgui_EndPopup(lua_State* state)
 
 static int LS_global_imgui_OpenPopup(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* strid = luaL_checkstring(state, 1);
 	const int flags = luaL_optinteger(state, 2, 0);
@@ -469,7 +469,7 @@ static int LS_global_imgui_OpenPopup(lua_State* state)
 
 static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
 	const int flags = luaL_optinteger(state, 2, 1);
@@ -489,7 +489,7 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 
 static int LS_global_imgui_BeginTable(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const char* strid = luaL_checkstring(state, 1);
 	const int columncount = luaL_checkinteger(state, 2);
@@ -603,7 +603,7 @@ static int LS_global_imgui_GetColumnWidth(lua_State* state)
 
 static int LS_global_imgui_SetItemDefaultFocus(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	ImGui::SetItemDefaultFocus();
 	return 0;
@@ -611,7 +611,7 @@ static int LS_global_imgui_SetItemDefaultFocus(lua_State* state)
 
 static int LS_global_imgui_SetKeyboardFocusHere(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const int offset = luaL_optinteger(state, 1, 0);
 	ImGui::SetKeyboardFocusHere(offset);
@@ -620,7 +620,7 @@ static int LS_global_imgui_SetKeyboardFocusHere(lua_State* state)
 
 static int LS_global_imgui_IsItemHovered(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	const int flags = luaL_optinteger(state, 1, 0);
 	const bool hovered = ImGui::IsItemHovered(flags);
@@ -650,14 +650,14 @@ static int LS_global_imgui_IsAnyItemHovered(lua_State* state)
 
 static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	return LS_PushImVec(state, ImGui::GetItemRectMin());
 }
 
 static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
-	LS_EnsureWindowScope(state);
+	LS_EnsureFrameScope(state);
 
 	return LS_PushImVec(state, ImGui::GetItemRectMax());
 }
