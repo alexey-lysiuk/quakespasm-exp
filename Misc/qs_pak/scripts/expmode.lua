@@ -87,13 +87,15 @@ local function unregister(window)
 	end
 end
 
-local function findwindow(title)
+function expmode.findwindow(title)
 	for _, window in ipairs(windows) do
 		if window.title == title then
 			return window
 		end
 	end
 end
+
+local findwindow <const> = expmode.findwindow
 
 function expmode.exit()
 	shouldexit = true
@@ -686,7 +688,7 @@ function expmode.edictreferences(edict)
 
 	local edictid = tostring(edict)
 	local title = 'References of ' .. edictid
-	local window = windows[title]
+	local window = findwindow(title)
 
 	if window then
 		wintofocus = window
