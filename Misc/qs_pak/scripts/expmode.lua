@@ -686,7 +686,7 @@ function expmode.edictreferences(edict)
 
 	local edictid = tostring(edict)
 	local title = 'References of ' .. edictid
-	local window = windows[title]
+	local window = findwindow(title)
 
 	if window then
 		wintofocus = window
