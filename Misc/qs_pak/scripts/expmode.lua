@@ -151,28 +151,6 @@ local function updatetoolwindow()
 	imBegin("Tools", nil, toolswindowflags)
 
 	for _, tool in ipairs(tools) do
---		local title = tool.title
---
---		if tool.onupdate then
---			-- Real tool
---			if imButton(title, toolwidgedsize) then
---				local window = findwindow(title)
---
---				if window then
---					wintofocus = window
---				elseif safecall(tool.onopen, tool) then
---					register(tool)
---				end
---			end
---		elseif title then
---			-- Group separator with text
---			imSeparatorText(title)
---		else
---			-- Group separator without text
---			imSpacing()
---			imSeparator()
---			imSpacing()
---		end
 		safecall(tool)
 	end
 
@@ -292,28 +270,14 @@ end
 
 local messagebox <const> = expmode.messagebox
 
---function expmode.addtool(title, onupdate, onopen, onclose)
---	local tool =
---	{
---		title = title or 'Tool',
---		onupdate = onupdate or function () end,
---		onopen = onopen or function () end,
---		onclose = onclose or function () end,
---	}
---
---	insert(tools, tool)
---	return tool
---end
-
 function expmode.addtool(func)
 	insert(tools, func)
 end
 
-function expmode.addseparator(text)
---	local separator = { title = text }
---	insert(tools, separator)
+local addtool <const> = expmode.addtool
 
-	insert(tools, function ()
+function expmode.addseparator(text)
+	addtool(function ()
 		if text then
 			imSeparatorText(text)
 		else
@@ -324,8 +288,25 @@ function expmode.addseparator(text)
 	end)
 end
 
-local addtool <const> = expmode.addtool
 local addseparator <const> = expmode.addseparator
+
+function expmode.addbuttontool(title, func)
+	addtool(function ()
+		if imButton(title, toolwidgedsize) then
+			func()
+		end
+	end)
+end
+
+local addbuttontool <const> = expmode.addbuttontool 
+
+function expmode.addbuttonwindowtool(title, construct, onupdate, onopen, onclose)
+	addbuttontool(title, function ()
+		window(title, construct, onupdate, onopen, onclose)
+	end)
+end
+
+local addbuttonwindowtool <const> = expmode.addbuttonwindowtool 
 
 
 local vec3mid <const> = vec3.mid
@@ -609,15 +590,9 @@ local function edicts_onclose(self)
 end
 
 function expmode.addedictstool(title, filter)
---	local tool = addtool(title, edicts_onupdate, edicts_onopen, edicts_onclose)
---	tool.filter = filter
-
-	addtool(function ()
-		if imButton(title, toolwidgedsize) then
-			window(title, function (self) self.filter = filter end,
-				edicts_onupdate, edicts_onopen, edicts_onclose)
-		end
-	end)
+	addbuttonwindowtool(title,
+		function (self) self.filter = filter end,
+		edicts_onupdate, edicts_onopen, edicts_onclose)
 end
 
 local addedictstool <const> = expmode.addedictstool
@@ -749,94 +724,60 @@ addedictstool('Buttons', edicts.isbutton)
 addedictstool('Exits', edicts.isexit)
 addedictstool('Messages', edicts.ismessage)
 addedictstool('Models', edicts.ismodel)
-addtool(function ()
-	if imButton('Trace Entity', toolwidgedsize) then
-		traceentity_onopen()
-	end
-end)
+addbuttontool('Trace Entity', traceentity_onopen)
 
 addseparator('Misc')
-addtool(function ()
-	local title = 'Scratchpad'
+addbuttonwindowtool('Scratchpad', nil, function (self)
+	local title = self.title
+	placewindow(title, defaultwindowsize)
 
-	if imButton(title, toolwidgedsize) then
-		window(title, nil, function (self)
-			placewindow(title, defaultwindowsize)
-
-			local visible, opened = imBegin(title, true)
-			if visible and opened then
-				_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
-			end
-			imEnd()
-
-			return opened
-		end)
+	local visible, opened = imBegin(title, true)
+	if visible and opened then
+		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
 	end
+	imEnd()
+
+	return opened
 end)
+addbuttonwindowtool('Stats', nil, function (self)
+	local title = self.title
+	placewindow(title, defaultwindowsize)
 
-addtool(function ()
-	local title = 'Stats'
+	local visible, opened = imBegin(title, true)
 
-	if imButton(title, toolwidgedsize) then
-		window(title, nil, function (self)
-			placewindow(title, defaultwindowsize)
+	if visible and opened then
+		local prevtime = self.realtime or 0
+		local curtime = host.realtime()
 
-			local visible, opened = imBegin(title, true)
+		if prevtime + 0.1 <= curtime then
+			local frametime = host.frametime()
+			local hours = floor(curtime / 3600)
+			local minutes = floor(curtime % 3600 / 60)
+			local seconds = floor(curtime % 60)
 
-			if visible and opened then
-				local prevtime = self.realtime or 0
-				local curtime = host.realtime()
+			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+			self.memstats = memstats()
+			self.realtime = curtime
+		end
 
-				if prevtime + 0.1 <= curtime then
-					local frametime = host.frametime()
-					local hours = floor(curtime / 3600)
-					local minutes = floor(curtime % 3600 / 60)
-					local seconds = floor(curtime % 60)
-		
-					self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
-						host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
-					self.memstats = memstats()
-					self.realtime = curtime
-				end
-
-				imSeparatorText('Host stats')
-				imText(self.hoststats)
-				imSeparatorText('Lua memory stats')
-				imText(self.memstats)
-			end
-
-			imEnd()
-
-			return opened
-		end)
+		imSeparatorText('Host stats')
+		imText(self.hoststats)
+		imSeparatorText('Lua memory stats')
+		imText(self.memstats)
 	end
-end)
 
-addtool(function () 
-	if imButton('Stop All Sounds', toolwidgedsize) then
-		sound.stopall()
-	end
+	imEnd()
+
+	return opened
 end)
+addbuttontool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
 	addseparator('Debug')
-	addtool(function ()
-		local title = 'Dear ImGui Demo'
-
-		if imButton(title, toolwidgedsize) then
-			window(title, nil, function () return imShowDemoWindow(true) end)
-		end
-	end)
-	addtool(function ()
-		if imButton('Trigger Error', toolwidgedsize) then
-			error('This error is intentional')
-		end
-	end)
+	addbuttonwindowtool('Dear ImGui Demo', nil, function () return imShowDemoWindow(true) end)
+	addbuttontool('Trigger Error', function () error('This error is intentional') end)
 end
 
 addseparator()
-addtool(function ()
-	if imButton('Press ESC to exit', toolwidgedsize) then
-		expmode.exit()
-	end
-end)
+addbuttontool('Press ESC to exit', expmode.exit)
