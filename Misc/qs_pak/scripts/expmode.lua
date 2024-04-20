@@ -74,9 +74,9 @@ local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos,
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
 
-local function register(window)
-	insert(windows, window)
-end
+--local function register(window)
+--	insert(windows, window)
+--end
 
 local function unregister(window)
 	for i, probe in ipairs(windows) do
@@ -233,8 +233,17 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			oncreate(window)
 		end
 
-		if safecall(window.onshow, window) then
-			register(window)
+--		if safecall(window.onshow, window) then
+--			register(window)
+
+		local status, isopened = safecall(window.onupdate, window)
+
+		if status then
+			if isopened then
+				insert(windows, window)
+			else
+				unregister(window)
+			end
 		else
 			return
 		end
@@ -430,7 +439,7 @@ local function edictinfo_onshow(self)
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
-		unregister(window)
+--		unregister(window)
 		return
 	end
 
@@ -444,6 +453,8 @@ local function edictinfo_onshow(self)
 	end
 
 	self.fields = fields
+
+	return true
 end
 
 local function edictinfo_onhide(self)
@@ -585,6 +596,8 @@ local function edicts_onshow(self)
 	end
 
 	self.entries = entries
+
+	return true
 end
 
 local function edicts_onhide(self)
@@ -604,6 +617,7 @@ local function traceentity_onshow(self)
 
 	if edict then
 		edictinfo(edict)
+		return true
 	else
 		messagebox('No entity', 'Player is not looking at any entity')
 	end
@@ -641,7 +655,7 @@ local function edictrefs_onshow(self)
 	local edict = self.edict
 
 	if tostring(self.edict) ~= self.edictid then
-		unregister(window)
+--		unregister(window)
 		return
 	end
 
@@ -661,7 +675,7 @@ local function edictrefs_onshow(self)
 	outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
-		unregister(window)
+--		unregister(window)
 		return
 	end
 
@@ -673,6 +687,8 @@ local function edictrefs_onshow(self)
 
 	self.references = references
 	self.referencedby = referencedby
+
+	return true
 end
 
 local function edictrefs_onhide(self)
@@ -687,30 +703,41 @@ function expmode.edictreferences(edict)
 
 	local edictid = tostring(edict)
 	local title = 'References of ' .. edictid
-	local window = findwindow(title)
+--	local window = findwindow(title)
+--
+--	if window then
+--		wintofocus = window
+--	else
+--		window =
+--		{
+--			title = title,
+--			edict = edict,
+--			edictid = edictid,
+--			onupdate = edictrefs_onupdate,
+--			onshow = edictrefs_onshow,
+--			onhide = edictrefs_onhide
+--		}
+--
+--		if not safecall(edictrefs_onshow, window) then
+--			return
+--		end
+--
+--		if window.references then
+--			register(window)
+--		else
+--			messagebox('No references', format("'%s' has no references", edict))
+--		end
+--	end
 
-	if window then
-		wintofocus = window
-	else
-		window =
-		{
-			title = title,
-			edict = edict,
-			edictid = edictid,
-			onupdate = edictrefs_onupdate,
-			onshow = edictrefs_onshow,
-			onhide = edictrefs_onhide
-		}
+	local function oncreate(self)
+		self.edict = edict
+		self.edictid = edictid
+	end
 
-		if not safecall(edictrefs_onshow, window) then
-			return
-		end
+	local refswin = window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
 
-		if window.references then
-			register(window)
-		else
-			messagebox('No references', format("'%s' has no references", edict))
-		end
+	if not refswin.references then
+		messagebox('No references', format("'%s' has no references", edict))
 	end
 end
 
