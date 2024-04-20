@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 
 project(quakespasm-exp LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(COMMON_SOURCES
 	Quake/anorm_dots.h
@@ -365,6 +365,11 @@ if(MSVC)
 	string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	string(REGEX REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	add_definitions(-D_HAS_EXCEPTIONS=0)  # This one is for STL
+
+	# Enable correct definition of __cplusplus macro, it's always set to 199711L otherwise
+	# See https://devblogs.microsoft.com/cppblog/msvc-now-correctly-reports-__cplusplus/
+	# and https://gitlab.kitware.com/cmake/cmake/-/issues/18837
+	add_compile_options(/Zc:__cplusplus)
 else()
 	option(QUAKE_SEARCH_USERDIRS "Search user directories for data" OFF)
 
