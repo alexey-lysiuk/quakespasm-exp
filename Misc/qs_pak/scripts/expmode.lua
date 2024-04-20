@@ -734,9 +734,11 @@ addwindowtool('Scratchpad', nil, function (self)
 	placewindow(title, defaultwindowsize)
 
 	local visible, opened = imBegin(title, true)
+
 	if visible and opened then
 		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
 	end
+
 	imEnd()
 
 	return opened
