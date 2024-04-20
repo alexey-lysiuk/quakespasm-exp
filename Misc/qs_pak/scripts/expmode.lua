@@ -65,7 +65,7 @@ local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.N
 local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local placedwindows = {}
-local tools = {}
+local actions = {}
 local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
@@ -150,29 +150,8 @@ local function updatetoolwindow()
 	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
 	imBegin("Tools", nil, toolswindowflags)
 
-	for _, tool in ipairs(tools) do
-		local title = tool.title
-
-		if tool.onupdate then
-			-- Real tool
-			if imButton(title, toolwidgedsize) then
-				local window = findwindow(title)
-
-				if window then
-					wintofocus = window
-				elseif safecall(tool.onopen, tool) then
-					register(tool)
-				end
-			end
-		elseif title then
-			-- Group separator with text
-			imSeparatorText(title)
-		else
-			-- Group separator without text
-			imSpacing()
-			imSeparator()
-			imSpacing()
-		end
+	for _, action in ipairs(actions) do
+		safecall(action)
 	end
 
 	imEnd()
@@ -291,26 +270,45 @@ end
 
 local messagebox <const> = expmode.messagebox
 
-function expmode.addtool(title, onupdate, onopen, onclose)
-	local tool =
-	{
-		title = title or 'Tool',
-		onupdate = onupdate or function () end,
-		onopen = onopen or function () end,
-		onclose = onclose or function () end,
-	}
-
-	insert(tools, tool)
-	return tool
+function expmode.addaction(func)
+	insert(actions, func)
 end
+
+local addaction <const> = expmode.addaction
 
 function expmode.addseparator(text)
-	local separator = { title = text }
-	insert(tools, separator)
+	local function separator()
+		imSpacing()
+		imSeparator()
+		imSpacing()
+	end
+
+	local function separatortext()
+		imSeparatorText(text)
+	end
+
+	addaction(text and separatortext or separator)
 end
 
-local addtool <const> = expmode.addtool
 local addseparator <const> = expmode.addseparator
+
+function expmode.addtool(title, func)
+	addaction(function ()
+		if imButton(title, toolwidgedsize) then
+			func()
+		end
+	end)
+end
+
+local addtool <const> = expmode.addtool 
+
+function expmode.addwindowtool(title, construct, onupdate, onopen, onclose)
+	addtool(title, function ()
+		window(title, construct, onupdate, onopen, onclose)
+	end)
+end
+
+local addwindowtool <const> = expmode.addwindowtool 
 
 
 local vec3mid <const> = vec3.mid
@@ -594,8 +592,9 @@ local function edicts_onclose(self)
 end
 
 function expmode.addedictstool(title, filter)
-	local tool = addtool(title, edicts_onupdate, edicts_onopen, edicts_onclose)
-	tool.filter = filter
+	addwindowtool(title,
+		function (self) self.filter = filter end,
+		edicts_onupdate, edicts_onopen, edicts_onclose)
 end
 
 local addedictstool <const> = expmode.addedictstool
@@ -727,10 +726,10 @@ addedictstool('Buttons', edicts.isbutton)
 addedictstool('Exits', edicts.isexit)
 addedictstool('Messages', edicts.ismessage)
 addedictstool('Models', edicts.ismodel)
-addtool('Trace Entity', nil, traceentity_onopen)
+addtool('Trace Entity', traceentity_onopen)
 
 addseparator('Misc')
-addtool('Scratchpad', function (self)
+addwindowtool('Scratchpad', nil, function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -744,7 +743,7 @@ addtool('Scratchpad', function (self)
 
 	return opened
 end)
-addtool('Stats', function (self)
+addwindowtool('Stats', nil, function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -780,7 +779,7 @@ addtool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
 	addseparator('Debug')
-	addtool('Dear ImGui Demo', imShowDemoWindow)
+	addwindowtool('Dear ImGui Demo', nil, function () return imShowDemoWindow(true) end)
 	addtool('Trigger Error', function () error('This error is intentional') end)
 end
 
