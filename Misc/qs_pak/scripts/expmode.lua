@@ -137,8 +137,8 @@ function expmode.safecall(func, ...)
 		print(result_or_error)
 
 		expmode.window('Tool Error',
-			function (self) self.message = result_or_error end,
-			errorwindow_onupdate)
+			errorwindow_onupdate,
+			function (self) self.message = result_or_error end)
 	end
 
 	return succeeded, result_or_error
@@ -168,7 +168,7 @@ local function updatewindows()
 
 		if not status or not keepopen then
 			unregister(window)
-			window:onclose()
+			window:onhide()
 		end
 	end
 end
@@ -203,19 +203,19 @@ function expmode.onopen()
 	shouldexit = false
 
 	for _, window in pairs(windows) do
-		safecall(window.onopen, window)
+		safecall(window.onshow, window)
 	end
 end
 
 function expmode.onclose()
 	for _, window in pairs(windows) do
-		safecall(window.onclose, window)
+		safecall(window.onhide, window)
 	end
 
 	screensize = nil
 end
 
-function expmode.window(title, construct, onupdate, onopen, onclose)
+function expmode.window(title, onupdate, oncreate, onshow, onhide)
 	local window = findwindow(title)
 
 	if window then
@@ -225,15 +225,15 @@ function expmode.window(title, construct, onupdate, onopen, onclose)
 		{
 			title = title,
 			onupdate = onupdate,
-			onopen = onopen or function () end,
-			onclose = onclose or function () end
+			onshow = onshow or function () end,
+			onhide = onhide or function () end
 		}
 
-		if construct then
-			construct(window)
+		if oncreate then
+			oncreate(window)
 		end
 
-		if safecall(window.onopen, window) then
+		if safecall(window.onshow, window) then
 			register(window)
 		else
 			return
@@ -263,7 +263,7 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	local messagebox = window(title, nil, messagebox_onupdate)
+	local messagebox = window(title, messagebox_onupdate)
 	messagebox.text = text
 	return messagebox
 end
@@ -302,9 +302,9 @@ end
 
 local addtool <const> = expmode.addtool 
 
-function expmode.addwindowtool(title, construct, onupdate, onopen, onclose)
+function expmode.addwindowtool(title, onupdate, oncreate, onshow, onhide)
 	addtool(title, function ()
-		window(title, construct, onupdate, onopen, onclose)
+		window(title, onupdate, oncreate, onshow, onhide)
 	end)
 end
 
@@ -426,7 +426,7 @@ local function edictinfo_onupdate(self)
 	return opened
 end
 
-local function edictinfo_onopen(self)
+local function edictinfo_onshow(self)
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
@@ -446,7 +446,7 @@ local function edictinfo_onopen(self)
 	self.fields = fields
 end
 
-local function edictinfo_onclose(self)
+local function edictinfo_onhide(self)
 	self.fields = nil
 end
 
@@ -455,9 +455,9 @@ function expmode.edictinfo(edict)
 		return
 	end
 
-	window(tostring(edict), 
-		function (self) self.edict = edict end, 
-		edictinfo_onupdate, edictinfo_onopen, edictinfo_onclose)
+	window(tostring(edict), edictinfo_onupdate,
+		function (self) self.edict = edict end,
+		edictinfo_onshow, edictinfo_onhide)
 end
 
 local edictinfo <const> = expmode.edictinfo
@@ -565,7 +565,7 @@ local function edicts_onupdate(self)
 	return opened
 end
 
-local function edicts_onopen(self)
+local function edicts_onshow(self)
 	local filter = self.filter or isany
 	local entries = {}
 
@@ -587,19 +587,19 @@ local function edicts_onopen(self)
 	self.entries = entries
 end
 
-local function edicts_onclose(self)
+local function edicts_onhide(self)
 	self.entries = nil
 end
 
 function expmode.addedictstool(title, filter)
-	addwindowtool(title,
+	addwindowtool(title, edicts_onupdate,
 		function (self) self.filter = filter end,
-		edicts_onupdate, edicts_onopen, edicts_onclose)
+		edicts_onshow, edicts_onhide)
 end
 
 local addedictstool <const> = expmode.addedictstool
 
-local function traceentity_onopen(self)
+local function traceentity_onshow(self)
 	local edict = player.traceentity()
 
 	if edict then
@@ -637,7 +637,7 @@ local function edictrefs_onupdate(self)
 	return opened
 end
 
-local function edictrefs_onopen(self)
+local function edictrefs_onshow(self)
 	local edict = self.edict
 
 	if tostring(self.edict) ~= self.edictid then
@@ -675,7 +675,7 @@ local function edictrefs_onopen(self)
 	self.referencedby = referencedby
 end
 
-local function edictrefs_onclose(self)
+local function edictrefs_onhide(self)
 	self.references = nil
 	self.referencedby = nil
 end
@@ -698,11 +698,11 @@ function expmode.edictreferences(edict)
 			edict = edict,
 			edictid = edictid,
 			onupdate = edictrefs_onupdate,
-			onopen = edictrefs_onopen,
-			onclose = edictrefs_onclose
+			onshow = edictrefs_onshow,
+			onhide = edictrefs_onhide
 		}
 
-		if not safecall(edictrefs_onopen, window) then
+		if not safecall(edictrefs_onshow, window) then
 			return
 		end
 
@@ -726,10 +726,10 @@ addedictstool('Buttons', edicts.isbutton)
 addedictstool('Exits', edicts.isexit)
 addedictstool('Messages', edicts.ismessage)
 addedictstool('Models', edicts.ismodel)
-addtool('Trace Entity', traceentity_onopen)
+addtool('Trace Entity', traceentity_onshow)
 
 addseparator('Misc')
-addwindowtool('Scratchpad', nil, function (self)
+addwindowtool('Scratchpad', function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -743,7 +743,7 @@ addwindowtool('Scratchpad', nil, function (self)
 
 	return opened
 end)
-addwindowtool('Stats', nil, function (self)
+addwindowtool('Stats', function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -779,7 +779,7 @@ addtool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
 	addseparator('Debug')
-	addwindowtool('Dear ImGui Demo', nil, function () return imShowDemoWindow(true) end)
+	addwindowtool('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
 	addtool('Trigger Error', function () error('This error is intentional') end)
 end
 
