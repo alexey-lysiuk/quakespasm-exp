@@ -87,13 +87,15 @@ local function unregister(window)
 	end
 end
 
-local function findwindow(title)
+function expmode.findwindow(title)
 	for _, window in ipairs(windows) do
 		if window.title == title then
 			return window
 		end
 	end
 end
+
+local findwindow <const> = expmode.findwindow
 
 function expmode.exit()
 	shouldexit = true
