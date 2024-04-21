@@ -238,6 +238,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 				insert(windows, window)
 			else
 				window:close()
+				return
 			end
 		else
 			return
@@ -695,40 +696,13 @@ function expmode.edictreferences(edict)
 
 	local edictid = tostring(edict)
 	local title = 'References of ' .. edictid
---	local window = findwindow(title)
---
---	if window then
---		wintofocus = window
---	else
---		window =
---		{
---			title = title,
---			edict = edict,
---			edictid = edictid,
---			onupdate = edictrefs_onupdate,
---			onshow = edictrefs_onshow,
---			onhide = edictrefs_onhide
---		}
---
---		if not safecall(edictrefs_onshow, window) then
---			return
---		end
---
---		if window.references then
---			register(window)
---		else
---			messagebox('No references', format("'%s' has no references", edict))
---		end
---	end
 
 	local function oncreate(self)
 		self.edict = edict
 		self.edictid = edictid
 	end
 
-	local refswin = window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
-
-	if not refswin.references then
+	if not window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide) then
 		messagebox('No references', format("'%s' has no references", edict))
 	end
 end
