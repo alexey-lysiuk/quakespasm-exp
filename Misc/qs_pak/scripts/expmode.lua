@@ -74,10 +74,6 @@ local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos,
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
 
---local function register(window)
---	insert(windows, window)
---end
-
 local function unregister(window)
 	for i, probe in ipairs(windows) do
 		if window == probe then
@@ -225,7 +221,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 		{
 			title = title,
 			onupdate = onupdate,
-			onshow = onshow or function () end,
+			onshow = onshow or function () return true end,
 			onhide = onhide or function () end
 		}
 
@@ -233,10 +229,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			oncreate(window)
 		end
 
---		if safecall(window.onshow, window) then
---			register(window)
-
-		local status, isopened = safecall(window.onupdate, window)
+		local status, isopened = safecall(window.onshow, window)
 
 		if status then
 			if isopened then
@@ -439,7 +432,6 @@ local function edictinfo_onshow(self)
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
---		unregister(window)
 		return
 	end
 
@@ -655,7 +647,6 @@ local function edictrefs_onshow(self)
 	local edict = self.edict
 
 	if tostring(self.edict) ~= self.edictid then
---		unregister(window)
 		return
 	end
 
@@ -675,7 +666,6 @@ local function edictrefs_onshow(self)
 	outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
---		unregister(window)
 		return
 	end
 
