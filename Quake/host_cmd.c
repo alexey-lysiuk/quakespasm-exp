@@ -2041,7 +2041,7 @@ static void Host_Give_f (void)
 
 	case 'i':
 		if (v > 0 && v < 5)
-			sv_player->v.items = (int)sv_player->v.items | (IT_SIGIL1 << (v - 1));
+			pr_global_struct->serverflags = (int)pr_global_struct->serverflags | (1 << (v - 1));
 		break;
 
 	case 'k':
