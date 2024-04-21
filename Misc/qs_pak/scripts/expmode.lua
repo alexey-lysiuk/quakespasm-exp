@@ -137,8 +137,8 @@ function expmode.safecall(func, ...)
 		print(result_or_error)
 
 		expmode.window('Tool Error',
-			function (self) self.message = result_or_error end,
-			errorwindow_onupdate)
+			errorwindow_onupdate,
+			function (self) self.message = result_or_error end)
 	end
 
 	return succeeded, result_or_error
@@ -215,7 +215,7 @@ function expmode.onclose()
 	screensize = nil
 end
 
-function expmode.window(title, construct, onupdate, onopen, onclose)
+function expmode.window(title, onupdate, construct, onopen, onclose)
 	local window = findwindow(title)
 
 	if window then
@@ -263,7 +263,7 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	local messagebox = window(title, nil, messagebox_onupdate)
+	local messagebox = window(title, messagebox_onupdate)
 	messagebox.text = text
 	return messagebox
 end
@@ -302,9 +302,9 @@ end
 
 local addtool <const> = expmode.addtool 
 
-function expmode.addwindowtool(title, construct, onupdate, onopen, onclose)
+function expmode.addwindowtool(title, onupdate, construct, onopen, onclose)
 	addtool(title, function ()
-		window(title, construct, onupdate, onopen, onclose)
+		window(title, onupdate, construct, onopen, onclose)
 	end)
 end
 
@@ -455,9 +455,9 @@ function expmode.edictinfo(edict)
 		return
 	end
 
-	window(tostring(edict), 
-		function (self) self.edict = edict end, 
-		edictinfo_onupdate, edictinfo_onopen, edictinfo_onclose)
+	window(tostring(edict), edictinfo_onupdate,
+		function (self) self.edict = edict end,
+		edictinfo_onopen, edictinfo_onclose)
 end
 
 local edictinfo <const> = expmode.edictinfo
@@ -592,9 +592,9 @@ local function edicts_onclose(self)
 end
 
 function expmode.addedictstool(title, filter)
-	addwindowtool(title,
+	addwindowtool(title, edicts_onupdate,
 		function (self) self.filter = filter end,
-		edicts_onupdate, edicts_onopen, edicts_onclose)
+		edicts_onopen, edicts_onclose)
 end
 
 local addedictstool <const> = expmode.addedictstool
@@ -729,7 +729,7 @@ addedictstool('Models', edicts.ismodel)
 addtool('Trace Entity', traceentity_onopen)
 
 addseparator('Misc')
-addwindowtool('Scratchpad', nil, function (self)
+addwindowtool('Scratchpad', function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -743,7 +743,7 @@ addwindowtool('Scratchpad', nil, function (self)
 
 	return opened
 end)
-addwindowtool('Stats', nil, function (self)
+addwindowtool('Stats', function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -779,7 +779,7 @@ addtool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
 	addseparator('Debug')
-	addwindowtool('Dear ImGui Demo', nil, function () return imShowDemoWindow(true) end)
+	addwindowtool('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
 	addtool('Trigger Error', function () error('This error is intentional') end)
 end
 
