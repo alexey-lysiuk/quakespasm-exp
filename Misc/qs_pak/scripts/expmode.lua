@@ -74,15 +74,6 @@ local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos,
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, toolwidgedsize, wintofocus
 
-local function unregister(window)
-	for i, probe in ipairs(windows) do
-		if window == probe then
-			remove(windows, i)
-			break
-		end
-	end
-end
-
 function expmode.findwindow(title)
 	for _, window in ipairs(windows) do
 		if window.title == title then
@@ -163,8 +154,7 @@ local function updatewindows()
 		local status, keepopen = safecall(window.onupdate, window)
 
 		if not status or not keepopen then
-			unregister(window)
-			window:onhide()
+			window:close()
 		end
 	end
 end
@@ -211,6 +201,17 @@ function expmode.onclose()
 	screensize = nil
 end
 
+local function closewindow(window)
+	safecall(window.onhide, window)
+
+	for i, probe in ipairs(windows) do
+		if window == probe then
+			remove(windows, i)
+			break
+		end
+	end
+end
+
 function expmode.window(title, onupdate, oncreate, onshow, onhide)
 	local window = findwindow(title)
 
@@ -222,7 +223,8 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			title = title,
 			onupdate = onupdate,
 			onshow = onshow or function () return true end,
-			onhide = onhide or function () end
+			onhide = onhide or function () end,
+			close = closewindow
 		}
 
 		if oncreate then
@@ -235,7 +237,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			if isopened then
 				insert(windows, window)
 			else
-				unregister(window)
+				window:close()
 			end
 		else
 			return
