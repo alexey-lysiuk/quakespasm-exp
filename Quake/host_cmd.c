@@ -2040,8 +2040,10 @@ static void Host_Give_f (void)
 		//johnfitz
 
 	case 'i':
-		if (v > 0 && v < 5)
-			pr_global_struct->serverflags = (int)pr_global_struct->serverflags | (1 << (v - 1));
+		{
+			int serverflags = (v > 0 && v < 5) ? (1 << (v - 1)) : 15;
+			pr_global_struct->serverflags = (int)pr_global_struct->serverflags | serverflags;
+		}
 		break;
 
 	case 'k':
