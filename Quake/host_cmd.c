@@ -2047,8 +2047,10 @@ static void Host_Give_f (void)
 		break;
 
 	case 'k':
-		if (v == 1 || v == 2)
-			sv_player->v.items = (int)sv_player->v.items | (IT_KEY1 << (v - 1));
+		{
+			int items = (v == 1 || v == 2) ? (IT_KEY1 << (v - 1)) : (IT_KEY1 | IT_KEY2);
+			sv_player->v.items = (int)sv_player->v.items | items;
+		}
 		break;
 	}
 
