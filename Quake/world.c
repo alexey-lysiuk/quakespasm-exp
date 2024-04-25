@@ -1173,7 +1173,7 @@ const char* SV_GetEntityName(edict_t* entity)
 	return "<unnamed>";
 }
 
-static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qboolean setend)
+static vec_t ET_DistanceToEntity(et_state_t* state, const edict_t* entity, qboolean setend)
 {
 	vec3_t end;
 
@@ -1181,13 +1181,13 @@ static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qbo
 		end[i] = entity->v.origin[i] + 0.5 * (entity->v.mins[i] + entity->v.maxs[i]);
 
 	if (setend)
-		VectorCopy(end, storage->end);
+		VectorCopy(end, state->end);
 
 	vec3_t dir;
-	VectorSubtract(end, storage->start, dir);
+	VectorSubtract(end, state->start, dir);
 	VectorNormalize(dir);
 
-	return DotProduct(dir, storage->forward);
+	return DotProduct(dir, state->forward);
 }
 
 #define SV_TRACE_ENTITY_SOLID 1
