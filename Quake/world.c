@@ -1353,6 +1353,17 @@ void SV_UpdateTracedEntityInfo(void)
 	entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
 	entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
 
+	if (strcmp(name, "trigger_changelevel") == 0)
+	{
+		eval_t* mapval = GetEdictFieldValue(ent, "map");
+		if (mapval)
+		{
+			const char* map = PR_GetString(mapval->string);
+			if (map[0] != '\0')
+				entity_sprintf("map: %s", map);
+		}
+	}
+
 	{
 		float health = ent->v.health;
 		if (health != 0.f)
