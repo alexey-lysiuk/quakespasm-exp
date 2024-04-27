@@ -133,15 +133,33 @@ end
 
 local safecall <const> = expmode.safecall
 
-local function updatetoolwindow()
-	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
-	imBegin("Tools", nil, toolswindowflags)
+--local function updatetoolwindow()
+--	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
+--	imBegin("Tools", nil, toolswindowflags)
+--
+--	for _, action in ipairs(actions) do
+--		safecall(action)
+--	end
+--
+--	imEnd()
+--end
 
-	for _, action in ipairs(actions) do
-		safecall(action)
+local function updateactions()
+	if ImGui.BeginMainMenuBar() then
+		if ImGui.BeginMenu('EXP') then
+			if ImGui.MenuItem('Exit', 'Esc') then
+				expmode.exit()
+			end
+
+			ImGui.EndMenu()
+		end
+
+		for _, action in ipairs(actions) do
+			safecall(action)
+		end
+
+		ImGui.EndMainMenuBar()
 	end
-
-	imEnd()
 end
 
 local function updatewindows()
@@ -179,7 +197,8 @@ function expmode.onupdate()
 		end
 	end
 
-	updatetoolwindow()
+--	updatetoolwindow()
+	updateactions()
 	updatewindows()
 
 	return not shouldexit
@@ -599,13 +618,28 @@ local function edicts_onhide(self)
 	self.entries = nil
 end
 
-function expmode.addedictstool(title, filter)
-	addwindowtool(title, edicts_onupdate,
-		function (self) self.filter = filter end,
-		edicts_onshow, edicts_onhide)
-end
-
-local addedictstool <const> = expmode.addedictstool
+--function expmode.addedictstool(title, filter)
+----	addwindowtool(title, edicts_onupdate,
+----		function (self) self.filter = filter end,
+----		edicts_onshow, edicts_onhide)
+--	addaction(function ()
+----		if ImGui.BeginMainMenuBar() then
+--			if ImGui.BeginMenu('Edicts') then
+--				if ImGui.MenuItem(title) then
+--					window(title, edicts_onupdate,
+--						function (self) self.filter = filter end,
+--						edicts_onshow, edicts_onhide)
+--				end
+--
+--				ImGui.EndMenu()
+--			end
+--
+--			ImGui.EndMainMenuBar()
+----		end
+--	end)
+--end
+--
+--local addedictstool <const> = expmode.addedictstool
 
 local function traceentity_onshow(self)
 	local edict = player.traceentity()
@@ -708,73 +742,125 @@ function expmode.edictreferences(edict)
 end
 
 
-addseparator('Edicts')
-addedictstool('All Edicts')
-addedictstool('Secrets', edicts.issecret)
-addedictstool('Monsters', edicts.ismonster)
-addedictstool('Teleports', edicts.isteleport)
-addedictstool('Doors', edicts.isdoor)
-addedictstool('Items', edicts.isitem)
-addedictstool('Buttons', edicts.isbutton)
-addedictstool('Exits', edicts.isexit)
-addedictstool('Messages', edicts.ismessage)
-addedictstool('Models', edicts.ismodel)
-addtool('Trace Entity', traceentity_onshow)
+--addseparator('Edicts')
+--addedictstool('All Edicts')
+--addedictstool('Secrets', edicts.issecret)
+--addedictstool('Monsters', edicts.ismonster)
+--addedictstool('Teleports', edicts.isteleport)
+--addedictstool('Doors', edicts.isdoor)
+--addedictstool('Items', edicts.isitem)
+--addedictstool('Buttons', edicts.isbutton)
+--addedictstool('Exits', edicts.isexit)
+--addedictstool('Messages', edicts.ismessage)
+--addedictstool('Models', edicts.ismodel)
+--addtool('Trace Entity', traceentity_onshow)
 
-addseparator('Misc')
-addwindowtool('Scratchpad', function (self)
-	local title = self.title
-	placewindow(title, defaultwindowsize)
+local edictstools = 
+{
+	{ 'All Edicts' },
+	{ 'Secrets', edicts.issecret },
+	{ 'Monsters', edicts.ismonster },
+	{ 'Teleports', edicts.isteleport },
+	{ 'Doors', edicts.isdoor },
+	{ 'Items', edicts.isitem },
+	{ 'Buttons', edicts.isbutton },
+	{ 'Exits', edicts.isexit },
+	{ 'Messages', edicts.ismessage },
+	{ 'Models', edicts.ismodel },
+}
 
-	local visible, opened = imBegin(title, true)
+addaction(function ()
+	if ImGui.BeginMenu('Edicts') then
+		for _, tool in ipairs(edictstools) do
+			local title = tool[1]
 
-	if visible and opened then
-		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
-	end
-
-	imEnd()
-
-	return opened
-end)
-addwindowtool('Stats', function (self)
-	local title = self.title
-	placewindow(title, defaultwindowsize)
-
-	local visible, opened = imBegin(title, true)
-
-	if visible and opened then
-		local prevtime = self.realtime or 0
-		local curtime = host.realtime()
-
-		if prevtime + 0.1 <= curtime then
-			local frametime = host.frametime()
-			local hours = floor(curtime / 3600)
-			local minutes = floor(curtime % 3600 / 60)
-			local seconds = floor(curtime % 60)
-
-			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
-				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
-			self.memstats = memstats()
-			self.realtime = curtime
+			if ImGui.MenuItem(title) then
+				window(title, edicts_onupdate,
+					function (self) self.filter = tool[2] end,
+					edicts_onshow, edicts_onhide)
+			end
 		end
 
-		imSeparatorText('Host stats')
-		imText(self.hoststats)
-		imSeparatorText('Lua memory stats')
-		imText(self.memstats)
+		imSeparator()
+
+		if ImGui.MenuItem('Trace Entity') then
+			traceentity_onshow()
+		end
+
+		ImGui.EndMenu()
 	end
-
-	imEnd()
-
-	return opened
 end)
-addtool('Stop All Sounds', function () sound.stopall() end)
+
+--addseparator('Misc')
+--addwindowtool('Scratchpad', function (self)
+--	local title = self.title
+--	placewindow(title, defaultwindowsize)
+--
+--	local visible, opened = imBegin(title, true)
+--
+--	if visible and opened then
+--		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
+--	end
+--
+--	imEnd()
+--
+--	return opened
+--end)
+--addwindowtool('Stats', function (self)
+--	local title = self.title
+--	placewindow(title, defaultwindowsize)
+--
+--	local visible, opened = imBegin(title, true)
+--
+--	if visible and opened then
+--		local prevtime = self.realtime or 0
+--		local curtime = host.realtime()
+--
+--		if prevtime + 0.1 <= curtime then
+--			local frametime = host.frametime()
+--			local hours = floor(curtime / 3600)
+--			local minutes = floor(curtime % 3600 / 60)
+--			local seconds = floor(curtime % 60)
+--
+--			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+--				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+--			self.memstats = memstats()
+--			self.realtime = curtime
+--		end
+--
+--		imSeparatorText('Host stats')
+--		imText(self.hoststats)
+--		imSeparatorText('Lua memory stats')
+--		imText(self.memstats)
+--	end
+--
+--	imEnd()
+--
+--	return opened
+--end)
+--addtool('Stop All Sounds', function () sound.stopall() end)
 
 if imShowDemoWindow then
-	addseparator('Debug')
-	addwindowtool('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
-	addtool('Trigger Error', function () error('This error is intentional') end)
+--	addseparator('Debug')
+--	addwindowtool('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
+--	addtool('Trigger Error', function () error('This error is intentional') end)
+
+	addaction(function ()
+		if ImGui.BeginMenu('Debug') then
+			if ImGui.MenuItem('ImGui Demo') then
+				window('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
+			end
+
+			imSeparator()
+
+			if ImGui.MenuItem('Trigger Error') then
+				safecall(function () error('This error is intentional') end)
+			end
+	
+			ImGui.EndMenu()
+		end
+	end)
 end
 
-addseparator()
-addtool('Press ESC to exit', expmode.exit)
+--addseparator()
+--addtool('Press ESC to exit', expmode.exit)
