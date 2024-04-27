@@ -1107,9 +1107,6 @@ static void PF_precache_sound (void)
 	const char	*s;
 	int		i;
 
-	if (sv.state != ss_loading)
-		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
-
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
@@ -1124,6 +1121,10 @@ static void PF_precache_sound (void)
 		if (!strcmp(sv.sound_precache[i], s))
 			return;
 	}
+
+	if (sv.state != ss_loading)
+		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
+
 	PR_RunError ("PF_precache_sound: overflow");
 }
 
@@ -1131,9 +1132,6 @@ static void PF_precache_model (void)
 {
 	const char	*s;
 	int		i;
-
-	if (sv.state != ss_loading)
-		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
 
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
@@ -1150,6 +1148,10 @@ static void PF_precache_model (void)
 		if (!strcmp(sv.model_precache[i], s))
 			return;
 	}
+
+	if (sv.state != ss_loading)
+		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
+
 	PR_RunError ("PF_precache_model: overflow");
 }
 

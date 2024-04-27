@@ -950,7 +950,6 @@ typedef struct
 	vec3_t maxs;
 	vec3_t start;
 	vec3_t end;
-	vec3_t forward;
 } et_state_t;
 
 static void ET_InitEntityTrace(et_state_t* state)
@@ -966,16 +965,17 @@ static void ET_InitEntityTrace(et_state_t* state)
 	vec_t sp = sin(angle);
 	vec_t cp = cos(angle);
 
-	state->forward[0] = cp * cy;
-	state->forward[1] = cp * sy;
-	state->forward[2] = -sp;
+	vec3_t forward;
+	forward[0] = cp * cy;
+	forward[1] = cp * sy;
+	forward[2] = -sp;
 
 	VectorCopy(vec3_origin, state->mins);
 	VectorCopy(vec3_origin, state->maxs);
 
 	VectorCopy(player->v.origin, state->start);
 	state->start[2] += 20;
-	VectorMA(state->start, 16 * 1024, state->forward, state->end);
+	VectorMA(state->start, 16 * 1024, forward, state->end);
 
 	// clip to world
 	moveclip_t* clip = &state->clip;
@@ -1173,7 +1173,7 @@ const char* SV_GetEntityName(edict_t* entity)
 	return "<unnamed>";
 }
 
-static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qboolean setend)
+static vec_t ET_DistanceToEntity(et_state_t* state, const edict_t* entity, qboolean setend)
 {
 	vec3_t end;
 
@@ -1181,13 +1181,12 @@ static vec_t ET_DistanceToEntity(et_state_t* storage, const edict_t* entity, qbo
 		end[i] = entity->v.origin[i] + 0.5 * (entity->v.mins[i] + entity->v.maxs[i]);
 
 	if (setend)
-		VectorCopy(end, storage->end);
+		VectorCopy(end, state->end);
 
-	vec3_t dir;
-	VectorSubtract(end, storage->start, dir);
-	VectorNormalize(dir);
+	vec3_t dist;
+	VectorSubtract(end, state->start, dist);
 
-	return DotProduct(dir, storage->forward);
+	return DotProduct(dist, dist);
 }
 
 #define SV_TRACE_ENTITY_SOLID 1
@@ -1247,7 +1246,7 @@ edict_t* SV_TraceEntity(int kind)
 		vec_t trigger_dist = ET_DistanceToEntity(&state, trigger_ent, /* setend = */ false);
 		vec_t solid_dist = ET_DistanceToEntity(&state, solid_ent, /* setend = */ false);
 
-		ent = trigger_dist > solid_dist ? trigger_ent : solid_ent;
+		ent = trigger_dist < solid_dist ? trigger_ent : solid_ent;
 	}
 
 	// Nothing is traced yet, try all possible entities
@@ -1265,7 +1264,7 @@ edict_t* SV_TraceEntity(int kind)
 				continue;
 
 			float dist = ET_DistanceToEntity(&state, check, /* setend = */ true);
-			if (dist < bestdist)
+			if (dist > bestdist)
 				continue;	// to far to turn
 
 			if (check->v.solid == SOLID_TRIGGER && trace_trigger)
@@ -1353,6 +1352,17 @@ void SV_UpdateTracedEntityInfo(void)
 	entity_sprintf("%i: %s", NUM_FOR_EDICT(ent), name);
 	entity_sprintf("min: %.0f %.0f %.0f", min[0], min[1], min[2]);
 	entity_sprintf("max: %.0f %.0f %.0f", max[0], max[1], max[2]);
+
+	if (strcmp(name, "trigger_changelevel") == 0)
+	{
+		eval_t* mapval = GetEdictFieldValue(ent, "map");
+		if (mapval)
+		{
+			const char* map = PR_GetString(mapval->string);
+			if (map[0] != '\0')
+				entity_sprintf("map: %s", map);
+		}
+	}
 
 	{
 		float health = ent->v.health;
