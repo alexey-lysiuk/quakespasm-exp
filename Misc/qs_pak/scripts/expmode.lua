@@ -62,7 +62,6 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
-local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local placedwindows = {}
 local actions = {}
@@ -70,9 +69,9 @@ local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowposx, nextwindowpos
+local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaultwindowposx, nextwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
-local screensize, shouldexit, toolwidgedsize, wintofocus
+local screensize, shouldexit, wintofocus
 
 function expmode.findwindow(title)
 	for _, window in ipairs(windows) do
@@ -133,17 +132,6 @@ end
 
 local safecall <const> = expmode.safecall
 
---local function updatetoolwindow()
---	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
---	imBegin("Tools", nil, toolswindowflags)
---
---	for _, action in ipairs(actions) do
---		safecall(action)
---	end
---
---	imEnd()
---end
-
 local function placewindow(title, size)
 	if placedwindows[title] then
 		return
@@ -194,7 +182,7 @@ local function stats()
 			placewindow(title, defaultwindowsize)
 		
 			local visible, opened = imBegin(title, true)
-		
+
 			if visible and opened then
 				local prevtime = self.realtime or 0
 				local curtime = host.realtime()
@@ -204,21 +192,21 @@ local function stats()
 					local hours = floor(curtime / 3600)
 					local minutes = floor(curtime % 3600 / 60)
 					local seconds = floor(curtime % 60)
-		
+
 					self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
 						host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 					self.memstats = memstats()
 					self.realtime = curtime
 				end
-		
+
 				imSeparatorText('Host stats')
 				imText(self.hoststats)
 				imSeparatorText('Lua memory stats')
 				imText(self.memstats)
 			end
-		
+
 			imEnd()
-		
+
 			return opened
 		end)
 	end
@@ -245,6 +233,28 @@ local function updateactions()
 
 		for _, action in ipairs(actions) do
 			safecall(action)
+		end
+
+		if #windows > 0 then
+			if ImGui.BeginMenu('Windows') then
+				for _, window in ipairs(windows) do
+					if ImGui.MenuItem(window.title) then
+						wintofocus = window
+					end
+				end
+
+				imSeparator()
+
+				if ImGui.MenuItem('Close all') then
+					for _, window in ipairs(windows) do
+						safecall(window.onhide, window)
+					end
+
+					windows = {}
+				end
+
+				ImGui.EndMenu()
+			end
 		end
 
 		ImGui.EndMainMenuBar()
@@ -277,16 +287,13 @@ function expmode.onupdate()
 		defaultedictinfowindowsize = imVec2(charwidth * 48, sy * 0.5)
 		defaultedictswindowsize = imVec2(charwidth * 64, sy * 0.5)
 		defaultmessageboxpos = imVec2(sx * 0.5, sy * 0.35)
-		defaulttoolwindowpos = imVec2(sx * 0.0025, sy * 0.005)
 		defaultwindowposx = charwidth * 25
-		toolwidgedsize = imVec2(charwidth * 20, 0)
 
 		if not nextwindowpos then
 			nextwindowpos = imVec2(defaultwindowposx, sy * 0.05)
 		end
 	end
 
---	updatetoolwindow()
 	updateactions()
 	updatewindows()
 
@@ -388,40 +395,6 @@ function expmode.addaction(func)
 end
 
 local addaction <const> = expmode.addaction
-
---function expmode.addseparator(text)
---	local function separator()
---		imSpacing()
---		imSeparator()
---		imSpacing()
---	end
---
---	local function separatortext()
---		imSeparatorText(text)
---	end
---
---	addaction(text and separatortext or separator)
---end
-
---local addseparator <const> = expmode.addseparator
-
---function expmode.addtool(title, func)
---	addaction(function ()
---		if imButton(title, toolwidgedsize) then
---			func()
---		end
---	end)
---end
---
---local addtool <const> = expmode.addtool 
---
---function expmode.addwindowtool(title, onupdate, oncreate, onshow, onhide)
---	addtool(title, function ()
---		window(title, onupdate, oncreate, onshow, onhide)
---	end)
---end
---
---local addwindowtool <const> = expmode.addwindowtool 
 
 
 local vec3mid <const> = vec3.mid
@@ -808,20 +781,6 @@ function expmode.edictreferences(edict)
 	end
 end
 
-
---addseparator('Edicts')
---addedictstool('All Edicts')
---addedictstool('Secrets', edicts.issecret)
---addedictstool('Monsters', edicts.ismonster)
---addedictstool('Teleports', edicts.isteleport)
---addedictstool('Doors', edicts.isdoor)
---addedictstool('Items', edicts.isitem)
---addedictstool('Buttons', edicts.isbutton)
---addedictstool('Exits', edicts.isexit)
---addedictstool('Messages', edicts.ismessage)
---addedictstool('Models', edicts.ismodel)
---addtool('Trace Entity', traceentity_onshow)
-
 local edictstools = 
 {
 	{ 'All Edicts' },
@@ -858,60 +817,7 @@ addaction(function ()
 	end
 end)
 
---addseparator('Misc')
---addwindowtool('Scratchpad', function (self)
---	local title = self.title
---	placewindow(title, defaultwindowsize)
---
---	local visible, opened = imBegin(title, true)
---
---	if visible and opened then
---		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
---	end
---
---	imEnd()
---
---	return opened
---end)
---addwindowtool('Stats', function (self)
---	local title = self.title
---	placewindow(title, defaultwindowsize)
---
---	local visible, opened = imBegin(title, true)
---
---	if visible and opened then
---		local prevtime = self.realtime or 0
---		local curtime = host.realtime()
---
---		if prevtime + 0.1 <= curtime then
---			local frametime = host.frametime()
---			local hours = floor(curtime / 3600)
---			local minutes = floor(curtime % 3600 / 60)
---			local seconds = floor(curtime % 60)
---
---			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
---				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
---			self.memstats = memstats()
---			self.realtime = curtime
---		end
---
---		imSeparatorText('Host stats')
---		imText(self.hoststats)
---		imSeparatorText('Lua memory stats')
---		imText(self.memstats)
---	end
---
---	imEnd()
---
---	return opened
---end)
---addtool('Stop All Sounds', function () sound.stopall() end)
-
 if imShowDemoWindow then
---	addseparator('Debug')
---	addwindowtool('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
---	addtool('Trigger Error', function () error('This error is intentional') end)
-
 	addaction(function ()
 		if ImGui.BeginMenu('Debug') then
 			if ImGui.MenuItem('ImGui Demo') then
@@ -928,6 +834,3 @@ if imShowDemoWindow then
 		end
 	end)
 end
-
---addseparator()
---addtool('Press ESC to exit', expmode.exit)
