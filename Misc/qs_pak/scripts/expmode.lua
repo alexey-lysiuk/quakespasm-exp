@@ -144,9 +144,98 @@ local safecall <const> = expmode.safecall
 --	imEnd()
 --end
 
+local function placewindow(title, size)
+	if placedwindows[title] then
+		return
+	end
+
+	placedwindows[title] = true
+
+	if nextwindowpos.x + size.x >= screensize.x then
+		nextwindowpos.x = defaultwindowposx
+	end
+
+	if nextwindowpos.y + size.y >= screensize.y then
+		nextwindowpos.y = screensize.x * 0.05
+	end
+
+	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
+	imSetNextWindowSize(size, imCondFirstUseEver)
+
+	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
+	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
+end
+
+local function scratchpad()
+	local title = 'Scratchpad'
+
+	if ImGui.MenuItem(title) then
+		expmode.window(title, function (self)
+			placewindow(title, defaultwindowsize)
+
+			local visible, opened = imBegin(title, true)
+
+			if visible and opened then
+				_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
+			end
+
+			imEnd()
+
+			return opened
+		end)
+	end
+end
+
+local function stats()
+	local title = 'Stats'
+
+	if ImGui.MenuItem(title) then
+		expmode.window(title, function (self)
+			placewindow(title, defaultwindowsize)
+		
+			local visible, opened = imBegin(title, true)
+		
+			if visible and opened then
+				local prevtime = self.realtime or 0
+				local curtime = host.realtime()
+		
+				if prevtime + 0.1 <= curtime then
+					local frametime = host.frametime()
+					local hours = floor(curtime / 3600)
+					local minutes = floor(curtime % 3600 / 60)
+					local seconds = floor(curtime % 60)
+		
+					self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+						host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+					self.memstats = memstats()
+					self.realtime = curtime
+				end
+		
+				imSeparatorText('Host stats')
+				imText(self.hoststats)
+				imSeparatorText('Lua memory stats')
+				imText(self.memstats)
+			end
+		
+			imEnd()
+		
+			return opened
+		end)
+	end
+end
+
 local function updateactions()
 	if ImGui.BeginMainMenuBar() then
 		if ImGui.BeginMenu('EXP') then
+			scratchpad()
+			stats()
+
+			if ImGui.MenuItem('Stop All Sounds') then
+				sound.stopall()
+			end
+
+			imSeparator()
+
 			if ImGui.MenuItem('Exit', 'Esc') then
 				expmode.exit()
 			end
@@ -300,39 +389,39 @@ end
 
 local addaction <const> = expmode.addaction
 
-function expmode.addseparator(text)
-	local function separator()
-		imSpacing()
-		imSeparator()
-		imSpacing()
-	end
+--function expmode.addseparator(text)
+--	local function separator()
+--		imSpacing()
+--		imSeparator()
+--		imSpacing()
+--	end
+--
+--	local function separatortext()
+--		imSeparatorText(text)
+--	end
+--
+--	addaction(text and separatortext or separator)
+--end
 
-	local function separatortext()
-		imSeparatorText(text)
-	end
+--local addseparator <const> = expmode.addseparator
 
-	addaction(text and separatortext or separator)
-end
-
-local addseparator <const> = expmode.addseparator
-
-function expmode.addtool(title, func)
-	addaction(function ()
-		if imButton(title, toolwidgedsize) then
-			func()
-		end
-	end)
-end
-
-local addtool <const> = expmode.addtool 
-
-function expmode.addwindowtool(title, onupdate, oncreate, onshow, onhide)
-	addtool(title, function ()
-		window(title, onupdate, oncreate, onshow, onhide)
-	end)
-end
-
-local addwindowtool <const> = expmode.addwindowtool 
+--function expmode.addtool(title, func)
+--	addaction(function ()
+--		if imButton(title, toolwidgedsize) then
+--			func()
+--		end
+--	end)
+--end
+--
+--local addtool <const> = expmode.addtool 
+--
+--function expmode.addwindowtool(title, onupdate, oncreate, onshow, onhide)
+--	addtool(title, function ()
+--		window(title, onupdate, oncreate, onshow, onhide)
+--	end)
+--end
+--
+--local addwindowtool <const> = expmode.addwindowtool 
 
 
 local vec3mid <const> = vec3.mid
@@ -349,28 +438,6 @@ local setpos <const> = player.setpos
 
 local localize <const> = text.localize
 local toascii <const> = text.toascii
-
-local function placewindow(title, size)
-	if placedwindows[title] then
-		return
-	end
-
-	placedwindows[title] = true
-
-	if nextwindowpos.x + size.x >= screensize.x then
-		nextwindowpos.x = defaultwindowposx
-	end
-
-	if nextwindowpos.y + size.y >= screensize.y then
-		nextwindowpos.y = screensize.x * 0.05
-	end
-
-	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
-	imSetNextWindowSize(size, imCondFirstUseEver)
-
-	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
-	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
-end
 
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
