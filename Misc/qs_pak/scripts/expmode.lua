@@ -74,7 +74,7 @@ local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaultwindowposx, nextwindowpos
+local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, nextwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
 local screensize, shouldexit, wintofocus
 
@@ -137,45 +137,13 @@ end
 
 local safecall <const> = expmode.safecall
 
-local function placewindow(title, size)
-	if placedwindows[title] then
-		return
-	end
-
-	placedwindows[title] = true
-
-	if nextwindowpos.x + size.x >= screensize.x then
-		nextwindowpos.x = defaultwindowposx
-	end
-
-	if nextwindowpos.y + size.y >= screensize.y then
-		nextwindowpos.y = screensize.x * 0.05
-	end
-
-	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
-	imSetNextWindowSize(size, imCondFirstUseEver)
-
-	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
-	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
-end
+local placewindow, scratchpad_update, stats_update
 
 local function scratchpad()
 	local title = 'Scratchpad'
 
 	if imMenuItem(title) then
-		expmode.window(title, function (self)
-			placewindow(title, defaultwindowsize)
-
-			local visible, opened = imBegin(title, true)
-
-			if visible and opened then
-				_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
-			end
-
-			imEnd()
-
-			return opened
-		end)
+		expmode.window(title, scratchpad_update)
 	end
 end
 
@@ -183,37 +151,7 @@ local function stats()
 	local title = 'Stats'
 
 	if imMenuItem(title) then
-		expmode.window(title, function (self)
-			placewindow(title, defaultwindowsize)
-		
-			local visible, opened = imBegin(title, true)
-
-			if visible and opened then
-				local prevtime = self.realtime or 0
-				local curtime = host.realtime()
-		
-				if prevtime + 0.1 <= curtime then
-					local frametime = host.frametime()
-					local hours = floor(curtime / 3600)
-					local minutes = floor(curtime % 3600 / 60)
-					local seconds = floor(curtime % 60)
-
-					self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
-						host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
-					self.memstats = memstats()
-					self.realtime = curtime
-				end
-
-				imSeparatorText('Host stats')
-				imText(self.hoststats)
-				imSeparatorText('Lua memory stats')
-				imText(self.memstats)
-			end
-
-			imEnd()
-
-			return opened
-		end)
+		expmode.window(title, stats_update)
 	end
 end
 
@@ -292,10 +230,9 @@ function expmode.onupdate()
 		defaultedictinfowindowsize = imVec2(charwidth * 48, sy * 0.5)
 		defaultedictswindowsize = imVec2(charwidth * 64, sy * 0.5)
 		defaultmessageboxpos = imVec2(sx * 0.5, sy * 0.35)
-		defaultwindowposx = charwidth * 25
 
 		if not nextwindowpos then
-			nextwindowpos = imVec2(defaultwindowposx, sy * 0.05)
+			nextwindowpos = imVec2(sx * 0.05, sy * 0.05)
 		end
 	end
 
@@ -416,6 +353,28 @@ local setpos <const> = player.setpos
 
 local localize <const> = text.localize
 local toascii <const> = text.toascii
+
+placewindow = function (title, size)
+	if placedwindows[title] then
+		return
+	end
+
+	placedwindows[title] = true
+
+	if nextwindowpos.x + size.x >= screensize.x then
+		nextwindowpos.x = screensize.x * 0.05
+	end
+
+	if nextwindowpos.y + size.y >= screensize.y then
+		nextwindowpos.y = screensize.y * 0.05
+	end
+
+	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
+	imSetNextWindowSize(size, imCondFirstUseEver)
+
+	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
+	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
+end
 
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
@@ -763,7 +722,7 @@ function expmode.edictreferences(edict)
 	end
 end
 
-local edictstools = 
+local edictstools <const> = 
 {
 	{ 'All Edicts' },
 	{ 'Secrets', edicts.issecret },
@@ -798,6 +757,54 @@ addaction(function ()
 		imEndMenu()
 	end
 end)
+
+scratchpad_update = function (self)
+	local title = self.title
+	placewindow(title, defaultwindowsize)
+
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
+	end
+
+	imEnd()
+
+	return opened
+end
+
+stats_update = function (self)
+	local title = self.title
+	placewindow(title, defaultwindowsize)
+
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		local prevtime = self.realtime or 0
+		local curtime = host.realtime()
+
+		if prevtime + 0.1 <= curtime then
+			local frametime = host.frametime()
+			local hours = floor(curtime / 3600)
+			local minutes = floor(curtime % 3600 / 60)
+			local seconds = floor(curtime % 60)
+
+			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+			self.memstats = memstats()
+			self.realtime = curtime
+		end
+
+		imSeparatorText('Host stats')
+		imText(self.hoststats)
+		imSeparatorText('Lua memory stats')
+		imText(self.memstats)
+	end
+
+	imEnd()
+
+	return opened
+end
 
 if imShowDemoWindow then
 	addaction(function ()
