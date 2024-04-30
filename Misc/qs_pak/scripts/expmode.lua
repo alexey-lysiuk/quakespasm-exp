@@ -178,6 +178,28 @@ local function updateactions()
 			safecall(action)
 		end
 
+		if #windows > 0 then
+			if imBeginMenu('Windows') then
+				for _, window in ipairs(windows) do
+					if imMenuItem(window.title) then
+						wintofocus = window
+					end
+				end
+
+				imSeparator()
+
+				if imMenuItem('Close all') then
+					for _, window in ipairs(windows) do
+						safecall(window.onhide, window)
+					end
+
+					windows = {}
+				end
+
+				imEndMenu()
+			end
+		end
+
 		imEndMainMenuBar()
 	end
 end
