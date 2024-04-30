@@ -16,4 +16,5 @@ sm98_zwiffle@35f8.ent
 sop1@e37d.ent
 casana@7cfa.ent
 castlez@1699.ent
+sm67_xen@e376.ent
 sm72_zwiffle@7a5e.ent

@@ -37,6 +37,8 @@ static const char* const addeddata =
 	/* 175 */ "736 -2656"
 	/* 184 */ "1"
 	/* 185 */ "\"target"
+	/* 192 */ "-"
+	/* 193 */ "-14"
 ;
 
 static constexpr EF_Patch ef_patches[] =
@@ -178,6 +180,20 @@ static constexpr EF_Patch ef_patches[] =
 	{ EF_ADD, 7, 185 },
 	{ EF_COPY, 36, 58040 },
 	{ EF_COPY, 24465, 58833 },
+
+	// sm67_xen@e376
+	{ EF_COPY, 22827, 0 },
+	{ EF_ADD, 1, 192 },
+	{ EF_COPY, 32, 30256 },
+	{ EF_COPY, 7397, 22859 },
+	{ EF_ADD, 3, 193 },
+	{ EF_COPY, 46, 22304 },
+	{ EF_COPY, 5579, 30303 },
+
+	// sm72_zwiffle@7a5e
+	{ EF_COPY, 21857, 0 },
+	{ EF_COPY, 89, 21759 },
+	{ EF_COPY, 7914, 21947 },
 };
 
 static constexpr EF_Fix ef_fixes[] =
@@ -189,6 +205,7 @@ static constexpr EF_Fix ef_fixes[] =
 	{ "bbelief6", 0x324b, 64996, 64996, 0, 3 },
 	{ "sm98_zwiffle", 0x35f8, 12603, 12626, 76, 8 },
 	{ "eoem7", 0x3ea8, 55903, 56050, 19, 7 },
+	{ "sm72_zwiffle", 0x7a5e, 29862, 29861, 109, 3 },
 	{ "casana", 0x7cfa, 54868, 54536, 86, 12 },
 	{ "dmc3m8", 0x8411, 83565, 83564, 9, 3 },
 	{ "sm27_bear", 0x92ba, 6602, 6602, 40, 3 },
@@ -196,6 +213,7 @@ static constexpr EF_Fix ef_fixes[] =
 	{ "sm212_naitelveni", 0xa835, 140070, 140070, 31, 9 },
 	{ "sm100_zwiffle", 0xc897, 13044, 13044, 28, 3 },
 	{ "sm51_fat", 0xdee3, 5149, 5149, 43, 3 },
+	{ "sm67_xen", 0xe376, 35883, 35886, 102, 7 },
 	{ "sop1", 0xe37d, 44013, 44000, 84, 2 },
 	{ "blitz1000", 0xe5bb, 22368, 22368, 3, 4 },
 	{ "sm58_rpg1", 0xe76b, 11950, 11938, 46, 27 },
