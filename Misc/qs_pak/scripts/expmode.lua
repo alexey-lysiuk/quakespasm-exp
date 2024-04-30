@@ -137,6 +137,23 @@ end
 
 local safecall <const> = expmode.safecall
 
+local function foreachwindow(func)
+	local i = 1
+	local count = #windows
+
+	while i <= count do
+		local window = windows[i]
+		local status, keepopen = safecall(func, window)
+
+		if status and keepopen then
+			i = i + 1
+		else
+			window:close()
+			count = count - 1
+		end
+	end
+end
+
 local placewindow, scratchpad_update, stats_update
 
 local function scratchpad()
@@ -189,10 +206,7 @@ local function updateactions()
 				imSeparator()
 
 				if imMenuItem('Close all') then
-					for _, window in ipairs(windows) do
-						safecall(window.onhide, window)
-					end
-
+					foreachwindow(function (window) return window:onhide() end)
 					windows = {}
 				end
 
@@ -205,18 +219,14 @@ local function updateactions()
 end
 
 local function updatewindows()
-	for _, window in pairs(windows) do
+	foreachwindow(function (window)
 		if wintofocus == window then
 			imSetNextWindowFocus()
 			wintofocus = nil
 		end
 
-		local status, keepopen = safecall(window.onupdate, window)
-
-		if not status or not keepopen then
-			window:close()
-		end
-	end
+		return window:onupdate()
+	end)
 end
 
 function expmode.onupdate()
@@ -245,15 +255,11 @@ end
 function expmode.onopen()
 	shouldexit = false
 
-	for _, window in pairs(windows) do
-		safecall(window.onshow, window)
-	end
+	foreachwindow(function (window) return window:onshow() end)
 end
 
 function expmode.onclose()
-	for _, window in pairs(windows) do
-		safecall(window.onhide, window)
-	end
+	foreachwindow(function (window) return window:onhide() end)
 
 	screensize = nil
 end
@@ -280,7 +286,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			title = title,
 			onupdate = onupdate,
 			onshow = onshow or function () return true end,
-			onhide = onhide or function () end,
+			onhide = onhide or function () return true end,
 			close = closewindow
 		}
 
@@ -435,11 +441,11 @@ local function edictinfo_onupdate(self)
 				end
 				if imSelectable('Copy all') then
 					local fields = {}
-				
+
 					for i, field in ipairs(self.fields) do
 						fields[i] = field.name .. ': ' .. field.value
 					end
-				
+
 					imSetClipboardText(concat(fields, '\n'))
 				end
 				imEndPopup()
@@ -464,7 +470,7 @@ local function edictinfo_onshow(self)
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
-		field.value = field.type == string 
+		field.value = field.type == string
 			and toascii(localize(field.value))
 			or tostring(field.value)
 		fields[i] = field
@@ -477,6 +483,7 @@ end
 
 local function edictinfo_onhide(self)
 	self.fields = nil
+	return true
 end
 
 function expmode.edictinfo(edict)
@@ -620,6 +627,7 @@ end
 
 local function edicts_onhide(self)
 	self.entries = nil
+	return true
 end
 
 local function traceentity_onshow(self)
@@ -702,6 +710,8 @@ end
 local function edictrefs_onhide(self)
 	self.references = nil
 	self.referencedby = nil
+
+	return true
 end
 
 function expmode.edictreferences(edict)
@@ -722,7 +732,7 @@ function expmode.edictreferences(edict)
 	end
 end
 
-local edictstools <const> = 
+local edictstools <const> =
 {
 	{ 'All Edicts' },
 	{ 'Secrets', edicts.issecret },
@@ -789,7 +799,7 @@ stats_update = function (self)
 			local minutes = floor(curtime % 3600 / 60)
 			local seconds = floor(curtime % 60)
 
-			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)',
 				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
@@ -818,7 +828,7 @@ if imShowDemoWindow then
 			if imMenuItem('Trigger Error') then
 				safecall(function () error('This error is intentional') end)
 			end
-	
+
 			imEndMenu()
 		end
 	end)
