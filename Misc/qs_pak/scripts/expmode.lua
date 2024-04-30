@@ -11,12 +11,16 @@ local insert <const> = table.insert
 local remove <const> = table.remove
 
 local imBegin <const> = ImGui.Begin
+local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
+local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
 local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
 local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
+local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
+local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
 local imGetItemRectMax <const> = ImGui.GetItemRectMax
@@ -25,6 +29,7 @@ local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
+local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
 local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
@@ -62,7 +67,6 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
-local toolswindowflags = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar
 
 local placedwindows = {}
 local actions = {}
@@ -70,11 +74,11 @@ local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, defaulttoolwindowpos, defaultwindowposx, nextwindowpos
+local defaultedictinfowindowsize, defaultedictswindowsize, defaultmessageboxpos, nextwindowpos
 local defaultwindowsize <const> = imVec2(320, 240)
-local screensize, shouldexit, toolwidgedsize, wintofocus
+local screensize, shouldexit, wintofocus
 
-function expmode.findwindow(title)
+local function findwindow(title)
 	for _, window in ipairs(windows) do
 		if window.title == title then
 			return window
@@ -82,11 +86,11 @@ function expmode.findwindow(title)
 	end
 end
 
-local findwindow <const> = expmode.findwindow
-
 function expmode.exit()
 	shouldexit = true
 end
+
+local exit <const> = expmode.exit
 
 local function errorwindow_onupdate(self)
 	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
@@ -133,15 +137,49 @@ end
 
 local safecall <const> = expmode.safecall
 
-local function updatetoolwindow()
-	imSetNextWindowPos(defaulttoolwindowpos, imCondFirstUseEver)
-	imBegin("Tools", nil, toolswindowflags)
+local placewindow, scratchpad_update, stats_update
 
-	for _, action in ipairs(actions) do
-		safecall(action)
+local function scratchpad()
+	local title = 'Scratchpad'
+
+	if imMenuItem(title) then
+		expmode.window(title, scratchpad_update)
 	end
+end
 
-	imEnd()
+local function stats()
+	local title = 'Stats'
+
+	if imMenuItem(title) then
+		expmode.window(title, stats_update)
+	end
+end
+
+local function updateactions()
+	if imBeginMainMenuBar() then
+		if imBeginMenu('EXP') then
+			scratchpad()
+			stats()
+
+			if imMenuItem('Stop All Sounds') then
+				sound.stopall()
+			end
+
+			imSeparator()
+
+			if imMenuItem('Exit', 'Esc') then
+				exit()
+			end
+
+			imEndMenu()
+		end
+
+		for _, action in ipairs(actions) do
+			safecall(action)
+		end
+
+		imEndMainMenuBar()
+	end
 end
 
 local function updatewindows()
@@ -170,16 +208,13 @@ function expmode.onupdate()
 		defaultedictinfowindowsize = imVec2(charwidth * 48, sy * 0.5)
 		defaultedictswindowsize = imVec2(charwidth * 64, sy * 0.5)
 		defaultmessageboxpos = imVec2(sx * 0.5, sy * 0.35)
-		defaulttoolwindowpos = imVec2(sx * 0.0025, sy * 0.005)
-		defaultwindowposx = charwidth * 25
-		toolwidgedsize = imVec2(charwidth * 20, 0)
 
 		if not nextwindowpos then
-			nextwindowpos = imVec2(defaultwindowposx, sy * 0.05)
+			nextwindowpos = imVec2(sx * 0.05, sy * 0.05)
 		end
 	end
 
-	updatetoolwindow()
+	updateactions()
 	updatewindows()
 
 	return not shouldexit
@@ -281,40 +316,6 @@ end
 
 local addaction <const> = expmode.addaction
 
-function expmode.addseparator(text)
-	local function separator()
-		imSpacing()
-		imSeparator()
-		imSpacing()
-	end
-
-	local function separatortext()
-		imSeparatorText(text)
-	end
-
-	addaction(text and separatortext or separator)
-end
-
-local addseparator <const> = expmode.addseparator
-
-function expmode.addtool(title, func)
-	addaction(function ()
-		if imButton(title, toolwidgedsize) then
-			func()
-		end
-	end)
-end
-
-local addtool <const> = expmode.addtool 
-
-function expmode.addwindowtool(title, onupdate, oncreate, onshow, onhide)
-	addtool(title, function ()
-		window(title, onupdate, oncreate, onshow, onhide)
-	end)
-end
-
-local addwindowtool <const> = expmode.addwindowtool 
-
 
 local vec3mid <const> = vec3.mid
 local vec3origin <const> = vec3.new()
@@ -331,7 +332,7 @@ local setpos <const> = player.setpos
 local localize <const> = text.localize
 local toascii <const> = text.toascii
 
-local function placewindow(title, size)
+placewindow = function (title, size)
 	if placedwindows[title] then
 		return
 	end
@@ -339,11 +340,11 @@ local function placewindow(title, size)
 	placedwindows[title] = true
 
 	if nextwindowpos.x + size.x >= screensize.x then
-		nextwindowpos.x = defaultwindowposx
+		nextwindowpos.x = screensize.x * 0.05
 	end
 
 	if nextwindowpos.y + size.y >= screensize.y then
-		nextwindowpos.y = screensize.x * 0.05
+		nextwindowpos.y = screensize.y * 0.05
 	end
 
 	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
@@ -599,14 +600,6 @@ local function edicts_onhide(self)
 	self.entries = nil
 end
 
-function expmode.addedictstool(title, filter)
-	addwindowtool(title, edicts_onupdate,
-		function (self) self.filter = filter end,
-		edicts_onshow, edicts_onhide)
-end
-
-local addedictstool <const> = expmode.addedictstool
-
 local function traceentity_onshow(self)
 	local edict = player.traceentity()
 
@@ -707,22 +700,43 @@ function expmode.edictreferences(edict)
 	end
 end
 
+local edictstools <const> = 
+{
+	{ 'All Edicts' },
+	{ 'Secrets', edicts.issecret },
+	{ 'Monsters', edicts.ismonster },
+	{ 'Teleports', edicts.isteleport },
+	{ 'Doors', edicts.isdoor },
+	{ 'Items', edicts.isitem },
+	{ 'Buttons', edicts.isbutton },
+	{ 'Exits', edicts.isexit },
+	{ 'Messages', edicts.ismessage },
+	{ 'Models', edicts.ismodel },
+}
 
-addseparator('Edicts')
-addedictstool('All Edicts')
-addedictstool('Secrets', edicts.issecret)
-addedictstool('Monsters', edicts.ismonster)
-addedictstool('Teleports', edicts.isteleport)
-addedictstool('Doors', edicts.isdoor)
-addedictstool('Items', edicts.isitem)
-addedictstool('Buttons', edicts.isbutton)
-addedictstool('Exits', edicts.isexit)
-addedictstool('Messages', edicts.ismessage)
-addedictstool('Models', edicts.ismodel)
-addtool('Trace Entity', traceentity_onshow)
+addaction(function ()
+	if imBeginMenu('Edicts') then
+		for _, tool in ipairs(edictstools) do
+			local title = tool[1]
 
-addseparator('Misc')
-addwindowtool('Scratchpad', function (self)
+			if imMenuItem(title) then
+				window(title, edicts_onupdate,
+					function (self) self.filter = tool[2] end,
+					edicts_onshow, edicts_onhide)
+			end
+		end
+
+		imSeparator()
+
+		if imMenuItem('Trace Entity') then
+			traceentity_onshow()
+		end
+
+		imEndMenu()
+	end
+end)
+
+scratchpad_update = function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -735,8 +749,9 @@ addwindowtool('Scratchpad', function (self)
 	imEnd()
 
 	return opened
-end)
-addwindowtool('Stats', function (self)
+end
+
+stats_update = function (self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
 
@@ -767,14 +782,22 @@ addwindowtool('Stats', function (self)
 	imEnd()
 
 	return opened
-end)
-addtool('Stop All Sounds', function () sound.stopall() end)
-
-if imShowDemoWindow then
-	addseparator('Debug')
-	addwindowtool('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
-	addtool('Trigger Error', function () error('This error is intentional') end)
 end
 
-addseparator()
-addtool('Press ESC to exit', expmode.exit)
+if imShowDemoWindow then
+	addaction(function ()
+		if imBeginMenu('Debug') then
+			if imMenuItem('ImGui Demo') then
+				window('Dear ImGui Demo', function () return imShowDemoWindow(true) end)
+			end
+
+			imSeparator()
+
+			if imMenuItem('Trigger Error') then
+				safecall(function () error('This error is intentional') end)
+			end
+	
+			imEndMenu()
+		end
+	end)
+end
