@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cstring>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include "google/vcencoder.h"
 #include "google/codetablewriter_interface.h"
@@ -176,38 +177,44 @@ static std::string ReadFile(const std::string& filename, size_t& size)
 	return buffer;
 }
 
-static std::string rootpath;
-static std::string entitiespath;
-static std::vector<std::string> filenames;
+static std::filesystem::path entitiespath;
+static std::filesystem::path oldentitiespath;
+static std::filesystem::path newentitiespath;
+static std::filesystem::path outputpath;
+static std::vector<std::filesystem::path> filenames;
 
 static void GatherFileList()
 {
-	size_t filelistsize;
-	const std::string filelist = ReadFile(entitiespath + "filelist.txt", filelistsize);
-	EFG_VERIFY(!filelist.empty());
-	EFG_VERIFY(filelistsize > 0);
-
-	size_t startindex = 0;
-
-	for (size_t i = 0; i < filelistsize; ++i)
-	{
-		if (filelist[i] == '\n')
-		{
-			if (i != startindex)
-				filenames.emplace_back(&filelist[startindex], i - startindex);
-
-			startindex = i + 1;
-		}
-	}
+	for (const auto& entry : std::filesystem::directory_iterator(oldentitiespath))
+		filenames.emplace_back(entry.path().filename());
 
 	EFG_VERIFY(!filenames.empty());
+}
+
+static bool IsOutdated()
+{
+	if (!std::filesystem::exists(outputpath))
+		return true;
+
+	const auto headerwritetime = std::filesystem::last_write_time(outputpath);
+
+	for (const auto& filename : filenames)
+	{
+		if (std::filesystem::last_write_time(oldentitiespath / filename) > headerwritetime)
+			return true;
+
+		if (std::filesystem::last_write_time(newentitiespath / filename) > headerwritetime)
+			return true;
+	}
+
+	return false;
 }
 
 static void ProcessEntFix(const std::string& filename)
 {
 	size_t oldsize, newsize;
-	const std::string olddata = ReadFile(entitiespath + "old/" + filename, oldsize);
-	const std::string newdata = ReadFile(entitiespath + "new/" + filename, newsize);
+	const std::string olddata = ReadFile(oldentitiespath / filename, oldsize);
+	const std::string newdata = ReadFile(newentitiespath / filename, newsize);
 
 	HashedDictionary dictionary(olddata.data(), olddata.size());
 	dictionary.Init();
@@ -294,8 +301,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static void WriteEntFixes()
 {
-	const std::string outputpath = rootpath + "Quake/entfixes.h";
-
 	FILE* file = fopen(outputpath.c_str(), "w");
 	EFG_VERIFY(file);
 	EFG_VERIFY(fputs(header, file) >= 0);
@@ -344,25 +349,31 @@ static void WriteEntFixes()
 	EFG_VERIFY(fclose(file) == 0);
 }
 
-static void Generate(const char* rootpath)
+static void Generate(const char* entities, const char* header)
 {
-	::rootpath = rootpath;
-	::rootpath += '/';
-	entitiespath = ::rootpath + "Misc/entfixes/entities/";
+	entitiespath = entities;
+	oldentitiespath = entitiespath / "old";
+	newentitiespath = entitiespath / "new";
+
+	outputpath = header;
 
 	GatherFileList();
-	ProcessEntFixes();
-	WriteEntFixes();
+
+	if (IsOutdated())
+	{
+		ProcessEntFixes();
+		WriteEntFixes();
+	}
 }
 
 int main(int argc, const char* argv[])
 {
-	if (argc != 2)
+	if (argc != 3)
 	{
-		printf("Usage: %s repo-root-dir", argv[0]);
+		printf("Usage: %s entities-path generated-header-path", argv[0]);
 		return EXIT_FAILURE;
 	}
 
-	Generate(argv[1]);
+	Generate(argv[1], argv[2]);
 	return EXIT_SUCCESS;
 }

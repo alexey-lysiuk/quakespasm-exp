@@ -34,7 +34,6 @@ set(COMMON_SOURCES
 	Quake/cvar.h
 	Quake/draw.h
 	Quake/entfixes.cpp
-	Quake/entfixes.h
 	Quake/filenames.h
 	Quake/gl_draw.c
 	Quake/gl_fog.c
@@ -385,7 +384,12 @@ else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE Quake ${LUA_DIR} ${IMGUI_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE
+	Quake
+	${LUA_DIR}
+	${IMGUI_DIR}
+	"${CMAKE_BINARY_DIR}"
+)
 
 if(APPLE)
 	if(NOT QUAKE_MACOS_MOUSE_ACCELERATION)
@@ -473,10 +477,13 @@ else()
 	)
 endif()
 
+set(ENTFIXES_HEADER "${CMAKE_BINARY_DIR}/entfixes.h")
+
 set(ENGINE_SOURCES
 	${COMMON_SOURCES}
 	${PLATFORM_SOURCE}
 	${OTHER_FILES}
+	${ENTFIXES_HEADER}
 )
 
 source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c)
@@ -496,6 +503,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(${ENTFIXES_HEADER} PROPERTIES GENERATED TRUE)
 
 option(QUAKE_LTO "Enable link-time optimization if supported by compiler" OFF)
 
@@ -693,9 +701,10 @@ else()
 endif()
 
 add_custom_target(genentfixes
-	COMMAND entfixesgenerator "${CMAKE_SOURCE_DIR}"
+	COMMAND entfixesgenerator "${CMAKE_SOURCE_DIR}/Misc/entfixes/entities" ${ENTFIXES_HEADER}
 	DEPENDS entfixesgenerator
 )
+add_dependencies(${PROJECT_NAME} genentfixes)
 
 option(QUAKE_BUILD_ENGINE_PAK "Build engine .pak file from individual files" ON)
 
