@@ -1,6 +1,7 @@
 
 local ipairs <const> = ipairs
 local tostring <const> = tostring
+local type <const> = type
 
 local floor <const> = math.floor
 
@@ -137,13 +138,14 @@ end
 
 local safecall <const> = expmode.safecall
 
-local function foreachwindow(func)
-	local i = 1
+local function foreachwindow(func_or_name)
+	local func = type(func_or_name) == 'function' and func_or_name
 	local count = #windows
+	local i = 1
 
 	while i <= count do
 		local window = windows[i]
-		local status, keepopen = safecall(func, window)
+		local status, keepopen = safecall(func or window[func_or_name], window)
 
 		if status and keepopen then
 			i = i + 1
@@ -206,7 +208,7 @@ local function updateactions()
 				imSeparator()
 
 				if imMenuItem('Close all') then
-					foreachwindow(function (window) return window:onhide() end)
+					foreachwindow('onhide')
 					windows = {}
 				end
 
@@ -255,11 +257,11 @@ end
 function expmode.onopen()
 	shouldexit = false
 
-	foreachwindow(function (window) return window:onshow() end)
+	foreachwindow('onshow')
 end
 
 function expmode.onclose()
-	foreachwindow(function (window) return window:onhide() end)
+	foreachwindow('onhide')
 
 	screensize = nil
 end
