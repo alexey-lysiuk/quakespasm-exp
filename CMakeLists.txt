@@ -712,7 +712,9 @@ if(QUAKE_BUILD_ENGINE_PAK)
 	set(ENGINE_PAK_SOURCES
 		gfx/conback.lmp
 		scripts/edicts.lua
-		scripts/expmode.lua
+		scripts/expmode_base.lua
+		scripts/expmode_edicts.lua
+		# expmode_debug.lua is excluded intentionally
 		default.cfg
 	)
 
