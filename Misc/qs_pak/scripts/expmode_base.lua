@@ -200,6 +200,8 @@ local function foreachwindow(func_or_name)
 	end
 end
 
+local scratchpadtext = ''
+
 local function scratchpad_update(self)
 	local title = self.title
 	placewindow(title, defaultwindowsize)
@@ -207,7 +209,7 @@ local function scratchpad_update(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		_, self.text = imInputTextMultiline('##text', self.text or '', 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
+		_, scratchpadtext = imInputTextMultiline('##text', scratchpadtext, 64 * 1024, autoexpandsize, imInputTextAllowTabInput)
 	end
 
 	imEnd()
