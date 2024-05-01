@@ -1,6 +1,7 @@
 
 local ipairs <const> = ipairs
 local tostring <const> = tostring
+local type <const> = type
 
 local floor <const> = math.floor
 
@@ -137,6 +138,24 @@ end
 
 local safecall <const> = expmode.safecall
 
+local function foreachwindow(func_or_name)
+	local func = type(func_or_name) == 'function' and func_or_name
+	local count = #windows
+	local i = 1
+
+	while i <= count do
+		local window = windows[i]
+		local status, keepopen = safecall(func or window[func_or_name], window)
+
+		if status and keepopen then
+			i = i + 1
+		else
+			window:close()
+			count = count - 1
+		end
+	end
+end
+
 local placewindow, scratchpad_update, stats_update
 
 local function scratchpad()
@@ -189,10 +208,7 @@ local function updateactions()
 				imSeparator()
 
 				if imMenuItem('Close all') then
-					for _, window in ipairs(windows) do
-						safecall(window.onhide, window)
-					end
-
+					foreachwindow('onhide')
 					windows = {}
 				end
 
@@ -205,18 +221,14 @@ local function updateactions()
 end
 
 local function updatewindows()
-	for _, window in pairs(windows) do
+	foreachwindow(function (window)
 		if wintofocus == window then
 			imSetNextWindowFocus()
 			wintofocus = nil
 		end
 
-		local status, keepopen = safecall(window.onupdate, window)
-
-		if not status or not keepopen then
-			window:close()
-		end
-	end
+		return window:onupdate()
+	end)
 end
 
 function expmode.onupdate()
@@ -245,15 +257,11 @@ end
 function expmode.onopen()
 	shouldexit = false
 
-	for _, window in pairs(windows) do
-		safecall(window.onshow, window)
-	end
+	foreachwindow('onshow')
 end
 
 function expmode.onclose()
-	for _, window in pairs(windows) do
-		safecall(window.onhide, window)
-	end
+	foreachwindow('onhide')
 
 	screensize = nil
 end
@@ -280,7 +288,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			title = title,
 			onupdate = onupdate,
 			onshow = onshow or function () return true end,
-			onhide = onhide or function () end,
+			onhide = onhide or function () return true end,
 			close = closewindow
 		}
 
@@ -477,6 +485,7 @@ end
 
 local function edictinfo_onhide(self)
 	self.fields = nil
+	return true
 end
 
 function expmode.edictinfo(edict)
@@ -620,6 +629,7 @@ end
 
 local function edicts_onhide(self)
 	self.entries = nil
+	return true
 end
 
 local function traceentity_onshow(self)
@@ -702,6 +712,8 @@ end
 local function edictrefs_onhide(self)
 	self.references = nil
 	self.referencedby = nil
+
+	return true
 end
 
 function expmode.edictreferences(edict)
