@@ -437,7 +437,7 @@ function edicts.isitem(edict)
 	end
 
 	-- Ammo
-	local ammoamount = edict.aflag 
+	local ammoamount = edict.aflag
 		or classname == 'item_shells' and edict.ammo_shells
 		or classname == 'item_spikes' and edict.ammo_nails
 		or classname == 'item_rockets' and edict.ammo_rockets
@@ -476,7 +476,7 @@ function edicts.isexit(edict)
 	end
 
 	if edict.classname ~= 'trigger_changelevel'
-		and edict.touch ~= 'changelevel_touch()' 
+		and edict.touch ~= 'changelevel_touch()'
 		and edict.use ~= 'trigger_changelevel()' then
 		return
 	end

@@ -435,11 +435,11 @@ local function edictinfo_onupdate(self)
 				end
 				if imSelectable('Copy all') then
 					local fields = {}
-				
+
 					for i, field in ipairs(self.fields) do
 						fields[i] = field.name .. ': ' .. field.value
 					end
-				
+
 					imSetClipboardText(concat(fields, '\n'))
 				end
 				imEndPopup()
@@ -464,7 +464,7 @@ local function edictinfo_onshow(self)
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
-		field.value = field.type == string 
+		field.value = field.type == string
 			and toascii(localize(field.value))
 			or tostring(field.value)
 		fields[i] = field
@@ -722,7 +722,7 @@ function expmode.edictreferences(edict)
 	end
 end
 
-local edictstools <const> = 
+local edictstools <const> =
 {
 	{ 'All Edicts' },
 	{ 'Secrets', edicts.issecret },
@@ -789,7 +789,7 @@ stats_update = function (self)
 			local minutes = floor(curtime % 3600 / 60)
 			local seconds = floor(curtime % 60)
 
-			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)', 
+			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)',
 				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
@@ -818,7 +818,7 @@ if imShowDemoWindow then
 			if imMenuItem('Trigger Error') then
 				safecall(function () error('This error is intentional') end)
 			end
-	
+
 			imEndMenu()
 		end
 	end)
