@@ -94,13 +94,10 @@ static void LS_InitExpMode()
 	lua_createtable(state, 0, 16);
 	lua_setglobal(state, ls_expmode_name);
 
-	LS_LoadScript(state, "scripts/expmode.lua");
-
+	LS_LoadScript(state, "scripts/expmode_base.lua");
+	LS_LoadScript(state, "scripts/expmode_edicts.lua");
 #ifndef NDEBUG
-	static const char* const DEBUG_SCRIPT = "scripts/expmode_debug.lua";
-
-	if (COM_FileExists(DEBUG_SCRIPT, nullptr))
-		LS_LoadScript(state, DEBUG_SCRIPT);
+	LS_LoadScript(state, "scripts/expmode_debug.lua");
 #endif // !NDEBUG
 
 	lua_gc(state, LUA_GCRESTART);
