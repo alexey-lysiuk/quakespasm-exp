@@ -250,63 +250,70 @@ local function stats_update(self)
 	return opened
 end
 
-local function scratchpad()
-	local title = 'Scratchpad'
+local function updateexpmenu()
+	if imBeginMenu('EXP') then
+		local title = 'Scratchpad'
 
-	if imMenuItem(title) then
-		window(title, scratchpad_update)
+		if imMenuItem(title) then
+			window(title, scratchpad_update)
+		end
+
+		title = 'Stats'
+
+		if imMenuItem(title) then
+			window(title, stats_update)
+		end
+
+		if imMenuItem('Stop All Sounds') then
+			sound.stopall()
+		end
+
+		imSeparator()
+
+		if imMenuItem('Exit', 'Esc') then
+			exit()
+		end
+
+		imEndMenu()
 	end
 end
 
-local function stats()
-	local title = 'Stats'
+local function updatewindowsmenu()
+	local closeall = 'Close all'
 
-	if imMenuItem(title) then
-		window(title, stats_update)
+	if imBeginMenu('Windows') then
+		local haswindows = #windows > 0
+
+		if haswindows then
+			for _, window in ipairs(windows) do
+				if imMenuItem(window.title) then
+					wintofocus = window
+				end
+			end
+
+			imSeparator()
+
+			if imMenuItem(closeall) then
+				foreachwindow('onhide')
+				windows = {}
+			end
+		else
+			imMenuItem(closeall, nil, false, false)
+		end
+
+		imEndMenu()
 	end
 end
 
 local function updateactions()
 	if imBeginMainMenuBar() then
-		if imBeginMenu('EXP') then
-			scratchpad()
-			stats()
-
-			if imMenuItem('Stop All Sounds') then
-				sound.stopall()
-			end
-
-			imSeparator()
-
-			if imMenuItem('Exit', 'Esc') then
-				exit()
-			end
-
-			imEndMenu()
-		end
+		updateexpmenu()
 
 		for _, action in ipairs(actions) do
 			safecall(action)
 		end
 
-		if #windows > 0 then
-			if imBeginMenu('Windows') then
-				for _, window in ipairs(windows) do
-					if imMenuItem(window.title) then
-						wintofocus = window
-					end
-				end
-
-				imSeparator()
-
-				if imMenuItem('Close all') then
-					foreachwindow('onhide')
-					windows = {}
-				end
-
-				imEndMenu()
-			end
-		end
+		updatewindowsmenu()
 
 		imEndMainMenuBar()
 	end
