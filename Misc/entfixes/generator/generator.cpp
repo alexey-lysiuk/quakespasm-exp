@@ -218,11 +218,11 @@ static bool IsOutdated()
 static void ProcessEntFix(const std::filesystem::path& filename)
 {
 	const auto oldpath = oldentitiespath / filename;
-	const size_t oldsize = std::filesystem::file_size(oldpath);
+	const auto oldsize = size_t(std::filesystem::file_size(oldpath));
 	const auto olddata = ReadFile(oldpath, oldsize);
 
 	const auto newpath = newentitiespath / filename;
-	const size_t newsize = std::filesystem::file_size(newpath);
+	const auto newsize = size_t(std::filesystem::file_size(newpath));
 	const auto newdata = ReadFile(newpath, newsize);
 
 	HashedDictionary dictionary(olddata.data(), olddata.size());
