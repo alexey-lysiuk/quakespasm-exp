@@ -162,7 +162,7 @@ public:
 
 #define EFG_VERIFY(EXPR) { if (!(EXPR)) { printf("ERROR: '%s' failed at line %i\n", #EXPR, __LINE__); exit(__LINE__); } }
 
-static std::string ReadFile(const std::filesystem::path& path, const std::uintmax_t size)
+static std::string ReadFile(const std::filesystem::path& path, const size_t size)
 {
 	std::fstream file(path, std::ios::in | std::ios::binary);
 	EFG_VERIFY(file.good());
@@ -218,11 +218,11 @@ static bool IsOutdated()
 static void ProcessEntFix(const std::filesystem::path& filename)
 {
 	const auto oldpath = oldentitiespath / filename;
-	const auto oldsize = std::filesystem::file_size(oldpath);
+	const size_t oldsize = std::filesystem::file_size(oldpath);
 	const auto olddata = ReadFile(oldpath, oldsize);
 
 	const auto newpath = newentitiespath / filename;
-	const auto newsize = std::filesystem::file_size(newpath);
+	const size_t newsize = std::filesystem::file_size(newpath);
 	const auto newdata = ReadFile(newpath, newsize);
 
 	HashedDictionary dictionary(olddata.data(), olddata.size());
