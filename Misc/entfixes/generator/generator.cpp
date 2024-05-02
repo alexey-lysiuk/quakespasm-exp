@@ -18,8 +18,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <algorithm>
-#include <cstdio>
-#include <cstring>
+#include <cstdlib>
+//#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -159,20 +162,25 @@ public:
 
 #define EFG_VERIFY(EXPR) { if (!(EXPR)) { printf("ERROR: '%s' failed at line %i\n", #EXPR, __LINE__); exit(__LINE__); } }
 
-static std::string ReadFile(const std::string& filename, size_t& size)
+static std::string ReadFile(const std::filesystem::path& path, const std::uintmax_t size)
 {
-	FILE* file = fopen(filename.c_str(), "rb");
-	EFG_VERIFY(file);
-	EFG_VERIFY(fseek(file, 0, SEEK_END) == 0);
+//	FILE* file = fopen(path.c_str(), "rb");
+//	EFG_VERIFY(file);
+//	EFG_VERIFY(fseek(file, 0, SEEK_END) == 0);
+//
+//	size = ftell(file);
+//	EFG_VERIFY(size > 0);
+//	EFG_VERIFY(fseek(file, 0, SEEK_SET) == 0);
 
-	size = ftell(file);
-	EFG_VERIFY(size > 0);
-	EFG_VERIFY(fseek(file, 0, SEEK_SET) == 0);
+	std::fstream file(path, std::ios::in | std::ios::binary);
+	EFG_VERIFY(file.good());
 
 	std::string buffer;
 	buffer.resize(size);
-	EFG_VERIFY(fread(&buffer[0], 1, size, file) == size);
-	EFG_VERIFY(fclose(file) == 0);
+	file.read(&buffer[0], size);
+	EFG_VERIFY(file.good());
+//	EFG_VERIFY(fread(&buffer[0], 1, size, file) == size);
+//	EFG_VERIFY(fclose(file) == 0);
 
 	return buffer;
 }
@@ -185,6 +193,8 @@ static std::vector<std::filesystem::path> filenames;
 
 static void GatherFileList()
 {
+	EFG_VERIFY(std::filesystem::exists(oldentitiespath));
+
 	for (const auto& entry : std::filesystem::directory_iterator(oldentitiespath))
 		filenames.emplace_back(entry.path().filename());
 
@@ -197,13 +207,18 @@ static bool IsOutdated()
 		return true;
 
 	const auto headerwritetime = std::filesystem::last_write_time(outputpath);
+	const auto isoutdated = [&headerwritetime](const std::filesystem::path& path)
+	{
+		EFG_VERIFY(std::filesystem::exists(path));
+		return std::filesystem::last_write_time(path) > headerwritetime;
+	};
 
 	for (const auto& filename : filenames)
 	{
-		if (std::filesystem::last_write_time(oldentitiespath / filename) > headerwritetime)
+		if (isoutdated(oldentitiespath / filename))
 			return true;
 
-		if (std::filesystem::last_write_time(newentitiespath / filename) > headerwritetime)
+		if (isoutdated(newentitiespath / filename))
 			return true;
 	}
 
@@ -212,9 +227,13 @@ static bool IsOutdated()
 
 static void ProcessEntFix(const std::string& filename)
 {
-	size_t oldsize, newsize;
-	const std::string olddata = ReadFile(oldentitiespath / filename, oldsize);
-	const std::string newdata = ReadFile(newentitiespath / filename, newsize);
+	const auto oldpath = oldentitiespath / filename;
+	const auto oldsize = std::filesystem::file_size(oldpath);
+	const auto olddata = ReadFile(oldpath, oldsize);
+
+	const auto newpath = oldentitiespath / filename;
+	const auto newsize = std::filesystem::file_size(newpath);
+	const auto newdata = ReadFile(newpath, newsize);
 
 	HashedDictionary dictionary(olddata.data(), olddata.size());
 	dictionary.Init();
@@ -297,19 +316,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+static const char* const addeddata =
 )";
 
 static void WriteEntFixes()
 {
-	FILE* file = fopen(outputpath.c_str(), "w");
-	EFG_VERIFY(file);
-	EFG_VERIFY(fputs(header, file) >= 0);
-	EFG_VERIFY(fputs("static const char* const addeddata =\n", file) >= 0);
+	std::ostringstream generated;
+	generated << header;
+
+//	ofstream file(outputpath, std::ios::out);
+//	EFG_VERIFY(file.good());
+//	file.write(header, sizeof header);
+
+//	FILE* file = fopen(outputpath.c_str(), "w");
+//	EFG_VERIFY(file);
+//	EFG_VERIFY(fputs(header, file) >= 0);
+//	EFG_VERIFY(fputs("static const char* const addeddata =\n", file) >= 0);
 
 	for (size_t i = 0, e = addeddata.size(); i < e; ++i)
-		EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\"\n", addedoffsets[i], addeddata[i].c_str()) > 0);
+		//EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\"\n", addedoffsets[i], addeddata[i].c_str()) > 0);
+		generated << "\t/* " << addedoffsets[i] << " */ \"" << addeddata[i] << "\"\n";
 
-	EFG_VERIFY(fputs(";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) >= 0);
+	//EFG_VERIFY(fputs(";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) >= 0);
+		generated << ";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n";
 
 	bool first = true;
 
@@ -318,19 +347,23 @@ static void WriteEntFixes()
 		if (first)
 			first = false;
 		else
-			EFG_VERIFY(fputs("\n", file) >= 0);
+			//EFG_VERIFY(fputs("\n", file) >= 0);
+			generated << '\n';
 
-		EFG_VERIFY(fprintf(file, "\t// %s@%s\n", fix.mapname.c_str(), fix.crc.c_str()) > 0);
+		//EFG_VERIFY(fprintf(file, "\t// %s@%s\n", fix.mapname.c_str(), fix.crc.c_str()) > 0);
+		generated << "\t// " << fix.mapname << '@' << fix.crc << '\n';
 
 		for (const EF_Patch& patch : fix.patches)
 		{
 			const EF_Operation op = patch.operation;
 			const char* opstr = op == EF_ADD ? "EF_ADD" : (op == EF_COPY ? "EF_COPY" : "EF_RUN");
-			EFG_VERIFY(fprintf(file, "\t{ %s, %zu, %zu },\n", opstr, patch.size, patch.value) > 0);
+			//EFG_VERIFY(fprintf(file, "\t{ %s, %zu, %zu },\n", opstr, patch.size, patch.value) > 0);
+			generated << "\t{ " << opstr << ", " << patch.size << ", " << patch.value << " },\n";
 		}
 	}
 
-	EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) >= 0);
+	//EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) >= 0);
+	generated << "};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n";
 
 	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
 	{
@@ -341,12 +374,22 @@ static void WriteEntFixes()
 
 	for (const EF_Fix& fix : fixes)
 	{
-		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
-			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, fix.patchindex, fix.patches.size()) > 0);
+//		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
+//			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, fix.patchindex, fix.patches.size()) > 0);
+		generated << "\t{ \"" << fix.mapname << "\", 0x" << fix.crc << ", "
+			<< fix.oldsize << ", " << fix.newsize << ", "
+			<< fix.patchindex << ", " << fix.patches.size() << " },\n";
 	}
 
-	EFG_VERIFY(fputs("};\n", file) >= 0);
-	EFG_VERIFY(fclose(file) == 0);
+//	EFG_VERIFY(fputs("};\n", file) >= 0);
+//	EFG_VERIFY(fclose(file) == 0);
+
+	generated << "};\n";
+
+	std::ofstream file(outputpath, std::ios::out);
+	EFG_VERIFY(file.good());
+	file << generated.str();
+	EFG_VERIFY(file.good());
 }
 
 static void Generate(const char* entities, const char* header)
@@ -370,7 +413,7 @@ int main(int argc, const char* argv[])
 {
 	if (argc != 3)
 	{
-		printf("Usage: %s entities-path generated-header-path", argv[0]);
+		std::cout << "Usage: " << argv[0] << " entities-path generated-header-path" << std::endl;
 		return EXIT_FAILURE;
 	}
 
