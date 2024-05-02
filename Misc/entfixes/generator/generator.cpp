@@ -164,14 +164,6 @@ public:
 
 static std::string ReadFile(const std::filesystem::path& path, const std::uintmax_t size)
 {
-//	FILE* file = fopen(path.c_str(), "rb");
-//	EFG_VERIFY(file);
-//	EFG_VERIFY(fseek(file, 0, SEEK_END) == 0);
-//
-//	size = ftell(file);
-//	EFG_VERIFY(size > 0);
-//	EFG_VERIFY(fseek(file, 0, SEEK_SET) == 0);
-
 	std::fstream file(path, std::ios::in | std::ios::binary);
 	EFG_VERIFY(file.good());
 
@@ -179,8 +171,6 @@ static std::string ReadFile(const std::filesystem::path& path, const std::uintma
 	buffer.resize(size);
 	file.read(&buffer[0], size);
 	EFG_VERIFY(file.good());
-//	EFG_VERIFY(fread(&buffer[0], 1, size, file) == size);
-//	EFG_VERIFY(fclose(file) == 0);
 
 	return buffer;
 }
@@ -225,13 +215,13 @@ static bool IsOutdated()
 	return false;
 }
 
-static void ProcessEntFix(const std::string& filename)
+static void ProcessEntFix(const std::filesystem::path& filename)
 {
 	const auto oldpath = oldentitiespath / filename;
 	const auto oldsize = std::filesystem::file_size(oldpath);
 	const auto olddata = ReadFile(oldpath, oldsize);
 
-	const auto newpath = oldentitiespath / filename;
+	const auto newpath = newentitiespath / filename;
 	const auto newsize = std::filesystem::file_size(newpath);
 	const auto newdata = ReadFile(newpath, newsize);
 
@@ -246,19 +236,21 @@ static void ProcessEntFix(const std::string& filename)
 	EFG_VERIFY(encoder.EncodeChunk(newdata.data(), newdata.size(), &output));
 	EFG_VERIFY(encoder.FinishEncoding(&output));
 
-	const size_t atpos = filename.find('@');
-	EFG_VERIFY(atpos != std::string::npos);
-	EFG_VERIFY(atpos < filename.size());
+	const std::string filenamestring = filename.string();
 
-	const size_t dotpos = filename.find('.');
+	const auto atpos = filenamestring.find('@');
+	EFG_VERIFY(atpos != std::string::npos);
+	EFG_VERIFY(atpos < filenamestring.size());
+
+	const auto dotpos = filenamestring.find('.');
 	EFG_VERIFY(dotpos != std::string::npos);
-	EFG_VERIFY(dotpos != filename.size());
+	EFG_VERIFY(dotpos != filenamestring.size());
 	EFG_VERIFY(dotpos > atpos);
 
-	std::string mapname{ filename.c_str(), atpos };
+	std::string mapname{ filenamestring.c_str(), atpos };
 	EFG_VERIFY(!mapname.empty());
 
-	std::string crc{ filename.c_str() + atpos + 1, dotpos - atpos - 1 };
+	std::string crc{ filenamestring.c_str() + atpos + 1, dotpos - atpos - 1 };
 	EFG_VERIFY(crc.size() == 4);  // 16-bit hex CRC
 
 	fixes.emplace_back(std::move(mapname), std::move(crc), std::move(writer->patches), oldsize + 1, newsize + 1);
@@ -324,21 +316,10 @@ static void WriteEntFixes()
 	std::ostringstream generated;
 	generated << header;
 
-//	ofstream file(outputpath, std::ios::out);
-//	EFG_VERIFY(file.good());
-//	file.write(header, sizeof header);
-
-//	FILE* file = fopen(outputpath.c_str(), "w");
-//	EFG_VERIFY(file);
-//	EFG_VERIFY(fputs(header, file) >= 0);
-//	EFG_VERIFY(fputs("static const char* const addeddata =\n", file) >= 0);
-
 	for (size_t i = 0, e = addeddata.size(); i < e; ++i)
-		//EFG_VERIFY(fprintf(file, "\t/* %zu */ \"%s\"\n", addedoffsets[i], addeddata[i].c_str()) > 0);
 		generated << "\t/* " << addedoffsets[i] << " */ \"" << addeddata[i] << "\"\n";
 
-	//EFG_VERIFY(fputs(";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n", file) >= 0);
-		generated << ";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n";
+	generated << ";\n\nstatic constexpr EF_Patch ef_patches[] =\n{\n";
 
 	bool first = true;
 
@@ -347,22 +328,18 @@ static void WriteEntFixes()
 		if (first)
 			first = false;
 		else
-			//EFG_VERIFY(fputs("\n", file) >= 0);
 			generated << '\n';
 
-		//EFG_VERIFY(fprintf(file, "\t// %s@%s\n", fix.mapname.c_str(), fix.crc.c_str()) > 0);
 		generated << "\t// " << fix.mapname << '@' << fix.crc << '\n';
 
 		for (const EF_Patch& patch : fix.patches)
 		{
 			const EF_Operation op = patch.operation;
 			const char* opstr = op == EF_ADD ? "EF_ADD" : (op == EF_COPY ? "EF_COPY" : "EF_RUN");
-			//EFG_VERIFY(fprintf(file, "\t{ %s, %zu, %zu },\n", opstr, patch.size, patch.value) > 0);
 			generated << "\t{ " << opstr << ", " << patch.size << ", " << patch.value << " },\n";
 		}
 	}
 
-	//EFG_VERIFY(fputs("};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n", file) >= 0);
 	generated << "};\n\nstatic constexpr EF_Fix ef_fixes[] =\n{\n";
 
 	std::sort(fixes.begin(), fixes.end(), [](const EF_Fix& lhs, const EF_Fix& rhs)
@@ -374,15 +351,10 @@ static void WriteEntFixes()
 
 	for (const EF_Fix& fix : fixes)
 	{
-//		EFG_VERIFY(fprintf(file, "\t{ \"%s\", 0x%s, %zu, %zu, %zu, %zu },\n",
-//			fix.mapname.c_str(), fix.crc.c_str(), fix.oldsize, fix.newsize, fix.patchindex, fix.patches.size()) > 0);
 		generated << "\t{ \"" << fix.mapname << "\", 0x" << fix.crc << ", "
 			<< fix.oldsize << ", " << fix.newsize << ", "
 			<< fix.patchindex << ", " << fix.patches.size() << " },\n";
 	}
-
-//	EFG_VERIFY(fputs("};\n", file) >= 0);
-//	EFG_VERIFY(fclose(file) == 0);
 
 	generated << "};\n";
 
