@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <algorithm>
 #include <cstdlib>
-//#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -162,8 +161,13 @@ public:
 
 #define EFG_VERIFY(EXPR) { if (!(EXPR)) { printf("ERROR: '%s' failed at line %i\n", #EXPR, __LINE__); exit(__LINE__); } }
 
-static std::string ReadFile(const std::filesystem::path& path, const size_t size)
+static std::pair<std::string, size_t> ReadFile(const std::filesystem::path& path)
 {
+	std::error_code error;
+	const auto size = size_t(std::filesystem::file_size(path, error));
+	EFG_VERIFY(error.value() == 0);
+	EFG_VERIFY(size != std::uintmax_t(-1) && size != 0);
+
 	std::fstream file(path, std::ios::in | std::ios::binary);
 	EFG_VERIFY(file.good());
 
@@ -172,7 +176,7 @@ static std::string ReadFile(const std::filesystem::path& path, const size_t size
 	file.read(&buffer[0], size);
 	EFG_VERIFY(file.good());
 
-	return buffer;
+	return { buffer, size };
 }
 
 static std::filesystem::path entitiespath;
@@ -189,6 +193,8 @@ static void GatherFileList()
 		filenames.emplace_back(entry.path().filename());
 
 	EFG_VERIFY(!filenames.empty());
+
+	std::sort(filenames.begin(), filenames.end());
 }
 
 static bool IsOutdated()
@@ -217,13 +223,8 @@ static bool IsOutdated()
 
 static void ProcessEntFix(const std::filesystem::path& filename)
 {
-	const auto oldpath = oldentitiespath / filename;
-	const auto oldsize = size_t(std::filesystem::file_size(oldpath));
-	const auto olddata = ReadFile(oldpath, oldsize);
-
-	const auto newpath = newentitiespath / filename;
-	const auto newsize = size_t(std::filesystem::file_size(newpath));
-	const auto newdata = ReadFile(newpath, newsize);
+	const auto [ olddata, oldsize ] = ReadFile(oldentitiespath / filename);
+	const auto [ newdata, newsize ] = ReadFile(newentitiespath / filename);
 
 	HashedDictionary dictionary(olddata.data(), olddata.size());
 	dictionary.Init();
