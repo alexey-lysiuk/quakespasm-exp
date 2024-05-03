@@ -19,12 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <algorithm>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 #include "google/vcencoder.h"
 #include "google/codetablewriter_interface.h"
@@ -187,8 +187,6 @@ static std::vector<std::filesystem::path> filenames;
 
 static void GatherFileList()
 {
-	EFG_VERIFY(std::filesystem::exists(oldentitiespath));
-
 	for (const auto& entry : std::filesystem::directory_iterator(oldentitiespath))
 		filenames.emplace_back(entry.path().filename());
 
@@ -208,15 +206,17 @@ static bool IsOutdated()
 		EFG_VERIFY(std::filesystem::exists(path));
 		return std::filesystem::last_write_time(path) > headerwritetime;
 	};
+	const auto isentryoutdated = [&isoutdated](const std::filesystem::path& filename)
+	{
+		return isoutdated(oldentitiespath / filename) || isoutdated(newentitiespath / filename);
+	};
+
+	if (isentryoutdated({}))
+		return true;
 
 	for (const auto& filename : filenames)
-	{
-		if (isoutdated(oldentitiespath / filename))
+		if (isentryoutdated(filename))
 			return true;
-
-		if (isoutdated(newentitiespath / filename))
-			return true;
-	}
 
 	return false;
 }
@@ -368,10 +368,16 @@ static void WriteEntFixes()
 static void Generate(const char* entities, const char* header)
 {
 	entitiespath = entities;
+	EFG_VERIFY(std::filesystem::exists(entitiespath));
+
 	oldentitiespath = entitiespath / "old";
+	EFG_VERIFY(std::filesystem::exists(oldentitiespath));
+
 	newentitiespath = entitiespath / "new";
+	EFG_VERIFY(std::filesystem::exists(newentitiespath));
 
 	outputpath = header;
+	EFG_VERIFY(std::filesystem::exists(outputpath.parent_path()));
 
 	GatherFileList();
 
