@@ -147,6 +147,18 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetNextWindowSizeConstraints(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImVec2 minsize = LS_GetImVecValue<ImVec2>(state, 1);
+	const ImVec2 maxsize = LS_GetImVecValue<ImVec2>(state, 2);
+	// TODO: add support for callback
+
+	ImGui::SetNextWindowSizeConstraints(minsize, maxsize);
+	return 0;
+}
+
 static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -784,7 +796,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Window manipulation
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
 		{ "SetNextWindowSize", LS_global_imgui_SetNextWindowSize },
-		// * SetNextWindowSizeConstraints
+		{ "SetNextWindowSizeConstraints", LS_global_imgui_SetNextWindowSizeConstraints },
 		// * SetNextWindowContentSize
 		// * SetNextWindowCollapsed
 		{ "SetNextWindowFocus", LS_global_imgui_SetNextWindowFocus },
