@@ -208,15 +208,17 @@ static bool IsOutdated()
 		EFG_VERIFY(std::filesystem::exists(path));
 		return std::filesystem::last_write_time(path) > headerwritetime;
 	};
+	const auto isentryoutdated = [&isoutdated](const std::filesystem::path& filename)
+	{
+		return isoutdated(oldentitiespath / filename) || isoutdated(newentitiespath / filename);
+	};
+
+	if (isentryoutdated({}))
+		return true;
 
 	for (const auto& filename : filenames)
-	{
-		if (isoutdated(oldentitiespath / filename))
+		if (isentryoutdated(filename))
 			return true;
-
-		if (isoutdated(newentitiespath / filename))
-			return true;
-	}
 
 	return false;
 }
