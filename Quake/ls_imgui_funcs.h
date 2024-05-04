@@ -590,6 +590,17 @@ static int LS_global_imgui_TableGetColumnFlags(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_GetColumnWidth(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const int columnindex = luaL_optinteger(state, 1, -1);
+	const float width = ImGui::GetColumnWidth(columnindex);
+
+	lua_pushnumber(state, width);
+	return 1;
+}
+
 static int LS_global_imgui_SetItemDefaultFocus(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1043,7 +1054,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * Columns
 		// * NextColumn
 		// * GetColumnIndex
-		// * GetColumnWidth
+		{ "GetColumnWidth", LS_global_imgui_GetColumnWidth },
 		// * SetColumnWidth
 		// * GetColumnOffset
 		// * SetColumnOffset
