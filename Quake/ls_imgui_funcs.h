@@ -163,6 +163,15 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_PushItemWidth(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const float itemwidth = luaL_checknumber(state, 1);
+	ImGui::PushItemWidth(itemwidth);
+	return 1;
+}
+
 static int LS_global_imgui_Separator(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -813,7 +822,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PopButtonRepeat
 
 		// Parameters stacks
-		// * PushItemWidth
+		{ "PushItemWidth", LS_global_imgui_PushItemWidth },
 		// * PopItemWidth
 		// * SetNextItemWidth
 		// * CalcItemWidth
