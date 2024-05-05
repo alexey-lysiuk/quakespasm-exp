@@ -194,6 +194,7 @@ set(LUA_SOURCES
 	${LUA_DIR}/lobject.h
 	${LUA_DIR}/lopcodes.c
 	${LUA_DIR}/lopcodes.h
+	${LUA_DIR}/loslib.c
 	${LUA_DIR}/lparser.c
 	${LUA_DIR}/lparser.h
 	${LUA_DIR}/lprefix.h

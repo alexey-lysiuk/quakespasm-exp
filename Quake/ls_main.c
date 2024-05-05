@@ -294,6 +294,33 @@ static void LS_InitStandardLibraries(lua_State* state)
 		luaL_requiref(state, lib->name, lib->func, 1);
 		lua_pop(state, 1);
 	}
+
+	// Load original 'os' library without global name creations,
+	// collect pointers to safe functions, and expose them as 'os' library
+	luaL_requiref(state, "os", luaopen_os, 0);
+
+	luaL_Reg functions[] =
+	{
+		{ "clock", NULL },
+		{ "date", NULL },
+		{ "difftime", NULL },
+		{ "time", NULL },
+		{ NULL, NULL }
+	};
+
+	for (luaL_Reg* f = functions; f->name != NULL; ++f)
+	{
+		lua_pushstring(state, f->name);
+		lua_rawget(state, -2);
+		f->func = lua_tocfunction(state, -1);
+		assert(f->func);
+		lua_pop(state, 1);  // remove function
+	}
+
+	luaL_newlib(state, functions);
+	lua_setglobal(state, "os");
+
+	lua_pop(state, 1);  // remove original 'os' library
 }
 
 static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
