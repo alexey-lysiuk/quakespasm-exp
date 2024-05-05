@@ -315,6 +315,11 @@ local function updateactions()
 
 		updatewindowsmenu()
 
+		local now = os.date()
+		local spacing = screensize.x - ImGui.CalcTextSize(now).x - ImGui.GetCursorPosX()
+		imSameLine(0, spacing)
+		imText(now)
+
 		imEndMainMenuBar()
 	end
 end
