@@ -4,6 +4,8 @@ local type <const> = type
 
 local floor <const> = math.floor
 
+local date <const> = os.date
+
 local format <const> = string.format
 
 local insert <const> = table.insert
@@ -13,9 +15,11 @@ local imBegin <const> = ImGui.Begin
 local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
 local imBeginMenu <const> = ImGui.BeginMenu
 local imButton <const> = ImGui.Button
+local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
 local imEndMenu <const> = ImGui.EndMenu
+local imGetCursorPosX <const> = ImGui.GetCursorPosX
 local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imMenuItem <const> = ImGui.MenuItem
@@ -35,6 +39,10 @@ local imCondFirstUseEver <const> = ImGui.Cond.FirstUseEver
 local imInputTextAllowTabInput <const> = ImGui.InputTextFlags.AllowTabInput
 
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
+
+local framecount <const> = host.framecount
+local frametime <const> = host.frametime
+local realtime <const> = host.realtime
 
 local placedwindows = {}
 local actions = {}
@@ -225,16 +233,16 @@ local function stats_update(self)
 
 	if visible and opened then
 		local prevtime = self.realtime or 0
-		local curtime = host.realtime()
+		local curtime = realtime()
 
 		if prevtime + 0.1 <= curtime then
-			local frametime = host.frametime()
+			local frametime = frametime()
 			local hours = floor(curtime / 3600)
 			local minutes = floor(curtime % 3600 / 60)
 			local seconds = floor(curtime % 60)
 
 			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)',
-				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+				framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
 		end
@@ -305,6 +313,22 @@ local function updatewindowsmenu()
 	end
 end
 
+local clockstring
+local clockupdatetime = 0
+
+local function updateclockmenu()
+	local now = realtime()
+
+	if now - clockupdatetime > 1 then
+		clockstring = date('%a %b %d %Y %H:%M')
+		clockupdatetime = now
+	end
+
+	local spacing = screensize.x - imCalcTextSize(clockstring).x - imGetCursorPosX()
+	imSameLine(0, spacing)
+	imText(clockstring)
+end
+
 local function updateactions()
 	if imBeginMainMenuBar() then
 		updateexpmenu()
@@ -314,11 +338,7 @@ local function updateactions()
 		end
 
 		updatewindowsmenu()
-
-		local now = os.date()
-		local spacing = screensize.x - ImGui.CalcTextSize(now).x - ImGui.GetCursorPosX()
-		imSameLine(0, spacing)
-		imText(now)
+		updateclockmenu()
 
 		imEndMainMenuBar()
 	end
