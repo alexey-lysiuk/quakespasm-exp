@@ -184,6 +184,15 @@ static int LS_global_imgui_GetCursorPosX(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_GetCursorPosY(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const float posy = ImGui::GetCursorPosY();
+	lua_pushnumber(state, posy);
+	return 1;
+}
+
 static int LS_global_imgui_Separator(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -866,7 +875,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * SetCursorScreenPos
 		// * GetCursorPos
 		{ "GetCursorPosX", LS_global_imgui_GetCursorPosX },
-		// * GetCursorPosY
+		{ "GetCursorPosY", LS_global_imgui_GetCursorPosY },
 		// * SetCursorPos
 		// * SetCursorPosX
 		// * SetCursorPosY
