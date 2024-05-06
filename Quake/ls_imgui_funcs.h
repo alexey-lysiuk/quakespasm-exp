@@ -175,6 +175,15 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_GetCursorPos(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImVec2 pos = ImGui::GetCursorPos();
+	LS_PushImVec(state, pos);
+	return 1;
+}
+
 static int LS_global_imgui_GetCursorPosX(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -873,7 +882,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Layout cursor positioning
 		// * GetCursorScreenPos
 		// * SetCursorScreenPos
-		// * GetCursorPos
+		{ "GetCursorPos", LS_global_imgui_GetCursorPos },
 		{ "GetCursorPosX", LS_global_imgui_GetCursorPosX },
 		{ "GetCursorPosY", LS_global_imgui_GetCursorPosY },
 		// * SetCursorPos
