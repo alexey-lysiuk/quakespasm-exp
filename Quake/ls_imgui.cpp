@@ -176,7 +176,7 @@ static const LS_UserDataType ls_imguitextbuffer_type =
 	sizeof(int) + /* fourcc */ + sizeof(LS_TextBuffer)
 };
 
-static LS_TextBuffer& LS_TextBufferValue(lua_State* state, int index)
+static LS_TextBuffer& LS_GetTextBufferValue(lua_State* state, int index)
 {
 	LS_TextBuffer* textbufferptr = static_cast<LS_TextBuffer*>(LS_GetValueFromTypedUserData(state, index, &ls_imguitextbuffer_type));
 	assert(textbufferptr);
@@ -186,14 +186,14 @@ static LS_TextBuffer& LS_TextBufferValue(lua_State* state, int index)
 
 static int LS_value_TextBuffer_gc(lua_State* state)
 {
-	LS_TextBuffer& textbuffer = LS_TextBufferValue(state, 1);
+	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
 	IM_FREE(textbuffer.data);
 	return 0;
 }
 
 static int LS_value_TextBuffer_tostring(lua_State* state)
 {
-	LS_TextBuffer& textbuffer = LS_TextBufferValue(state, 1);
+	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
 	lua_pushlstring(state, textbuffer.data, textbuffer.size);
 	return 1;
 }
