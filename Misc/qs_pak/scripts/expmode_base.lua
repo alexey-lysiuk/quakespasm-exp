@@ -36,6 +36,10 @@ local imInputTextAllowTabInput <const> = ImGui.InputTextFlags.AllowTabInput
 
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
+local framecount <const> = host.framecount
+local frametime <const> = host.frametime
+local realtime <const> = host.realtime
+
 local placedwindows = {}
 local actions = {}
 local windows = {}
@@ -225,16 +229,16 @@ local function stats_update(self)
 
 	if visible and opened then
 		local prevtime = self.realtime or 0
-		local curtime = host.realtime()
+		local curtime = realtime()
 
 		if prevtime + 0.1 <= curtime then
-			local frametime = host.frametime()
+			local frametime = frametime()
 			local hours = floor(curtime / 3600)
 			local minutes = floor(curtime % 3600 / 60)
 			local seconds = floor(curtime % 60)
 
 			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)',
-				host.framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+				framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
 		end
