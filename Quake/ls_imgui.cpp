@@ -164,6 +164,87 @@ int LS_value_ImVec_tostring<ImVec4>(lua_State* state)
 }
 
 
+struct LS_TextBuffer
+{
+	char* data;
+	size_t size;
+};
+
+static const LS_UserDataType ls_imguitextbuffer_type =
+{
+	{ {{'i', 'm', 't', 'b'}} },
+	sizeof(int) + /* fourcc */ + sizeof(LS_TextBuffer)
+};
+
+static LS_TextBuffer& LS_TextBufferValue(lua_State* state, int index)
+{
+	LS_TextBuffer* textbufferptr = static_cast<LS_TextBuffer*>(LS_GetValueFromTypedUserData(state, index, &ls_imguitextbuffer_type));
+	assert(textbufferptr);
+
+	return *textbufferptr;
+}
+
+static int LS_value_TextBuffer_gc(lua_State* state)
+{
+	LS_TextBuffer& textbuffer = LS_TextBufferValue(state, 1);
+	IM_FREE(textbuffer.data);
+	return 0;
+}
+
+static int LS_value_TextBuffer_tostring(lua_State* state)
+{
+	LS_TextBuffer& textbuffer = LS_TextBufferValue(state, 1);
+	lua_pushlstring(state, textbuffer.data, textbuffer.size);
+	return 1;
+}
+
+static int LS_global_imgui_TextBuffer(lua_State* state)
+{
+	static constexpr lua_Integer BUFFER_SIZE_MIN = 256;
+	static constexpr lua_Integer BUFFER_SIZE_MAX = 1024 * 1024;
+	const lua_Integer ibuffersize = luaL_checkinteger(state, 1);
+
+	const size_t buffersize = CLAMP(BUFFER_SIZE_MIN, ibuffersize, BUFFER_SIZE_MAX);
+	char* bufferdata = reinterpret_cast<char*>(IM_ALLOC(buffersize));
+
+	size_t textlength = 0;
+	const char* text = luaL_optlstring(state, 2, "", &textlength);
+	assert(text);
+
+	if (buffersize <= textlength)
+	{
+		// Text doesn't fit the buffer, cut it
+		textlength = buffersize - 1;
+		bufferdata[textlength] = '\0';
+	}
+
+	if (textlength > 0)
+		strncpy(bufferdata, text, textlength);
+	else
+		bufferdata[0] = '\0';
+
+	LS_TextBuffer* textbuffer = static_cast<LS_TextBuffer*>(LS_CreateTypedUserData(state, &ls_imguitextbuffer_type));
+	assert(textbuffer);
+
+	textbuffer->data = bufferdata;
+	textbuffer->size = buffersize;
+
+	// Create and set 'textbuffer?' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__gc", LS_value_TextBuffer_gc },
+		{ "__tostring", LS_value_TextBuffer_tostring },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "ImGui.TextBuffer"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
+
 enum LS_ImGuiType
 {
 	ImMemberType_bool,
