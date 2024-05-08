@@ -4,6 +4,8 @@ local type <const> = type
 
 local floor <const> = math.floor
 
+local date <const> = os.date
+
 local format <const> = string.format
 
 local insert <const> = table.insert
@@ -13,9 +15,11 @@ local imBegin <const> = ImGui.Begin
 local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
 local imBeginMenu <const> = ImGui.BeginMenu
 local imButton <const> = ImGui.Button
+local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
 local imEndMenu <const> = ImGui.EndMenu
+local imGetCursorPosX <const> = ImGui.GetCursorPosX
 local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imMenuItem <const> = ImGui.MenuItem
@@ -309,6 +313,22 @@ local function updatewindowsmenu()
 	end
 end
 
+local clockstring
+local clockupdatetime = 0
+
+local function updateclockmenu()
+	local now = realtime()
+
+	if now - clockupdatetime > 1 then
+		clockstring = date('%a %b %d %Y %H:%M')
+		clockupdatetime = now
+	end
+
+	local spacing = screensize.x - imCalcTextSize(clockstring).x - imGetCursorPosX()
+	imSameLine(0, spacing)
+	imText(clockstring)
+end
+
 local function updateactions()
 	if imBeginMainMenuBar() then
 		updateexpmenu()
@@ -318,6 +338,7 @@ local function updateactions()
 		end
 
 		updatewindowsmenu()
+		updateclockmenu()
 
 		imEndMainMenuBar()
 	end
