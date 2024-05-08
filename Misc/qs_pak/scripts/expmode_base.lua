@@ -314,7 +314,7 @@ local function updatewindowsmenu()
 end
 
 local clockstring
-local clockupdatetime = 0
+local clockupdatetime = -1
 
 local function updateclockmenu()
 	local now = realtime()
