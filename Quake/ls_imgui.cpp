@@ -191,6 +191,13 @@ static int LS_value_TextBuffer_gc(lua_State* state)
 	return 0;
 }
 
+static int LS_value_TextBuffer_len(lua_State* state)
+{
+	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
+	lua_pushinteger(state, strlen(textbuffer.data));
+	return 1;
+}
+
 static int LS_value_TextBuffer_tostring(lua_State* state)
 {
 	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
@@ -202,8 +209,8 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 {
 	static constexpr lua_Integer BUFFER_SIZE_MIN = 256;
 	static constexpr lua_Integer BUFFER_SIZE_MAX = 1024 * 1024;
-	const lua_Integer ibuffersize = luaL_checkinteger(state, 1);
 
+	const lua_Integer ibuffersize = luaL_optinteger(state, 1, 256);
 	const size_t buffersize = CLAMP(BUFFER_SIZE_MIN, ibuffersize, BUFFER_SIZE_MAX);
 	char* bufferdata = reinterpret_cast<char*>(IM_ALLOC(buffersize));
 
@@ -233,6 +240,7 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__gc", LS_value_TextBuffer_gc },
+		{ "__len", LS_value_TextBuffer_len },
 		{ "__tostring", LS_value_TextBuffer_tostring },
 		{ NULL, NULL }
 	};
