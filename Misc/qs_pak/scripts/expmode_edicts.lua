@@ -297,7 +297,37 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		edictstable(title, self.entries, not self.filter, defaultscrollytableflags)
+		local searchbuffer = self.searchbuffer
+
+		if not searchbuffer then
+			searchbuffer = ImGui.TextBuffer()
+			self.searchbuffer = searchbuffer
+		end
+
+		if ImGui.InputText('##search', searchbuffer) then
+			local searchstring = tostring(searchbuffer):lower()
+
+			if #searchstring > 0 then
+				local searchresults = {}
+
+				for _, entry in ipairs(self.entries) do
+					if entry.description:lower():find(searchstring, 1, true)
+						or tostring(entry.location):lower():find(searchstring, 1, true) then
+						insert(searchresults, entry)
+					end
+				end
+
+				self.searchresults = searchresults
+			else
+				self.searchresults = nil
+			end
+		end
+
+		local searchactive = #searchbuffer > 0
+		local entries = searchactive and self.searchresults or self.entries
+		local zerobasedindex = not searchactive and not self.filter
+
+		edictstable(title, entries, zerobasedindex, defaultscrollytableflags)
 	end
 
 	imEnd()
