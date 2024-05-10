@@ -194,7 +194,7 @@ static int LS_value_TextBuffer_gc(lua_State* state)
 static int LS_value_TextBuffer_tostring(lua_State* state)
 {
 	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
-	lua_pushlstring(state, textbuffer.data, textbuffer.size);
+	lua_pushstring(state, textbuffer.data);
 	return 1;
 }
 
