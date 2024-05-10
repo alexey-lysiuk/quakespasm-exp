@@ -289,6 +289,22 @@ static int LS_global_imgui_SmallButton(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_InputText(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* label = luaL_checkstring(state, 1);
+	assert(label);
+
+	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 2);
+	const int flags = luaL_optinteger(state, 3, 0);
+
+	// TODO: Input text callback support
+	const bool changed = ImGui::InputText(label, textbuffer.data, textbuffer.size, flags);
+	lua_pushboolean(state, changed);
+	return 1;
+}
+
 static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -297,7 +313,6 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	assert(label);
 
 	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 2);
-
 	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 3, ImVec2());
 	const int flags = luaL_optinteger(state, 4, 0);
 
@@ -943,7 +958,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * VSliderScalar
 
 		// Widgets: Input with Keyboard
-		//{ "InputText", LS_global_imgui_InputText },
+		{ "InputText", LS_global_imgui_InputText },
 		{ "InputTextMultiline", LS_global_imgui_InputTextMultiline },
 		// * InputTextWithHint
 		// * InputFloat
