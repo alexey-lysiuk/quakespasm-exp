@@ -229,7 +229,7 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 	textbuffer->data = bufferdata;
 	textbuffer->size = buffersize;
 
-	// Create and set 'textbuffer?' metatable
+	// Create and set 'ImGui.TextBuffer' metatable
 	static const luaL_Reg functions[] =
 	{
 		{ "__gc", LS_value_TextBuffer_gc },
