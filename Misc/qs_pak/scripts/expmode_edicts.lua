@@ -18,6 +18,7 @@ local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
 local imGetMainViewport <const> = ImGui.GetMainViewport
+local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
@@ -33,6 +34,7 @@ local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imText <const> = ImGui.Text
+local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = ImGui.ImVec2
 
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
@@ -192,19 +194,18 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
-local function edictstable_tostring(entries, zerobasedindex)
+local function edictstable_tostring(entries)
 	local lines = {}
 
-	for row = 1, #entries do
-		local entry = entries[row]
-		local line = format('%d\t%s\t%s', zerobasedindex and row - 1 or row, entry.description, entry.location)
+	for _, entry in ipairs(entries) do
+		local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
 		insert(lines, line)
 	end
 
 	return concat(lines, '\n')
 end
 
-local function edictstable(title, entries, zerobasedindex, tableflags)
+local function edictstable(title, entries, tableflags)
 	if imBeginTable(title, 3, tableflags or defaulttableflags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
@@ -213,12 +214,11 @@ local function edictstable(title, entries, zerobasedindex, tableflags)
 
 		for row = 1, #entries do
 			local entry = entries[row]
-			local index = tostring(zerobasedindex and row - 1 or row)
 			local description = entry.description
 
 			imTableNextRow()
 			imTableNextColumn()
-			imSelectable(index, false, imSelectableDisabled)
+			imSelectable(entry.index, false, imSelectableDisabled)
 			imTableNextColumn()
 
 			if entry.isfree then
@@ -236,10 +236,10 @@ local function edictstable(title, entries, zerobasedindex, tableflags)
 							imSetClipboardText(tostring(cellvalue))
 						end
 						if imSelectable('Copy row') then
-							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
+							imSetClipboardText(format('%s\t%s\t%s', entry.index, description, location))
 						end
 						if imSelectable('Copy table') then
-							imSetClipboardText(edictstable_tostring(entries, zerobasedindex))
+							imSetClipboardText(edictstable_tostring(entries))
 						end
 						imEndPopup()
 					end
@@ -300,11 +300,11 @@ local function edicts_onupdate(self)
 		local searchbuffer = self.searchbuffer
 
 		if not searchbuffer then
-			searchbuffer = ImGui.TextBuffer()
+			searchbuffer = imTextBuffer()
 			self.searchbuffer = searchbuffer
 		end
 
-		if ImGui.InputText('##search', searchbuffer) then
+		if imInputText('##search', searchbuffer) then
 			local searchstring = tostring(searchbuffer):lower()
 
 			if #searchstring > 0 then
@@ -323,11 +323,8 @@ local function edicts_onupdate(self)
 			end
 		end
 
-		local searchactive = #searchbuffer > 0
-		local entries = searchactive and self.searchresults or self.entries
-		local zerobasedindex = not searchactive and not self.filter
-
-		edictstable(title, entries, zerobasedindex, defaultscrollytableflags)
+		local entries = #searchbuffer > 0 and self.searchresults or self.entries
+		edictstable(title, entries, defaultscrollytableflags)
 	end
 
 	imEnd()
@@ -338,6 +335,7 @@ end
 local function edicts_onshow(self)
 	local filter = self.filter or isany
 	local entries = {}
+	local index = self.filter and 1 or 0
 
 	for _, edict in ipairs(edicts) do
 		local description, location, angles = filter(edict)
@@ -347,10 +345,12 @@ local function edicts_onshow(self)
 			{
 				edict = edict,
 				isfree = isfree(edict),
+				index = index,
 				description = toascii(description),
 				location = location or '',
 				angles = angles
 			})
+			index = index + 1
 		end
 	end
 
@@ -408,9 +408,11 @@ end
 local function edictrefs_onshow(self)
 	local edict = self.edict
 
-	if tostring(self.edict) ~= self.edictid then
+	if tostring(edict) ~= self.edictid then
 		return
 	end
+
+	local index = 1
 
 	local function addentries(source, list)
 		for _, edict in ipairs(source) do
@@ -418,10 +420,12 @@ local function edictrefs_onshow(self)
 			insert(list,
 			{
 				edict = edict,
+				index = index,
 				description = description,
 				location = location,
 				angles = angles
 			})
+			index = index + 1
 		end
 	end
 
@@ -433,6 +437,8 @@ local function edictrefs_onshow(self)
 
 	local references = {}
 	addentries(outgoing, references)
+
+	index = 1
 
 	local referencedby = {}
 	addentries(incoming, referencedby)
