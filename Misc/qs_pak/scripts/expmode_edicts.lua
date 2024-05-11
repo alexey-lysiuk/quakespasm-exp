@@ -327,38 +327,44 @@ local function edicts_onupdate(self)
 	return opened
 end
 
+local function edicts_addentry(filter, edict, index, entries)
+	local description, location, angles = filter(edict)
+
+	if not description then
+		return index
+	end
+
+	local freed = isfree(edict)
+	description = toascii(description)
+
+	local entry =
+	{
+		edict = edict,
+		isfree = freed,
+		index = index,
+		description = description,
+	}
+
+	if not freed then
+		entry.location = location
+		entry.angles = angles
+
+		-- Description and location cells need unique IDs to generate click events
+		entry.descriptionid = format('%s##%d', description, index)
+		entry.locationid = format('%s##%d', location, index)
+	end
+
+	insert(entries, entry)
+	return index + 1
+end
+
 local function edicts_onshow(self)
 	local filter = self.filter or isany
 	local entries = {}
 	local index = self.filter and 1 or 0
 
 	for _, edict in ipairs(edicts) do
-		local description, location, angles = filter(edict)
-
-		if description then
-			local freed = isfree(edict)
-			description = toascii(description)
-
-			local entry =
-			{
-				edict = edict,
-				isfree = freed,
-				index = index,
-				description = description,
-			}
-
-			if not freed then
-				entry.location = location
-				entry.angles = angles
-
-				-- Description and location cells need unique IDs to generate click events
-				entry.descriptionid = format('%s##%d', description, index)
-				entry.locationid = format('%s##%d', location, index)
-			end
-
-			insert(entries, entry)
-			index = index + 1
-		end
+		index = edicts_addentry(filter, edict, index, entries)
 	end
 
 	self.entries = entries
@@ -423,16 +429,7 @@ local function edictrefs_onshow(self)
 
 	local function addentries(source, list)
 		for _, edict in ipairs(source) do
-			local description, location, angles = isany(edict)
-			insert(list,
-			{
-				edict = edict,
-				index = index,
-				description = description,
-				location = location,
-				angles = angles
-			})
-			index = index + 1
+			index = edicts_addentry(isany, edict, index, list)
 		end
 	end
 
