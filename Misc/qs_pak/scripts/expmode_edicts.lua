@@ -12,6 +12,7 @@ local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
 local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
+local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
@@ -23,6 +24,7 @@ local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -283,7 +285,7 @@ local function edicts_calculatedefaultwindowsize(self)
 	end
 end
 
-local function edicts_updatesearch(self, force)
+local function edicts_updatesearch(self, modified)
 	local searchbuffer = self.searchbuffer
 
 	if not searchbuffer then
@@ -291,7 +293,7 @@ local function edicts_updatesearch(self, force)
 		self.searchbuffer = searchbuffer
 	end
 
-	if force or imInputText('##search', searchbuffer) then
+	if modified then
 		local searchstring = tostring(searchbuffer):lower()
 
 		if #searchstring > 0 then
@@ -322,7 +324,14 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		local entries = edicts_updatesearch(self) and self.searchresults or self.entries
+		local searchmodified = imInputText('##search', self.searchbuffer)
+		imSameLine()
+		if imButton('Reset') then
+			self.searchbuffer = nil
+			searchmodified = true
+		end
+
+		local entries = edicts_updatesearch(self, searchmodified) and self.searchresults or self.entries
 		edictstable(title, entries, defaultscrollytableflags)
 	end
 
