@@ -108,7 +108,6 @@ static void LS_InitExpMode()
 
 
 static bool exp_active;
-static char exp_justactived;
 
 static SDL_EventFilter exp_eventfilter;
 static void* exp_eventuserdata;
@@ -147,10 +146,6 @@ static void EXP_EnterMode()
 		EXP_Create();
 
 	exp_active = true;
-
-	// Need to skip two frames because SDL_StopTextInput() is called during the next one after ImGui activation
-	// Otherwise, text input will be unavailable. See EXP_Update() for SDL_StartTextInput() call
-	exp_justactived = 2;
 
 	// Close menu or console if opened
 	if (key_dest == key_console)
@@ -241,13 +236,8 @@ void EXP_Update()
 
 	ImGui::NewFrame();
 
-	if (exp_justactived > 0)
-	{
-		--exp_justactived;
-
-		if (exp_justactived == 0)
-			SDL_StartTextInput();
-	}
+	if (!SDL_IsTextInputActive())
+		SDL_StartTextInput();
 
 #ifdef USE_LUA_SCRIPTING
 	LS_MarkImGuiFrameStart();
