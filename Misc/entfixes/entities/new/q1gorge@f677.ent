@@ -1,0 +1,3050 @@
+{
+"classname" "worldspawn"
+"_sunlight" "180"
+"_sun_mangle" "227 -57 0"
+"message" "Quake SinGorge "
+"sky" "deu"
+"fog" "0.02"
+"sounds" "5"
+"worldtype" "2"
+"wad" "gfx/QuArK.wad"
+}
+{
+"classname" "info_player_start"
+"origin" "-3808 -1920 -648"
+"angle" "268"
+}
+{
+"classname" "info_player_coop"
+"origin" "-3808 -2016 -640"
+"angle" "270"
+"spawnflags" "2048"
+}
+{
+"classname" "info_player_coop"
+"origin" "704 -1664 -672"
+"spawnflags" "2048"
+"angle" "1"
+}
+{
+"classname" "info_player_coop"
+"origin" "2400 128 64"
+"spawnflags" "2048"
+"angle" "360"
+}
+{
+"classname" "info_player_coop"
+"origin" "-1696 640 288"
+"spawnflags" "2048"
+"angle" "360"
+}
+{
+"classname" "item_armorInv"
+"origin" "3296 -800 352"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "-3808 -2752 -640"
+"angle" "0"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "992 -2304 -576"
+"spawnflags" "1792"
+"angle" "269"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "672 1120 352"
+"spawnflags" "1792"
+"angle" "269"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "-960 960 352"
+"spawnflags" "1792"
+"angle" "90"
+}
+{
+"classname" "trigger_once"
+"target" "t1"
+"sounds" "0"
+"model" "*1"
+}
+{
+"classname" "trigger_earthquake"
+"targetname" "t1"
+"weapon" "150"
+"model" "*2"
+}
+{
+"classname" "trigger_earthquake_kill"
+"target" "t1"
+"model" "*3"
+}
+{
+"classname" "trigger_teleport"
+"target" "go"
+"model" "*4"
+}
+{
+"classname" "light"
+"origin" "-2688 -2752 -384"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-3680 -2784 -384"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-3456 -2912 -512"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-2432 -2048 -448"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-3808 -2016 -560"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-2304 -1152 -448"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1888 -640 -384"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1648 -368 -496"
+"light" "250"
+}
+{
+"classname" "item_artifact_invulnerability"
+"origin" "-2256 -784 -704"
+}
+{
+"classname" "light"
+"origin" "-608 -256 -544"
+"light" "80"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-64 -160 -544"
+"light" "80"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-128 -896 -768"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "928 -1344 -672"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-704 -960 -1488"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "768 -1152 -448"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "960 -1792 -320"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "1088 -2704 -256"
+"light" "80"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "1472 -2944 -256"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "960 -2176 -576"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "1216 -2824 -544"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "752 -960 -656"
+"light" "140"
+"style" "5"
+}
+{
+"classname" "light"
+"origin" "2816 -2808 -256"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "3200 -1848 -192"
+"light" "60"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "3216 -840 -144"
+"light" "60"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "1840 632 176"
+"light" "60"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "2512 584 144"
+"light" "60"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "912 632 -96"
+"light" "80"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "544 2296 352"
+"light" "60"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "720 856 352"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "1088 2040 352"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "-176 2264 352"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "-384 1656 544"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "-1008 1144 384"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "-976 1720 432"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "-1016 2056 576"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-792 2320 368"
+"light" "60"
+"wait" "0.3"
+}
+{
+"classname" "light"
+"origin" "-800 2328 576"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1248 2440 592"
+"light" "200"
+}
+{
+"classname" "light"
+"origin" "-976 2552 352"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "2936 -160 -304"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "2584 496 -176"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "1728 640 -120"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1056 2504 592"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1280 2688 592"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1024 2216 576"
+"light" "80"
+"wait" "0.3"
+}
+{
+"classname" "light"
+"origin" "-1024 2216 416"
+"light" "200"
+}
+{
+"classname" "light"
+"origin" "-1424 2904 288"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1400 2912 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1144 2912 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1856 2912 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-2144 2632 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1008 2696 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1264 2904 528"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "-2144 2904 528"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1744 1704 544"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-2128 2016 544"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1984 2280 544"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1768 1340 544"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1448 1264 576"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1448 1632 384"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1616 1056 576"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1984 2056 576"
+"light" "200"
+}
+{
+"classname" "light"
+"origin" "-1984 1608 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-2128 2232 288"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-2128 1536 280"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-2128 1856 280"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "1296 1672 -16"
+"light" "40"
+"wait" "0.03"
+}
+{
+"classname" "light"
+"origin" "1696 -2944 -544"
+"light" "50"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "3136 -168 148"
+"light" "300"
+}
+{
+"classname" "light"
+"origin" "-688 2688 432"
+"light" "200"
+}
+{
+"classname" "light"
+"origin" "-688 2688 608"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1280 2752 416"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "-672 2280 736"
+"targetname" "go"
+"angle" "180"
+}
+{
+"classname" "light"
+"origin" "-1792 1288 368"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1896 1728 392"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1912 2248 368"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1976 2052 588"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1976 1616 588"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1448 1408 432"
+"light" "200"
+}
+{
+"classname" "light"
+"origin" "-1736 1600 328"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"light" "200"
+"angle" "360"
+"origin" "-1952 1552 336"
+}
+{
+"classname" "light"
+"light" "500"
+"angle" "60"
+"origin" "-1248 1380 392"
+"target" "si"
+}
+{
+"classname" "info_null"
+"origin" "-1248 1380 204"
+"targetname" "si"
+}
+{
+"classname" "light"
+"light" "500"
+"angle" "60"
+"origin" "-1260 856 396"
+"target" "in"
+}
+{
+"classname" "info_null"
+"origin" "-1260 852 204"
+"targetname" "in"
+}
+{
+"classname" "light"
+"light" "500"
+"angle" "60"
+"origin" "-664 856 396"
+"target" "sju"
+}
+{
+"classname" "info_null"
+"origin" "-664 856 204"
+"targetname" "sju"
+}
+{
+"classname" "light"
+"origin" "-1792 1912 328"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1576 1104 400"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"origin" "-1912 1004 432"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1920 1024 640"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1648 1536 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1872 1760 576"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "1888 -3264 -32"
+"light" "200"
+}
+{
+"classname" "light"
+"origin" "2168 -3328 -416"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "light"
+"light" "300"
+"angle" "360"
+"origin" "-1184 1224 592"
+"_color" "256 0 0"
+}
+{
+"classname" "monster_army"
+"origin" "-1456 -512 -464"
+"angle" "270"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1472 -512 -448"
+"angle" "270"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_enforcer"
+"origin" "912 -1072 -704"
+"angle" "135"
+"spawnflags" "3073"
+}
+{
+"classname" "monster_demon1"
+"origin" "896 -1088 -688"
+"angle" "155"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "1056 -1668 -520"
+"angle" "121"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "1056 -1668 -516"
+"spawnflags" "3585"
+"angle" "138"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1200 -960 -384"
+"angle" "180"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-1200 -960 -384"
+"angle" "180"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1200 -960 -384"
+"angle" "180"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1376 -880 -432"
+"angle" "180"
+"spawnflags" "2817"
+}
+{
+"classname" "item_shells"
+"origin" "-3536 -2480 -672"
+"spawnflags" "1"
+}
+{
+"classname" "item_shells"
+"origin" "-3584 -2480 -672"
+"spawnflags" "1"
+}
+{
+"classname" "item_health"
+"origin" "-3888 -3072 -688"
+}
+{
+"classname" "item_health"
+"origin" "-3888 -3008 -688"
+}
+{
+"classname" "monster_army"
+"origin" "-2752 -2768 -592"
+"angle" "209"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2752 -2768 -592"
+"angle" "222"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-2752 -2768 -592"
+"angle" "215"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-2656 -3024 -400"
+"angle" "128"
+"spawnflags" "3328"
+"target" "joule"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-2656 -3024 -400"
+"angle" "118"
+"spawnflags" "2816"
+"target" "joule"
+}
+{
+"classname" "monster_army"
+"origin" "-2656 -3024 -400"
+"angle" "134"
+"spawnflags" "3584"
+"target" "joule"
+}
+{
+"classname" "item_health"
+"origin" "-2568 -3136 -432"
+}
+{
+"classname" "monster_demon1"
+"origin" "-2512 -1696 -560"
+"angle" "270"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2512 -1696 -512"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-2512 -1696 -560"
+"spawnflags" "3585"
+"angle" "270"
+}
+{
+"classname" "monster_wizard"
+"origin" "-3048 -2880 8"
+"angle" "132"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_wizard"
+"origin" "-3616 -2256 -16"
+"angle" "309"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_wizard"
+"origin" "-2568 -2288 -24"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "item_shells"
+"origin" "-2240 -2480 -640"
+"spawnflags" "1"
+}
+{
+"classname" "item_shells"
+"origin" "-2240 -2520 -640"
+"spawnflags" "1"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-2240 -1088 -560"
+"angle" "234"
+"spawnflags" "3073"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2240 -1072 -560"
+"angle" "234"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_wizard"
+"origin" "-2400 -1456 0"
+"angle" "271"
+"spawnflags" "2305"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-320 -928 -496"
+"angle" "180"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_ogre"
+"origin" "-320 -864 -496"
+"angle" "180"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_demon1"
+"origin" "-320 -992 -496"
+"angle" "180"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "64 -864 -496"
+"angle" "180"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "64 -928 -496"
+"angle" "179"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "64 -976 -496"
+"angle" "180"
+"spawnflags" "2816"
+}
+{
+"classname" "item_shells"
+"origin" "-2568 -3096 -432"
+"spawnflags" "1"
+}
+{
+"classname" "item_health"
+"origin" "-2256 -1696 -592"
+}
+{
+"classname" "item_health"
+"origin" "-2256 -1744 -592"
+}
+{
+"classname" "monster_wizard"
+"origin" "-80 -928 432"
+"spawnflags" "2816"
+"angle" "180"
+}
+{
+"classname" "monster_wizard"
+"origin" "-1856 -1056 -128"
+"angle" "90"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_wizard"
+"origin" "-1472 -512 -32"
+"angle" "295"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_wizard"
+"origin" "-128 -560 -112"
+"spawnflags" "2048"
+"angle" "226"
+}
+{
+"classname" "monster_enforcer"
+"origin" "1952 -3200 -80"
+"angle" "152"
+"spawnflags" "3328"
+"target" "djin"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "1952 -3200 -80"
+"angle" "136"
+"spawnflags" "2816"
+"target" "djin"
+}
+{
+"classname" "monster_army"
+"origin" "1952 -3200 -80"
+"angle" "130"
+"target" "djin"
+"spawnflags" "3584"
+}
+{
+"classname" "light"
+"origin" "2362 -82 288"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "760 2168 40"
+"light" "60"
+"wait" "0.04"
+}
+{
+"classname" "item_health"
+"origin" "1744 -3360 -112"
+"spawnflags" "2"
+}
+{
+"classname" "monster_ogre"
+"origin" "1632 -2944 -320"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "1632 -2944 -320"
+"angle" "0"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "1632 -2928 -304"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "1872 -2848 -320"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_ogre"
+"origin" "1872 -2848 -320"
+"angle" "270"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_demon1"
+"origin" "1136 -2736 -336"
+"angle" "317"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "1136 -2736 -336"
+"angle" "320"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "1136 -2736 -336"
+"angle" "312"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_ogre"
+"origin" "960 -2208 -352"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "960 -2208 -352"
+"angle" "269"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_enforcer"
+"origin" "976 -1296 -472"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_wizard"
+"origin" "976 -1296 -448"
+"angle" "269"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_ogre"
+"origin" "976 -1296 -480"
+"angle" "270"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_enforcer"
+"origin" "528 -992 -544"
+"angle" "162"
+"spawnflags" "2305"
+}
+{
+"classname" "item_shells"
+"origin" "1648 -3288 -640"
+"spawnflags" "1"
+}
+{
+"classname" "item_shells"
+"origin" "1688 -3288 -640"
+"spawnflags" "1"
+}
+{
+"classname" "weapon_supershotgun"
+"origin" "752 -960 -720"
+}
+{
+"classname" "item_health"
+"origin" "616 -2512 -624"
+}
+{
+"classname" "item_health"
+"origin" "616 -2560 -624"
+}
+{
+"classname" "item_armor1"
+"origin" "2224 -2704 -512"
+}
+{
+"classname" "monster_wizard"
+"origin" "2224 -3392 -480"
+"angle" "112"
+"spawnflags" "2305"
+}
+{
+"classname" "item_artifact_invulnerability"
+"origin" "1972 -3336 -76"
+}
+{
+"classname" "weapon_rocketlauncher"
+"origin" "1152 1408 -176"
+}
+{
+"classname" "item_armor2"
+"origin" "1888 -3296 -48"
+}
+{
+"classname" "monster_demon1"
+"origin" "3200 -1568 -256"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_shalrath"
+"origin" "3200 -1568 -240"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "3304 -2320 -256"
+"spawnflags" "2817"
+"angle" "240"
+}
+{
+"classname" "monster_enforcer"
+"origin" "3104 -2352 -256"
+"angle" "208"
+"spawnflags" "3073"
+}
+{
+"classname" "monster_ogre"
+"origin" "3104 -2352 -264"
+"angle" "238"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_army"
+"origin" "3304 -2320 -256"
+"angle" "236"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_enforcer"
+"origin" "3304 -2320 -256"
+"angle" "204"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_wizard"
+"origin" "1904 944 432"
+"angle" "236"
+}
+{
+"classname" "monster_wizard"
+"origin" "1280 256 512"
+"angle" "48"
+}
+{
+"classname" "monster_army"
+"origin" "720 800 288"
+"angle" "317"
+"spawnflags" "2049"
+}
+{
+"classname" "monster_wizard"
+"origin" "464 1008 688"
+"angle" "71"
+}
+{
+"classname" "monster_wizard"
+"origin" "1312 1776 688"
+"angle" "185"
+}
+{
+"classname" "monster_enforcer"
+"origin" "1104 1840 288"
+"angle" "270"
+"spawnflags" "2049"
+}
+{
+"classname" "item_shells"
+"origin" "2320 184 8"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "2320 232 8"
+"spawnflags" "1"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-112 2264 288"
+"angle" "0"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-112 2272 288"
+"angle" "0"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_ogre"
+"origin" "3392 -752 336"
+"angle" "135"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_shalrath"
+"origin" "3392 -752 336"
+"angle" "90"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_shambler"
+"origin" "2932 -136 -20"
+"spawnflags" "2816"
+"angle" "297"
+}
+{
+"classname" "monster_enforcer"
+"origin" "3536 -272 32"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "3536 -272 0"
+"angle" "269"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_ogre"
+"origin" "3528 -272 32"
+"angle" "233"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_wizard"
+"origin" "2464 -320 208"
+"angle" "0"
+"spawnflags" "2305"
+}
+{
+"classname" "light"
+"origin" "2464 -320 96"
+"light" "40"
+"wait" "0.04"
+}
+{
+"classname" "weapon_grenadelauncher"
+"origin" "2608 -192 40"
+}
+{
+"classname" "item_spikes"
+"origin" "2360 -32 224"
+"spawnflags" "1"
+}
+{
+"classname" "item_shells"
+"origin" "2360 -72 224"
+"spawnflags" "1"
+}
+{
+"classname" "monster_enforcer"
+"origin" "2400 -144 240"
+"angle" "0"
+"spawnflags" "3328"
+"target" "sin"
+}
+{
+"classname" "monster_army"
+"origin" "2400 -144 240"
+"angle" "0"
+"target" "sin"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "2400 -144 240"
+"angle" "0"
+"target" "sin"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "1280 672 240"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_enforcer"
+"origin" "1280 672 240"
+"angle" "0"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_demon1"
+"origin" "1280 672 240"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "item_health"
+"origin" "2464 144 -336"
+}
+{
+"classname" "item_health"
+"origin" "2528 144 -336"
+}
+{
+"classname" "monster_enforcer"
+"origin" "2912 48 -320"
+"spawnflags" "2049"
+"angle" "123"
+}
+{
+"classname" "monster_demon1"
+"origin" "2064 640 -192"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_ogre"
+"origin" "2064 640 -192"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "item_health"
+"origin" "1536 784 -176"
+"spawnflags" "2"
+}
+{
+"classname" "monster_demon1"
+"origin" "1088 400 -160"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_shambler"
+"origin" "1088 400 -160"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "1088 384 -160"
+"angle" "0"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_wizard"
+"origin" "1040 640 -16"
+"spawnflags" "2049"
+"angle" "360"
+}
+{
+"classname" "monster_wizard"
+"origin" "656 1216 -16"
+"angle" "270"
+"spawnflags" "2305"
+}
+{
+"classname" "monster_wizard"
+"origin" "1104 1920 -16"
+"angle" "270"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_ogre"
+"origin" "848 1136 -176"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_enforcer"
+"origin" "848 1136 -176"
+"angle" "270"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_demon1"
+"origin" "848 1136 -176"
+"angle" "270"
+"spawnflags" "2817"
+}
+{
+"classname" "item_shells"
+"origin" "624 544 -96"
+"spawnflags" "1"
+}
+{
+"classname" "item_shells"
+"origin" "672 496 -96"
+"spawnflags" "1"
+}
+{
+"classname" "monster_demon1"
+"origin" "1392 1744 -48"
+"angle" "210"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "1392 1744 -32"
+"angle" "227"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_shalrath"
+"origin" "1392 1744 -32"
+"angle" "225"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_wizard"
+"origin" "704 2000 -32"
+"angle" "313"
+"spawnflags" "2049"
+}
+{
+"classname" "item_armor2"
+"origin" "-704 896 256"
+}
+{
+"classname" "item_shells"
+"origin" "-1216 832 224"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "-1168 832 224"
+"spawnflags" "1"
+}
+{
+"classname" "monster_army"
+"origin" "-1448 752 280"
+"angle" "0"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1448 752 280"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1448 752 272"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "item_health"
+"origin" "-1512 1784 336"
+}
+{
+"classname" "item_health"
+"origin" "-1408 1784 336"
+}
+{
+"classname" "weapon_lightning"
+"origin" "-1424 2224 368"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-688 2624 368"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_ogre"
+"origin" "-688 2688 360"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_army"
+"origin" "-688 2624 368"
+"angle" "270"
+"spawnflags" "3584"
+}
+{
+"classname" "light"
+"origin" "-1424 2224 384"
+"light" "150"
+}
+{
+"classname" "monster_army"
+"origin" "-1232 2216 384"
+"angle" "0"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1232 2216 368"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1232 2216 360"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1376 2400 304"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1376 2400 304"
+"angle" "0"
+"spawnflags" "3073"
+}
+{
+"classname" "item_shells"
+"origin" "-1472 2368 288"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "-1472 2416 288"
+"spawnflags" "1"
+}
+{
+"classname" "item_health"
+"origin" "-880 2576 272"
+}
+{
+"classname" "item_health"
+"origin" "-880 2528 272"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1008 2416 304"
+"angle" "90"
+"spawnflags" "2049"
+}
+{
+"classname" "monster_army"
+"origin" "-1344 2608 304"
+"angle" "0"
+"spawnflags" "3073"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1344 2608 304"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_wizard"
+"origin" "-1424 2912 352"
+"angle" "270"
+"spawnflags" "2049"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1328 2896 240"
+"angle" "180"
+"spawnflags" "2048"
+}
+{
+"classname" "item_health"
+"origin" "-1200 2864 224"
+}
+{
+"classname" "item_health"
+"origin" "-1200 2928 224"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1552 2912 240"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1552 2912 240"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1552 2912 240"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "item_rockets"
+"origin" "-1728 2928 208"
+"spawnflags" "1"
+}
+{
+"classname" "item_rockets"
+"origin" "-1728 2864 208"
+"spawnflags" "1"
+}
+{
+"classname" "monster_shambler"
+"origin" "-1056 2912 480"
+"angle" "270"
+"spawnflags" "2049"
+}
+{
+"classname" "item_spikes"
+"origin" "-1280 2336 464"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "-1328 2336 464"
+"spawnflags" "1"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1072 2448 496"
+"angle" "180"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "-1072 2448 496"
+"angle" "180"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1072 2448 496"
+"angle" "178"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_dog"
+"origin" "-912 2592 496"
+"angle" "216"
+"spawnflags" "2049"
+}
+{
+"classname" "monster_demon1"
+"origin" "-2120 2904 496"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2120 2904 496"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_shalrath"
+"origin" "-2120 2904 496"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-720 2784 560"
+"angle" "270"
+"spawnflags" "2305"
+}
+{
+"classname" "monster_army"
+"origin" "-720 2784 560"
+"angle" "270"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_army"
+"origin" "-720 2784 560"
+"angle" "271"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1200 2224 544"
+"angle" "1"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1200 2224 560"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1200 2224 544"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "item_armor2"
+"origin" "-720 2144 576"
+}
+{
+"classname" "weapon_supernailgun"
+"origin" "-1176 1808 544"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1448 1768 544"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_army"
+"origin" "-1448 1768 544"
+"angle" "270"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1448 1768 544"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "light"
+"origin" "-1448 1592 592"
+"light" "180"
+}
+{
+"classname" "monster_army"
+"origin" "-1296 1136 576"
+"angle" "90"
+"spawnflags" "2048"
+}
+{
+"classname" "item_health"
+"origin" "-1488 944 576"
+}
+{
+"classname" "item_health"
+"origin" "-1440 992 576"
+}
+{
+"classname" "monster_misin"
+"origin" "-1664 1024 560"
+"angle" "46"
+"spawnflags" "2048"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1696 1904 496"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1696 1904 496"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_shambler"
+"origin" "-2152 1360 496"
+"angle" "0"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2152 1360 496"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_shalrath"
+"origin" "-2152 1360 504"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1664 1328 512"
+"angle" "180"
+"spawnflags" "2561"
+}
+{
+"classname" "monster_dog"
+"origin" "-1664 1328 512"
+"angle" "180"
+"spawnflags" "3585"
+}
+{
+"classname" "item_shells"
+"origin" "2112 -2840 -352"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "2152 -2840 -352"
+"spawnflags" "1"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-2128 2144 496"
+"angle" "270"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_demon1"
+"origin" "-2128 2144 496"
+"angle" "270"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2128 2144 496"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "light"
+"origin" "-1816 2272 600"
+"light" "180"
+"_color" "255 96 225"
+}
+{
+"classname" "trigger_changelevel"
+"map" "start"
+"spawnflags" "2048"
+"model" "*5"
+}
+{
+"classname" "light"
+"origin" "-2752 -3064 -144"
+"light" "300"
+"style" "4"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1784 2368 304"
+"angle" "271"
+"spawnflags" "2305"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1792 2368 304"
+"angle" "270"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1672 1352 296"
+"angle" "90"
+"spawnflags" "2048"
+}
+{
+"classname" "monster_misin"
+"origin" "-1656 1920 288"
+"angle" "180"
+"spawnflags" "2049"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1960 1272 288"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_shambler"
+"origin" "-1960 1272 288"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1960 1272 288"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "item_shells"
+"origin" "-1776 2144 264"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "-1776 2200 264"
+"spawnflags" "1"
+}
+{
+"classname" "item_health"
+"origin" "-2024 1136 272"
+}
+{
+"classname" "item_health"
+"origin" "-1984 1136 272"
+}
+{
+"classname" "item_rockets"
+"origin" "-1970 2136 456"
+"spawnflags" "1"
+}
+{
+"classname" "item_rockets"
+"origin" "-2024 2136 456"
+"spawnflags" "1"
+}
+{
+"classname" "weapon_rocketlauncher"
+"origin" "-1116 2170 750"
+}
+{
+"classname" "monster_ogre"
+"origin" "-2128 2048 224"
+"angle" "270"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_demon1"
+"origin" "-2128 2048 224"
+"angle" "270"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-2128 2048 272"
+"angle" "270"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_demon1"
+"origin" "-2128 1488 224"
+"angle" "90"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_shalrath"
+"origin" "-2128 1488 224"
+"angle" "90"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-2128 1488 272"
+"angle" "90"
+"spawnflags" "3585"
+}
+{
+"classname" "func_door"
+"angle" "90"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*6"
+}
+{
+"classname" "func_door"
+"angle" "270"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*7"
+}
+{
+"classname" "info_intermission"
+"origin" "-344 656 536"
+"mangle" "12.70 135.77 0"
+}
+{
+"classname" "info_intermission"
+"origin" "3664 -480 528"
+"mangle" "16.69 163.43 0"
+}
+{
+"classname" "info_intermission"
+"origin" "1088 272 296"
+"mangle" "18.64 121.82 0"
+}
+{
+"classname" "info_intermission"
+"origin" "1344 -2816 72"
+"mangle" "14.06 -30.43 0"
+}
+{
+"classname" "light"
+"origin" "-2640 -3048 -344"
+"light" "180"
+}
+{
+"classname" "item_armor1"
+"origin" "-3968 -3264 -704"
+}
+{
+"classname" "trigger_once"
+"target" "split"
+"sounds" "0"
+"model" "*8"
+}
+{
+"classname" "func_train"
+"targetname" "split"
+"target" "a1d1"
+"speed" "500"
+"model" "*9"
+}
+{
+"classname" "path_corner"
+"origin" "-1152 -952 -1536"
+"targetname" "a1d1"
+"target" "a1d2"
+}
+{
+"classname" "path_corner"
+"origin" "-1152 -952 -1728"
+"targetname" "a1d2"
+"target" "a1d1"
+"wait" "-1"
+}
+{
+"classname" "light"
+"origin" "-864 2080 400"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1184 2088 400"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-1184 2088 592"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "-864 2088 592"
+"light" "180"
+}
+{
+"classname" "light"
+"origin" "3120 -192 208"
+"light" "300"
+}
+{
+"classname" "func_train"
+"targetname" "split"
+"target" "rig"
+"speed" "500"
+"model" "*10"
+}
+{
+"classname" "path_corner"
+"origin" "-1024 -1120 -640"
+"targetname" "rig"
+"target" "rag"
+"wait" "2.2"
+}
+{
+"classname" "path_corner"
+"origin" "-1024 -1120 -1808"
+"targetname" "rag"
+"target" "rig"
+"wait" "-1"
+}
+{
+"classname" "func_train"
+"targetname" "split"
+"target" "rol"
+"speed" "450"
+"model" "*11"
+}
+{
+"classname" "path_corner"
+"origin" "-384 -1120 -640"
+"targetname" "rol"
+"target" "rul"
+"wait" "2"
+}
+{
+"classname" "path_corner"
+"origin" "-384 -1120 -1792"
+"targetname" "rul"
+"target" "rol"
+"wait" "-1"
+}
+{
+"classname" "func_train"
+"targetname" "split"
+"target" "v1"
+"speed" "2000"
+"model" "*12"
+}
+{
+"classname" "path_corner"
+"origin" "-1024 -1120 -1728"
+"targetname" "v1"
+"target" "v2"
+}
+{
+"classname" "path_corner"
+"origin" "-1024 -1120 -992"
+"targetname" "v2"
+"target" "v1"
+"wait" "-1"
+}
+{
+"classname" "light"
+"origin" "2120 -3232 -120"
+"light" "200"
+}
+{
+"classname" "func_train"
+"target" "k1"
+"targetname" "glue"
+"speed" "50"
+"sounds" "1"
+"model" "*13"
+}
+{
+"classname" "path_corner"
+"origin" "2200 -3128 -336"
+"targetname" "k1"
+"target" "k2"
+}
+{
+"classname" "path_corner"
+"origin" "2200 -2856 -336"
+"targetname" "k2"
+"target" "k1"
+"wait" "-1"
+}
+{
+"classname" "light"
+"origin" "2208 -2720 -512"
+"light" "100"
+"style" "5"
+}
+{
+"classname" "model_tree3"
+"origin" "-2288 -1512 -632"
+}
+{
+"classname" "model_tree3"
+"origin" "3496 -448 -104"
+}
+{
+"classname" "model_tree3"
+"origin" "1400 288 -240"
+}
+{
+"classname" "model_tree3"
+"origin" "848 888 -232"
+}
+{
+"classname" "model_tree6"
+"origin" "-1384 912 200"
+}
+{
+"classname" "model_tree4"
+"origin" "-1232 688 208"
+}
+{
+"classname" "model_tree3"
+"origin" "-808 1632 224"
+}
+{
+"classname" "model_tree6"
+"origin" "568 -528 -696"
+}
+{
+"classname" "model_tree6"
+"origin" "672 -2432 -632"
+}
+{
+"classname" "model_tree6"
+"origin" "2344 128 -48"
+}
+{
+"classname" "model_tree4"
+"origin" "-1328 -336 -568"
+}
+{
+"classname" "model_tree4"
+"origin" "-2880 -3160 -616"
+}
+{
+"classname" "light"
+"light" "40"
+"angle" "360"
+"origin" "-2880 -3160 -620"
+"wait" "0.3"
+}
+{
+"classname" "func_door"
+"angle" "90"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*14"
+}
+{
+"classname" "func_door"
+"angle" "270"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*15"
+}
+{
+"classname" "func_door"
+"angle" "90"
+"speed" "100"
+"wait" "-1"
+"sounds" "2"
+"message" "this door opens elsewhere"
+"targetname" "gorge"
+"model" "*16"
+}
+{
+"classname" "func_door"
+"angle" "270"
+"speed" "100"
+"wait" "-1"
+"sounds" "2"
+"message" "this door opens elsewhere"
+"targetname" "gorge"
+"model" "*17"
+}
+{
+"classname" "func_door"
+"angle" "90"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*18"
+}
+{
+"classname" "func_door"
+"angle" "270"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*19"
+}
+{
+"classname" "item_spikes"
+"origin" "1744 -3312 -112"
+"spawnflags" "1"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "-3808 -1856 -608"
+"angle" "270"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "1824 -2944 -304"
+"angle" "180"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "976 656 336"
+"angle" "180"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "-1264 2912 512"
+"angle" "180"
+"spawnflags" "1792"
+}
+{
+"classname" "light"
+"origin" "-1248 2976 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-1120 2352 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-812 2560 404"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-1376 2352 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-1056 2784 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-2208 1696 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-2208 1432 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-1792 1128 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-1584 1440 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-1576 1880 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-2208 1760 664"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-2208 1504 664"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-800 2208 960"
+"light" "200"
+"style" "4"
+}
+{
+"classname" "light"
+"origin" "2464 -224 640"
+"light" "200"
+"style" "4"
+}
+{
+"classname" "light"
+"origin" "-1632 2976 408"
+"light" "150"
+}
+{
+"classname" "item_spikes"
+"origin" "1744 -3312 -112"
+"spawnflags" "1"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "-3808 -1856 -608"
+"angle" "270"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "1824 -2944 -304"
+"angle" "180"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "976 656 336"
+"angle" "180"
+"spawnflags" "1792"
+}
+{
+"classname" "info_player_deathmatch"
+"origin" "-1264 2912 512"
+"angle" "180"
+"spawnflags" "1792"
+}
+{
+"classname" "light"
+"origin" "-1248 2976 408"
+"light" "150"
+}
+{
+"classname" "light"
+"origin" "-800 2208 960"
+"light" "200"
+"style" "4"
+}
+{
+"classname" "light"
+"origin" "2464 -224 640"
+"light" "200"
+"style" "4"
+}
+{
+"classname" "light"
+"origin" "-1632 2976 408"
+"light" "150"
+}
+{
+"classname" "func_door"
+"angle" "180"
+"speed" "60"
+"wait" "-1"
+"sounds" "2"
+"targetname" "gone"
+"message" "this door opens elsewhere"
+"model" "*20"
+}
+{
+"classname" "func_door"
+"angle" "180"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*21"
+}
+{
+"classname" "func_button"
+"angle" "90"
+"speed" "100"
+"wait" "-1"
+"target" "gone"
+"message" "basedoor opened"
+"sounds" "2"
+"model" "*22"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1952 1016 352"
+"angle" "0"
+"spawnflags" "3329"
+}
+{
+"classname" "monster_ogre"
+"origin" "-1952 1016 352"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1448 1720 344"
+"angle" "270"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_demon1"
+"origin" "-1448 1720 344"
+"angle" "270\"
+"spawnflags" "3328"
+}
+{
+"classname" "light"
+"origin" "2608 -192 48"
+"light" "150"
+"style" "5"
+}
+{
+"classname" "monster_shalrath"
+"origin" "-1448 1720 344"
+"angle" "270"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-584 2200 376"
+"angle" "0"
+"spawnflags" "2305"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-1040 2024 360"
+"angle" "270"
+"spawnflags" "2305"
+}
+{
+"classname" "trigger_once"
+"target" "glue"
+"message" "bridgedoor opened"
+"sounds" "3"
+"model" "*23"
+}
+{
+"classname" "light"
+"origin" "-2544 -2480 -336"
+"light" "300"
+"_color" "256 0 0"
+}
+{
+"classname" "light"
+"origin" "-2536 -1592 -328"
+"light" "300"
+"_color" "256 0 0"
+}
+{
+"classname" "light"
+"origin" "3760 -752 416"
+"light" "300"
+"_color" "256 0 0"
+}
+{
+"classname" "light"
+"origin" "1294 1932 472"
+"light" "300"
+"_color" "256 0 0"
+}
+{
+"classname" "light"
+"origin" "-1666 860 480"
+"light" "300"
+"_color" "256 0 0"
+}
+{
+"classname" "monster_misin"
+"origin" "-1032 2232 360"
+"angle" "270"
+"spawnflags" "2049"
+}
+{
+"classname" "light"
+"origin" "-1016 2160 776"
+"light" "150"
+"style" "6"
+}
+{
+"classname" "item_artifact_super_damage"
+"origin" "-1016 2168 768"
+}
+{
+"classname" "ambient_drone"
+"origin" "-2640 -3104 -384"
+}
+{
+"classname" "ambient_drone"
+"origin" "1896 -3304 -40"
+}
+{
+"classname" "ambient_drone"
+"origin" "2336 -80 256"
+}
+{
+"classname" "ambient_drone"
+"origin" "-848 2616 360"
+}
+{
+"classname" "ambient_drone"
+"origin" "-1024 2632 312"
+}
+{
+"classname" "ambient_drone"
+"origin" "-936 2472 528"
+}
+{
+"classname" "ambient_drone"
+"origin" "-1776 1760 488"
+}
+{
+"classname" "ambient_drone"
+"origin" "-1728 1320 304"
+}
+{
+"classname" "ambient_comp_hum"
+"origin" "-1800 1456 312"
+}
+{
+"classname" "item_artifact_invisibility"
+"origin" "3208 -240 -344"
+}
+{
+"classname" "func_door"
+"angle" "180"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*24"
+}
+{
+"classname" "func_door"
+"angle" "0"
+"speed" "100"
+"wait" "4"
+"sounds" "2"
+"model" "*25"
+}
+{
+"classname" "func_button"
+"angle" "270"
+"target" "gorge"
+"speed" "100"
+"wait" "-1"
+"message" "exit door opened"
+"sounds" "2"
+"model" "*26"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "joule"
+"target" "jou0"
+"model" "*27"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "joule"
+"target" "jou1"
+"model" "*28"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "joule"
+"target" "jou2"
+"model" "*29"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "djin"
+"target" "jin0"
+"model" "*30"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "djin"
+"target" "jin1"
+"model" "*31"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "djin"
+"target" "jin2"
+"model" "*32"
+}
+{
+"classname" "monster_ogre"
+"origin" "-3984 -1760 -704"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_demon1"
+"origin" "-3984 -1760 -712"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-3984 -1824 -696"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_army"
+"origin" "-3984 -1824 -696"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-3984 -1824 -696"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_wizard"
+"origin" "-3984 -1888 -696"
+"angle" "0"
+"spawnflags" "2048"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "-2568 -2544 -600"
+"targetname" "jou0"
+"angle" "270"
+"spawnflags" "2048"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "-2728 -2840 -584"
+"angle" "0"
+"targetname" "jou1"
+"spawnflags" "2048"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "-2752 -2768 -368"
+"targetname" "jou2"
+"angle" "312"
+"spawnflags" "2048"
+}
+{
+"classname" "monster_wizard"
+"origin" "-3984 -1888 -576"
+"angle" "0"
+"spawnflags" "2304"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "1632 -2880 -48"
+"targetname" "jin2"
+"angle" "318"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "1472 -2944 -256"
+"angle" "0"
+"targetname" "jin1"
+}
+{
+"classname" "weapon_nailgun"
+"origin" "-1648 -384 -496"
+}
+{
+"classname" "monster_shalrath"
+"origin" "-3984 -1760 -592"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_demon1"
+"origin" "-3984 -1760 -592"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "monster_shambler"
+"origin" "-3984 -1760 -592"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "-3984 -1824 -576"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_wizard"
+"origin" "-3984 -1824 -576"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "item_shells"
+"origin" "592 -1256 -752"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "1248 -2560 -624"
+"spawnflags" "1"
+}
+{
+"classname" "item_shells"
+"origin" "632 -1216 -752"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "1296 -2592 -624"
+"spawnflags" "1"
+}
+{
+"classname" "monster_demon1"
+"origin" "968 -2368 -584"
+"angle" "90"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_enforcer"
+"origin" "960 -2368 -576"
+"spawnflags" "3329"
+"angle" "90"
+}
+{
+"classname" "monster_army"
+"origin" "960 -2368 -576"
+"angle" "90"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_ogre"
+"origin" "1352 -2904 -568"
+"spawnflags" "3329"
+"angle" "145"
+}
+{
+"classname" "monster_dog"
+"origin" "1344 -2896 -536"
+"angle" "140"
+"spawnflags" "3585"
+}
+{
+"classname" "monster_hell_knight"
+"origin" "1344 -2904 -536"
+"angle" "143"
+"spawnflags" "2817"
+}
+{
+"classname" "monster_enforcer"
+"origin" "648 -1648 -680"
+"angle" "36"
+"spawnflags" "3328"
+}
+{
+"classname" "monster_wizard"
+"origin" "640 -1648 -680"
+"angle" "28"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_shalrath"
+"origin" "2168 -2944 -536"
+"spawnflags" "2817"
+"angle" "179"
+}
+{
+"classname" "monster_enforcer"
+"origin" "2168 -2936 -536"
+"angle" "180"
+"spawnflags" "3073"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "2416 -2928 -272"
+"targetname" "jin0"
+"angle" "180"
+}
+{
+"classname" "monster_enforcer"
+"origin" "-3984 -1824 -576"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "sin"
+"target" "guil1"
+"model" "*33"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "2864 -368 240"
+"targetname" "guil2"
+"angle" "164"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "sin"
+"target" "guil3"
+"model" "*34"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "2704 400 -8"
+"targetname" "guil3"
+"angle" "270"
+}
+{
+"classname" "monster_wizard"
+"origin" "2304 -136 -16"
+"angle" "0"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_wizard"
+"origin" "2304 -8 -16"
+"angle" "0"
+"spawnflags" "2304"
+}
+{
+"classname" "monster_wizard"
+"origin" "2304 -136 96"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "sin"
+"target" "guil2"
+"model" "*35"
+}
+{
+"classname" "trigger_teleport"
+"targetname" "sin"
+"target" "guil0"
+"model" "*36"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "2776 208 248"
+"targetname" "guil0"
+"angle" "217"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "2904 -40 248"
+"targetname" "guil1"
+"angle" "180"
+}
+{
+"classname" "item_health"
+"origin" "2576 -304 -8"
+}
+{
+"classname" "item_health"
+"origin" "2632 -304 -8"
+}
+{
+"classname" "item_shells"
+"origin" "2320 136 0"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "2320 88 0"
+"spawnflags" "1"
+}
+{
+"classname" "monster_shambler"
+"origin" "2304 -8 80"
+"angle" "0"
+"spawnflags" "2816"
+}
+{
+"classname" "monster_shalrath"
+"origin" "2304 -8 88"
+"angle" "0"
+"spawnflags" "3328"
+}
+{
+"classname" "item_shells"
+"origin" "-1200 -624 -480"
+"spawnflags" "257"
+}
+{
+"classname" "item_shells"
+"origin" "-1168 -672 -480"
+"spawnflags" "257"
+}
+{
+"classname" "item_armor2"
+"origin" "576 -880 -464"
+}
+{
+"classname" "item_spikes"
+"origin" "-1264 -528 -464"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "-1232 -576 -464"
+"spawnflags" "1"
+}
+{
+"classname" "monster_demon1"
+"origin" "2304 -8 80"
+"angle" "0"
+"spawnflags" "3584"
+}
+{
+"classname" "item_health"
+"origin" "-2912 -1952 -720"
+}
+{
+"classname" "item_health"
+"origin" "-2912 -2016 -720"
+}
+{
+"classname" "func_wall"
+"model" "*37"
+}
+{
+"classname" "model_wubel"
+"origin" "-2127.8 2311 254"
+"angel" "180"
+}
+{
+"classname" "light"
+"origin" "-2128 2152 248"
+"light" "150"
+"style" "5"
+"_color" "96 128 256"
+}
+{
+"classname" "light"
+"origin" "-1792 1376 318"
+"light" "150"
+"style" "5"
+}
+{
+"classname" "light"
+"origin" "-2128 2312 240"
+"light" "150"
+"style" "1"
+"_color" "225 225 96"
+}
+{
+"classname" "light"
+"origin" "-1792 1536 310"
+"light" "150"
+"style" "1"
+}
+{
+"classname" "light"
+"origin" "-1248 2912 246"
+"light" "150"
+"style" "1"
+}
+{
+"classname" "light"
+"origin" "-1632 2912 246"
+"light" "150"
+"style" "1"
+}
+{
+"classname" "model_tubel"
+"origin" "-1248 2908 258"
+}
+{
+"classname" "model_wubel"
+"origin" "-1632 2908 258"
+}
+{
+"classname" "model_wubel"
+"origin" "-1792 1372 322"
+}
+{
+"classname" "model_tubel"
+"origin" "-1792 1532 322"
+}
+{
+"classname" "model_bubel"
+"origin" "-2127.8 2153 254"
+"angel" "180"
+}
+{
+"classname" "light"
+"light" "240"
+"angle" "360"
+"origin" "-1216 2496 384"
+}
+{
+"classname" "light"
+"light" "300"
+"angle" "360"
+"origin" "2480 -224 496"
+"_color" "256 0 0"
+}
+{
+"classname" "item_shells"
+"origin" "2336 -2752 -320"
+"spawnflags" "1"
+}
+{
+"classname" "item_spikes"
+"origin" "2384 -2752 -320"
+"spawnflags" "1"
+}
+{
+"classname" "light"
+"light" "300"
+"angle" "360"
+"origin" "2016 -3152 304"
+"style" "4"
+}
+{
+"classname" "light"
+"light" "300"
+"angle" "360"
+"origin" "2016 -3152 176"
+"_color" "256 0 0"
+}
+{
+"classname" "item_armor1"
+"origin" "3040 -272 -352"
+}
+{
+"classname" "ambient_swamp1"
+"origin" "-2176 -576 -512"
+}
+{
+"classname" "ambient_swamp1"
+"origin" "512 -704 -512"
+}
+{
+"classname" "ambient_swamp1"
+"origin" "1792 576 -192"
+}
+{
+"classname" "ambient_swamp1"
+"origin" "960 1536 -64"
+}
+{
+"classname" "ambient_swamp2"
+"origin" "-960 1152 256"
+}
