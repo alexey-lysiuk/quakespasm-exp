@@ -7,6 +7,7 @@ local format <const> = string.format
 local concat <const> = table.concat
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
@@ -300,8 +301,10 @@ local function edicts_updatesearch(self, modified)
 			local searchresults = {}
 
 			for _, entry in ipairs(self.entries) do
-				if entry.description:lower():find(searchstring, 1, true)
-					or tostring(entry.location):find(searchstring, 1, true) then
+				local found = entry.description:lower():find(searchstring, 1, true)
+					or tostring(entry.location):find(searchstring, 1, true)
+
+				if found then
 					insert(searchresults, entry)
 				end
 			end
@@ -324,8 +327,13 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
+		imAlignTextToFramePadding()
+		imText('Search:')
+		imSameLine()
+
 		local searchmodified = imInputText('##search', self.searchbuffer)
 		imSameLine()
+
 		if imButton('Reset') then
 			self.searchbuffer = nil
 			searchmodified = true
@@ -387,6 +395,7 @@ local function edicts_onshow(self)
 end
 
 local function edicts_onhide(self)
+	self.searchresults = nil
 	self.entries = nil
 	return true
 end
