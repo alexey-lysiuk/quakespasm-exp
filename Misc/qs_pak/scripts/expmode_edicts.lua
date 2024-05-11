@@ -212,8 +212,7 @@ local function edictstable(title, entries, tableflags)
 		imTableSetupColumn('Location')
 		imTableHeadersRow()
 
-		for row = 1, #entries do
-			local entry = entries[row]
+		for _, entry in ipairs(entries) do
 			local description = entry.description
 
 			imTableNextRow()
@@ -245,11 +244,7 @@ local function edictstable(title, entries, tableflags)
 					end
 				end
 
-				-- Description and location need unique IDs to generate click events
-				local descriptionid = description .. '##' .. row
-				local locationid = location .. '##' .. row
-
-				if imSelectable(descriptionid) then
+				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict)
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
@@ -259,7 +254,7 @@ local function edictstable(title, entries, tableflags)
 
 				imTableNextColumn()
 
-				if imSelectable(locationid) then
+				if imSelectable(entry.locationid) then
 					moveplayer(entry.edict, location, entry.angles)
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
@@ -312,7 +307,7 @@ local function edicts_onupdate(self)
 
 				for _, entry in ipairs(self.entries) do
 					if entry.description:lower():find(searchstring, 1, true)
-						or tostring(entry.location):lower():find(searchstring, 1, true) then
+						or tostring(entry.location):find(searchstring, 1, true) then
 						insert(searchresults, entry)
 					end
 				end
@@ -341,15 +336,27 @@ local function edicts_onshow(self)
 		local description, location, angles = filter(edict)
 
 		if description then
-			insert(entries,
+			local freed = isfree(edict)
+			description = toascii(description)
+
+			local entry =
 			{
 				edict = edict,
-				isfree = isfree(edict),
+				isfree = freed,
 				index = index,
-				description = toascii(description),
-				location = location or '',
-				angles = angles
-			})
+				description = description,
+			}
+
+			if not freed then
+				entry.location = location
+				entry.angles = angles
+
+				-- Description and location cells need unique IDs to generate click events
+				entry.descriptionid = format('%s##%d', description, index)
+				entry.locationid = format('%s##%d', location, index)
+			end
+
+			insert(entries, entry)
 			index = index + 1
 		end
 	end
