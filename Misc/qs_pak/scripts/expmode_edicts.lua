@@ -283,6 +283,36 @@ local function edicts_calculatedefaultwindowsize(self)
 	end
 end
 
+local function edicts_updatesearch(self, force)
+	local searchbuffer = self.searchbuffer
+
+	if not searchbuffer then
+		searchbuffer = imTextBuffer()
+		self.searchbuffer = searchbuffer
+	end
+
+	if force or imInputText('##search', searchbuffer) then
+		local searchstring = tostring(searchbuffer):lower()
+
+		if #searchstring > 0 then
+			local searchresults = {}
+
+			for _, entry in ipairs(self.entries) do
+				if entry.description:lower():find(searchstring, 1, true)
+					or tostring(entry.location):find(searchstring, 1, true) then
+					insert(searchresults, entry)
+				end
+			end
+
+			self.searchresults = searchresults
+		else
+			self.searchresults = nil
+		end
+	end
+
+	return #searchbuffer > 0
+end
+
 local function edicts_onupdate(self)
 	edicts_calculatedefaultwindowsize()
 
@@ -292,33 +322,7 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		local searchbuffer = self.searchbuffer
-
-		if not searchbuffer then
-			searchbuffer = imTextBuffer()
-			self.searchbuffer = searchbuffer
-		end
-
-		if imInputText('##search', searchbuffer) then
-			local searchstring = tostring(searchbuffer):lower()
-
-			if #searchstring > 0 then
-				local searchresults = {}
-
-				for _, entry in ipairs(self.entries) do
-					if entry.description:lower():find(searchstring, 1, true)
-						or tostring(entry.location):find(searchstring, 1, true) then
-						insert(searchresults, entry)
-					end
-				end
-
-				self.searchresults = searchresults
-			else
-				self.searchresults = nil
-			end
-		end
-
-		local entries = #searchbuffer > 0 and self.searchresults or self.entries
+		local entries = edicts_updatesearch(self) and self.searchresults or self.entries
 		edictstable(title, entries, defaultscrollytableflags)
 	end
 
@@ -369,6 +373,7 @@ local function edicts_onshow(self)
 
 	self.entries = entries
 
+	edicts_updatesearch(self, true)
 	return true
 end
 
