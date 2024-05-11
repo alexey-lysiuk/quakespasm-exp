@@ -284,7 +284,7 @@ static const LS_UserDataType ls_imguistyle_type =
 	sizeof(int) /* fourcc */ + sizeof(void*)
 };
 
-constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 50> ls_imguistyle_members =
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 51> ls_imguistyle_members =
 {
 #define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
 
@@ -319,6 +319,7 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 50> ls_imguistyl
 	LS_IMGUI_STYLE_MEMBER(TabMinWidthForCloseButton),
 	LS_IMGUI_STYLE_MEMBER(TabBarBorderSize),
 	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
+	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersTextAlign),
 	LS_IMGUI_STYLE_MEMBER(ColorButtonPosition),
 	LS_IMGUI_STYLE_MEMBER(ButtonTextAlign),
 	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
