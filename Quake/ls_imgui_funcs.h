@@ -247,6 +247,14 @@ static int LS_global_imgui_Unindent(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_AlignTextToFramePadding(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	ImGui::AlignTextToFramePadding();
+	return 0;
+}
+
 static int LS_global_imgui_Text(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -900,7 +908,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "Unindent", LS_global_imgui_Unindent },
 		// * BeginGroup
 		// * EndGroup
-		// * AlignTextToFramePadding
+		{ "AlignTextToFramePadding", LS_global_imgui_AlignTextToFramePadding },
 		// * GetTextLineHeight
 		// * GetTextLineHeightWithSpacing
 		// * GetFrameHeight
