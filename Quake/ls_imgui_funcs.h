@@ -780,6 +780,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 	{
 		{ "ImVec2", LS_global_imgui_ImVec2 },
 		{ "ImVec4", LS_global_imgui_ImVec4 },
+		{ "TextBuffer", LS_global_imgui_TextBuffer },
 
 		// Context creation and access
 		// * should not be exposed
