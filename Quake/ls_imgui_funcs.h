@@ -297,8 +297,6 @@ static int LS_global_imgui_SmallButton(lua_State* state)
 	return 1;
 }
 
-static ImVector<char> ls_inputtextbuffer;
-
 static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -306,44 +304,14 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	const char* label = luaL_checkstring(state, 1);
 	assert(label);
 
-	size_t textlength = 0;
-	const char* text = luaL_checklstring(state, 2, &textlength);
-	assert(text);
-
-	static constexpr lua_Integer BUFFER_SIZE_MIN = 1024;
-	static constexpr lua_Integer BUFFER_SIZE_MAX = 1024 * 1024;
-	const lua_Integer ibuffersize = luaL_checkinteger(state, 3);
-
-	const size_t buffersize = CLAMP(BUFFER_SIZE_MIN, ibuffersize, BUFFER_SIZE_MAX);
-	ls_inputtextbuffer.resize(buffersize);
-
-	if (buffersize <= textlength)
-	{
-		// Text doesn't fit the buffer, cut it
-		textlength = buffersize - 1;
-		ls_inputtextbuffer[textlength] = '\0';
-	}
-
-	char* buf = &ls_inputtextbuffer[0];
-
-	if (textlength > 0)
-		strncpy(buf, text, textlength);
-	else
-		*buf = '\0';
-
-	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 4, ImVec2());
-	const int flags = luaL_optinteger(state, 5, 0);
+	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 2);
+	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 3, ImVec2());
+	const int flags = luaL_optinteger(state, 4, 0);
 
 	// TODO: Input text callback support
-	const bool changed = ImGui::InputTextMultiline(label, buf, buffersize, size, flags);
+	const bool changed = ImGui::InputTextMultiline(label, textbuffer.data, textbuffer.size, size, flags);
 	lua_pushboolean(state, changed);
-
-	if (changed)
-		lua_pushstring(state, buf);
-	else
-		lua_pushvalue(state, 2);
-
-	return 2;
+	return 1;
 }
 
 static int LS_global_imgui_Selectable(lua_State* state)
