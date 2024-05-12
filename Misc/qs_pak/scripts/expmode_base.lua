@@ -38,7 +38,8 @@ local imWindowFlags <const> = ImGui.WindowFlags
 local imCondFirstUseEver <const> = ImGui.Cond.FirstUseEver
 local imInputTextAllowTabInput <const> = ImGui.InputTextFlags.AllowTabInput
 
-local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse | imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
+local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse
+	| imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
 
 local framecount <const> = host.framecount
 local frametime <const> = host.frametime
