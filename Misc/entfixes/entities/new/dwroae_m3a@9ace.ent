@@ -6148,10 +6148,6 @@
 "origin" "-1472 352 640"
 }
 {
-"classname" "monster_hell_knight"
-"origin" "-1472 432 640"
-}
-{
 "targetname" "t152"
 "target" "t148"
 "classname" "trigger_teleport"
