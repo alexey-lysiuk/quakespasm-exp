@@ -193,19 +193,18 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
-local function edictstable_tostring(entries, zerobasedindex)
+local function edictstable_tostring(entries)
 	local lines = {}
 
-	for row = 1, #entries do
-		local entry = entries[row]
-		local line = format('%d\t%s\t%s', zerobasedindex and row - 1 or row, entry.description, entry.location)
+	for _, entry in ipairs(entries) do
+		local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
 		insert(lines, line)
 	end
 
 	return concat(lines, '\n')
 end
 
-local function edictstable(title, entries, zerobasedindex, tableflags)
+local function edictstable(title, entries, tableflags)
 	if imBeginTable(title, 3, tableflags or defaulttableflags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
@@ -219,7 +218,7 @@ local function edictstable(title, entries, zerobasedindex, tableflags)
 
 			imTableNextRow()
 			imTableNextColumn()
-			imSelectable(index, false, imSelectableDisabled)
+			imSelectable(entry.index, false, imSelectableDisabled)
 			imTableNextColumn()
 
 			if entry.isfree then
@@ -237,10 +236,10 @@ local function edictstable(title, entries, zerobasedindex, tableflags)
 							imSetClipboardText(tostring(cellvalue))
 						end
 						if imSelectable('Copy row') then
-							imSetClipboardText(format('%s\t%s\t%s', index, description, location))
+							imSetClipboardText(format('%s\t%s\t%s', entry.index, description, location))
 						end
 						if imSelectable('Copy table') then
-							imSetClipboardText(edictstable_tostring(entries, zerobasedindex))
+							imSetClipboardText(edictstable_tostring(entries))
 						end
 						imEndPopup()
 					end
@@ -298,7 +297,7 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		edictstable(title, self.entries, not self.filter, defaultscrollytableflags)
+		edictstable(title, self.entries, defaultscrollytableflags)
 	end
 
 	imEnd()
@@ -306,23 +305,40 @@ local function edicts_onupdate(self)
 	return opened
 end
 
+local function edicts_addentry(filter, edict, index, entries)
+	local description, location, angles = filter(edict)
+
+	if not description then
+		return index
+	end
+
+	local freed = isfree(edict)
+	description = toascii(description)
+
+	local entry =
+	{
+		edict = edict,
+		isfree = freed,
+		index = index,
+		description = description,
+	}
+
+	if not freed then
+		entry.location = location
+		entry.angles = angles
+	end
+
+	insert(entries, entry)
+	return index + 1
+end
+
 local function edicts_onshow(self)
 	local filter = self.filter or isany
 	local entries = {}
+	local index = self.filter and 1 or 0
 
 	for _, edict in ipairs(edicts) do
-		local description, location, angles = filter(edict)
-
-		if description then
-			insert(entries,
-			{
-				edict = edict,
-				isfree = isfree(edict),
-				description = toascii(description),
-				location = location or '',
-				angles = angles
-			})
-		end
+		index = edicts_addentry(filter, edict, index, entries)
 	end
 
 	self.entries = entries
@@ -368,20 +384,15 @@ end
 local function edictrefs_onshow(self)
 	local edict = self.edict
 
-	if tostring(self.edict) ~= self.edictid then
+	if tostring(edict) ~= self.edictid then
 		return
 	end
 
 	local function addentries(source, list)
+		local index = 1
+
 		for _, edict in ipairs(source) do
-			local description, location, angles = isany(edict)
-			insert(list,
-			{
-				edict = edict,
-				description = description,
-				location = location,
-				angles = angles
-			})
+			index = edicts_addentry(isany, edict, index, list)
 		end
 	end
 
