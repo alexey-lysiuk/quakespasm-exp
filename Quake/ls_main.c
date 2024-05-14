@@ -989,7 +989,7 @@ static void LS_Exec_f(void)
 void LS_Init(void)
 {
 	Cmd_AddCommand("lua", LS_Exec_f);
-	Cmd_AddCommand("resetluastate", LS_ResetState);
+	Cmd_AddCommand("resetlua", LS_ResetState);
 }
 
 void LS_Shutdown(void)
