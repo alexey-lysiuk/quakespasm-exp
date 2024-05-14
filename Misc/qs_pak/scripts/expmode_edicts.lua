@@ -64,6 +64,7 @@ local window <const> = expmode.window
 
 local ghost <const> = player.ghost
 local setpos <const> = player.setpos
+local traceentity <const> = player.traceentity
 
 local localize <const> = text.localize
 local toascii <const> = text.toascii
@@ -334,17 +335,6 @@ local function edicts_onhide(self)
 	return true
 end
 
-local function traceentity_onshow(self)
-	local edict = player.traceentity()
-
-	if edict then
-		edictinfo(edict)
-		return true
-	else
-		messagebox('No entity', 'Player is not looking at any entity')
-	end
-end
-
 local function edictrefs_onupdate(self)
 	edicts_calculatedefaultwindowsize()
 
@@ -467,7 +457,13 @@ addaction(function ()
 		imSeparator()
 
 		if imMenuItem('Trace Entity') then
-			traceentity_onshow()
+			local edict = traceentity()
+
+			if edict then
+				edictinfo(edict)
+			else
+				messagebox('No entity', 'Player is not looking at any entity')
+			end
 		end
 
 		imEndMenu()
