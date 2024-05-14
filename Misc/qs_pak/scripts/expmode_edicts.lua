@@ -7,21 +7,25 @@ local format <const> = string.format
 local concat <const> = table.concat
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
 local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
+local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
 local imGetMainViewport <const> = ImGui.GetMainViewport
+local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -33,6 +37,7 @@ local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imText <const> = ImGui.Text
+local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = ImGui.ImVec2
 
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
@@ -282,6 +287,38 @@ local function edicts_calculatedefaultwindowsize(self)
 	end
 end
 
+local function edicts_updatesearch(self, modified)
+	local searchbuffer = self.searchbuffer
+
+	if not searchbuffer then
+		searchbuffer = imTextBuffer()
+		self.searchbuffer = searchbuffer
+	end
+
+	if modified then
+		local searchstring = tostring(searchbuffer):lower()
+
+		if #searchstring > 0 then
+			local searchresults = {}
+
+			for _, entry in ipairs(self.entries) do
+				local found = entry.description:lower():find(searchstring, 1, true)
+					or tostring(entry.location):find(searchstring, 1, true)
+
+				if found then
+					insert(searchresults, entry)
+				end
+			end
+
+			self.searchresults = searchresults
+		else
+			self.searchresults = nil
+		end
+	end
+
+	return #searchbuffer > 0
+end
+
 local function edicts_onupdate(self)
 	edicts_calculatedefaultwindowsize()
 
@@ -291,7 +328,20 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		edictstable(title, self.entries, defaultscrollytableflags)
+		imAlignTextToFramePadding()
+		imText('Search:')
+		imSameLine()
+
+		local searchmodified = imInputText('##search', self.searchbuffer)
+		imSameLine()
+
+		if imButton('Reset') then
+			self.searchbuffer = nil
+			searchmodified = true
+		end
+
+		local entries = edicts_updatesearch(self, searchmodified) and self.searchresults or self.entries
+		edictstable(title, entries, defaultscrollytableflags)
 	end
 
 	imEnd()
@@ -341,10 +391,12 @@ local function edicts_onshow(self)
 
 	self.entries = entries
 
+	edicts_updatesearch(self, true)
 	return true
 end
 
 local function edicts_onhide(self)
+	self.searchresults = nil
 	self.entries = nil
 	return true
 end
