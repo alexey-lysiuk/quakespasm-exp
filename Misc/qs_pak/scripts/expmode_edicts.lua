@@ -211,9 +211,7 @@ local function edictstable(title, entries, tableflags)
 		imTableSetupColumn('Location')
 		imTableHeadersRow()
 
-		for row = 1, #entries do
-			local entry = entries[row]
-			local index = tostring(zerobasedindex and row - 1 or row)
+		for _, entry in ipairs(entries) do
 			local description = entry.description
 
 			imTableNextRow()
@@ -245,11 +243,7 @@ local function edictstable(title, entries, tableflags)
 					end
 				end
 
-				-- Description and location need unique IDs to generate click events
-				local descriptionid = description .. '##' .. row
-				local locationid = location .. '##' .. row
-
-				if imSelectable(descriptionid) then
+				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict)
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
@@ -259,7 +253,7 @@ local function edictstable(title, entries, tableflags)
 
 				imTableNextColumn()
 
-				if imSelectable(locationid) then
+				if imSelectable(entry.locationid) then
 					moveplayer(entry.edict, location, entry.angles)
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
@@ -326,6 +320,10 @@ local function edicts_addentry(filter, edict, index, entries)
 	if not freed then
 		entry.location = location
 		entry.angles = angles
+
+		-- Description and location cells need unique IDs to generate click events
+		entry.descriptionid = format('%s##%d', description, index)
+		entry.locationid = format('%s##%d', location, index)
 	end
 
 	insert(entries, entry)
