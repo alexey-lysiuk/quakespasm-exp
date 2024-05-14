@@ -54,7 +54,6 @@ local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
-local defaultedictinfowindowsize, defaultedictswindowsize
 
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
@@ -64,7 +63,6 @@ local string <const> = edicts.valuetypes.string
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
-local placewindow <const> = expmode.placewindow
 local window <const> = expmode.window
 
 local ghost <const> = player.ghost
@@ -95,8 +93,6 @@ end
 
 local function edictinfo_onupdate(self)
 	local title = self.title
-	placewindow(title, defaultedictinfowindowsize)
-
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
@@ -155,12 +151,6 @@ local function edictinfo_onupdate(self)
 end
 
 local function edictinfo_onshow(self)
-	if not defaultedictinfowindowsize then
-		local width = imCalcTextSize('a').x * 48
-		local height = imGetMainViewport().Size.y * 0.5
-		defaultedictinfowindowsize = imVec2(width, height)
-	end
-
 	local title = self.title
 
 	if tostring(self.edict) ~= title then
@@ -279,14 +269,6 @@ local function edictstable(title, entries, tableflags)
 	end
 end
 
-local function edicts_calculatedefaultwindowsize(self)
-	if not defaultedictswindowsize then
-		local width = imCalcTextSize('a').x * 64
-		local height = imGetMainViewport().Size.y * 0.5
-		defaultedictswindowsize = imVec2(width, height)
-	end
-end
-
 local function edicts_updatesearch(self, modified)
 	local searchbuffer = self.searchbuffer
 
@@ -320,11 +302,7 @@ local function edicts_updatesearch(self, modified)
 end
 
 local function edicts_onupdate(self)
-	edicts_calculatedefaultwindowsize()
-
 	local title = self.title
-	placewindow(title, defaultedictswindowsize)
-
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
@@ -402,12 +380,7 @@ local function edicts_onhide(self)
 end
 
 local function edictrefs_onupdate(self)
-	edicts_calculatedefaultwindowsize()
-
-	local title = self.title
-	placewindow(title, defaultedictswindowsize)
-
-	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
+	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		local references = self.references

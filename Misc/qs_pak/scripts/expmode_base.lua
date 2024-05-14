@@ -29,7 +29,6 @@ local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
-local imSetNextWindowSize <const> = ImGui.SetNextWindowSize
 local imSpacing <const> = ImGui.Spacing
 local imText <const> = ImGui.Text
 local imVec2 <const> = ImGui.ImVec2
@@ -45,14 +44,12 @@ local framecount <const> = host.framecount
 local frametime <const> = host.frametime
 local realtime <const> = host.realtime
 
-local placedwindows = {}
 local actions = {}
 local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultmessageboxpos, nextwindowpos
-local defaultwindowsize <const> = imVec2(320, 240)
+local defaultmessageboxpos
 local screensize, shouldexit, wintofocus
 
 function expmode.addaction(func)
@@ -167,30 +164,6 @@ end
 
 local window <const> = expmode.window
 
-function expmode.placewindow(title, size)
-	if placedwindows[title] then
-		return
-	end
-
-	placedwindows[title] = true
-
-	if nextwindowpos.x + size.x >= screensize.x then
-		nextwindowpos.x = screensize.x * 0.05
-	end
-
-	if nextwindowpos.y + size.y >= screensize.y then
-		nextwindowpos.y = screensize.y * 0.05
-	end
-
-	imSetNextWindowPos(nextwindowpos, imCondFirstUseEver)
-	imSetNextWindowSize(size, imCondFirstUseEver)
-
-	nextwindowpos.x = nextwindowpos.x + screensize.x * 0.05
-	nextwindowpos.y = nextwindowpos.y + screensize.y * 0.05
-end
-
-local placewindow <const> = expmode.placewindow
-
 local function foreachwindow(func_or_name)
 	local func = type(func_or_name) == 'function' and func_or_name
 	local count = #windows
@@ -212,16 +185,13 @@ end
 local scratchpadtext
 
 local function scratchpad_update(self)
-	local title = self.title
-	placewindow(title, defaultwindowsize)
-
-	if not scratchpadtext then
-		scratchpadtext = ImGui.TextBuffer(64 * 1024)
-	end
-
-	local visible, opened = imBegin(title, true)
+	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
+		if not scratchpadtext then
+			scratchpadtext = ImGui.TextBuffer(64 * 1024)
+		end
+
 		imInputTextMultiline('##text', scratchpadtext, autoexpandsize, imInputTextAllowTabInput)
 	end
 
@@ -231,10 +201,7 @@ local function scratchpad_update(self)
 end
 
 local function stats_update(self)
-	local title = self.title
-	placewindow(title, defaultwindowsize)
-
-	local visible, opened = imBegin(title, true)
+	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
 		local prevtime = self.realtime or 0
@@ -363,15 +330,7 @@ end
 function expmode.onupdate()
 	if not screensize then
 		screensize = imGetMainViewport().Size
-
-		local sx = screensize.x
-		local sy = screensize.y
-
-		defaultmessageboxpos = imVec2(sx * 0.5, sy * 0.35)
-
-		if not nextwindowpos then
-			nextwindowpos = imVec2(sx * 0.05, sy * 0.05)
-		end
+		defaultmessageboxpos = imVec2(screensize.x * 0.5, screensize.y * 0.35)
 	end
 
 	updateactions()
