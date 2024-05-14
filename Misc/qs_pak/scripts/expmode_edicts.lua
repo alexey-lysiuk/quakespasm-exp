@@ -482,9 +482,11 @@ addaction(function ()
 			local title = tool[1]
 
 			if imMenuItem(title) then
-				window(title, edicts_onupdate,
+				local win = window(title, edicts_onupdate,
 					function (self) self.filter = tool[2] end,
 					edicts_onshow, edicts_onhide)
+				win.minsize = imVec2(320, 240)
+				win.maxsize = imVec2(1920, 1080)
 			end
 		end
 

@@ -27,6 +27,7 @@ local imSameLine <const> = ImGui.SameLine
 local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
+local imSetNextWindowSizeConstraints <const> = ImGui.SetNextWindowSizeConstraints
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
 local imSpacing <const> = ImGui.Spacing
@@ -321,6 +322,13 @@ local function updatewindows()
 		if wintofocus == window then
 			imSetNextWindowFocus()
 			wintofocus = nil
+		end
+
+		local minsize = window.minsize
+		local maxsize = window.maxsize
+
+		if minsize and maxsize then
+			imSetNextWindowSizeConstraints(minsize, maxsize)
 		end
 
 		return window:onupdate()
