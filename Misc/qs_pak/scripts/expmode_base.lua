@@ -27,6 +27,7 @@ local imSameLine <const> = ImGui.SameLine
 local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
+local imSetNextWindowSizeConstraints <const> = ImGui.SetNextWindowSizeConstraints
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
 local imSpacing <const> = ImGui.Spacing
@@ -126,6 +127,20 @@ local function closewindow(window)
 	end
 end
 
+local function setconstraints(self, minsize, maxsize)
+	if not minsize then
+		local charsize = imCalcTextSize('A')
+		minsize = imVec2(charsize.x * 36, charsize.y * 12)
+	end
+
+	if not maxsize then
+		maxsize = imVec2(screensize.x * 0.9, screensize.y * 0.9)
+	end
+
+	self.minsize = minsize
+	self.maxsize = maxsize
+end
+
 function expmode.window(title, onupdate, oncreate, onshow, onhide)
 	local window = findwindow(title)
 
@@ -138,7 +153,8 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			onupdate = onupdate,
 			onshow = onshow or function () return true end,
 			onhide = onhide or function () return true end,
-			close = closewindow
+			close = closewindow,
+			setconstraints = setconstraints,
 		}
 
 		if oncreate then
@@ -235,13 +251,13 @@ local function updateexpmenu()
 		local title = 'Scratchpad'
 
 		if imMenuItem(title) then
-			window(title, scratchpad_update)
+			window(title, scratchpad_update):setconstraints()
 		end
 
 		title = 'Stats'
 
 		if imMenuItem(title) then
-			window(title, stats_update)
+			window(title, stats_update):setconstraints()
 		end
 
 		if imMenuItem('Stop All Sounds') then
@@ -321,6 +337,13 @@ local function updatewindows()
 		if wintofocus == window then
 			imSetNextWindowFocus()
 			wintofocus = nil
+		end
+
+		local minsize = window.minsize
+		local maxsize = window.maxsize
+
+		if minsize and maxsize then
+			imSetNextWindowSizeConstraints(minsize, maxsize)
 		end
 
 		return window:onupdate()
