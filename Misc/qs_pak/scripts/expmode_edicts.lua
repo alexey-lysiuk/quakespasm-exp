@@ -182,7 +182,7 @@ function expmode.edictinfo(edict)
 
 	window(tostring(edict), edictinfo_onupdate,
 		function (self) self.edict = edict end,
-		edictinfo_onshow, edictinfo_onhide)
+		edictinfo_onshow, edictinfo_onhide):setconstraints()
 end
 
 local edictinfo <const> = expmode.edictinfo
@@ -456,7 +456,11 @@ function expmode.edictreferences(edict)
 		self.edictid = edictid
 	end
 
-	if not window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide) then
+	local refswin = window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
+
+	if refswin then
+		refswin:setconstraints()
+	else
 		messagebox('No references', format("'%s' has no references", edict))
 	end
 end
@@ -481,11 +485,9 @@ addaction(function ()
 			local title = tool[1]
 
 			if imMenuItem(title) then
-				local win = window(title, edicts_onupdate,
+				window(title, edicts_onupdate,
 					function (self) self.filter = tool[2] end,
-					edicts_onshow, edicts_onhide)
-				win.minsize = imVec2(320, 240)
-				win.maxsize = imVec2(1920, 1080)
+					edicts_onshow, edicts_onhide):setconstraints()
 			end
 		end
 
