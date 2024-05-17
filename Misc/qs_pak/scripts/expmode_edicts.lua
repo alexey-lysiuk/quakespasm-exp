@@ -138,18 +138,29 @@ local function updatesearch(window, compfunc, modified)
 	return #searchbuffer > 0 and window.searchresults or window.entries
 end
 
+local function edictinfo_searchcompare(entry, string)
+	local function contains(value)
+		return value:lower():find(string, 1, true)
+	end
+
+	return contains(entry.name) or contains(entry.value)
+end
+
 local function edictinfo_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, edictinfo_searchcompare, searchmodified)
+
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaultscrollytableflags) then
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
 
-			for _, field in ipairs(self.fields) do
+			for _, field in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(field.name)
@@ -179,7 +190,7 @@ local function edictinfo_onupdate(self)
 				if imSelectable('Copy all') then
 					local fields = {}
 
-					for i, field in ipairs(self.fields) do
+					for i, field in ipairs(self.entries) do
 						fields[i] = field.name .. ': ' .. field.value
 					end
 
@@ -213,12 +224,14 @@ local function edictinfo_onshow(self)
 		fields[i] = field
 	end
 
-	self.fields = fields
+	self.entries = fields
 
+	updatesearch(self, edictinfo_searchcompare, true)
 	return true
 end
 
 local function edictinfo_onhide(self)
+	self.searchresults = nil
 	self.fields = nil
 	return true
 end
