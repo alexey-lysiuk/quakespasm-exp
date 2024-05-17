@@ -109,12 +109,12 @@ local function searchbar(window)
 	return modified
 end
 
-local function edictinfo_updatesearch(self, modified)
-	local searchbuffer = self.searchbuffer
+local function updatesearch(window, compfunc, modified)
+	local searchbuffer = window.searchbuffer
 
 	if not searchbuffer then
 		searchbuffer = imTextBuffer()
-		self.searchbuffer = searchbuffer
+		window.searchbuffer = searchbuffer
 	end
 
 	if modified then
@@ -123,22 +123,27 @@ local function edictinfo_updatesearch(self, modified)
 		if #searchstring > 0 then
 			local searchresults = {}
 
-			for _, entry in ipairs(self.fields) do
-				local found = entry.name:lower():find(searchstring, 1, true)
-					or entry.value:lower():find(searchstring, 1, true)
-
-				if found then
+			for _, entry in ipairs(window.entries) do
+				if compfunc(entry, searchstring) then
 					insert(searchresults, entry)
 				end
 			end
 
-			self.searchresults = searchresults
+			window.searchresults = searchresults
 		else
-			self.searchresults = nil
+			window.searchresults = nil
 		end
 	end
 
 	return #searchbuffer > 0
+end
+
+local function edictinfo_searchcompare(entry, string)
+	local function contains(value)
+		return value:lower():find(string, 1, true)
+	end
+
+	return contains(entry.name) or contains(entry.value)
 end
 
 local function edictinfo_onupdate(self)
@@ -147,7 +152,8 @@ local function edictinfo_onupdate(self)
 
 	if visible and opened then
 		local searchmodified = searchbar(self)
-		local fields = edictinfo_updatesearch(self, searchmodified) and self.searchresults or self.fields
+		local entries = updatesearch(self, edictinfo_searchcompare, searchmodified)
+			and self.searchresults or self.entries
 
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaultscrollytableflags) then
@@ -155,7 +161,7 @@ local function edictinfo_onupdate(self)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
 
-			for _, field in ipairs(fields) do
+			for _, field in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(field.name)
@@ -183,13 +189,13 @@ local function edictinfo_onupdate(self)
 					expmode.edictreferences(self.edict)
 				end
 				if imSelectable('Copy all') then
-					local lines = {}
+					local fields = {}
 
 					for i, field in ipairs(fields) do
-						lines[i] = field.name .. ': ' .. field.value
+						fields[i] = field.name .. ': ' .. field.value
 					end
 
-					imSetClipboardText(concat(lines, '\n'))
+					imSetClipboardText(concat(fields, '\n'))
 				end
 				imEndPopup()
 			end
@@ -219,9 +225,9 @@ local function edictinfo_onshow(self)
 		fields[i] = field
 	end
 
-	self.fields = fields
+	self.entries = fields
 
-	edictinfo_updatesearch(self, true)
+	updatesearch(self, edictinfo_searchcompare, true)
 	return true
 end
 
@@ -324,36 +330,9 @@ local function edictstable(title, entries, tableflags)
 	end
 end
 
-local function edicts_updatesearch(self, modified)
-	local searchbuffer = self.searchbuffer
-
-	if not searchbuffer then
-		searchbuffer = imTextBuffer()
-		self.searchbuffer = searchbuffer
-	end
-
-	if modified then
-		local searchstring = tostring(searchbuffer):lower()
-
-		if #searchstring > 0 then
-			local searchresults = {}
-
-			for _, entry in ipairs(self.entries) do
-				local found = entry.description:lower():find(searchstring, 1, true)
-					or tostring(entry.location):find(searchstring, 1, true)
-
-				if found then
-					insert(searchresults, entry)
-				end
-			end
-
-			self.searchresults = searchresults
-		else
-			self.searchresults = nil
-		end
-	end
-
-	return #searchbuffer > 0
+local function edicts_searchcompare(entry, string)
+	return entry.description:lower():find(string, 1, true)
+		or tostring(entry.location):find(string, 1, true)
 end
 
 local function edicts_onupdate(self)
@@ -362,7 +341,8 @@ local function edicts_onupdate(self)
 
 	if visible and opened then
 		local searchmodified = searchbar(self)
-		local entries = edicts_updatesearch(self, searchmodified) and self.searchresults or self.entries
+		local entries = updatesearch(self, edicts_searchcompare, searchmodified)
+			and self.searchresults or self.entries
 		edictstable(title, entries, defaultscrollytableflags)
 	end
 
@@ -413,7 +393,8 @@ local function edicts_onshow(self)
 
 	self.entries = entries
 
-	edicts_updatesearch(self, true)
+--	edicts_updatesearch(self, true)
+	updatesearch(self, edicts_searchcompare, true)
 	return true
 end
 
