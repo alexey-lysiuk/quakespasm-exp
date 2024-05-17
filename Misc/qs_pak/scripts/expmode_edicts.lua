@@ -194,7 +194,7 @@ local function edictinfo_onupdate(self)
 						fields[i] = field.name .. ': ' .. field.value
 					end
 
-					imSetClipboardText(concat(fields, '\n'))
+					imSetClipboardText(concat(fields, '\n') .. '\n')
 				end
 				imEndPopup()
 			end
@@ -256,7 +256,7 @@ local function edictstable_tostring(entries)
 		insert(lines, line)
 	end
 
-	return concat(lines, '\n')
+	return concat(lines, '\n') .. '\n'
 end
 
 local function edictstable(title, entries, tableflags)
@@ -289,7 +289,7 @@ local function edictstable(title, entries, tableflags)
 							imSetClipboardText(tostring(cellvalue))
 						end
 						if imSelectable('Copy row') then
-							imSetClipboardText(format('%s\t%s\t%s', entry.index, description, location))
+							imSetClipboardText(format('%s\t%s\t%s\n', entry.index, description, location))
 						end
 						if imSelectable('Copy table') then
 							imSetClipboardText(edictstable_tostring(entries))
