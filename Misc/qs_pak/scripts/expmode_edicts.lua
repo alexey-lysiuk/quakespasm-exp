@@ -90,6 +90,54 @@ local function moveplayer(edict, location, angles)
 	end
 end
 
+local function searchbar(window)
+	imAlignTextToFramePadding()
+	imText('Search:')
+	imSameLine()
+
+	local modified = imInputText('##search', window.searchbuffer)
+
+	if #window.searchbuffer > 0 then
+		imSameLine()
+
+		if imButton('Reset') then
+			window.searchbuffer = nil
+			modified = true
+		end
+	end
+
+	return modified
+end
+
+local function updatesearch(window, compfunc, modified)
+	local searchbuffer = window.searchbuffer
+
+	if not searchbuffer then
+		searchbuffer = imTextBuffer()
+		window.searchbuffer = searchbuffer
+	end
+
+	if modified then
+		local searchstring = tostring(searchbuffer):lower()
+
+		if #searchstring > 0 then
+			local searchresults = {}
+
+			for _, entry in ipairs(window.entries) do
+				if compfunc(entry, searchstring) then
+					insert(searchresults, entry)
+				end
+			end
+
+			window.searchresults = searchresults
+		else
+			window.searchresults = nil
+		end
+	end
+
+	return #searchbuffer > 0 and window.searchresults or window.entries
+end
+
 local function edictinfo_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
@@ -268,36 +316,9 @@ local function edictstable(title, entries, tableflags)
 	end
 end
 
-local function edicts_updatesearch(self, modified)
-	local searchbuffer = self.searchbuffer
-
-	if not searchbuffer then
-		searchbuffer = imTextBuffer()
-		self.searchbuffer = searchbuffer
-	end
-
-	if modified then
-		local searchstring = tostring(searchbuffer):lower()
-
-		if #searchstring > 0 then
-			local searchresults = {}
-
-			for _, entry in ipairs(self.entries) do
-				local found = entry.description:lower():find(searchstring, 1, true)
-					or tostring(entry.location):find(searchstring, 1, true)
-
-				if found then
-					insert(searchresults, entry)
-				end
-			end
-
-			self.searchresults = searchresults
-		else
-			self.searchresults = nil
-		end
-	end
-
-	return #searchbuffer > 0
+local function edicts_searchcompare(entry, string)
+	return entry.description:lower():find(string, 1, true)
+		or tostring(entry.location):find(string, 1, true)
 end
 
 local function edicts_onupdate(self)
@@ -305,19 +326,8 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		imAlignTextToFramePadding()
-		imText('Search:')
-		imSameLine()
-
-		local searchmodified = imInputText('##search', self.searchbuffer)
-		imSameLine()
-
-		if imButton('Reset') then
-			self.searchbuffer = nil
-			searchmodified = true
-		end
-
-		local entries = edicts_updatesearch(self, searchmodified) and self.searchresults or self.entries
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, edicts_searchcompare, searchmodified)
 		edictstable(title, entries, defaultscrollytableflags)
 	end
 
@@ -368,7 +378,7 @@ local function edicts_onshow(self)
 
 	self.entries = entries
 
-	edicts_updatesearch(self, true)
+	updatesearch(self, edicts_searchcompare, true)
 	return true
 end
 
