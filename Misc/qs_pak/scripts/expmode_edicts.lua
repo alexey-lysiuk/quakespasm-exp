@@ -190,7 +190,7 @@ local function edictinfo_onupdate(self)
 				if imSelectable('Copy all') then
 					local fields = {}
 
-					for i, field in ipairs(self.entries) do
+					for i, field in ipairs(entries) do
 						fields[i] = field.name .. ': ' .. field.value
 					end
 
