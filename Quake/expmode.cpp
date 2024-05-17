@@ -116,6 +116,8 @@ static SDL_Window* exp_window;
 static SDL_GLContext exp_glcontext;
 static bool exp_created;
 
+static int exp_mouseposx = INT_MIN, exp_mouseposy = INT_MIN;
+
 static void EXP_Create()
 {
 	assert(!exp_created);
@@ -167,6 +169,9 @@ static void EXP_EnterMode()
 	SDL_GetEventFilter(&exp_eventfilter, &exp_eventuserdata);
 	SDL_SetEventFilter(nullptr, nullptr);
 
+	if (exp_mouseposx != INT_MIN && exp_mouseposx != INT_MIN)
+		SDL_WarpMouseInWindow(exp_window, exp_mouseposx, exp_mouseposy);
+
 	// Enable contol of ImGui windows by all input devices
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 
@@ -189,6 +194,8 @@ static void EXP_ExitMode()
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NoMouse;
+
+	SDL_GetMouseState(&exp_mouseposx, &exp_mouseposy);
 
 	SDL_StopTextInput();
 	SDL_SetEventFilter(exp_eventfilter, exp_eventuserdata);
