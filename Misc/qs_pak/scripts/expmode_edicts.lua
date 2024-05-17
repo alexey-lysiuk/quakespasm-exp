@@ -109,18 +109,53 @@ local function searchbar(window)
 	return modified
 end
 
+local function edictinfo_updatesearch(self, modified)
+	local searchbuffer = self.searchbuffer
+
+	if not searchbuffer then
+		searchbuffer = imTextBuffer()
+		self.searchbuffer = searchbuffer
+	end
+
+	if modified then
+		local searchstring = tostring(searchbuffer):lower()
+
+		if #searchstring > 0 then
+			local searchresults = {}
+
+			for _, entry in ipairs(self.fields) do
+				local found = entry.name:lower():find(searchstring, 1, true)
+					or entry.value:lower():find(searchstring, 1, true)
+
+				if found then
+					insert(searchresults, entry)
+				end
+			end
+
+			self.searchresults = searchresults
+		else
+			self.searchresults = nil
+		end
+	end
+
+	return #searchbuffer > 0
+end
+
 local function edictinfo_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		local searchmodified = searchbar(self)
+		local fields = edictinfo_updatesearch(self, searchmodified) and self.searchresults or self.fields
+
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaultscrollytableflags) then
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
 
-			for _, field in ipairs(self.fields) do
+			for _, field in ipairs(fields) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(field.name)
@@ -148,13 +183,13 @@ local function edictinfo_onupdate(self)
 					expmode.edictreferences(self.edict)
 				end
 				if imSelectable('Copy all') then
-					local fields = {}
+					local lines = {}
 
-					for i, field in ipairs(self.fields) do
-						fields[i] = field.name .. ': ' .. field.value
+					for i, field in ipairs(fields) do
+						lines[i] = field.name .. ': ' .. field.value
 					end
 
-					imSetClipboardText(concat(fields, '\n'))
+					imSetClipboardText(concat(lines, '\n'))
 				end
 				imEndPopup()
 			end
@@ -186,10 +221,12 @@ local function edictinfo_onshow(self)
 
 	self.fields = fields
 
+	edictinfo_updatesearch(self, true)
 	return true
 end
 
 local function edictinfo_onhide(self)
+	self.searchresults = nil
 	self.fields = nil
 	return true
 end
