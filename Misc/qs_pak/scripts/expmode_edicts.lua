@@ -90,6 +90,25 @@ local function moveplayer(edict, location, angles)
 	end
 end
 
+local function searchbar(window)
+	imAlignTextToFramePadding()
+	imText('Search:')
+	imSameLine()
+
+	local modified = imInputText('##search', window.searchbuffer)
+
+	if #window.searchbuffer > 0 then
+		imSameLine()
+
+		if imButton('Reset') then
+			window.searchbuffer = nil
+			modified = true
+		end
+	end
+
+	return modified
+end
+
 local function edictinfo_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
@@ -305,18 +324,7 @@ local function edicts_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		imAlignTextToFramePadding()
-		imText('Search:')
-		imSameLine()
-
-		local searchmodified = imInputText('##search', self.searchbuffer)
-		imSameLine()
-
-		if imButton('Reset') then
-			self.searchbuffer = nil
-			searchmodified = true
-		end
-
+		local searchmodified = searchbar(self)
 		local entries = edicts_updatesearch(self, searchmodified) and self.searchresults or self.entries
 		edictstable(title, entries, defaultscrollytableflags)
 	end
