@@ -135,7 +135,7 @@ local function updatesearch(window, compfunc, modified)
 		end
 	end
 
-	return #searchbuffer > 0
+	return #searchbuffer > 0 and window.searchresults or window.entries
 end
 
 local function edictinfo_searchcompare(entry, string)
@@ -153,7 +153,6 @@ local function edictinfo_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, edictinfo_searchcompare, searchmodified)
-			and self.searchresults or self.entries
 
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaultscrollytableflags) then
@@ -342,7 +341,6 @@ local function edicts_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, edicts_searchcompare, searchmodified)
-			and self.searchresults or self.entries
 		edictstable(title, entries, defaultscrollytableflags)
 	end
 
@@ -393,7 +391,6 @@ local function edicts_onshow(self)
 
 	self.entries = entries
 
---	edicts_updatesearch(self, true)
 	updatesearch(self, edicts_searchcompare, true)
 	return true
 end
