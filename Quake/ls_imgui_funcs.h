@@ -113,6 +113,15 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_IsWindowAppearing(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const bool appearing = ImGui::IsWindowAppearing();
+	lua_pushboolean(state, appearing);
+	return 1;
+}
+
 static int LS_global_imgui_IsWindowFocused(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -794,7 +803,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * EndChild
 
 		// Windows Utilities
-		// * IsWindowAppearing
+		{ "IsWindowAppearing", LS_global_imgui_IsWindowAppearing },
 		// * IsWindowCollapsed
 		{ "IsWindowFocused", LS_global_imgui_IsWindowFocused },
 		// * IsWindowHovered
