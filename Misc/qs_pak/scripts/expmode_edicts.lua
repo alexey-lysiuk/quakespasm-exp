@@ -490,7 +490,7 @@ function expmode.edictreferences(edict)
 	if refswin then
 		refswin:setconstraints()
 	else
-		messagebox('No references', format("'%s' has no references", edict))
+		messagebox('No references', format("'%s' has no references.", edict))
 	end
 end
 
@@ -528,7 +528,7 @@ addaction(function ()
 			if edict then
 				edictinfo(edict)
 			else
-				messagebox('No entity', 'Player is not looking at any entity')
+				messagebox('No entity', 'Player is not looking at an interactible entity.')
 			end
 		end
 
