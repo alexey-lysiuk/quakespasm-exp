@@ -151,6 +151,15 @@ static int LS_global_imgui_GetWindowSize(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_GetWindowWidth(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const float width = ImGui::GetWindowWidth();
+	lua_pushnumber(state, width);
+	return 1;
+}
+
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -828,7 +837,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * GetWindowDrawList
 		{ "GetWindowPos", LS_global_imgui_GetWindowPos },
 		{ "GetWindowSize", LS_global_imgui_GetWindowSize },
-		// * GetWindowWidth
+		{ "GetWindowWidth", LS_global_imgui_GetWindowWidth },
 		// * GetWindowHeight
 
 		// Window manipulation
