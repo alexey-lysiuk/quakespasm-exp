@@ -142,6 +142,15 @@ static int LS_global_imgui_GetWindowPos(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_GetWindowSize(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const ImVec2 size = ImGui::GetWindowSize();
+	LS_PushImVec(state, size);
+	return 1;
+}
+
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -818,7 +827,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * IsWindowHovered
 		// * GetWindowDrawList
 		{ "GetWindowPos", LS_global_imgui_GetWindowPos },
-		// * GetWindowSize
+		{ "GetWindowSize", LS_global_imgui_GetWindowSize },
 		// * GetWindowWidth
 		// * GetWindowHeight
 
