@@ -133,6 +133,15 @@ static int LS_global_imgui_IsWindowFocused(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_GetWindowPos(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const ImVec2 pos = ImGui::GetWindowPos();
+	LS_PushImVec(state, pos);
+	return 1;
+}
+
 static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -808,7 +817,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "IsWindowFocused", LS_global_imgui_IsWindowFocused },
 		// * IsWindowHovered
 		// * GetWindowDrawList
-		// * GetWindowPos
+		{ "GetWindowPos", LS_global_imgui_GetWindowPos },
 		// * GetWindowSize
 		// * GetWindowWidth
 		// * GetWindowHeight
