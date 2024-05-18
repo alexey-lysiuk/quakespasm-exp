@@ -113,6 +113,15 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_IsWindowAppearing(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const bool appearing = ImGui::IsWindowAppearing();
+	lua_pushboolean(state, appearing);
+	return 1;
+}
+
 static int LS_global_imgui_IsWindowFocused(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -121,6 +130,42 @@ static int LS_global_imgui_IsWindowFocused(lua_State* state)
 	const bool focused = ImGui::IsWindowFocused(flags);
 
 	lua_pushboolean(state, focused);
+	return 1;
+}
+
+static int LS_global_imgui_GetWindowPos(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const ImVec2 pos = ImGui::GetWindowPos();
+	LS_PushImVec(state, pos);
+	return 1;
+}
+
+static int LS_global_imgui_GetWindowSize(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const ImVec2 size = ImGui::GetWindowSize();
+	LS_PushImVec(state, size);
+	return 1;
+}
+
+static int LS_global_imgui_GetWindowWidth(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const float width = ImGui::GetWindowWidth();
+	lua_pushnumber(state, width);
+	return 1;
+}
+
+static int LS_global_imgui_GetWindowHeight(lua_State* state)
+{
+	LS_EnsureWindowScope(state);
+
+	const float height = ImGui::GetWindowHeight();
+	lua_pushnumber(state, height);
 	return 1;
 }
 
@@ -794,15 +839,15 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * EndChild
 
 		// Windows Utilities
-		// * IsWindowAppearing
+		{ "IsWindowAppearing", LS_global_imgui_IsWindowAppearing },
 		// * IsWindowCollapsed
 		{ "IsWindowFocused", LS_global_imgui_IsWindowFocused },
 		// * IsWindowHovered
 		// * GetWindowDrawList
-		// * GetWindowPos
-		// * GetWindowSize
-		// * GetWindowWidth
-		// * GetWindowHeight
+		{ "GetWindowPos", LS_global_imgui_GetWindowPos },
+		{ "GetWindowSize", LS_global_imgui_GetWindowSize },
+		{ "GetWindowWidth", LS_global_imgui_GetWindowWidth },
+		{ "GetWindowHeight", LS_global_imgui_GetWindowHeight },
 
 		// Window manipulation
 		{ "SetNextWindowPos", LS_global_imgui_SetNextWindowPos },
