@@ -22,12 +22,14 @@ local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
+local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
 local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
+local imSetKeyboardFocusHere <const> = ImGui.SetKeyboardFocusHere
 local imSetTooltip <const> = ImGui.SetTooltip
 local imSpacing <const> = ImGui.Spacing
 local imTableGetColumnFlags <const> = ImGui.TableGetColumnFlags
@@ -95,12 +97,16 @@ local function searchbar(window)
 	imText('Search:')
 	imSameLine()
 
+	if imIsWindowAppearing() then
+		imSetKeyboardFocusHere()
+	end
+
 	local modified = imInputText('##search', window.searchbuffer)
 
 	if #window.searchbuffer > 0 then
-		imSameLine()
+		imSameLine(0, 0)
 
-		if imButton('Reset') then
+		if imButton('x') then
 			window.searchbuffer = nil
 			modified = true
 		end
