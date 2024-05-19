@@ -742,7 +742,7 @@ static int LS_global_imgui_GetMainViewport(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	ImGuiViewport** viewportptr = static_cast<ImGuiViewport**>(LS_CreateTypedUserData(state, &ls_imguiviewport_type));
-	assert(viewportptr && *viewportptr);
+	assert(viewportptr);
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	assert(viewport);
