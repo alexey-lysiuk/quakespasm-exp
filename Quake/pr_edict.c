@@ -1197,6 +1197,12 @@ static void PR_PatchFishCountBug (void)
 		funcstart = 8600;
 		totalmonsters = 5580;
 	}
+	else if (pr_crc == 16197)  // hrimturt
+	{
+		funcindex = 391;
+		funcstart = 9730;
+		totalmonsters = 6344;
+	}
 	else
 		return;
 
