@@ -522,7 +522,7 @@ addaction(function ()
 			if edict then
 				edictinfo(edict)
 			else
-				messagebox('No entity', 'Player is not looking at any entity.')
+				messagebox('No entity', 'Player is not looking at an interactible entity.')
 			end
 		end
 
