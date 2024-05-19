@@ -104,9 +104,9 @@ local function searchbar(window)
 	local modified = imInputText('##search', window.searchbuffer)
 
 	if #window.searchbuffer > 0 then
-		imSameLine()
+		imSameLine(0, 0)
 
-		if imButton('Reset') then
+		if imButton('x') then
 			window.searchbuffer = nil
 			modified = true
 		end
