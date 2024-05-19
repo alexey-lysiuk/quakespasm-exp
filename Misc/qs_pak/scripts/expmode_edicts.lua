@@ -18,7 +18,9 @@ local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
-local imGetMainViewport <const> = ImGui.GetMainViewport
+--local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
+--local imGetMainViewport <const> = ImGui.GetMainViewport
+--local imGetWindowPos <const> = ImGui.GetWindowPos
 local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
@@ -191,7 +193,9 @@ local function edictinfo_onupdate(self)
 					moveplayer(self.edict)
 				end
 				if imSelectable('References') then
-					expmode.edictreferences(self.edict)
+--					local popupwinpos = imGetWindowPos()
+--					expmode.edictreferences(self.edict):setposition(popupwinpos)
+					expmode.edictreferences(self.edict):setpositionfromcursor()
 				end
 				if imSelectable('Copy all') then
 					local fields = {}
@@ -247,7 +251,7 @@ function expmode.edictinfo(edict)
 		return
 	end
 
-	window(tostring(edict), edictinfo_onupdate,
+	return window(tostring(edict), edictinfo_onupdate,
 		function (self) self.edict = edict end,
 		edictinfo_onshow, edictinfo_onhide):setconstraints()
 end
@@ -288,7 +292,23 @@ local function edictstable(title, entries, tableflags)
 				local function contextmenu(cellvalue)
 					if imBeginPopupContextItem() then
 						if imSelectable('References') then
-							expmode.edictreferences(entry.edict)
+--							local refswin = expmode.edictreferences(entry.edict)
+--
+--							if refswin then
+--								local popupwinpos = imGetWindowPos()
+--								refswin:setposition(popupwinpos)
+--							end
+
+--							local screensize = imGetMainViewport().Size
+--							local childpos = imGetCursorScreenPos()
+--							childpos.x = childpos.x + screensize.x * 0.01
+--							childpos.y = childpos.y + screensize.y * 0.01
+--							expmode.edictreferences(entry.edict):setposition(childpos)
+
+--							local popupwinpos = imGetWindowPos()
+--							expmode.edictreferences(entry.edict):setposition(popupwinpos)
+
+							expmode.edictreferences(entry.edict):setpositionfromcursor()
 						end
 						imSeparator()
 						if imSelectable('Copy cell') then
@@ -305,7 +325,18 @@ local function edictstable(title, entries, tableflags)
 				end
 
 				if imSelectable(entry.descriptionid) then
-					edictinfo(entry.edict)
+--					local screensize = imGetMainViewport().Size
+----					local childpos = imGetWindowPos()
+----					local cursorpos = imGetCursorPos()
+--					local childpos = imGetCursorScreenPos()
+----					print('windowpos', childpos)
+----					childpos.x = childpos.x + screensize.x * 0.05
+----					childpos.y = childpos.y + screensize.y * 0.05
+--					childpos.x = childpos.x + screensize.x * 0.025
+--					childpos.y = childpos.y + screensize.y * 0.025
+----					print('childwindowpos', childpos)
+--					edictinfo(entry.edict):setposition(childpos)
+					edictinfo(entry.edict):setpositionfromcursor()
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					imSetTooltip(tostring(entry.edict))
@@ -488,9 +519,9 @@ function expmode.edictreferences(edict)
 	local refswin = window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
 
 	if refswin then
-		refswin:setconstraints()
+		return refswin:setconstraints()
 	else
-		messagebox('No references', format("'%s' has no references.", edict))
+		return messagebox('No references', format("'%s' has no references.", edict))
 	end
 end
 

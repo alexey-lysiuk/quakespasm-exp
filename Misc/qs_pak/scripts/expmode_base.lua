@@ -20,6 +20,7 @@ local imEnd <const> = ImGui.End
 local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
 local imEndMenu <const> = ImGui.EndMenu
 local imGetCursorPosX <const> = ImGui.GetCursorPosX
+local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
 local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imMenuItem <const> = ImGui.MenuItem
@@ -139,6 +140,21 @@ local function setconstraints(self, minsize, maxsize)
 
 	self.minsize = minsize
 	self.maxsize = maxsize
+	return self
+end
+
+local function setposition(self, position)
+	self.position = position
+	return self
+end
+
+local function setpositionfromcursor(self)
+--	local screensize = imGetMainViewport().Size
+	local position = imGetCursorScreenPos()
+	position.x = position.x + screensize.x * 0.01
+	position.y = position.y + screensize.y * 0.01
+
+	return setposition(self, position)
 end
 
 function expmode.window(title, onupdate, oncreate, onshow, onhide)
@@ -155,6 +171,8 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			onhide = onhide or function () return true end,
 			close = closewindow,
 			setconstraints = setconstraints,
+			setposition = setposition,
+			setpositionfromcursor = setpositionfromcursor,
 		}
 
 		if oncreate then
@@ -346,6 +364,13 @@ local function updatewindows()
 			imSetNextWindowSizeConstraints(minsize, maxsize)
 		end
 
+		local position = window.position
+
+		if position then
+			imSetNextWindowPos(position)
+			window.position = nil
+		end
+
 		return window:onupdate()
 	end)
 end
@@ -375,7 +400,7 @@ function expmode.onclose()
 end
 
 local function messagebox_onupdate(self)
-	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
+--	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
 
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
