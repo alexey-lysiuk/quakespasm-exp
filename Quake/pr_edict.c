@@ -1182,29 +1182,34 @@ static void PR_PatchFishCountBug (void)
 	if (strcmp(sv.name, "sm175_scampie") == 0)
 		return;
 
-	int funcindex, funcstart;
-	short totalmonsters;
+	typedef struct
+	{
+		unsigned short progscrc;
+		short funcindex, funcstart, onefpconst, totalmonsters;
+	}
+	PatchDefinition;
 
-	if (pr_crc == 51103)  // version 1.01
+	static const PatchDefinition PATCHES[] =
 	{
-		funcindex = 374;
-		funcstart = 8399;
-		totalmonsters = 5464;
-	}
-	else if (pr_crc == 24778)  // version 1.06
-	{
-		funcindex = 373;
-		funcstart = 8600;
-		totalmonsters = 5580;
-	}
-	else if (pr_crc == 16197)  // hrimturt
-	{
-		funcindex = 391;
-		funcstart = 9730;
-		totalmonsters = 6344;
-	}
-	else
-		return;
+		{ 51103, 374, 8399,  214, 5464 },  // version 1.01
+		{ 24778, 373, 8600,  214, 5580 },  // version 1.06
+		{ 16197, 391, 9730, 2616, 6344 },  // hrimturt
+	};
+
+	static const size_t PATCH_COUNT = Q_COUNTOF(PATCHES);
+	size_t patchindex = 0;
+
+	for (; patchindex < PATCH_COUNT; ++patchindex)
+		if (PATCHES[patchindex].progscrc == pr_crc)
+			break;
+
+	if (patchindex == PATCH_COUNT)
+		return;  // no crc match found
+
+	short funcindex = PATCHES[patchindex].funcindex;
+	short funcstart = PATCHES[patchindex].funcstart;
+	short onefpconst = PATCHES[patchindex].onefpconst;
+	short totalmonsters = PATCHES[patchindex].totalmonsters;
 
 	if (progs->numfunctions <= funcindex ||
 		progs->numstatements <= funcstart ||
@@ -1218,7 +1223,7 @@ static void PR_PatchFishCountBug (void)
 
 	// Check the first instruction
 	st = &pr_statements[funcstart + 6];
-	if (st->op != OP_ADD_F || st->a != 40 || st->b != 214 || st->c != totalmonsters)
+	if (st->op != OP_ADD_F || st->a != 40 || st->b != onefpconst || st->c != totalmonsters)
 		return;
 
 	// Replace the first instruction with goto to skip the second one
