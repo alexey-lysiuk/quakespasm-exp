@@ -58,8 +58,8 @@ local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.Scroll
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
-local float <const> = edicts.valuetypes.float
-local string <const> = edicts.valuetypes.string
+local type_entity <const> = edicts.valuetypes.entity
+local type_string <const> = edicts.valuetypes.string
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
@@ -170,7 +170,14 @@ local function edictinfo_onupdate(self)
 				imTableNextColumn()
 				imText(field.name)
 				imTableNextColumn()
-				imText(field.value)
+
+				if field.edict then
+					if imSelectable(field.value) then
+						expmode.edictinfo(field.edict):movetocursor()
+					end
+				else
+					imText(field.value)
+				end
 			end
 
 			local popupname = 'edictinfo_popup'
@@ -223,9 +230,20 @@ local function edictinfo_onshow(self)
 	local fields = {}
 
 	for i, field in ipairs(self.edict) do
-		field.value = field.type == string
-			and toascii(localize(field.value))
-			or tostring(field.value)
+		local value = field.value
+		local valuetype = field.type
+
+		if valuetype == type_string then
+			value = toascii(localize(value))
+		else
+			if valuetype == type_entity then
+				field.edict = value
+			end
+
+			value = tostring(value)
+		end
+
+		field.value = value
 		fields[i] = field
 	end
 
