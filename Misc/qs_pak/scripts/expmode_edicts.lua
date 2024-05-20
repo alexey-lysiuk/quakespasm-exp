@@ -2,6 +2,8 @@
 local ipairs <const> = ipairs
 local tostring <const> = tostring
 
+local tointeger <const> = math.tointeger
+
 local format <const> = string.format
 
 local concat <const> = table.concat
@@ -59,6 +61,7 @@ local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
 local getname <const> = edicts.getname
 local type_entity <const> = edicts.valuetypes.entity
+local type_float <const> = edicts.valuetypes.float
 local type_string <const> = edicts.valuetypes.string
 
 local addaction <const> = expmode.addaction
@@ -238,6 +241,8 @@ local function edictinfo_onshow(self)
 		else
 			if valuetype == type_entity then
 				field.edict = value
+			elseif valuetype == type_float then
+				value = tointeger(value) or value
 			end
 
 			value = tostring(value)
