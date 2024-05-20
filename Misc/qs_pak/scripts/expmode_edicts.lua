@@ -485,12 +485,9 @@ function expmode.edictreferences(edict)
 	end
 
 	local refswin = window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
-
-	if refswin then
-		return refswin:setconstraints()
-	else
-		return messagebox('No references', format("'%s' has no references.", edict))
-	end
+	return refswin
+		and refswin:setconstraints()
+		or messagebox('No references', format("'%s' has no references.", edict))
 end
 
 local edictstools <const> =
