@@ -18,7 +18,6 @@ local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
-local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
