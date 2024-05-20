@@ -139,6 +139,8 @@ local function setconstraints(self, minsize, maxsize)
 
 	self.minsize = minsize
 	self.maxsize = maxsize
+
+	return self
 end
 
 function expmode.window(title, onupdate, oncreate, onshow, onhide)
