@@ -18,9 +18,6 @@ local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
---local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
---local imGetMainViewport <const> = ImGui.GetMainViewport
---local imGetWindowPos <const> = ImGui.GetWindowPos
 local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
@@ -193,9 +190,7 @@ local function edictinfo_onupdate(self)
 					moveplayer(self.edict)
 				end
 				if imSelectable('References') then
---					local popupwinpos = imGetWindowPos()
---					expmode.edictreferences(self.edict):setposition(popupwinpos)
-					expmode.edictreferences(self.edict):setpositionfromcursor()
+					expmode.edictreferences(self.edict):movetocursor()
 				end
 				if imSelectable('Copy all') then
 					local fields = {}
@@ -292,23 +287,7 @@ local function edictstable(title, entries, tableflags)
 				local function contextmenu(cellvalue)
 					if imBeginPopupContextItem() then
 						if imSelectable('References') then
---							local refswin = expmode.edictreferences(entry.edict)
---
---							if refswin then
---								local popupwinpos = imGetWindowPos()
---								refswin:setposition(popupwinpos)
---							end
-
---							local screensize = imGetMainViewport().Size
---							local childpos = imGetCursorScreenPos()
---							childpos.x = childpos.x + screensize.x * 0.01
---							childpos.y = childpos.y + screensize.y * 0.01
---							expmode.edictreferences(entry.edict):setposition(childpos)
-
---							local popupwinpos = imGetWindowPos()
---							expmode.edictreferences(entry.edict):setposition(popupwinpos)
-
-							expmode.edictreferences(entry.edict):setpositionfromcursor()
+							expmode.edictreferences(entry.edict):movetocursor()
 						end
 						imSeparator()
 						if imSelectable('Copy cell') then
@@ -325,18 +304,7 @@ local function edictstable(title, entries, tableflags)
 				end
 
 				if imSelectable(entry.descriptionid) then
---					local screensize = imGetMainViewport().Size
-----					local childpos = imGetWindowPos()
-----					local cursorpos = imGetCursorPos()
---					local childpos = imGetCursorScreenPos()
-----					print('windowpos', childpos)
-----					childpos.x = childpos.x + screensize.x * 0.05
-----					childpos.y = childpos.y + screensize.y * 0.05
---					childpos.x = childpos.x + screensize.x * 0.025
---					childpos.y = childpos.y + screensize.y * 0.025
-----					print('childwindowpos', childpos)
---					edictinfo(entry.edict):setposition(childpos)
-					edictinfo(entry.edict):setpositionfromcursor()
+					edictinfo(entry.edict):movetocursor()
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					imSetTooltip(tostring(entry.edict))

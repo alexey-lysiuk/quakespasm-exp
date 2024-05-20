@@ -128,6 +128,15 @@ local function closewindow(window)
 	end
 end
 
+local function movetocursor(self)
+	local position = imGetCursorScreenPos()
+	position.x = position.x + screensize.x * 0.01
+	position.y = position.y + screensize.y * 0.01
+	self.position = position
+
+	return self
+end
+
 local function setconstraints(self, minsize, maxsize)
 	if not minsize then
 		local charsize = imCalcTextSize('A')
@@ -140,21 +149,8 @@ local function setconstraints(self, minsize, maxsize)
 
 	self.minsize = minsize
 	self.maxsize = maxsize
+
 	return self
-end
-
-local function setposition(self, position)
-	self.position = position
-	return self
-end
-
-local function setpositionfromcursor(self)
---	local screensize = imGetMainViewport().Size
-	local position = imGetCursorScreenPos()
-	position.x = position.x + screensize.x * 0.01
-	position.y = position.y + screensize.y * 0.01
-
-	return setposition(self, position)
 end
 
 function expmode.window(title, onupdate, oncreate, onshow, onhide)
@@ -170,9 +166,8 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			onshow = onshow or function () return true end,
 			onhide = onhide or function () return true end,
 			close = closewindow,
+			movetocursor = movetocursor,
 			setconstraints = setconstraints,
-			setposition = setposition,
-			setpositionfromcursor = setpositionfromcursor,
 		}
 
 		if oncreate then
@@ -400,8 +395,6 @@ function expmode.onclose()
 end
 
 local function messagebox_onupdate(self)
---	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
-
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
 	if visible and opened then
