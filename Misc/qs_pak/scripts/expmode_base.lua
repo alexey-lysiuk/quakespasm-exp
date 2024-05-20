@@ -28,9 +28,10 @@ local imSameLine <const> = ImGui.SameLine
 local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
-local imSetNextWindowSizeConstraints <const> = ImGui.SetNextWindowSizeConstraints
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
+local imSetNextWindowSize <const> = ImGui.SetNextWindowSize
+local imSetNextWindowSizeConstraints <const> = ImGui.SetNextWindowSizeConstraints
 local imSpacing <const> = ImGui.Spacing
 local imText <const> = ImGui.Text
 local imVec2 <const> = ImGui.ImVec2
@@ -153,6 +154,13 @@ local function setconstraints(self, minsize, maxsize)
 	return self
 end
 
+local function setsize(self, size, flags)
+	self.size = size
+	self.sizeflags = flags or imCondFirstUseEver
+
+	return self
+end
+
 function expmode.window(title, onupdate, oncreate, onshow, onhide)
 	local window = findwindow(title)
 
@@ -168,6 +176,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			close = closewindow,
 			movetocursor = movetocursor,
 			setconstraints = setconstraints,
+			setsize = setsize,
 		}
 
 		if oncreate then
@@ -364,6 +373,14 @@ local function updatewindows()
 		if position then
 			imSetNextWindowPos(position)
 			window.position = nil
+		end
+
+		local size = window.size
+
+		if size then
+			imSetNextWindowSize(size, window.sizeflags)
+			window.size = nil
+			window.sizeflags = nil
 		end
 
 		return window:onupdate()
