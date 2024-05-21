@@ -348,6 +348,13 @@ local function updatewindows()
 			imSetNextWindowSizeConstraints(minsize, maxsize)
 		end
 
+		local position = window.position
+
+		if position then
+			imSetNextWindowPos(position)
+			window.position = nil
+		end
+
 		return window:onupdate()
 	end)
 end
