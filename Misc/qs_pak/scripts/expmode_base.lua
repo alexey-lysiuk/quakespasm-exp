@@ -50,7 +50,6 @@ local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
-local defaultmessageboxpos
 local screensize, shouldexit, wintofocus
 
 function expmode.addaction(func)
@@ -64,7 +63,8 @@ end
 local exit <const> = expmode.exit
 
 local function errorwindow_onupdate(self)
-	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
+	local windowpos = imVec2(screensize.x * 0.5, screensize.y * 0.5)
+	imSetNextWindowPos(windowpos, imCondFirstUseEver, centerpivot)
 
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
@@ -355,7 +355,6 @@ end
 function expmode.onupdate()
 	if not screensize then
 		screensize = imGetMainViewport().Size
-		defaultmessageboxpos = imVec2(screensize.x * 0.5, screensize.y * 0.35)
 	end
 
 	updateactions()
@@ -377,8 +376,6 @@ function expmode.onclose()
 end
 
 local function messagebox_onupdate(self)
-	imSetNextWindowPos(defaultmessageboxpos, imCondFirstUseEver, centerpivot)
-
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
 	if visible and opened then
