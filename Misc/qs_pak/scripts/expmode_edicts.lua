@@ -190,7 +190,7 @@ local function edictinfo_onupdate(self)
 					moveplayer(self.edict)
 				end
 				if imSelectable('References') then
-					expmode.edictreferences(self.edict)
+					expmode.edictreferences(self.edict):movetocursor()
 				end
 				if imSelectable('Copy all') then
 					local fields = {}
@@ -287,7 +287,7 @@ local function edictstable(title, entries, tableflags)
 				local function contextmenu(cellvalue)
 					if imBeginPopupContextItem() then
 						if imSelectable('References') then
-							expmode.edictreferences(entry.edict)
+							expmode.edictreferences(entry.edict):movetocursor()
 						end
 						imSeparator()
 						if imSelectable('Copy cell') then
@@ -304,7 +304,7 @@ local function edictstable(title, entries, tableflags)
 				end
 
 				if imSelectable(entry.descriptionid) then
-					edictinfo(entry.edict)
+					edictinfo(entry.edict):movetocursor()
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					imSetTooltip(tostring(entry.edict))
