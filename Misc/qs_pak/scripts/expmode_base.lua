@@ -20,6 +20,7 @@ local imEnd <const> = ImGui.End
 local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
 local imEndMenu <const> = ImGui.EndMenu
 local imGetCursorPosX <const> = ImGui.GetCursorPosX
+local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
 local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imMenuItem <const> = ImGui.MenuItem
@@ -127,6 +128,15 @@ local function closewindow(window)
 	end
 end
 
+local function movetocursor(self)
+	local position = imGetCursorScreenPos()
+	position.x = position.x + screensize.x * 0.01
+	position.y = position.y + screensize.y * 0.01
+	self.position = position
+
+	return self
+end
+
 local function setconstraints(self, minsize, maxsize)
 	if not minsize then
 		local charsize = imCalcTextSize('A')
@@ -156,6 +166,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 			onshow = onshow or function () return true end,
 			onhide = onhide or function () return true end,
 			close = closewindow,
+			movetocursor = movetocursor,
 			setconstraints = setconstraints,
 		}
 
