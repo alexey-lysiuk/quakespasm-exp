@@ -551,13 +551,13 @@
 "classname" "trigger_command"
 "origin" "-1744 640 832"
 "targetname" "musica"
-"message" "mp3 play n3sp02-a\n"
+"message" "music n3sp02-a\n"
 }
 {
 "classname" "trigger_command"
 "origin" "-1536 640 816"
 "targetname" "musicb"
-"message" "mp3 play n3sp02-b\n"
+"message" "music n3sp02-b\n"
 }
 {
 "classname" "trigger_command"
