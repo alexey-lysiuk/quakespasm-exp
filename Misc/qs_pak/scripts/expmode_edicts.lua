@@ -176,7 +176,7 @@ local function edictinfo_onupdate(self)
 				imTableNextColumn()
 
 				if field.edict then
-					if imSelectable(field.value) then
+					if imSelectable(field.selectableid) then
 						expmode.edictinfo(field.edict):movetocursor()
 					end
 				else
@@ -242,6 +242,7 @@ local function edictinfo_onshow(self)
 		else
 			if valuetype == type_entity then
 				field.edict = value
+				field.selectableid = format('%s##%s', value, field.name)
 			elseif valuetype == type_float then
 				value = tointeger(value) or value
 			end
