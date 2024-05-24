@@ -129,11 +129,12 @@ local function closewindow(window)
 	end
 end
 
-local function movetocursor(self)
+local function movetocursor(self, flags)
 	local position = imGetCursorScreenPos()
 	position.x = position.x + screensize.x * 0.01
 	position.y = position.y + screensize.y * 0.01
 	self.position = position
+	self.positionflags = flags or imCondFirstUseEver
 
 	return self
 end
@@ -371,8 +372,9 @@ local function updatewindows()
 		local position = window.position
 
 		if position then
-			imSetNextWindowPos(position)
+			imSetNextWindowPos(position, window.positionflags)
 			window.position = nil
+			window.positionflags = nil
 		end
 
 		local size = window.size
