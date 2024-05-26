@@ -5135,7 +5135,7 @@
 }
 {
 "classname" "func_spawn_small"
-"origin" "512 -224 1112"
+"origin" "512 -240 1112"
 "spawnfunction" "monster_wizard"
 "targetname" "door4"
 "angle" "99"
