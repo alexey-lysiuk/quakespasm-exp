@@ -1,0 +1,239 @@
+{
+"message" "doh! 10min speedmap!"
+"wad" "C:\Program Files\Qoole\work\sm26_amrik.wad"
+"classname" "worldspawn"
+}
+{
+"angle" "90"
+"origin" "-288 -336 0"
+"classname" "info_player_start"
+}
+{
+"origin" "-304 -336 -64"
+"classname" "item_artifact_super_damage"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_cells"
+}
+{
+"angle" "90"
+"origin" "-296 -344 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-296 -344 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-296 -344 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-296 -344 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-296 -344 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-304 -336 -64"
+"classname" "item_rockets"
+}
+{
+"angle" "90"
+"origin" "-296 -344 -64"
+"classname" "item_rockets"
+}
+{
+"origin" "-304 -336 -96"
+"classname" "weapon_lightning"
+}
+{
+"origin" "-304 -336 -128"
+"classname" "weapon_rocketlauncher"
+}
+{
+"origin" "-304 -320 -144"
+"classname" "item_armorInv"
+}
+{
+"model" "*1"
+"map" "start"
+"classname" "trigger_changelevel"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "80 64 -192"
+"classname" "monster_shambler"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-48 256 -192"
+"classname" "monster_shambler"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "32 -32 -48"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-32 288 -128"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-32 288 -128"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-6 232 -128"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-32 288 -128"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "48 144 -80"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "80 -128 -96"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-48 -288 -272"
+"classname" "monster_tarbaby"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "0 112 -192"
+"classname" "monster_shambler"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "-142 258 -144"
+"classname" "monster_shambler"
+}
+{
+"gravity" "1"
+"angle" "90"
+"origin" "163 -79 -176"
+"classname" "monster_shambler"
+}
