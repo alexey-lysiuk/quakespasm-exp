@@ -64,6 +64,7 @@ local getname <const> = edicts.getname
 local type_entity <const> = edicts.valuetypes.entity
 local type_float <const> = edicts.valuetypes.float
 local type_string <const> = edicts.valuetypes.string
+local type_vector <const> = edicts.valuetypes.vector
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
@@ -179,6 +180,12 @@ local function edictinfo_onupdate(self)
 					if imSelectable(field.selectableid) then
 						expmode.edictinfo(field.edict):movetocursor()
 					end
+				elseif field.vector then
+					if imSelectable(field.selectableid) then
+						ghost(true)
+						setpos(field.vector)
+						expmode.exit()
+					end
 				else
 					imText(field.value)
 				end
@@ -242,6 +249,9 @@ local function edictinfo_onshow(self)
 		else
 			if valuetype == type_entity then
 				field.edict = value
+				field.selectableid = format('%s##%s', value, field.name)
+			elseif valuetype == type_vector then
+				field.vector = value
 				field.selectableid = format('%s##%s', value, field.name)
 			elseif valuetype == type_float then
 				value = tointeger(value) or value
