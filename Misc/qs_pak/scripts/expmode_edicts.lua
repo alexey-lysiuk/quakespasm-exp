@@ -16,6 +16,7 @@ local imBeginPopup <const> = ImGui.BeginPopup
 local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
 local imButton <const> = ImGui.Button
+local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
@@ -516,16 +517,17 @@ end
 
 local edictstools <const> =
 {
-	{ 'All Edicts' },
-	{ 'Secrets', edicts.issecret },
-	{ 'Monsters', edicts.ismonster },
-	{ 'Teleports', edicts.isteleport },
-	{ 'Doors', edicts.isdoor },
-	{ 'Items', edicts.isitem },
-	{ 'Buttons', edicts.isbutton },
-	{ 'Exits', edicts.isexit },
-	{ 'Messages', edicts.ismessage },
-	{ 'Models', edicts.ismodel },
+	-- Name, filter function, default width of 'Description' cell in characters
+	{ 'All Edicts', nil, 30 },
+	{ 'Secrets', edicts.issecret, 15 },
+	{ 'Monsters', edicts.ismonster, 15 },
+	{ 'Teleports', edicts.isteleport, 30 },
+	{ 'Doors', edicts.isdoor, 15 },
+	{ 'Items', edicts.isitem, 20 },
+	{ 'Buttons', edicts.isbutton, 15 },
+	{ 'Exits', edicts.isexit, 15 },
+	{ 'Messages', edicts.ismessage, 40 },
+	{ 'Models', edicts.ismodel, 25 },
 }
 
 addaction(function ()
@@ -534,9 +536,12 @@ addaction(function ()
 			local title = tool[1]
 
 			if imMenuItem(title) then
+				local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
+				local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
+
 				window(title, edicts_onupdate,
 					function (self) self.filter = tool[2] end,
-					edicts_onshow, edicts_onhide):setconstraints()
+					edicts_onshow, edicts_onhide):setconstraints():setsize(imVec2(width, 0))
 			end
 		end
 
