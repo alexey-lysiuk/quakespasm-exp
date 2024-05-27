@@ -914,6 +914,12 @@ static void Mod_LoadEntities (lump_t *l)
 	{
 		char* EF_ApplyEntitiesFix(const char* mapname, const byte* oldents, unsigned oldsize, unsigned crc);
 		ents = EF_ApplyEntitiesFix(loadmodel->name, mod_base + l->fileofs, l->filelen, crc);
+
+		if (ents)
+		{
+			strcpy(entfilename, "<embedded entfixes>");
+			path_id = UINT_MAX;
+		}
 	}
 
 	if (ents)
