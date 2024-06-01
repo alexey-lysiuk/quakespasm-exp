@@ -64,6 +64,7 @@ local getname <const> = edicts.getname
 local type_entity <const> = edicts.valuetypes.entity
 local type_float <const> = edicts.valuetypes.float
 local type_string <const> = edicts.valuetypes.string
+local type_vector <const> = edicts.valuetypes.vector
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
@@ -179,6 +180,12 @@ local function edictinfo_onupdate(self)
 					if imSelectable(field.selectableid) then
 						expmode.edictinfo(field.edict):movetocursor()
 					end
+				elseif field.vector then
+					if imSelectable(field.selectableid) then
+						ghost(true)
+						setpos(field.vector)
+						expmode.exit()
+					end
 				else
 					imText(field.value)
 				end
@@ -242,6 +249,9 @@ local function edictinfo_onshow(self)
 		else
 			if valuetype == type_entity then
 				field.edict = value
+				field.selectableid = format('%s##%s', value, field.name)
+			elseif valuetype == type_vector then
+				field.vector = value
 				field.selectableid = format('%s##%s', value, field.name)
 			elseif valuetype == type_float then
 				value = tointeger(value) or value
@@ -517,6 +527,7 @@ end
 
 local edictstools <const> =
 {
+	-- Name, filter function, default width of 'Description' cell in characters
 	{ 'All Edicts', nil, 30 },
 	{ 'Secrets', edicts.issecret, 15 },
 	{ 'Monsters', edicts.ismonster, 15 },
@@ -535,7 +546,9 @@ addaction(function ()
 			local title = tool[1]
 
 			if imMenuItem(title) then
-				local width = imCalcTextSize('A').x * (35 + tool[3])
+				local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
+				local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
+
 				window(title, edicts_onupdate,
 					function (self) self.filter = tool[2] end,
 					edicts_onshow, edicts_onhide):setconstraints():setsize(imVec2(width, 0))
