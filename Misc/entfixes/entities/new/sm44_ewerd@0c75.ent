@@ -1,0 +1,328 @@
+{
+"classname" "worldspawn"
+"light" "125"
+"message" "sm44 - Forgotten Temple\nby E-werd"
+"wad" "gfx/QuArK.wad"
+}
+{
+"classname" "info_player_start"
+"origin" "256 128 528"
+"angle" "270"
+}
+{
+"classname" "weapon_supershotgun"
+"origin" "256 128 -96"
+}
+{
+"classname" "light"
+"origin" "256 128 528"
+"light" "800"
+}
+{
+"classname" "monster_wizard"
+"origin" "480 288 320"
+"angle" "216"
+}
+{
+"classname" "monster_wizard"
+"origin" "480 -96 320"
+"angle" "135"
+}
+{
+"classname" "monster_wizard"
+"origin" "64 288 320"
+"angle" "320"
+}
+{
+"classname" "monster_ogre"
+"origin" "256 416 224"
+"angle" "270"
+}
+{
+"classname" "item_health"
+"origin" "-128 -96 96"
+}
+{
+"classname" "item_armor2"
+"origin" "64 416 192"
+}
+{
+"classname" "item_shells"
+"origin" "-80 560 192"
+"spawnflags" "1"
+}
+{
+"classname" "monster_knight"
+"origin" "0 0 96"
+"angle" "45"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "-112 624 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "112 624 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "64 368 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "528 368 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "528 464 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "736 464 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "784 304 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "912 64 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "912 -352 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "560 -352 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "560 64 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "688 304 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "688 -144 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "784 -144 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "784 -592 256"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "784 -704 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "608 -656 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "608 -752 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "240 -752 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "240 -656 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "416 -528 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "416 -880 -80"
+"light" "225"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "688 -592 256"
+"light" "225"
+}
+{
+"classname" "monster_dog"
+"origin" "64 576 224"
+"angle" "225"
+}
+{
+"classname" "weapon_nailgun"
+"origin" "480 416 192"
+}
+{
+"classname" "item_spikes"
+"origin" "720 400 192"
+"spawnflags" "1"
+}
+{
+"classname" "monster_ogre"
+"origin" "584 64 224"
+"angle" "0"
+}
+{
+"classname" "monster_ogre"
+"origin" "888 64 224"
+"angle" "180"
+}
+{
+"classname" "monster_ogre"
+"origin" "888 -352 224"
+"angle" "180"
+}
+{
+"classname" "monster_ogre"
+"origin" "584 -352 224"
+"angle" "360"
+}
+{
+"classname" "monster_dog"
+"origin" "736 -144 224"
+"angle" "90"
+}
+{
+"classname" "monster_dog"
+"origin" "736 -592 224"
+"angle" "90"
+}
+{
+"classname" "monster_wizard"
+"origin" "576 -32 240"
+"angle" "0"
+}
+{
+"classname" "monster_wizard"
+"origin" "576 -256 240"
+"angle" "0"
+}
+{
+"classname" "monster_wizard"
+"origin" "576 -448 240"
+"angle" "0"
+}
+{
+"classname" "monster_wizard"
+"origin" "576 160 240"
+"angle" "0"
+}
+{
+"classname" "monster_wizard"
+"origin" "896 160 240"
+"angle" "180"
+}
+{
+"classname" "monster_wizard"
+"origin" "528 416 240"
+"angle" "180"
+}
+{
+"classname" "monster_wizard"
+"origin" "896 -32 240"
+"angle" "180"
+}
+{
+"classname" "monster_wizard"
+"origin" "896 -256 240"
+"angle" "180"
+}
+{
+"classname" "monster_wizard"
+"origin" "896 -448 240"
+"angle" "180"
+}
+{
+"classname" "light"
+"origin" "736 80 32"
+"light" "400"
+}
+{
+"classname" "light"
+"origin" "736 -352 32"
+"light" "400"
+}
+{
+"classname" "item_spikes"
+"origin" "720 -720 -128"
+}
+{
+"classname" "light"
+"origin" "48 -704 -64"
+"light" "300"
+"style" "11"
+}
+{
+"classname" "trigger_changelevel"
+"origin" "0 0 0"
+"map" "start"
+"model" "*1"
+}
+{
+"classname" "monster_ogre"
+"origin" "416 -544 -96"
+"angle" "270"
+}
+{
+"classname" "monster_ogre"
+"origin" "416 -864 -96"
+"angle" "90"
+}
+{
+"classname" "monster_wizard"
+"origin" "512 -544 -80"
+"angle" "270"
+}
+{
+"classname" "monster_wizard"
+"origin" "320 -544 -80"
+"angle" "270"
+}
+{
+"classname" "monster_wizard"
+"origin" "320 -864 -80"
+"angle" "90"
+}
+{
+"classname" "monster_wizard"
+"origin" "512 -864 -80"
+"angle" "90"
+}
+{
+"classname" "monster_dog"
+"origin" "160 -704 -96"
+"angle" "0"
+}
+{
+"classname" "info_intermission"
+"origin" "480 -96 256"
+"mangle" "0 135 0"
+}
