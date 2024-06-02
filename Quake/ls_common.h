@@ -59,6 +59,8 @@ vec_t* LS_GetVec3Value(lua_State* state, int index);
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
 
+void LS_InitProgsType(lua_State* state);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus
