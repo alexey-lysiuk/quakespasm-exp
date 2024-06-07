@@ -772,6 +772,7 @@ static void LS_InitGlobalTables(lua_State* state)
 
 	LS_InitVec3Type(state);
 	LS_InitEdictType(state);
+	LS_InitProgsType(state);
 }
 
 void LS_LoadScript(lua_State* state, const char* filename)
