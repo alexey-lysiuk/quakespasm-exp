@@ -258,6 +258,7 @@ enum LS_ImGuiType
 	ImMemberType_bool,
 	ImMemberType_int,
 	ImMemberType_unsigned,
+	ImMemberType_ImGuiDir,
 	ImMemberType_float,
 	ImMemberType_ImVec2,
 	ImMemberType_ImVec4,
@@ -278,6 +279,7 @@ struct LS_ImGuiTypeHolder;
 LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
 LS_IMGUI_DEFINE_MEMBER_TYPE(int);
 LS_IMGUI_DEFINE_MEMBER_TYPE(unsigned);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
 LS_IMGUI_DEFINE_MEMBER_TYPE(float);
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
@@ -319,6 +321,7 @@ static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_UserDataType& ty
 
 	case ImMemberType_int:
 	case ImMemberType_unsigned:
+	case ImMemberType_ImGuiDir:
 		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
 		break;
 
