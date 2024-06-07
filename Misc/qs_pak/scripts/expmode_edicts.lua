@@ -108,6 +108,15 @@ local function searchbar(window)
 	local modified = imInputText('##search', window.searchbuffer)
 
 	if #window.searchbuffer > 0 then
+		if imIsItemHovered(imHoveredFlagsDelayNormal) then
+			local searchresults = window.searchresults
+			local count = searchresults and #searchresults or -1
+
+			if count >= 0 then
+				imSetTooltip(count .. ' result(s)')
+			end
+		end
+
 		imSameLine(0, 0)
 
 		if imButton('x') then
