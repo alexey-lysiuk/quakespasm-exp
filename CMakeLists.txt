@@ -387,7 +387,6 @@ else()
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-	Quake
 	${LUA_DIR}
 	${IMGUI_DIR}
 	"${CMAKE_BINARY_DIR}"
