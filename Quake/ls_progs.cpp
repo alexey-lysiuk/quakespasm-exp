@@ -110,21 +110,33 @@ static int LS_global_progs_datcrc(lua_State* state)
 	return 1;
 }
 
-// Returns progs function by its index
-static int LS_global_progs_func(lua_State* state)
+static int LS_global_functions_iterator(lua_State* state)
+{
+	lua_Integer index = luaL_checkinteger(state, 2);
+	index = luaL_intop(+, index, 1);
+
+	if (index > 0 && index < progs->numfunctions)
+	{
+		lua_pushinteger(state, index);
+		LS_PushFunctionValue(state, index);
+		return 2;
+	}
+
+	lua_pushnil(state);
+	return 1;
+}
+
+// Returns progs function iterator, e.g., for i, f in progs.functions() do print(i, f) end
+static int LS_global_progs_functions(lua_State* state)
 {
 	if (progs == nullptr)
 		return 0;
 
-	const int index = luaL_checkinteger(state, 1);
-	
-	if (index > 0 && index < progs->numfunctions)
-	{
-		LS_PushFunctionValue(state, index);
-		return 1;
-	}
-
-	return 0;
+	const lua_Integer index = luaL_optinteger(state, 1, 0);
+	lua_pushcfunction(state, LS_global_functions_iterator);
+	lua_pushnil(state);  // unused
+	lua_pushinteger(state, index);  // initial value
+	return 3;
 }
 
 // Returns progs version number (PROG_VERSION)
@@ -144,7 +156,7 @@ void LS_InitProgsType(lua_State* state)
 	{
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
-		{ "func", LS_global_progs_func },
+		{ "functions", LS_global_progs_functions },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
 	};
