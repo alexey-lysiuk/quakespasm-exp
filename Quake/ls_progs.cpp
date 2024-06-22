@@ -69,8 +69,6 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-//		{ "__eq", LS_value_function_eq },
-//		{ "__lt", LS_value_function_lt },
 		{ "__tostring", LS_value_function_tostring },
 		{ NULL, NULL }
 	};
