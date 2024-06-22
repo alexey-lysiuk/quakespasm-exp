@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
+#include <assert.h>
+
 #include "ls_common.h"
 
 extern "C"
@@ -26,6 +28,67 @@ extern "C"
 #include "quakedef.h"
 }
 
+static const LS_UserDataType ls_function_type =
+{
+	{ {{'f', 'u', 'n', 'c'}} },
+	sizeof(int) /* fourcc */ + sizeof(int) /* function index */
+};
+
+
+// Get edict index from 'function' userdata at given index
+static int LS_GetFunctionIndex(lua_State* state, int index)
+{
+	int* indexptr = static_cast<int*>(LS_GetValueFromTypedUserData(state, index, &ls_function_type));
+	assert(indexptr);
+	return *indexptr;
+}
+
+// Gets pointer to edict_t from 'function' userdata
+static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = LS_GetFunctionIndex(state, 1);
+	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
+}
+
+// Pushes string representation of given function
+static int LS_value_function_tostring(lua_State* state)
+{
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
+		lua_pushfstring(state, "%s()", PR_GetString(function->s_name));
+	else
+		lua_pushstring(state, "invalid edict");
+
+	return 1;
+}
+
+// Sets metatable for 'function' userdata
+static void LS_SetFunctionMetaTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+//		{ "__eq", LS_value_function_eq },
+//		{ "__lt", LS_value_function_lt },
+		{ "__tostring", LS_value_function_tostring },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "func"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+}
+
+// Creates and pushes 'function' userdata by edict index, [1..progs->numfunctions)
+static void LS_PushFunctionValue(lua_State* state, int functionindex)
+{
+	int* indexptr = static_cast<int*>(LS_CreateTypedUserData(state, &ls_function_type));
+	assert(indexptr);
+	*indexptr = functionindex;
+	LS_SetFunctionMetaTable(state);
+}
 
 // Returns CRC of progdefs header (PROGHEADER_CRC)
 static int LS_global_progs_crc(lua_State* state)
@@ -47,6 +110,23 @@ static int LS_global_progs_datcrc(lua_State* state)
 	return 1;
 }
 
+// Returns progs function by its index
+static int LS_global_progs_func(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 1);
+	
+	if (index > 0 && index < progs->numfunctions)
+	{
+		LS_PushFunctionValue(state, index);
+		return 1;
+	}
+
+	return 0;
+}
+
 // Returns progs version number (PROG_VERSION)
 static int LS_global_progs_version(lua_State* state)
 {
@@ -64,6 +144,7 @@ void LS_InitProgsType(lua_State* state)
 	{
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
+		{ "func", LS_global_progs_func },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
 	};
