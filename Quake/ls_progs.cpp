@@ -35,7 +35,7 @@ static const LS_UserDataType ls_function_type =
 };
 
 
-// Get edict index from 'function' userdata at given index
+// Get function index from 'function' userdata at given index
 static int LS_GetFunctionIndex(lua_State* state, int index)
 {
 	int* indexptr = static_cast<int*>(LS_GetValueFromTypedUserData(state, index, &ls_function_type));
@@ -43,7 +43,7 @@ static int LS_GetFunctionIndex(lua_State* state, int index)
 	return *indexptr;
 }
 
-// Gets pointer to edict_t from 'function' userdata
+// Gets pointer to dfunction_t from 'function' userdata
 static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 {
 	if (progs == nullptr)
@@ -59,7 +59,7 @@ static int LS_value_function_tostring(lua_State* state)
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
 		lua_pushfstring(state, "%s()", PR_GetString(function->s_name));
 	else
-		lua_pushstring(state, "invalid edict");
+		lua_pushstring(state, "invalid function");
 
 	return 1;
 }
@@ -79,7 +79,7 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-// Creates and pushes 'function' userdata by edict index, [1..progs->numfunctions)
+// Creates and pushes 'function' userdata by function index, [1..progs->numfunctions)
 static void LS_PushFunctionValue(lua_State* state, int functionindex)
 {
 	int* indexptr = static_cast<int*>(LS_CreateTypedUserData(state, &ls_function_type));
