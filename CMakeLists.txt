@@ -725,6 +725,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		scripts/edicts.lua
 		scripts/expmode_base.lua
 		scripts/expmode_edicts.lua
+		scripts/expmode_progs.lua
 		scripts/progs.lua
 		# expmode_debug.lua is excluded intentionally
 		default.cfg

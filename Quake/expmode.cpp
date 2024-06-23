@@ -96,6 +96,7 @@ static void LS_InitExpMode()
 
 	LS_LoadScript(state, "scripts/expmode_base.lua");
 	LS_LoadScript(state, "scripts/expmode_edicts.lua");
+	LS_LoadScript(state, "scripts/expmode_progs.lua");
 #ifndef NDEBUG
 	LS_LoadScript(state, "scripts/expmode_debug.lua");
 #endif // !NDEBUG
