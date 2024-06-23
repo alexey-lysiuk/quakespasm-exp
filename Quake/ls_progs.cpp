@@ -161,6 +161,8 @@ void LS_InitProgsType(lua_State* state)
 
 	luaL_newlib(state, progs_functions);
 	lua_setglobal(state, "progs");
+
+	LS_LoadScript(state, "scripts/progs.lua");
 }
 
 #endif // USE_LUA_SCRIPTING
