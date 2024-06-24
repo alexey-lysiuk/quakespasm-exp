@@ -22,7 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <assert.h>
 
 #include "ls_common.h"
+
+extern "C"
+{
 #include "quakedef.h"
+}
 
 
 static const LS_UserDataType ls_vec3_type =
@@ -44,36 +48,38 @@ static int LS_Vec3GetComponent(lua_State* state, int index)
 // Gets value of 'vec3' from userdata at given index
 vec_t* LS_GetVec3Value(lua_State* state, int index)
 {
-	vec3_t* value = LS_GetValueFromTypedUserData(state, index, &ls_vec3_type);
+	void* value = LS_GetValueFromTypedUserData(state, index, &ls_vec3_type);
 	assert(value);
 
-	return *value;
+	return *static_cast<vec3_t*>(value);
+}
+
+template <typename T>
+int LS_Vec3Func(lua_State* state, T* func);
+
+template <>
+int LS_Vec3Func(lua_State* state, void (*func)(vec3_t, vec3_t, vec3_t))
+{
+	vec_t* v1 = LS_GetVec3Value(state, 1);
+	vec_t* v2 = LS_GetVec3Value(state, 2);
+
+	vec3_t result;
+	func(v1, v2, result);
+
+	LS_PushVec3Value(state, result);
+	return 1;
 }
 
 // Pushes result of two 'vec3' values addition
 static int LS_value_vec3_add(lua_State* state)
 {
-	vec_t* v1 = LS_GetVec3Value(state, 1);
-	vec_t* v2 = LS_GetVec3Value(state, 2);
-
-	vec3_t result;
-	VectorAdd(v1, v2, result);
-
-	LS_PushVec3Value(state, result);
-	return 1;
+	return LS_Vec3Func(state, _VectorAdd);
 }
 
 // Pushes result of two 'vec3' values subtraction
 static int LS_value_vec3_sub(lua_State* state)
 {
-	vec_t* v1 = LS_GetVec3Value(state, 1);
-	vec_t* v2 = LS_GetVec3Value(state, 2);
-
-	vec3_t result;
-	VectorSubtract(v1, v2, result);
-
-	LS_PushVec3Value(state, result);
-	return 1;
+	return LS_Vec3Func(state, _VectorSubtract);
 }
 
 // Pushes result of 'vec3' scale by a number (the second argument)
@@ -178,7 +184,7 @@ static int LS_value_vec3_tostring(lua_State* state)
 // Creates and pushes 'vec3' userdata built from vec3_t value
 void LS_PushVec3Value(lua_State* state, const vec_t* value)
 {
-	vec3_t* valueptr = LS_CreateTypedUserData(state, &ls_vec3_type);
+	vec3_t* valueptr = static_cast<vec3_t*>(LS_CreateTypedUserData(state, &ls_vec3_type));
 	assert(valueptr);
 
 	VectorCopy(value, *valueptr);
@@ -251,14 +257,7 @@ static int LS_global_vec3_copy(lua_State* state)
 // Pushes new 'vec3' userdata which value is a cross product of functions arguments
 static int LS_global_vec3_cross(lua_State* state)
 {
-	vec_t* v1 = LS_GetVec3Value(state, 1);
-	vec_t* v2 = LS_GetVec3Value(state, 2);
-
-	vec3_t result;
-	CrossProduct(v1, v2, result);
-
-	LS_PushVec3Value(state, result);
-	return 1;
+	return LS_Vec3Func(state, CrossProduct);
 }
 
 // Pushes a number which value is a dot product of functions arguments
