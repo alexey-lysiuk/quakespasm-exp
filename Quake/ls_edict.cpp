@@ -19,16 +19,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <assert.h>
+#include <cassert>
 
 #include "ls_common.h"
-#include "quakedef.h"
 
+extern "C"
+{
+#include "quakedef.h"
 
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
 qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* ED_GetFieldNameByOffset(int offset);
 const char* SV_GetEntityName(edict_t* entity);
+} // extern "C"
 
 
 static const LS_UserDataType ls_edict_type =
@@ -47,7 +50,7 @@ static void LS_SetEdictMetaTable(lua_State* state);
 // Creates and pushes 'edict' userdata by edict index, [0..sv.num_edicts)
 void LS_PushEdictValue(lua_State* state, int edictindex)
 {
-	int* indexptr = LS_CreateTypedUserData(state, &ls_edict_type);
+	int* indexptr = static_cast<int*>(LS_CreateTypedUserData(state, &ls_edict_type));
 	assert(indexptr);
 	*indexptr = edictindex;
 	LS_SetEdictMetaTable(state);
@@ -106,7 +109,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 // Get edict index from 'edict' userdata at given index
 static int LS_GetEdictIndex(lua_State* state, int index)
 {
-	int* indexptr = LS_GetValueFromTypedUserData(state, index, &ls_edict_type);
+	int* indexptr = static_cast<int*>(LS_GetValueFromTypedUserData(state, index, &ls_edict_type));
 	assert(indexptr);
 
 	return *indexptr;

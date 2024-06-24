@@ -63,7 +63,7 @@ set(COMMON_SOURCES
 	Quake/keys.h
 	Quake/lodepng.h
 	Quake/ls_common.h
-	Quake/ls_edict.c
+	Quake/ls_edict.cpp
 	Quake/ls_imgui.cpp
 	Quake/ls_imgui.h
 	Quake/ls_imgui_enums.h
