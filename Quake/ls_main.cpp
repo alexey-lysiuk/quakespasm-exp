@@ -19,10 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <assert.h>
+#include <cassert>
 
 #include "ls_common.h"
+
+extern "C"
+{
 #include "quakedef.h"
+}
 
 #ifdef USE_TLSF
 #include "tlsf/tlsf.h"
@@ -32,13 +36,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static lua_State* ls_state;
 static size_t ls_quota;
 
-typedef struct
+struct LS_MemoryStats
 {
 	size_t usedbytes;
 	size_t usedblocks;
 	size_t freebytes;
 	size_t freeblocks;
-} LS_MemoryStats;
+};
 
 
 #ifdef USE_TLSF
@@ -46,14 +50,14 @@ typedef struct
 static tlsf_t ls_memory;
 static size_t ls_memorysize;
 
-static void* LS_tempalloc(lua_State* state, size_t size)
+static char* LS_tempalloc(lua_State* state, size_t size)
 {
 	void* result = tlsf_malloc(ls_memory, size);
 
 	if (!result)
 		luaL_error(state, "unable to allocation %I bytes", size);
 
-	return result;
+	return static_cast<char*>(result);
 }
 
 static void LS_tempfree(void* ptr)
@@ -63,9 +67,9 @@ static void LS_tempfree(void* ptr)
 
 #else // !USE_TLSF
 
-static void* LS_tempalloc(lua_State* state, size_t size)
+static char* LS_tempalloc(lua_State* state, size_t size)
 {
-	return malloc(size);
+	return static_cast<char*>(malloc(size));
 }
 
 static void LS_tempfree(void* ptr)
@@ -78,7 +82,7 @@ static void LS_tempfree(void* ptr)
 
 void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
 {
-	int* result = lua_newuserdatauv(state, type->size, 0);
+	int* result = static_cast<int*>(lua_newuserdatauv(state, type->size, 0));
 	assert(result);
 
 	*result = type->fourcc;
@@ -91,7 +95,7 @@ void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDat
 {
 	luaL_checktype(state, index, LUA_TUSERDATA);
 
-	int* result = lua_touserdata(state, index);
+	int* result = static_cast<int*>(lua_touserdata(state, index));
 	assert(result);
 
 	if (type->fourcc != *result)
@@ -535,7 +539,7 @@ static void LS_MemoryStatsCollector(void* pointer, size_t size, int isused, void
 {
 	(void)pointer;
 
-	LS_MemoryStats* stats = user;
+	LS_MemoryStats* stats = static_cast<LS_MemoryStats*>(user);
 	assert(stats);
 
 	if (isused)
@@ -808,10 +812,10 @@ static void LS_ResetState(void)
 #endif // USE_TLSF && !NDEBUG
 }
 
-static size_t LS_CheckSizeArgument(const char* argname)
+static int LS_CheckSizeArgument(const char* argname)
 {
 	int argindex = COM_CheckParm(argname);
-	size_t result = 0;
+	int result = 0;
 
 	if (argindex && argindex < com_argc - 1)
 	{
@@ -833,7 +837,7 @@ lua_State* LS_GetState(void)
 		{
 			if (ls_memorysize == 0)
 			{
-				size_t heapsize = LS_CheckSizeArgument("-luaheapsize");  // in kB
+				const int heapsize = LS_CheckSizeArgument("-luaheapsize");  // in kB
 				ls_memorysize = CLAMP(8 * 1024, heapsize, 64 * 1024) * 1024;
 			}
 
@@ -861,7 +865,7 @@ lua_State* LS_GetState(void)
 
 	if (ls_quota == 0)
 	{
-		size_t quota = LS_CheckSizeArgument("-luaexecquota");  // in kilo-ops
+		const int quota = LS_CheckSizeArgument("-luaexecquota");  // in kilo-ops
 		ls_quota = CLAMP(4 * 1024, quota, 64 * 1024) * 1024;
 	}
 
@@ -878,7 +882,7 @@ typedef struct
 
 static const char* LS_global_reader(lua_State* state, void* data, size_t* size)
 {
-	LS_ReaderData* readerdata = data;
+	LS_ReaderData* readerdata = static_cast<LS_ReaderData*>(data);
 	assert(readerdata);
 
 	static const char prefix[] = "return ";
@@ -987,6 +991,9 @@ static void LS_Exec_f(void)
 		Con_SafePrintf("Running %s\n", LUA_RELEASE);
 }
 
+extern "C"
+{
+
 void LS_Init(void)
 {
 	Cmd_AddCommand("lua", LS_Exec_f);
@@ -1003,5 +1010,7 @@ void LS_Shutdown(void)
 	ls_memory = NULL;
 #endif // USE_TLSF
 }
+
+} // extern "C"
 
 #endif // USE_LUA_SCRIPTING
