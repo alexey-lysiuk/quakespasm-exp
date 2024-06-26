@@ -80,29 +80,29 @@ static void LS_tempfree(void* ptr)
 #endif // USE_TLSF
 
 
-void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type)
+void* LS_TypelessUserDataType::NewPtr(lua_State* state) const
 {
-	int* result = static_cast<int*>(lua_newuserdatauv(state, type->size, 0));
+	uint32_t* result = static_cast<uint32_t*>(lua_newuserdatauv(state, size, 0));
 	assert(result);
 
-	*result = type->fourcc;
+	*result = fourcc;
 	result += 1;
 
 	return result;
 }
 
-void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type)
+void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 {
 	luaL_checktype(state, index, LUA_TUSERDATA);
 
-	int* result = static_cast<int*>(lua_touserdata(state, index));
+	uint32_t* result = static_cast<uint32_t*>(lua_touserdata(state, index));
 	assert(result);
 
-	if (type->fourcc != *result)
+	if (fourcc != *result)
 	{
 		char expected[5], actual[5];
 
-		memcpy(expected, type, 4);
+		memcpy(expected, &fourcc, 4);
 		expected[4] = '\0';
 		memcpy(actual, result, 4);
 		actual[4] = '\0';

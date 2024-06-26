@@ -29,11 +29,8 @@ static int LS_global_imgui_GetStyle(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const ImGuiStyle** styleptr = static_cast<const ImGuiStyle**>(LS_CreateTypedUserData(state, &ls_imguistyle_type));
-	assert(styleptr && *styleptr);
-
-	const ImGuiStyle* style = &ImGui::GetStyle();
-	*styleptr = style;
+	ImGuiStyle*& style = ls_imguistyle_type.New(state);
+	style = &ImGui::GetStyle();
 
 	// Create and set 'ImGuiStyle' metatable
 	static const luaL_Reg functions[] =
@@ -367,7 +364,7 @@ static int LS_global_imgui_InputText(lua_State* state)
 	const char* label = luaL_checkstring(state, 1);
 	assert(label);
 
-	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 2);
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
 	// TODO: Input text callback support
@@ -383,7 +380,7 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	const char* label = luaL_checkstring(state, 1);
 	assert(label);
 
-	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 2);
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
 	const ImVec2 size = luaL_opt(state, LS_GetImVecValue<ImVec2>, 3, ImVec2());
 	const int flags = luaL_optinteger(state, 4, 0);
 
@@ -759,13 +756,8 @@ static int LS_global_imgui_GetMainViewport(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	ImGuiViewport** viewportptr = static_cast<ImGuiViewport**>(LS_CreateTypedUserData(state, &ls_imguiviewport_type));
-	assert(viewportptr);
-
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	assert(viewport);
-
-	*viewportptr = viewport;
+	ImGuiViewport*& viewport = ls_imguiviewport_type.New(state);
+	viewport = ImGui::GetMainViewport();
 
 	// Create and set 'ImGuiViewport' metatable
 	static const luaL_Reg functions[] =

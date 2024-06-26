@@ -33,13 +33,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 const char* SV_GetEntityName(edict_t* entity);
 } // extern "C"
 
-
-static const LS_UserDataType ls_edict_type =
-{
-	{ {{'e', 'd', 'c', 't'}} },
-	sizeof(int) /* fourcc */ + sizeof(int) /* edict index */
-};
-
+constexpr LS_UserDataType<int> ls_edict_type("edct");
 
 //
 // Expose edict_t as 'edict' userdata
@@ -50,9 +44,9 @@ static void LS_SetEdictMetaTable(lua_State* state);
 // Creates and pushes 'edict' userdata by edict index, [0..sv.num_edicts)
 void LS_PushEdictValue(lua_State* state, int edictindex)
 {
-	int* indexptr = static_cast<int*>(LS_CreateTypedUserData(state, &ls_edict_type));
-	assert(indexptr);
-	*indexptr = edictindex;
+	int& newvalue = ls_edict_type.New(state);
+	newvalue = edictindex;
+
 	LS_SetEdictMetaTable(state);
 }
 
@@ -106,27 +100,18 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 	}
 }
 
-// Get edict index from 'edict' userdata at given index
-static int LS_GetEdictIndex(lua_State* state, int index)
-{
-	int* indexptr = static_cast<int*>(LS_GetValueFromTypedUserData(state, index, &ls_edict_type));
-	assert(indexptr);
-
-	return *indexptr;
-}
-
 // Gets pointer to edict_t from 'edict' userdata
 static edict_t* LS_GetEdictFromUserData(lua_State* state)
 {
-	int index = LS_GetEdictIndex(state, 1);
+	const int index = ls_edict_type.GetValue(state, 1);
 	return (index >= 0 && index < sv.num_edicts) ? EDICT_NUM(index) : NULL;
 }
 
 // Pushes result of comparison for equality of two edict values
 static int LS_value_edict_eq(lua_State* state)
 {
-	int left = LS_GetEdictIndex(state, 1);
-	int right = LS_GetEdictIndex(state, 2);
+	const int left = ls_edict_type.GetValue(state, 1);
+	const int right = ls_edict_type.GetValue(state, 2);
 
 	lua_pushboolean(state, left == right);
 	return 1;
@@ -135,8 +120,8 @@ static int LS_value_edict_eq(lua_State* state)
 // Pushes true if index of first edict is less than index of second edict, otherwise pushes false
 static int LS_value_edict_lt(lua_State* state)
 {
-	int left = LS_GetEdictIndex(state, 1);
-	int right = LS_GetEdictIndex(state, 2);
+	const int left = ls_edict_type.GetValue(state, 1);
+	const int right = ls_edict_type.GetValue(state, 2);
 
 	lua_pushboolean(state, left < right);
 	return 1;

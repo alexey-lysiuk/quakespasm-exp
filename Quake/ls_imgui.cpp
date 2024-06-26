@@ -45,21 +45,27 @@ extern "C"
 template<typename T>
 const char* LS_GetImVecUserDataName();
 
-template<typename T>
-const LS_UserDataType* LS_GetImVecUserDataType();
+//template<typename T>
+//const LS_UserDataType* LS_GetImVecUserDataType();
 
 template<typename T>
 int LS_GetImVecComponentCount();
 
-// Gets value of 'ImVec?' from userdata at given index
 template<typename T>
-static T& LS_GetImVecValue(lua_State* state, int index)
-{
-	T* value = static_cast<T*>(LS_GetValueFromTypedUserData(state, index, LS_GetImVecUserDataType<T>()));
-	assert(value);
+T& LS_NewImVecUserData(lua_State* state);
 
-	return *value;
-}
+template<typename T>
+T& LS_GetImVecValue(lua_State* state, int index);
+
+//// Gets value of 'ImVec?' from userdata at given index
+//template<typename T>
+//static T& LS_GetImVecValue(lua_State* state, int index)
+//{
+//	T* value = static_cast<T*>(LS_GetValueFromTypedUserData(state, index, LS_GetImVecUserDataType<T>()));
+//	assert(value);
+//
+//	return *value;
+//}
 
 // Pushes value of 'ImVec?' component, indexed by integer [0..?] or string 'x', 'y', ...
 template<typename T>
@@ -93,10 +99,13 @@ static int LS_value_ImVec_tostring(lua_State* state);
 template<typename T>
 static int LS_PushImVec(lua_State* state, const T& value)
 {
-	T* valueptr = static_cast<T*>(LS_CreateTypedUserData(state, LS_GetImVecUserDataType<T>()));
-	assert(valueptr);
+	//T* valueptr = static_cast<T*>(LS_CreateTypedUserData(state, LS_GetImVecUserDataType<T>()));
+	//assert(valueptr);
 
-	*valueptr = value;
+	//*valueptr = value;
+
+	T& newvalue = LS_NewImVecUserData<T>(state);
+	newvalue = value;
 
 	// Create and set 'ImVec?' metatable
 	static const luaL_Reg functions[] =
@@ -115,9 +124,10 @@ static int LS_PushImVec(lua_State* state, const T& value)
 }
 
 #define LS_DEFINE_IMVEC_TYPE(COMPONENTS) \
-	static const LS_UserDataType ls_imvec##COMPONENTS##_type = { { {{'i', 'm', 'v', '0' + COMPONENTS}} }, sizeof(int) /* fourcc */ + sizeof(ImVec##COMPONENTS) }; \
+	constexpr LS_UserDataType<ImVec##COMPONENTS> ls_imvec##COMPONENTS##_type("imv" #COMPONENTS); \
 	template<> const char* LS_GetImVecUserDataName<ImVec##COMPONENTS>() { return "ImVec"#COMPONENTS; } \
-	template<> const LS_UserDataType* LS_GetImVecUserDataType<ImVec##COMPONENTS>() { return &ls_imvec##COMPONENTS##_type; } \
+	template<> ImVec##COMPONENTS& LS_NewImVecUserData(lua_State* state) { return ls_imvec##COMPONENTS##_type.New(state); } \
+	template<> ImVec##COMPONENTS& LS_GetImVecValue(lua_State* state, int index) { return ls_imvec##COMPONENTS##_type.GetValue(state, index); } \
 	template<> int LS_GetImVecComponentCount<ImVec##COMPONENTS>() { return COMPONENTS; }
 
 LS_DEFINE_IMVEC_TYPE(2)
@@ -170,37 +180,25 @@ struct LS_TextBuffer
 	size_t size;
 };
 
-static const LS_UserDataType ls_imguitextbuffer_type =
-{
-	{ {{'i', 'm', 't', 'b'}} },
-	sizeof(int) + /* fourcc */ + sizeof(LS_TextBuffer)
-};
-
-static LS_TextBuffer& LS_GetTextBufferValue(lua_State* state, int index)
-{
-	LS_TextBuffer* textbufferptr = static_cast<LS_TextBuffer*>(LS_GetValueFromTypedUserData(state, index, &ls_imguitextbuffer_type));
-	assert(textbufferptr);
-
-	return *textbufferptr;
-}
+constexpr LS_UserDataType<LS_TextBuffer> ls_imguitextbuffer_type("imtb");
 
 static int LS_value_TextBuffer_gc(lua_State* state)
 {
-	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 1);
 	IM_FREE(textbuffer.data);
 	return 0;
 }
 
 static int LS_value_TextBuffer_len(lua_State* state)
 {
-	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 1);
 	lua_pushinteger(state, strlen(textbuffer.data));
 	return 1;
 }
 
 static int LS_value_TextBuffer_tostring(lua_State* state)
 {
-	LS_TextBuffer& textbuffer = LS_GetTextBufferValue(state, 1);
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 1);
 	lua_pushstring(state, textbuffer.data);
 	return 1;
 }
@@ -230,11 +228,9 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 	else
 		bufferdata[0] = '\0';
 
-	LS_TextBuffer* textbuffer = static_cast<LS_TextBuffer*>(LS_CreateTypedUserData(state, &ls_imguitextbuffer_type));
-	assert(textbuffer);
-
-	textbuffer->data = bufferdata;
-	textbuffer->size = buffersize;
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.New(state);
+	textbuffer.data = bufferdata;
+	textbuffer.size = buffersize;
 
 	// Create and set 'ImGui.TextBuffer' metatable
 	static const luaL_Reg functions[] =
@@ -303,9 +299,9 @@ static const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char*
 	return valueit->second;
 }
 
-static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_UserDataType& type, const LS_ImGuiMember& member)
+static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
 {
-	void* userdataptr = LS_GetValueFromTypedUserData(state, 1, &type);
+	void* userdataptr = type.GetValuePtr(state, 1);
 	assert(userdataptr);
 
 	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
@@ -350,11 +346,7 @@ static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_UserDataType& ty
 	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
 
 
-static const LS_UserDataType ls_imguiviewport_type =
-{
-	{ {{'i', 'm', 'v', 'p'}} },
-	sizeof(int) /* fourcc */ + sizeof(void*)
-};
+constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("imvp");
 
 constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewport_members =
 {
@@ -370,11 +362,7 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewp
 #undef LS_IMGUI_VIEWPORT_MEMBER
 };
 
-static const LS_UserDataType ls_imguistyle_type =
-{
-	{ {{'i', 'm', 's', 't'}} },
-	sizeof(int) /* fourcc */ + sizeof(void*)
-};
+constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("imst");
 
 constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 51> ls_imguistyle_members =
 {
