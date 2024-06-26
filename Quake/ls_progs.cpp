@@ -28,20 +28,7 @@ extern "C"
 #include "quakedef.h"
 }
 
-static const LS_UserDataType ls_function_type =
-{
-	{ {{'f', 'u', 'n', 'c'}} },
-	sizeof(int) /* fourcc */ + sizeof(int) /* function index */
-};
-
-
-// Get function index from 'function' userdata at given index
-static int LS_GetFunctionIndex(lua_State* state, int index)
-{
-	int* indexptr = static_cast<int*>(LS_GetValueFromTypedUserData(state, index, &ls_function_type));
-	assert(indexptr);
-	return *indexptr;
-}
+constexpr LS_UserDataType<int> ls_function_type("func");
 
 // Gets pointer to dfunction_t from 'function' userdata
 static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
@@ -49,7 +36,7 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	if (progs == nullptr)
 		return 0;
 
-	const int index = LS_GetFunctionIndex(state, 1);
+	const int index = ls_function_type.GetValue(state, 1);
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
@@ -77,15 +64,6 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
-}
-
-// Creates and pushes 'function' userdata by function index, [1..progs->numfunctions)
-static void LS_PushFunctionValue(lua_State* state, int functionindex)
-{
-	int* indexptr = static_cast<int*>(LS_CreateTypedUserData(state, &ls_function_type));
-	assert(indexptr);
-	*indexptr = functionindex;
-	LS_SetFunctionMetaTable(state);
 }
 
 // Returns CRC of progdefs header (PROGHEADER_CRC)
@@ -116,7 +94,11 @@ static int LS_global_functions_iterator(lua_State* state)
 	if (index > 0 && index < progs->numfunctions)
 	{
 		lua_pushinteger(state, index);
-		LS_PushFunctionValue(state, index);
+
+		int& newvalue = ls_function_type.New(state);
+		newvalue = index;
+		LS_SetFunctionMetaTable(state);
+
 		return 2;
 	}
 

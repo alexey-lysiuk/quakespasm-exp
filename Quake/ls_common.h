@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
+#include <cstdint>
 
 extern "C"
 {
@@ -36,18 +37,42 @@ int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
 
-typedef struct
+class LS_TypelessUserDataType
 {
-	union
+public:
+	constexpr LS_TypelessUserDataType(const char (&fourcc)[5], const size_t size)
+	: fourcc((fourcc[0] << 24) | (fourcc[1] << 16) | (fourcc[2] << 8) | fourcc[3])
+	, size(uint32_t(size))
 	{
-		struct { char ch[4]; };
-		int fourcc;
-	};
-	size_t size;
-} LS_UserDataType;
+	}
 
-void* LS_CreateTypedUserData(lua_State* state, const LS_UserDataType* type);
-void* LS_GetValueFromTypedUserData(lua_State* state, int index, const LS_UserDataType* type);
+	void* NewPtr(lua_State* state) const;
+	void* GetValuePtr(lua_State* state, int index) const;
+
+protected:
+	uint32_t fourcc;
+	uint32_t size;
+};
+
+template <typename T>
+class LS_UserDataType : public LS_TypelessUserDataType
+{
+public:
+	constexpr explicit LS_UserDataType(const char (&fourcc)[5])
+	: LS_TypelessUserDataType(fourcc, sizeof(fourcc) + sizeof(T))
+	{
+	}
+
+	T& New(lua_State* const state) const
+	{
+		return *static_cast<T*>(NewPtr(state));
+	}
+
+	T& GetValue(lua_State* const state, const int index) const
+	{
+		return *static_cast<T*>(GetValuePtr(state, index));
+	}
+};
 
 int LS_GetVectorComponent(lua_State* state, int index, int componentcount);
 

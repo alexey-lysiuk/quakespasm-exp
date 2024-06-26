@@ -28,13 +28,7 @@ extern "C"
 #include "quakedef.h"
 }
 
-
-static const LS_UserDataType ls_vec3_type =
-{
-	{ {{'v', 'e', 'c', '3'}} },
-	sizeof(int) /* fourcc */ + sizeof(vec3_t)
-};
-
+constexpr LS_UserDataType<vec3_t> ls_vec3_type("vec3");
 
 //
 // Expose vec3_t as 'vec3' userdata
@@ -48,10 +42,7 @@ static int LS_Vec3GetComponent(lua_State* state, int index)
 // Gets value of 'vec3' from userdata at given index
 vec_t* LS_GetVec3Value(lua_State* state, int index)
 {
-	void* value = LS_GetValueFromTypedUserData(state, index, &ls_vec3_type);
-	assert(value);
-
-	return *static_cast<vec3_t*>(value);
+	return ls_vec3_type.GetValue(state, index);
 }
 
 template <typename T>
@@ -184,10 +175,8 @@ static int LS_value_vec3_tostring(lua_State* state)
 // Creates and pushes 'vec3' userdata built from vec3_t value
 void LS_PushVec3Value(lua_State* state, const vec_t* value)
 {
-	vec3_t* valueptr = static_cast<vec3_t*>(LS_CreateTypedUserData(state, &ls_vec3_type));
-	assert(valueptr);
-
-	VectorCopy(value, *valueptr);
+	vec3_t& newvalue = ls_vec3_type.New(state);
+	VectorCopy(value, newvalue);
 
 	// Create and set 'vec3_t' metatable
 	static const luaL_Reg functions[] =
