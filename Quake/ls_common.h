@@ -21,13 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
 
+extern "C"
+{
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+} // extern "C"
 
 lua_State* LS_GetState(void);
 
@@ -60,9 +60,5 @@ void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
 
 void LS_InitProgsType(lua_State* state);
-
-#ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
 
 #endif // USE_LUA_SCRIPTING
