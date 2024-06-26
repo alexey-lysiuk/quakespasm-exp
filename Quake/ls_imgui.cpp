@@ -45,9 +45,6 @@ extern "C"
 template<typename T>
 const char* LS_GetImVecUserDataName();
 
-//template<typename T>
-//const LS_UserDataType* LS_GetImVecUserDataType();
-
 template<typename T>
 int LS_GetImVecComponentCount();
 
@@ -56,16 +53,6 @@ T& LS_NewImVecUserData(lua_State* state);
 
 template<typename T>
 T& LS_GetImVecValue(lua_State* state, int index);
-
-//// Gets value of 'ImVec?' from userdata at given index
-//template<typename T>
-//static T& LS_GetImVecValue(lua_State* state, int index)
-//{
-//	T* value = static_cast<T*>(LS_GetValueFromTypedUserData(state, index, LS_GetImVecUserDataType<T>()));
-//	assert(value);
-//
-//	return *value;
-//}
 
 // Pushes value of 'ImVec?' component, indexed by integer [0..?] or string 'x', 'y', ...
 template<typename T>
@@ -99,11 +86,6 @@ static int LS_value_ImVec_tostring(lua_State* state);
 template<typename T>
 static int LS_PushImVec(lua_State* state, const T& value)
 {
-	//T* valueptr = static_cast<T*>(LS_CreateTypedUserData(state, LS_GetImVecUserDataType<T>()));
-	//assert(valueptr);
-
-	//*valueptr = value;
-
 	T& newvalue = LS_NewImVecUserData<T>(state);
 	newvalue = value;
 
