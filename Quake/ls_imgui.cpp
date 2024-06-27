@@ -106,7 +106,7 @@ static int LS_PushImVec(lua_State* state, const T& value)
 }
 
 #define LS_DEFINE_IMVEC_TYPE(COMPONENTS) \
-	constexpr LS_UserDataType<ImVec##COMPONENTS> ls_imvec##COMPONENTS##_type("imv" #COMPONENTS); \
+	constexpr LS_UserDataType<ImVec##COMPONENTS> ls_imvec##COMPONENTS##_type("ImVec"#COMPONENTS); \
 	template<> const char* LS_GetImVecUserDataName<ImVec##COMPONENTS>() { return "ImVec"#COMPONENTS; } \
 	template<> ImVec##COMPONENTS& LS_NewImVecUserData(lua_State* state) { return ls_imvec##COMPONENTS##_type.New(state); } \
 	template<> ImVec##COMPONENTS& LS_GetImVecValue(lua_State* state, int index) { return ls_imvec##COMPONENTS##_type.GetValue(state, index); } \
@@ -162,7 +162,7 @@ struct LS_TextBuffer
 	size_t size;
 };
 
-constexpr LS_UserDataType<LS_TextBuffer> ls_imguitextbuffer_type("imtb");
+constexpr LS_UserDataType<LS_TextBuffer> ls_imguitextbuffer_type("ImGuiTextBuffer");
 
 static int LS_value_TextBuffer_gc(lua_State* state)
 {
@@ -328,7 +328,7 @@ static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserData
 	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
 
 
-constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("imvp");
+constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport");
 
 constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewport_members =
 {
@@ -344,7 +344,7 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewp
 #undef LS_IMGUI_VIEWPORT_MEMBER
 };
 
-constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("imst");
+constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("ImGuiStyle");
 
 constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 51> ls_imguistyle_members =
 {

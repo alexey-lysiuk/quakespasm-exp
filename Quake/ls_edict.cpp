@@ -33,7 +33,7 @@ const char* ED_GetFieldNameByOffset(int offset);
 const char* SV_GetEntityName(edict_t* entity);
 } // extern "C"
 
-constexpr LS_UserDataType<int> ls_edict_type("edct");
+constexpr LS_UserDataType<int> ls_edict_type("edict");
 
 //
 // Expose edict_t as 'edict' userdata
