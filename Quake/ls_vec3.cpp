@@ -359,7 +359,7 @@ static int LS_global_vector_new(lua_State* state)
 {
 	LS_Vector<N> result;
 
-	for (int i = 0; i < N; ++i)
+	for (size_t i = 0; i < N; ++i)
 		result[i] = luaL_optnumber(state, i + 1, 0.f);
 
 	return LS_PushVectorValue(state, result);
