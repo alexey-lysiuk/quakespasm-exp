@@ -164,11 +164,24 @@ static int LS_value_vec3_newindex(lua_State* state)
 // Pushes string built from 'vec3' value
 static int LS_value_vec3_tostring(lua_State* state)
 {
-	char buf[64];
 	vec_t* value = LS_GetVec3Value(state, 1);
-	int length = q_snprintf(buf, sizeof buf, "%.1f %.1f %.1f", value[0], value[1], value[2]);
+	assert(value);
 
-	lua_pushlstring(state, buf, length);
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	for (size_t i = 0; i < 3; ++i)
+	{
+		char numbuf[32];
+		const int numlen = lua_number2str(numbuf, sizeof numbuf, value[i]);
+
+		if (i > 0)
+			luaL_addlstring(&buffer, " ", 1);
+
+		luaL_addlstring(&buffer, numbuf, numlen);
+	}
+
+	luaL_pushresult(&buffer);
 	return 1;
 }
 
