@@ -78,10 +78,10 @@ public:
 int LS_GetVectorComponent(lua_State* state, int index, int componentcount);
 
 typedef float vec_t;
-void LS_InitVec3Type(lua_State* state);
 void LS_PushVec3Value(lua_State* state, const vec_t* value);
 vec_t* LS_GetVec3Value(lua_State* state, int index);
 
+void LS_InitVectorType(lua_State* state);
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
 
