@@ -21,8 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <cstdint>
-
 extern "C"
 {
 #include "lua.h"
@@ -40,26 +38,29 @@ void LS_LoadScript(lua_State* state, const char* filename);
 class LS_TypelessUserDataType
 {
 public:
-	constexpr LS_TypelessUserDataType(const char (&fourcc)[5], const size_t size)
-	: fourcc((fourcc[0] << 24) | (fourcc[1] << 16) | (fourcc[2] << 8) | fourcc[3])
-	, size(uint32_t(size))
+	constexpr LS_TypelessUserDataType(const char* const name, const size_t size)
+	: name(name)
+	, size(size)
 	{
 	}
+
+	const char* const GetName() const { return name; }
+	const size_t GetSize() const { return size; }
 
 	void* NewPtr(lua_State* state) const;
 	void* GetValuePtr(lua_State* state, int index) const;
 
 protected:
-	uint32_t fourcc;
-	uint32_t size;
+	const char* name;
+	size_t size;
 };
 
 template <typename T>
 class LS_UserDataType : public LS_TypelessUserDataType
 {
 public:
-	constexpr explicit LS_UserDataType(const char (&fourcc)[5])
-	: LS_TypelessUserDataType(fourcc, sizeof(fourcc) + sizeof(T))
+	constexpr LS_UserDataType(const char* const name)
+	: LS_TypelessUserDataType(name, sizeof(void*) + sizeof(T))
 	{
 	}
 

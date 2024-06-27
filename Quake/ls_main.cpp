@@ -82,10 +82,10 @@ static void LS_tempfree(void* ptr)
 
 void* LS_TypelessUserDataType::NewPtr(lua_State* state) const
 {
-	uint32_t* result = static_cast<uint32_t*>(lua_newuserdatauv(state, size, 0));
+	const LS_TypelessUserDataType** result = static_cast<const LS_TypelessUserDataType**>(lua_newuserdatauv(state, size, 0));
 	assert(result);
 
-	*result = fourcc;
+	*result = this;
 	result += 1;
 
 	return result;
@@ -95,20 +95,11 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 {
 	luaL_checktype(state, index, LUA_TUSERDATA);
 
-	uint32_t* result = static_cast<uint32_t*>(lua_touserdata(state, index));
-	assert(result);
+	const LS_TypelessUserDataType** result = static_cast<const LS_TypelessUserDataType**>(lua_touserdata(state, index));
+	assert(result && *result);
 
-	if (fourcc != *result)
-	{
-		char expected[5], actual[5];
-
-		memcpy(expected, &fourcc, 4);
-		expected[4] = '\0';
-		memcpy(actual, result, 4);
-		actual[4] = '\0';
-
-		luaL_error(state, "invalid userdata type, expected '%s', got '%s'", expected, actual);
-	}
+	if (*result != this)
+		luaL_error(state, "invalid userdata type, expected '%s', got '%s'", name, (*result)->name);
 
 	result += 1;
 

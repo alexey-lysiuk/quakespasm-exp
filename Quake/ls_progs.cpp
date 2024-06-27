@@ -28,7 +28,7 @@ extern "C"
 #include "quakedef.h"
 }
 
-constexpr LS_UserDataType<int> ls_function_type("func");
+constexpr LS_UserDataType<int> ls_function_type("function");
 
 // Gets pointer to dfunction_t from 'function' userdata
 static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
