@@ -329,13 +329,34 @@ static void LS_InitVectorType(lua_State* state)
 	lua_setglobal(state, LS_GetVectorUserDataType<N>().GetName());
 }
 
+static LS_Vector3 LS_Vector3CrossProduct(const LS_Vector3& left, const LS_Vector3& right)
+{
+	LS_Vector3 result;
+
+	result[0] = left[1] * right[2] - left[2] * right[1];
+	result[1] = left[2] * right[0] - left[0] * right[2];
+	result[2] = left[0] * right[1] - left[1] * right[0];
+
+	return result;
+}
+
+// Pushes new 'vec3' userdata which value is a cross product of functions arguments
+static int LS_value_vector3_cross(lua_State* state)
+{
+	return LS_VectorBinaryOperation<3>(state, LS_Vector3CrossProduct);
+}
+
 void LS_InitVectorType(lua_State* state)
 {
 	LS_InitVectorType<2>(state);
 	LS_InitVectorType<3>(state);
 	LS_InitVectorType<4>(state);
 
-	// TODO: cross product for vec3
+	lua_getglobal(state, "vec3");
+	lua_pushstring(state, "cross");
+	lua_pushcfunction(state, LS_value_vector3_cross);
+	lua_rawset(state, -3);
+	lua_pop(state, 1);  // remove 'vec3' table
 }
 
 #endif // USE_LUA_SCRIPTING
