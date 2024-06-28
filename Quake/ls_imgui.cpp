@@ -37,7 +37,6 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
-#ifdef USE_IMGUI
 template <>
 LS_Vector2& LS_Vector2::operator=(const ImVec2& other)
 {
@@ -79,7 +78,6 @@ LS_Vector4::operator ImVec4() const
 {
 	return ImVec4(value[0], value[1], value[2], value[3]);
 }
-#endif // USE_IMGUI
 
 
 struct LS_TextBuffer
