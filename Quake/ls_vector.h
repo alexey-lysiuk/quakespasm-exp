@@ -36,7 +36,7 @@ public:
 	LS_Vector& operator=(const LS_Vector&) = default;
 	LS_Vector& operator=(LS_Vector&&) = default;
 
-	LS_Vector(const float (&array)[N])
+	explicit LS_Vector(const float (&array)[N])
 	{
 		memcpy(value, array, sizeof value);
 	}
