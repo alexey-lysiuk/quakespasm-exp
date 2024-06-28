@@ -21,12 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-extern "C"
-{
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-} // extern "C"
+#include "lua.hpp"
 
 lua_State* LS_GetState(void);
 

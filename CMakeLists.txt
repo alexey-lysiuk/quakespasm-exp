@@ -210,6 +210,7 @@ set(LUA_SOURCES
 	${LUA_DIR}/ltm.c
 	${LUA_DIR}/ltm.h
 	${LUA_DIR}/lua.h
+	${LUA_DIR}/lua.hpp
 	${LUA_DIR}/luaconf.h
 	${LUA_DIR}/lualib.h
 	${LUA_DIR}/lundump.c
