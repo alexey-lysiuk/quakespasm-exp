@@ -34,7 +34,7 @@ local imSetNextWindowSize <const> = ImGui.SetNextWindowSize
 local imSetNextWindowSizeConstraints <const> = ImGui.SetNextWindowSizeConstraints
 local imSpacing <const> = ImGui.Spacing
 local imText <const> = ImGui.Text
-local imVec2 <const> = ImGui.ImVec2
+local imVec2 <const> = vec2.new
 
 local imWindowFlags <const> = ImGui.WindowFlags
 local imCondFirstUseEver <const> = ImGui.Cond.FirstUseEver

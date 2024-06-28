@@ -24,6 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cassert>
 #include <cstring>
 
+#ifdef USE_IMGUI
+struct ImVec2;
+struct ImVec4;
+#endif // USE_IMGUI
+
 template <size_t N>
 class LS_Vector
 {
@@ -58,6 +63,23 @@ public:
 		assert(component < N);
 		return value[component];
 	}
+
+	static LS_Vector Zero()
+	{
+		LS_Vector result;
+		memset(result.value, 0, sizeof result.value);
+		return result;
+	}
+
+#ifdef USE_IMGUI
+	explicit LS_Vector(const ImVec2& other);
+	LS_Vector& operator=(const ImVec2& other);
+	operator ImVec2() const;
+
+	explicit LS_Vector(const ImVec4& other);
+	LS_Vector& operator=(const ImVec4& other);
+	operator ImVec4() const;
+#endif // USE_IMGUI
 
 private:
 	float value[N];
@@ -131,8 +153,6 @@ LS_Vector<N>& LS_GetVectorValue(lua_State* state, int index);
 
 template <size_t N>
 int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value);
-
-int LS_GetVectorComponent(lua_State* state, int index, int componentcount);
 
 void LS_InitVectorType(lua_State* state);
 

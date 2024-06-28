@@ -41,7 +41,7 @@ local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imText <const> = ImGui.Text
 local imTextBuffer <const> = ImGui.TextBuffer
-local imVec2 <const> = ImGui.ImVec2
+local imVec2 <const> = vec2.new
 
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
 local imTableFlags <const> = ImGui.TableFlags
