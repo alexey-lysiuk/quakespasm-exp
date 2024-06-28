@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cassert>
 
 #include "ls_common.h"
+#include "ls_vector.h"
 
 extern "C"
 {
@@ -71,7 +72,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_vector:
-		LS_PushVec3Value(state, value->vector);
+		LS_PushVectorValue(state, LS_Vector3(value->vector));
 		break;
 
 	case ev_entity:

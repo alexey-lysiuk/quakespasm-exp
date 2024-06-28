@@ -70,7 +70,8 @@ set(COMMON_SOURCES
 	Quake/ls_imgui_funcs.h
 	Quake/ls_main.cpp
 	Quake/ls_progs.cpp
-	Quake/ls_vec3.cpp
+	Quake/ls_vector.cpp
+	Quake/ls_vector.h
 	Quake/main_sdl.c
 	Quake/mathlib.c
 	Quake/mathlib.h

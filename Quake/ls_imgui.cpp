@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #if defined USE_LUA_SCRIPTING && defined USE_IMGUI
 
 #include "ls_imgui.h"
+#include "ls_vector.h"
 
 // TODO: Find better place for this WITHOUT altering ImGui source code
 #define IM_VEC4_CLASS_EXTRA \
@@ -35,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "quakedef.h"
-#include "common.h"
 }
 
 #include "frozen/string.h"

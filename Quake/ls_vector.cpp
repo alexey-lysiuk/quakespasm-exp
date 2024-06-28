@@ -20,152 +20,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef USE_LUA_SCRIPTING
 
 #include <cassert>
-#include <utility>
 
 #include "ls_common.h"
-
-extern "C"
-{
-#include "quakedef.h"
-}
-
-
-// Converts vector type component at given stack index to integer index [0..componentcount)
-// On Lua side, valid numeric component indix start with one, [1..componentcount]
-int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
-{
-	assert(componentcount > 1 && componentcount < 5);
-
-	const int comptype = lua_type(state, index);
-	int component = -1;
-
-	if (comptype == LUA_TSTRING)
-	{
-		const char* compstr = lua_tostring(state, 2);
-		assert(compstr);
-
-		char compchar = compstr[0];
-
-		if (compchar != '\0' && compstr[1] == '\0')
-			component = compchar - 'x';
-
-		if (componentcount == 4 && component == -1)
-			component = 3;  // 'w' -> [3]
-
-		if (component < 0 || component >= componentcount)
-			luaL_error(state, "invalid vector component '%s'", compstr);
-	}
-	else if (comptype == LUA_TNUMBER)
-	{
-		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
-
-		if (component < 0 || component >= componentcount)
-			luaL_error(state, "vector component %d is out of range [1..%d]", component + 1, componentcount);  // on Lua side, indices start with 1
-	}
-	else
-		luaL_error(state, "invalid type %s of vector component", lua_typename(state, comptype));
-
-	assert(component >= 0 && component <= componentcount);
-	return component;
-}
+#include "ls_vector.h"
 
 
 template <size_t N>
-class LS_Vector
-{
-public:
-	using UserDataType = LS_UserDataType<LS_Vector<N>>;
-	static const UserDataType& GetUserDataType();
+const LS_UserDataType<LS_Vector<N>>& LS_GetVectorUserDataType();
 
-	const float operator[](const size_t component) const
-	{
-		assert(component < N);
-		return value[component];
-	}
-
-	float& operator[](const size_t component)
-	{
-		assert(component < N);
-		return value[component];
-	}
-
-//	LS_Vector<components>& operator=(const float (&newvalue)[components])
-//	{
-//		memcpy(value, newvalue, sizeof(float) * components);
-//		return *this;
-//	}
-
-//	const float* data() const { return value; }
-//	float* data() { return value; }
-
-private:
-	float value[N];
-};
-
-template <size_t N>
-const LS_Vector<N> operator+(const LS_Vector<N>& left, const LS_Vector<N>& right)
-{
-	LS_Vector<N> result;
-
-	for (size_t i = 0; i < N; ++i)
-		result[i] = left[i] + right[i];
-
-	return result;
-}
-
-template <size_t N>
-const LS_Vector<N> operator-(const LS_Vector<N>& left, const LS_Vector<N>& right)
-{
-	LS_Vector<N> result;
-
-	for (size_t i = 0; i < N; ++i)
-		result[i] = left[i] - right[i];
-
-	return result;
-}
-
-template <size_t N>
-const bool operator==(const LS_Vector<N>& left, const LS_Vector<N>& right)
-{
-	// TODO: compare with some epsilon
-
-	for (size_t i = 0; i < N; ++i)
-		if (left[i] != right[i])
-			return false;
-
-	return true;
-}
-
-
-#define LS_DEFINE_VECTOR_TYPE(COMPONENTS) \
-	using LS_Vector##COMPONENTS = LS_Vector<COMPONENTS>; \
+#define LS_DEFINE_VECTOR_USER_DATA_TYPE(COMPONENTS) \
 	constexpr LS_UserDataType<LS_Vector##COMPONENTS> ls_vec##COMPONENTS##_type("vec" #COMPONENTS); \
-	template <> const LS_Vector##COMPONENTS::UserDataType& LS_Vector##COMPONENTS::GetUserDataType() { return ls_vec##COMPONENTS##_type; }
+	template <> const LS_UserDataType<LS_Vector<COMPONENTS>>& LS_GetVectorUserDataType() { return ls_vec##COMPONENTS##_type; } \
+	template <> LS_Vector<COMPONENTS>& LS_GetVectorValue(lua_State* state, int index) { return LS_GetVectorUserDataType<COMPONENTS>().GetValue(state, index); }
 
-LS_DEFINE_VECTOR_TYPE(2)
-LS_DEFINE_VECTOR_TYPE(3)
-LS_DEFINE_VECTOR_TYPE(4)
+LS_DEFINE_VECTOR_USER_DATA_TYPE(2)
+LS_DEFINE_VECTOR_USER_DATA_TYPE(3)
+LS_DEFINE_VECTOR_USER_DATA_TYPE(4)
+
+#undef LS_DEFINE_VECTOR_USER_DATA_TYPE
 
 
-// TODO: remove this!
-// Gets value of 'vec3' from userdata at given index
-vec_t* LS_GetVec3Value(lua_State* state, int index)
-{
-	return &ls_vec3_type.GetValue(state, index)[0];
-}
+//// TODO: remove this!
+//// Gets value of 'vec3' from userdata at given index
+//vec_t* LS_GetVec3Value(lua_State* state, int index)
+//{
+//	return &ls_vec3_type.GetValue(state, index)[0];
+//}
 
 
 //
-// Expose 'vec?' userdata
+// Expose 'vecN' userdata
 //
-
-template <size_t N>
-int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value);
 
 template <size_t N, typename F>
 int LS_VectorBinaryOperation(lua_State* state, F func)
 {
-	const auto& userdatatype = LS_Vector<N>::GetUserDataType();
+	const auto& userdatatype = LS_GetVectorUserDataType<N>();
 	const LS_Vector<N>& left = userdatatype.GetValue(state, 1);
 	const LS_Vector<N>& right = userdatatype.GetValue(state, 2);
 
@@ -247,7 +137,7 @@ static int LS_value_vector_concat(lua_State* state)
 template <size_t N>
 static int LS_value_vector_eq(lua_State* state)
 {
-	const auto& userdatatype = LS_Vector<N>::GetUserDataType();
+	const auto& userdatatype = LS_GetVectorUserDataType<N>();
 	const LS_Vector<N>& left = userdatatype.GetValue(state, 1);
 	const LS_Vector<N>& right = userdatatype.GetValue(state, 2);
 
@@ -282,7 +172,7 @@ static int LS_value_vector_eq(lua_State* state)
 template <size_t N>
 static int LS_value_vector_tostring(lua_State* state)
 {
-	const auto& userdatatype = LS_Vector<N>::GetUserDataType();
+	const auto& userdatatype = LS_GetVectorUserDataType<N>();
 	const LS_Vector<N>& value = userdatatype.GetValue(state, 1);
 
 	luaL_Buffer buffer;
@@ -307,7 +197,7 @@ static int LS_value_vector_tostring(lua_State* state)
 template <size_t N>
 int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 {
-	const auto& userdatatype = value.GetUserDataType();
+	const auto& userdatatype = LS_GetVectorUserDataType<N>();
 
 	LS_Vector<N>& newvalue = userdatatype.New(state);
 	newvalue = value;
@@ -338,15 +228,15 @@ int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 	return 1;
 }
 
-// TODO: Remove this!
-void LS_PushVec3Value(lua_State* state, const vec_t* value)
-{
-	LS_Vector3 tempvalue;
-	tempvalue[0] = value[0];
-	tempvalue[1] = value[1];
-	tempvalue[2] = value[2];
-	LS_PushVectorValue(state, tempvalue);
-}
+//// TODO: Remove this!
+//void LS_PushVec3Value(lua_State* state, const vec_t* value)
+//{
+//	LS_Vector3 tempvalue;
+//	tempvalue[0] = value[0];
+//	tempvalue[1] = value[1];
+//	tempvalue[2] = value[2];
+//	LS_PushVectorValue(state, tempvalue);
+//}
 
 
 //
@@ -425,9 +315,48 @@ static void LS_InitVectorType(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	const char* vectortypename = LS_Vector<N>::GetUserDataType().GetName();
+	const char* vectortypename = LS_GetVectorUserDataType<N>().GetName();
 	luaL_newlib(state, functions);
 	lua_setglobal(state, vectortypename);
+}
+
+// Converts vector type component at given stack index to integer index [0..componentcount)
+// On Lua side, valid numeric component indix start with one, [1..componentcount]
+int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
+{
+	assert(componentcount > 1 && componentcount < 5);
+
+	const int comptype = lua_type(state, index);
+	int component = -1;
+
+	if (comptype == LUA_TSTRING)
+	{
+		const char* compstr = lua_tostring(state, 2);
+		assert(compstr);
+
+		char compchar = compstr[0];
+
+		if (compchar != '\0' && compstr[1] == '\0')
+			component = compchar - 'x';
+
+		if (componentcount == 4 && component == -1)
+			component = 3;  // 'w' -> [3]
+
+		if (component < 0 || component >= componentcount)
+			luaL_error(state, "invalid vector component '%s'", compstr);
+	}
+	else if (comptype == LUA_TNUMBER)
+	{
+		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
+
+		if (component < 0 || component >= componentcount)
+			luaL_error(state, "vector component %d is out of range [1..%d]", component + 1, componentcount);  // on Lua side, indices start with 1
+	}
+	else
+		luaL_error(state, "invalid type %s of vector component", lua_typename(state, comptype));
+
+	assert(component >= 0 && component <= componentcount);
+	return component;
 }
 
 void LS_InitVectorType(lua_State* state)

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cassert>
 
 #include "ls_common.h"
+#include "ls_vector.h"
 
 extern "C"
 {
@@ -113,12 +114,12 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 
 static int LS_global_player_setpos(lua_State* state)
 {
-	vec_t* pos = LS_GetVec3Value(state, 1);
+	const LS_Vector3& pos = LS_GetVectorValue<3>(state, 1);
 	char anglesstr[64] = { '\0' };
 
 	if (lua_type(state, 2) == LUA_TUSERDATA)
 	{
-		vec_t* angles = LS_GetVec3Value(state, 2);
+		const LS_Vector3& angles = LS_GetVectorValue<3>(state, 2);
 		q_snprintf(anglesstr, sizeof anglesstr, " %.02f %.02f %.02f", angles[0], angles[1], angles[2]);
 	}
 
