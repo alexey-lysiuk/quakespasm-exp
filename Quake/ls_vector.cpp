@@ -115,10 +115,24 @@ template <size_t N>
 static int LS_value_vector_mul(lua_State* state)
 {
 	const LS_Vector<N>& left = LS_GetVectorValue<N>(state, 1);
-	const lua_Number right = luaL_checknumber(state, 2);
+	const int righttype = lua_type(state, 2);
 
-	const LS_Vector<N> result = left * right;
-	return LS_PushVectorValue(state, result);
+	if (LUA_TNUMBER == righttype)
+	{
+		const lua_Number right = luaL_checknumber(state, 2);
+		return LS_PushVectorValue(state, left * right);
+	}
+	else if (LUA_TUSERDATA == righttype)
+	{
+		const LS_Vector<N>& right = LS_GetVectorValue<N>(state, 2);
+		lua_pushnumber(state, left * right);
+		return 1;
+	}
+	else
+		luaL_error(state, "invalid argument of type %s passed to vector multiplication, expected 'number' or '%s'",
+			lua_typename(state, righttype), LS_GetVectorUserDataType<N>().GetName());
+
+	return 0;
 }
 
 // Pushes result of 'vecN' scale by a reciprocal of a number (the second argument)
