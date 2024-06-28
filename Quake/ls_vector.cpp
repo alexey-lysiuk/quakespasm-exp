@@ -31,7 +31,8 @@ const LS_UserDataType<LS_Vector<N>>& LS_GetVectorUserDataType();
 #define LS_DEFINE_VECTOR_USER_DATA_TYPE(COMPONENTS) \
 	constexpr LS_UserDataType<LS_Vector##COMPONENTS> ls_vec##COMPONENTS##_type("vec" #COMPONENTS); \
 	template <> const LS_UserDataType<LS_Vector<COMPONENTS>>& LS_GetVectorUserDataType() { return ls_vec##COMPONENTS##_type; } \
-	template <> LS_Vector<COMPONENTS>& LS_GetVectorValue(lua_State* state, int index) { return LS_GetVectorUserDataType<COMPONENTS>().GetValue(state, index); }
+	template <> LS_Vector<COMPONENTS>& LS_GetVectorValue(lua_State* state, int index) { return LS_GetVectorUserDataType<COMPONENTS>().GetValue(state, index); } \
+	template int LS_PushVectorValue<COMPONENTS>(lua_State* state, const LS_Vector<COMPONENTS>& value);
 
 LS_DEFINE_VECTOR_USER_DATA_TYPE(2)
 LS_DEFINE_VECTOR_USER_DATA_TYPE(3)
