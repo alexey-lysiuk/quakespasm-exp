@@ -40,14 +40,6 @@ LS_DEFINE_VECTOR_USER_DATA_TYPE(4)
 #undef LS_DEFINE_VECTOR_USER_DATA_TYPE
 
 
-//// TODO: remove this!
-//// Gets value of 'vec3' from userdata at given index
-//vec_t* LS_GetVec3Value(lua_State* state, int index)
-//{
-//	return &ls_vec3_type.GetValue(state, index)[0];
-//}
-
-
 //
 // Expose 'vecN' userdata
 //
@@ -63,60 +55,55 @@ int LS_VectorBinaryOperation(lua_State* state, F func)
 	return LS_PushVectorValue(state, result);
 }
 
-// Pushes result of two 'vec?' values addition
+// Pushes result of two 'vecN' values addition
 template <size_t N>
 static int LS_value_vector_add(lua_State* state)
 {
 	return LS_VectorBinaryOperation<N>(state, operator+<N>);
 }
 
-// Pushes result of two 'vec?' values subtraction
+// Pushes result of two 'vecN' values subtraction
 template <size_t N>
 static int LS_value_vector_sub(lua_State* state)
 {
 	return LS_VectorBinaryOperation<N>(state, operator-<N>);
 }
 
-//// Pushes result of 'vec3' scale by a number (the second argument)
-//static int LS_value_vec3_mul(lua_State* state)
-//{
-//	vec_t* value = LS_GetVec3Value(state, 1);
-//	lua_Number scale = luaL_checknumber(state, 2);
-//
-//	vec3_t result;
-//	VectorScale(value, scale, result);
-//
-//	LS_PushVec3Value(state, result);
-//	return 1;
-//}
-//
-//// Pushes result of 'vec3' scale by a reciprocal of a number (the second argument)
-//static int LS_value_vec3_div(lua_State* state)
-//{
-//	vec_t* value = LS_GetVec3Value(state, 1);
-//	lua_Number scale = 1.f / luaL_checknumber(state, 2);
-//
-//	vec3_t result;
-//	VectorScale(value, scale, result);
-//
-//	LS_PushVec3Value(state, result);
-//	return 1;
-//}
-//
-//// Pushes result of 'vec3' inversion
-//static int LS_value_vec3_unm(lua_State* state)
-//{
-//	vec_t* value = LS_GetVec3Value(state, 1);
-//
-//	vec3_t result;
-//	VectorCopy(value, result);
-//	VectorInverse(result);
-//
-//	LS_PushVec3Value(state, result);
-//	return 1;
-//}
+// Pushes result of 'vecN' scale by a number (the second argument)
+template <size_t N>
+static int LS_value_vector_mul(lua_State* state)
+{
+	const LS_Vector<N>& left = LS_GetVectorValue<N>(state, 1);
+	const lua_Number right = luaL_checknumber(state, 2);
 
-// Pushes result of 'vec?' value concatenation with some other value
+	const LS_Vector<N> result = left * right;
+	return LS_PushVectorValue(state, result);
+}
+
+// Pushes result of 'vecN' scale by a reciprocal of a number (the second argument)
+template <size_t N>
+static int LS_value_vector_div(lua_State* state)
+{
+	const LS_Vector<N>& left = LS_GetVectorValue<N>(state, 1);
+	const lua_Number right = luaL_checknumber(state, 2);
+
+	const LS_Vector<N> result = left * (1.f / right);
+	return LS_PushVectorValue(state, result);
+}
+
+// Pushes result of 'vecN' inversion
+template <size_t N>
+static int LS_value_vector_unm(lua_State* state)
+{
+	LS_Vector<N> result = LS_GetVectorValue<N>(state, 1);
+
+	for (size_t i = 0; i < N; ++i)
+		result[i] = -result[i];
+
+	return LS_PushVectorValue(state, result);
+}
+
+// Pushes result of 'vecN' value concatenation with some other value
 template <size_t N>
 static int LS_value_vector_concat(lua_State* state)
 {
@@ -133,7 +120,7 @@ static int LS_value_vector_concat(lua_State* state)
 	return 1;
 }
 
-// Pushes result of two 'vec?' values comparison for equality
+// Pushes result of two 'vecN' values comparison for equality
 template <size_t N>
 static int LS_value_vector_eq(lua_State* state)
 {
@@ -146,34 +133,34 @@ static int LS_value_vector_eq(lua_State* state)
 	return 1;
 }
 
-//// Pushes value of 'vec3' component, indexed by integer [0..2] or string 'x', 'y', 'z'
-//static int LS_value_vec3_index(lua_State* state)
-//{
-//	vec_t* value = LS_GetVec3Value(state, 1);
-//	int component = LS_Vec3GetComponent(state, 2);
-//
-//	lua_pushnumber(state, value[component]);
-//	return 1;
-//}
-//
-//// Sets new value of 'vec3_t' component, indexed by integer [0..2] or string 'x', 'y', 'z'
-//static int LS_value_vec3_newindex(lua_State* state)
-//{
-//	vec_t* value = LS_GetVec3Value(state, 1);
-//	int component = LS_Vec3GetComponent(state, 2);
-//
-//	lua_Number compvalue = luaL_checknumber(state, 3);
-//	value[component] = compvalue;
-//
-//	return 0;
-//}
+// Pushes value of 'vecN' component, indexed by integer [0..N-1] or string 'x', 'y' (, 'z' (, 'w'))
+template <size_t N>
+static int LS_value_vector_index(lua_State* state)
+{
+	const LS_Vector<N>& value = LS_GetVectorValue<N>(state, 1);
+	const size_t component = LS_GetVectorComponent(state, 2, 3);
 
-// Pushes string built from 'vec?' value
+	lua_pushnumber(state, value[component]);
+	return 1;
+}
+
+// Sets new value of 'vecN' component, indexed by integer [0..N-1] or string 'x', 'y' (, 'z' (, 'w'))
+template <size_t N>
+static int LS_value_vector_newindex(lua_State* state)
+{
+	LS_Vector<N>& value = LS_GetVectorValue<N>(state, 1);
+	const size_t component = LS_GetVectorComponent(state, 2, 3);
+
+	lua_Number compvalue = luaL_checknumber(state, 3);
+	value[component] = compvalue;
+	return 0;
+}
+
+// Pushes string built from 'vecN' value
 template <size_t N>
 static int LS_value_vector_tostring(lua_State* state)
 {
-	const auto& userdatatype = LS_GetVectorUserDataType<N>();
-	const LS_Vector<N>& value = userdatatype.GetValue(state, 1);
+	const LS_Vector<N>& value = LS_GetVectorValue<N>(state, 1);
 
 	luaL_Buffer buffer;
 	luaL_buffinit(state, &buffer);
@@ -193,7 +180,7 @@ static int LS_value_vector_tostring(lua_State* state)
 	return 1;
 }
 
-// Creates and pushes 'vec?' userdata built from vec3_t value
+// Creates and pushes 'vecN' userdata built from LS_Vector value
 template <size_t N>
 int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 {
@@ -202,21 +189,21 @@ int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 	LS_Vector<N>& newvalue = userdatatype.New(state);
 	newvalue = value;
 
-	// Create and set 'vec3_t' metatable
+	// Create and set 'vecN' metatable
 	static const luaL_Reg functions[] =
 	{
 		// Math functions
 		{ "__add", LS_value_vector_add<N> },
 		{ "__sub", LS_value_vector_sub<N> },
-//		{ "__mul", LS_value_vec3_mul },
-//		{ "__div", LS_value_vec3_div },
-//		{ "__unm", LS_value_vec3_unm },
+		{ "__mul", LS_value_vector_mul<N> },
+		{ "__div", LS_value_vector_div<N> },
+		{ "__unm", LS_value_vector_unm<N> },
 
 		// Other functions
 		{ "__concat", LS_value_vector_concat<N> },
 		{ "__eq", LS_value_vector_eq<N> },
-//		{ "__index", LS_value_vec3_index },
-//		{ "__newindex", LS_value_vec3_newindex },
+		{ "__index", LS_value_vector_index<N> },
+		{ "__newindex", LS_value_vector_newindex<N> },
 		{ "__tostring", LS_value_vector_tostring<N> },
 		{ NULL, NULL }
 	};
@@ -228,29 +215,19 @@ int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 	return 1;
 }
 
-//// TODO: Remove this!
-//void LS_PushVec3Value(lua_State* state, const vec_t* value)
-//{
-//	LS_Vector3 tempvalue;
-//	tempvalue[0] = value[0];
-//	tempvalue[1] = value[1];
-//	tempvalue[2] = value[2];
-//	LS_PushVectorValue(state, tempvalue);
-//}
-
 
 //
-// Helper functions for 'vec3' values
+// Helper functions for 'vecN' values
 //
 
-// Pushes new 'vec?' userdata built from individual component values
+// Pushes new 'vecN' userdata built from individual component values
 template <size_t N>
 static int LS_global_vector_new(lua_State* state)
 {
 	LS_Vector<N> result;
 
 	for (size_t i = 0; i < N; ++i)
-		result[i] = luaL_optnumber(state, i + 1, 0.f);
+		result[i] = luaL_optnumber(state, int(i + 1), 0.f);
 
 	return LS_PushVectorValue(state, result);
 }
@@ -266,58 +243,50 @@ const LS_Vector<N> LS_VectorMidPoint(const LS_Vector<N>& min, const LS_Vector<N>
 	return result;
 }
 
-// Pushes new 'vec?' userdata which value is a mid point of functions arguments
+// Pushes new 'vecN' userdata which value is a mid point of functions arguments
 template <size_t N>
 static int LS_global_vector_mid(lua_State* state)
 {
 	return LS_VectorBinaryOperation<N>(state, LS_VectorMidPoint<N>);
 }
 
-//// Pushes new 'vec3' userdata which value is a copy of its argument
-//static int LS_global_vec3_copy(lua_State* state)
-//{
-//	vec_t* result = LS_GetVec3Value(state, 1);
-//	LS_PushVec3Value(state, result);
-//	return 1;
-//}
-//
-//// Pushes new 'vec3' userdata which value is a cross product of functions arguments
-//static int LS_global_vec3_cross(lua_State* state)
-//{
-//	return LS_Vec3Func(state, CrossProduct);
-//}
-//
-//// Pushes a number which value is a dot product of functions arguments
-//static int LS_global_vec3_dot(lua_State* state)
-//{
-//	vec_t* v1 = LS_GetVec3Value(state, 1);
-//	vec_t* v2 = LS_GetVec3Value(state, 2);
-//
-//	vec_t result = DotProduct(v1, v2);
-//
-//	lua_pushnumber(state, result);
-//	return 1;
-//}
+// Pushes new 'vecN' userdata which value is a copy of its argument
+template <size_t N>
+static int LS_global_vector_copy(lua_State* state)
+{
+	const LS_Vector<N>& value = LS_GetVectorValue<N>(state, 1);
+	return LS_PushVectorValue(state, value);
+}
+
+// Pushes a number which value is a dot product of functions arguments
+template <size_t N>
+static int LS_global_vector_dot(lua_State* state)
+{
+	const LS_Vector<N>& left = LS_GetVectorValue<N>(state, 1);
+	const LS_Vector<N>& right = LS_GetVectorValue<N>(state, 2);
+
+	const float result = left * right;
+	lua_pushnumber(state, result);
+	return 1;
+}
 
 
-// Creates 'vec?' table with helper functions for 'vec?' values
+// Creates 'vecN' table with helper functions for 'vecN' values
 
 template <size_t N>
 static void LS_InitVectorType(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-//		{ "copy", LS_global_vec3_copy },
-//		{ "cross", LS_global_vec3_cross },
-//		{ "dot", LS_global_vec3_dot },
+		{ "copy", LS_global_vector_copy<N> },
+		{ "dot", LS_global_vector_dot<N> },
 		{ "mid", LS_global_vector_mid<N> },
 		{ "new", LS_global_vector_new<N> },
 		{ NULL, NULL }
 	};
 
-	const char* vectortypename = LS_GetVectorUserDataType<N>().GetName();
 	luaL_newlib(state, functions);
-	lua_setglobal(state, vectortypename);
+	lua_setglobal(state, LS_GetVectorUserDataType<N>().GetName());
 }
 
 // Converts vector type component at given stack index to integer index [0..componentcount)
@@ -364,6 +333,8 @@ void LS_InitVectorType(lua_State* state)
 	LS_InitVectorType<2>(state);
 	LS_InitVectorType<3>(state);
 	LS_InitVectorType<4>(state);
+
+	// TODO: cross product for vec3
 }
 
 #endif // USE_LUA_SCRIPTING

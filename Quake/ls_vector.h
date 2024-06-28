@@ -86,6 +86,28 @@ inline const LS_Vector<N> operator-(const LS_Vector<N>& left, const LS_Vector<N>
 }
 
 template <size_t N>
+inline float operator*(const LS_Vector<N>& left, const LS_Vector<N>& right)
+{
+	float result = 0.f;
+
+	for (size_t i = 0; i < N; ++i)
+		result += left[i] * right[i];
+
+	return result;
+}
+
+template <size_t N>
+inline const LS_Vector<N> operator*(const LS_Vector<N>& left, const float& right)
+{
+	LS_Vector<N> result;
+
+	for (size_t i = 0; i < N; ++i)
+		result[i] = left[i] * right;
+
+	return result;
+}
+
+template <size_t N>
 inline const bool operator==(const LS_Vector<N>& left, const LS_Vector<N>& right)
 {
 	// TODO: compare with some epsilon?
@@ -109,10 +131,6 @@ LS_Vector<N>& LS_GetVectorValue(lua_State* state, int index);
 
 template <size_t N>
 int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value);
-
-//typedef float vec_t;
-//void LS_PushVec3Value(lua_State* state, const vec_t* value);
-//vec_t* LS_GetVec3Value(lua_State* state, int index);
 
 int LS_GetVectorComponent(lua_State* state, int index, int componentcount);
 
