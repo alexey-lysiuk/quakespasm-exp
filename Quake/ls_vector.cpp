@@ -43,7 +43,7 @@ LS_DEFINE_VECTOR_USER_DATA_TYPE(4)
 
 // Converts vector type component at given stack index to integer index [0..componentcount)
 // On Lua side, valid numeric component indix start with one, [1..componentcount]
-int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
+static int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
 {
 	assert(componentcount > 1 && componentcount < 5);
 
