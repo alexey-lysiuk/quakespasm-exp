@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cassert>
 
 #include "ls_common.h"
+#include "ls_vector.h"
 
 extern "C"
 {
@@ -107,58 +108,18 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 }
 
 
-// Converts vector type component at given stack index to integer index [0..componentcount)
-// On Lua side, valid numeric component indix start with one, [1..componentcount]
-int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
-{
-	assert(componentcount > 1 && componentcount < 5);
-
-	int comptype = lua_type(state, index);
-	int component = -1;
-
-	if (comptype == LUA_TSTRING)
-	{
-		const char* compstr = lua_tostring(state, 2);
-		assert(compstr);
-
-		char compchar = compstr[0];
-
-		if (compchar != '\0' && compstr[1] == '\0')
-			component = compchar - 'x';
-
-		if (componentcount == 4 && component == -1)
-			component = 3;  // 'w' -> [3]
-
-		if (component < 0 || component >= componentcount)
-			luaL_error(state, "invalid vector component '%s'", compstr);
-	}
-	else if (comptype == LUA_TNUMBER)
-	{
-		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
-
-		if (component < 0 || component >= componentcount)
-			luaL_error(state, "vector component %d is out of range [1..%d]", component + 1, componentcount);  // on Lua side, indices start with 1
-	}
-	else
-		luaL_error(state, "invalid type %s of vector component", lua_typename(state, comptype));
-
-	assert(component >= 0 && component <= componentcount);
-	return component;
-}
-
-
 //
 // Expose 'player' global table with corresponding helper functions
 //
 
 static int LS_global_player_setpos(lua_State* state)
 {
-	vec_t* pos = LS_GetVec3Value(state, 1);
+	const LS_Vector3& pos = LS_GetVectorValue<3>(state, 1);
 	char anglesstr[64] = { '\0' };
 
 	if (lua_type(state, 2) == LUA_TUSERDATA)
 	{
-		vec_t* angles = LS_GetVec3Value(state, 2);
+		const LS_Vector3& angles = LS_GetVectorValue<3>(state, 2);
 		q_snprintf(anglesstr, sizeof anglesstr, " %.02f %.02f %.02f", angles[0], angles[1], angles[2]);
 	}
 
@@ -765,7 +726,7 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_setglobal(state, "host");
 	}
 
-	LS_InitVec3Type(state);
+	LS_InitVectorType(state);
 	LS_InitEdictType(state);
 	LS_InitProgsType(state);
 }
