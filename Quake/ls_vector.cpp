@@ -41,6 +41,46 @@ LS_DEFINE_VECTOR_USER_DATA_TYPE(4)
 #undef LS_DEFINE_VECTOR_USER_DATA_TYPE
 
 
+// Converts vector type component at given stack index to integer index [0..componentcount)
+// On Lua side, valid numeric component indix start with one, [1..componentcount]
+int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
+{
+	assert(componentcount > 1 && componentcount < 5);
+
+	const int comptype = lua_type(state, index);
+	int component = -1;
+
+	if (comptype == LUA_TSTRING)
+	{
+		const char* compstr = lua_tostring(state, 2);
+		assert(compstr);
+
+		char compchar = compstr[0];
+
+		if (compchar != '\0' && compstr[1] == '\0')
+			component = compchar - 'x';
+
+		if (componentcount == 4 && component == -1)
+			component = 3;  // 'w' -> [3]
+
+		if (component < 0 || component >= componentcount)
+			luaL_error(state, "invalid vector component '%s'", compstr);
+	}
+	else if (comptype == LUA_TNUMBER)
+	{
+		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
+
+		if (component < 0 || component >= componentcount)
+			luaL_error(state, "vector component %d is out of range [1..%d]", component + 1, componentcount);  // on Lua side, indices start with 1
+	}
+	else
+		luaL_error(state, "invalid type %s of vector component", lua_typename(state, comptype));
+
+	assert(component >= 0 && component <= componentcount);
+	return component;
+}
+
+
 //
 // Expose 'vecN' userdata
 //
@@ -273,7 +313,6 @@ static int LS_global_vector_dot(lua_State* state)
 
 
 // Creates 'vecN' table with helper functions for 'vecN' values
-
 template <size_t N>
 static void LS_InitVectorType(lua_State* state)
 {
@@ -288,45 +327,6 @@ static void LS_InitVectorType(lua_State* state)
 
 	luaL_newlib(state, functions);
 	lua_setglobal(state, LS_GetVectorUserDataType<N>().GetName());
-}
-
-// Converts vector type component at given stack index to integer index [0..componentcount)
-// On Lua side, valid numeric component indix start with one, [1..componentcount]
-int LS_GetVectorComponent(lua_State* state, int index, int componentcount)
-{
-	assert(componentcount > 1 && componentcount < 5);
-
-	const int comptype = lua_type(state, index);
-	int component = -1;
-
-	if (comptype == LUA_TSTRING)
-	{
-		const char* compstr = lua_tostring(state, 2);
-		assert(compstr);
-
-		char compchar = compstr[0];
-
-		if (compchar != '\0' && compstr[1] == '\0')
-			component = compchar - 'x';
-
-		if (componentcount == 4 && component == -1)
-			component = 3;  // 'w' -> [3]
-
-		if (component < 0 || component >= componentcount)
-			luaL_error(state, "invalid vector component '%s'", compstr);
-	}
-	else if (comptype == LUA_TNUMBER)
-	{
-		component = lua_tointeger(state, 2) - 1;  // on C side, indices start with 0
-
-		if (component < 0 || component >= componentcount)
-			luaL_error(state, "vector component %d is out of range [1..%d]", component + 1, componentcount);  // on Lua side, indices start with 1
-	}
-	else
-		luaL_error(state, "invalid type %s of vector component", lua_typename(state, comptype));
-
-	assert(component >= 0 && component <= componentcount);
-	return component;
 }
 
 void LS_InitVectorType(lua_State* state)
