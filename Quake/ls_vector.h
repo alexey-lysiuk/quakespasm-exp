@@ -59,6 +59,13 @@ public:
 		return value[component];
 	}
 
+	static LS_Vector Zero()
+	{
+		LS_Vector result;
+		memset(result.value, 0, sizeof result.value);
+		return result;
+	}
+
 private:
 	float value[N];
 };
