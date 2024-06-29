@@ -119,7 +119,7 @@ inline float operator*(const LS_Vector<N>& left, const LS_Vector<N>& right)
 }
 
 template <size_t N>
-inline const LS_Vector<N> operator*(const LS_Vector<N>& left, const float& right)
+inline const LS_Vector<N> operator*(const LS_Vector<N>& left, const float right)
 {
 	LS_Vector<N> result;
 
