@@ -119,7 +119,8 @@ const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameof
 	return valueit->second;
 }
 
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member);
+using CustomTypeHandler = bool(*)(lua_State*, const LS_TypelessUserDataType& type, const LS_ImGuiMember&);
+int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander = nullptr);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);

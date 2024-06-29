@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <assert.h>
 
-//#include "imgui.h"
 #include "ls_common.h"
 #include "ls_vector.h"
 
@@ -52,7 +51,7 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
+int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander)
 {
 	void* userdataptr = type.GetValuePtr(state, 1);
 	assert(userdataptr);
@@ -70,7 +69,7 @@ int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& t
 
 	case ImMemberType_int:
 	case ImMemberType_unsigned:
-	case ImMemberType_ImGuiDir:
+	//case ImMemberType_ImGuiDir:
 		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
 		break;
 
@@ -78,17 +77,20 @@ int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& t
 		lua_pushnumber(state, *reinterpret_cast<const float*>(memberptr));
 		break;
 
-	case ImMemberType_ImVec2:
-		LS_PushVectorValue(state, LS_Vector2(*reinterpret_cast<const ImVec2*>(memberptr)));
-		break;
-
-	case ImMemberType_ImVec4:
-		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
-		break;
+//	case ImMemberType_ImVec2:
+//		LS_PushVectorValue(state, LS_Vector2(*reinterpret_cast<const ImVec2*>(memberptr)));
+//		break;
+//
+//	case ImMemberType_ImVec4:
+//		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
+//		break;
 
 	default:
-		assert(false);
-		lua_pushnil(state);
+		if (hander == nullptr || !hander(state, type, member))
+		{
+			assert(false);
+			lua_pushnil(state);
+		}
 		break;
 	}
 

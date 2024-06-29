@@ -40,47 +40,43 @@ LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
 
-
-template <>
-LS_Vector2& LS_Vector2::operator=(const ImVec2& other)
+static LS_Vector2 FromImVec2(const ImVec2& value)
 {
-	value[0] = other.x;
-	value[1] = other.y;
-	return *this;
+	return LS_Vector2(reinterpret_cast<const float*>(&value.x));
 }
 
-template <>
-inline LS_Vector2::LS_Vector(const ImVec2& other)
-{
-	*this = other;
-}
-
-template <>
-LS_Vector2::operator ImVec2() const
+static ImVec2 ToImVec2(const LS_Vector2& value)
 {
 	return ImVec2(value[0], value[1]);
 }
 
-template <>
-LS_Vector4& LS_Vector4::operator=(const ImVec4& other)
+static bool LS_ImGuiTypeHandler(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
 {
-	value[0] = other.x;
-	value[1] = other.y;
-	value[2] = other.z;
-	value[3] = other.w;
-	return *this;
-}
+	void* userdataptr = type.GetValuePtr(state, 1);
+	assert(userdataptr);
 
-template <>
-inline LS_Vector4::LS_Vector(const ImVec4& other)
-{
-	*this = other;
-}
+	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
+	assert(bytes);
 
-template <>
-LS_Vector4::operator ImVec4() const
-{
-	return ImVec4(value[0], value[1], value[2], value[3]);
+	const uint8_t* memberptr = bytes + member.offset;
+
+	switch (member.type)
+	{
+	case ImMemberType_ImGuiDir:
+		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
+		return true;
+
+	case ImMemberType_ImVec2:
+		LS_PushVectorValue(state, LS_Vector2(reinterpret_cast<const float*>(memberptr)));
+		return true;
+
+	case ImMemberType_ImVec4:
+		LS_PushVectorValue(state, LS_Vector4(reinterpret_cast<const float*>(memberptr)));
+		return true;
+
+	default:
+		return false;
+	}
 }
 
 
