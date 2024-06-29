@@ -36,6 +36,11 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+
+
 template <>
 LS_Vector2& LS_Vector2::operator=(const ImVec2& other)
 {
