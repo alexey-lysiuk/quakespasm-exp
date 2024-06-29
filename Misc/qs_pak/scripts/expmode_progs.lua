@@ -25,7 +25,7 @@ local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable 
 local functions <const> = progs.functions
 
 local function functions_onupdate(self)
-	local title = 'Progs Functions'
+	local title = self.title
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened and imBeginTable(title, 2, defaultTableFlags) then
@@ -69,8 +69,7 @@ end
 expmode.addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions') then
-
-			expmode.window(title, functions_onupdate, nil,
+			expmode.window('Progs Functions', functions_onupdate, nil,
 				functions_onshow, functions_onhide):setconstraints()
 		end
 
