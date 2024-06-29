@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
+#include "frozen/string.h"
 #include "lua.hpp"
 
 lua_State* LS_GetState(void);
@@ -69,6 +70,61 @@ public:
 		return *static_cast<T*>(GetValuePtr(state, index));
 	}
 };
+
+struct LS_ImGuiMember
+{
+	size_t type:8;
+	size_t offset:24;
+};
+
+template <typename T>
+struct LS_ImGuiTypeHolder;
+
+enum LS_ImGuiType
+{
+	ImMemberType_bool,
+	ImMemberType_int,
+	ImMemberType_unsigned,
+	ImMemberType_ImGuiDir,
+	ImMemberType_float,
+	ImMemberType_ImVec2,
+	ImMemberType_ImVec4,
+};
+
+#define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
+	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr LS_ImGuiType IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
+
+LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
+LS_IMGUI_DEFINE_MEMBER_TYPE(int);
+LS_IMGUI_DEFINE_MEMBER_TYPE(unsigned);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
+LS_IMGUI_DEFINE_MEMBER_TYPE(float);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+
+#undef LS_IMGUI_DEFINE_MEMBER_TYPE
+
+#define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
+	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
+
+template <typename T>
+const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameoftype, const T& members)
+{
+	size_t length;
+	const char* key = luaL_checklstring(state, 2, &length);
+	assert(key);
+	assert(length > 0);
+
+	const frozen::string keystr(key, length);
+	const auto valueit = members.find(keystr);
+
+	if (members.end() == valueit)
+		luaL_error(state, "unknown member '%s' of %s", key, nameoftype);
+
+	return valueit->second;
+}
+
+int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);

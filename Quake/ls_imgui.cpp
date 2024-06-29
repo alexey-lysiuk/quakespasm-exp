@@ -33,7 +33,6 @@ extern "C"
 #include "quakedef.h"
 }
 
-#include "frozen/string.h"
 #include "frozen/unordered_map.h"
 
 
@@ -153,103 +152,6 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 	lua_setmetatable(state, -2);
 	return 1;
 }
-
-
-enum LS_ImGuiType
-{
-	ImMemberType_bool,
-	ImMemberType_int,
-	ImMemberType_unsigned,
-	ImMemberType_ImGuiDir,
-	ImMemberType_float,
-	ImMemberType_ImVec2,
-	ImMemberType_ImVec4,
-};
-
-struct LS_ImGuiMember
-{
-	size_t type:8;
-	size_t offset:24;
-};
-
-template <typename T>
-struct LS_ImGuiTypeHolder;
-
-#define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
-	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr LS_ImGuiType IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
-
-LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
-LS_IMGUI_DEFINE_MEMBER_TYPE(int);
-LS_IMGUI_DEFINE_MEMBER_TYPE(unsigned);
-LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
-LS_IMGUI_DEFINE_MEMBER_TYPE(float);
-LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
-LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
-
-#undef LS_IMGUI_DEFINE_MEMBER_TYPE
-
-template <typename T>
-static const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameoftype, const T& members)
-{
-	size_t length;
-	const char* key = luaL_checklstring(state, 2, &length);
-	assert(key);
-	assert(length > 0);
-
-	const frozen::string keystr(key, length);
-	const auto valueit = members.find(keystr);
-
-	if (members.end() == valueit)
-		luaL_error(state, "unknown member '%s' of %s", key, nameoftype);
-
-	return valueit->second;
-}
-
-static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
-{
-	void* userdataptr = type.GetValuePtr(state, 1);
-	assert(userdataptr);
-
-	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
-	assert(bytes);
-
-	const uint8_t* memberptr = bytes + member.offset;
-
-	switch (member.type)
-	{
-	case ImMemberType_bool:
-		lua_pushboolean(state, *reinterpret_cast<const bool*>(memberptr));
-		break;
-
-	case ImMemberType_int:
-	case ImMemberType_unsigned:
-	case ImMemberType_ImGuiDir:
-		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
-		break;
-
-	case ImMemberType_float:
-		lua_pushnumber(state, *reinterpret_cast<const float*>(memberptr));
-		break;
-
-	case ImMemberType_ImVec2:
-		LS_PushVectorValue(state, LS_Vector2(*reinterpret_cast<const ImVec2*>(memberptr)));
-		break;
-
-	case ImMemberType_ImVec4:
-		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
-		break;
-
-	default:
-		assert(false);
-		lua_pushnil(state);
-		break;
-	}
-
-	return 1;
-}
-
-#define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
-	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
 
 
 constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport");
