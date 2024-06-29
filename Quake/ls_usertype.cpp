@@ -86,7 +86,7 @@ int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& t
 //		break;
 
 	default:
-		if (hander == nullptr || !hander(state, type, member))
+		if (hander == nullptr || !hander(state, member.type, memberptr))
 		{
 			assert(false);
 			lua_pushnil(state);

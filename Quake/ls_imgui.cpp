@@ -36,6 +36,10 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
+constexpr int ImMemberType_ImGuiDir = 100;
+constexpr int ImMemberType_ImVec2 = 101;
+constexpr int ImMemberType_ImVec4 = 102;
+
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
 LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
@@ -50,17 +54,9 @@ static ImVec2 ToImVec2(const LS_Vector2& value)
 	return ImVec2(value[0], value[1]);
 }
 
-static bool LS_ImGuiTypeHandler(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
+static bool LS_ImGuiTypeHandler(lua_State* const state, const uint32_t type, const uint8_t* const memberptr)
 {
-	void* userdataptr = type.GetValuePtr(state, 1);
-	assert(userdataptr);
-
-	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
-	assert(bytes);
-
-	const uint8_t* memberptr = bytes + member.offset;
-
-	switch (member.type)
+	switch (type)
 	{
 	case ImMemberType_ImGuiDir:
 		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));

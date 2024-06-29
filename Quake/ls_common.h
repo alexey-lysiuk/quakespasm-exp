@@ -73,8 +73,8 @@ public:
 
 struct LS_ImGuiMember
 {
-	size_t type:8;
-	size_t offset:24;
+	uint32_t type:8;
+	uint32_t offset:24;
 };
 
 template <typename T>
@@ -85,14 +85,16 @@ enum LS_ImGuiType
 	ImMemberType_bool,
 	ImMemberType_int,
 	ImMemberType_unsigned,
-	ImMemberType_ImGuiDir,
+//	ImMemberType_ImGuiDir,
 	ImMemberType_float,
-	ImMemberType_ImVec2,
-	ImMemberType_ImVec4,
+//	ImMemberType_ImVec2,
+//	ImMemberType_ImVec4,
+
+	ImMemberType_FirstCustomType,
 };
 
 #define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
-	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr LS_ImGuiType IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
+	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
 
 LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
 LS_IMGUI_DEFINE_MEMBER_TYPE(int);
@@ -119,7 +121,7 @@ const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameof
 	return valueit->second;
 }
 
-using CustomTypeHandler = bool(*)(lua_State*, const LS_TypelessUserDataType& type, const LS_ImGuiMember&);
+using CustomTypeHandler = bool(*)(lua_State*, uint32_t, const uint8_t*);
 int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander = nullptr);
 
 void LS_InitEdictType(lua_State* state);
