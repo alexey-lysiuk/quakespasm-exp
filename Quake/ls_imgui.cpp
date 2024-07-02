@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ls_imgui.h"
 #include "ls_vector.h"
 
-#ifndef NDEBUG
+#ifdef USE_HELLO_IMGUI
 #include "hello_imgui/imgui_theme.h"
-#endif // !NDEBUG
+#endif // USE_HELLO_IMGUI
 
 extern "C"
 {
@@ -363,7 +363,7 @@ void LS_ClearImGuiStack()
 #include "ls_imgui_enums.h"
 #include "ls_imgui_funcs.h"
 
-#ifndef NDEBUG
+#ifdef USE_HELLO_IMGUI
 
 static int LS_global_ImGuiTheme_ApplyTheme(lua_State* state)
 {
@@ -417,7 +417,7 @@ static void LS_InitImGuiTheme(lua_State* state)
 	lua_setglobal(state, "ImGuiTheme");
 }
 
-#endif // !NDEBUG
+#endif // USE_HELLO_IMGUI
 
 void LS_InitImGuiBindings(lua_State* state)
 {
@@ -427,9 +427,9 @@ void LS_InitImGuiBindings(lua_State* state)
 	lua_setglobal(state, "ImGui");
 	assert(lua_gettop(state) == 0);
 
-#ifndef NDEBUG
+#ifdef USE_HELLO_IMGUI
 	LS_InitImGuiTheme(state);
-#endif // !NDEBUG
+#endif // USE_HELLO_IMGUI
 }
 
 #endif // USE_LUA_SCRIPTING && USE_IMGUI
