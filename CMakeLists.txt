@@ -383,6 +383,7 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
+	set_source_files_properties(Quake/imgui/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-variable")
 
 	# Disable C++ exceptions and RTTI
 	# target_compile_options() doesn't fit very well as GCC complains on every C file
@@ -508,7 +509,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${TLSF_SOURCES}
 )
 
-# Remove if USE_HELLO_IMGUI is defined
+# TODO: Remove when USE_HELLO_IMGUI is defined
 set(OTHER_FILES ${OTHER_FILES} ${HELLO_IMGUI_SOURCES})
 
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
