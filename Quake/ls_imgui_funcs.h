@@ -1120,6 +1120,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * TableGetColumnName
 		{ "TableGetColumnFlags", LS_global_imgui_TableGetColumnFlags },
 		// * TableSetColumnEnabled
+		// * TableGetHoveredColumn
 		// * TableSetBgColor
 
 		// Legacy Columns API
