@@ -382,6 +382,7 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
+	set_source_files_properties(Quake/imgui/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-variable")
 
 	# Disable C++ exceptions and RTTI
 	# target_compile_options() doesn't fit very well as GCC complains on every C file
