@@ -51,7 +51,8 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander)
+//int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander)
+int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
 {
 	void* userdataptr = type.GetValuePtr(state, 1);
 	assert(userdataptr);
@@ -85,12 +86,21 @@ int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& t
 //		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
 //		break;
 
+	case ImMemberType_Vector2:
+		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector2*>(memberptr)));
+		break;
+
+	case ImMemberType_Vector3:
+		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector3*>(memberptr)));
+		break;
+
+	case ImMemberType_Vector3:
+		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector3*>(memberptr)));
+		break;
+
 	default:
-		if (hander == nullptr || !hander(state, member.type, memberptr))
-		{
-			assert(false);
-			lua_pushnil(state);
-		}
+		assert(false);
+		lua_pushnil(state);
 		break;
 	}
 

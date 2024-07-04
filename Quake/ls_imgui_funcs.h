@@ -22,7 +22,8 @@ static int LS_value_ImGuiStyle_index(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiStyle", ls_imguistyle_members);
-	return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member, LS_ImGuiTypeHandler);
+	//return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member, LS_ImGuiTypeHandler);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member);
 }
 
 static int LS_global_imgui_GetStyle(lua_State* state)
@@ -747,7 +748,8 @@ static int LS_value_ImGuiViewport_index(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiViewport", ls_imguiviewport_members);
-	return LS_ImGuiTypeOperatorIndex(state, ls_imguiviewport_type, member, LS_ImGuiTypeHandler);
+	//return LS_ImGuiTypeOperatorIndex(state, ls_imguiviewport_type, member, LS_ImGuiTypeHandler);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member);
 }
 
 static int LS_global_imgui_GetMainViewport(lua_State* state)

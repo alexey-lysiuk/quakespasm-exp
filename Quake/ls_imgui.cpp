@@ -36,13 +36,31 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
-constexpr int ImMemberType_ImGuiDir = 100;
-constexpr int ImMemberType_ImVec2 = 101;
-constexpr int ImMemberType_ImVec4 = 102;
+//constexpr int ImMemberType_ImGuiDir = 100;
+//constexpr int ImMemberType_ImVec2 = 101;
+//constexpr int ImMemberType_ImVec4 = 102;
 
-LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
-LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
-LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+//LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
+//LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
+//LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+
+template <>
+struct LS_ImGuiTypeHolder<ImGuiDir>
+{
+	static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_int;
+};
+
+template <>
+struct LS_ImGuiTypeHolder<ImVec2>
+{
+	static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_Vector2;
+};
+
+template <>
+struct LS_ImGuiTypeHolder<ImVec4>
+{
+	static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_Vector4;
+};
 
 static LS_Vector2 FromImVec2(const ImVec2& value)
 {
@@ -54,26 +72,26 @@ static ImVec2 ToImVec2(const LS_Vector2& value)
 	return ImVec2(value[0], value[1]);
 }
 
-static bool LS_ImGuiTypeHandler(lua_State* const state, const uint32_t type, const uint8_t* const memberptr)
-{
-	switch (type)
-	{
-	case ImMemberType_ImGuiDir:
-		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
-		return true;
-
-	case ImMemberType_ImVec2:
-		LS_PushVectorValue(state, LS_Vector2(reinterpret_cast<const float*>(memberptr)));
-		return true;
-
-	case ImMemberType_ImVec4:
-		LS_PushVectorValue(state, LS_Vector4(reinterpret_cast<const float*>(memberptr)));
-		return true;
-
-	default:
-		return false;
-	}
-}
+//static bool LS_ImGuiTypeHandler(lua_State* const state, const uint32_t type, const uint8_t* const memberptr)
+//{
+//	switch (type)
+//	{
+//	case ImMemberType_ImGuiDir:
+//		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
+//		return true;
+//
+//	case ImMemberType_ImVec2:
+//		LS_PushVectorValue(state, LS_Vector2(reinterpret_cast<const float*>(memberptr)));
+//		return true;
+//
+//	case ImMemberType_ImVec4:
+//		LS_PushVectorValue(state, LS_Vector4(reinterpret_cast<const float*>(memberptr)));
+//		return true;
+//
+//	default:
+//		return false;
+//	}
+//}
 
 
 struct LS_TextBuffer
@@ -230,7 +248,7 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 51> ls_imguistyl
 #undef LS_IMGUI_STYLE_MEMBER
 };
 
-#undef LS_IMGUI_MEMBER
+//#undef LS_IMGUI_MEMBER
 
 
 static bool ls_framescope;

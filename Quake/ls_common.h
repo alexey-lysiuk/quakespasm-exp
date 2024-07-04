@@ -89,6 +89,9 @@ enum LS_ImGuiType
 	ImMemberType_float,
 //	ImMemberType_ImVec2,
 //	ImMemberType_ImVec4,
+	ImMemberType_Vector2,
+	ImMemberType_Vector3,
+	ImMemberType_Vector4,
 
 	ImMemberType_FirstCustomType,
 };
@@ -121,8 +124,9 @@ const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameof
 	return valueit->second;
 }
 
-using CustomTypeHandler = bool(*)(lua_State*, uint32_t, const uint8_t*);
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander = nullptr);
+//using CustomTypeHandler = bool(*)(lua_State*, uint32_t, const uint8_t*);
+//int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander = nullptr);
+int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
