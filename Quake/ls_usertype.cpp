@@ -51,8 +51,7 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
-//int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander)
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
+int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_MemberDefinition& member)
 {
 	void* userdataptr = type.GetValuePtr(state, 1);
 	assert(userdataptr);
@@ -62,39 +61,30 @@ int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& t
 
 	const uint8_t* memberptr = bytes + member.offset;
 
-	switch (member.type)
+	switch (LS_MemberType(member.type))
 	{
-	case ImMemberType_bool:
+	case LS_MemberType::Boolean:
 		lua_pushboolean(state, *reinterpret_cast<const bool*>(memberptr));
 		break;
 
-	case ImMemberType_int:
-	case ImMemberType_unsigned:
-	//case ImMemberType_ImGuiDir:
+	case LS_MemberType::Signed:
+	case LS_MemberType::Unsigned:
 		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
 		break;
 
-	case ImMemberType_float:
+	case LS_MemberType::Float:
 		lua_pushnumber(state, *reinterpret_cast<const float*>(memberptr));
 		break;
 
-//	case ImMemberType_ImVec2:
-//		LS_PushVectorValue(state, LS_Vector2(*reinterpret_cast<const ImVec2*>(memberptr)));
-//		break;
-//
-//	case ImMemberType_ImVec4:
-//		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
-//		break;
-
-	case ImMemberType_Vector2:
+	case LS_MemberType::Vector2:
 		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector2*>(memberptr)));
 		break;
 
-	case ImMemberType_Vector3:
+	case LS_MemberType::Vector3:
 		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector3*>(memberptr)));
 		break;
 
-	case ImMemberType_Vector4:
+	case LS_MemberType::Vector4:
 		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector4*>(memberptr)));
 		break;
 

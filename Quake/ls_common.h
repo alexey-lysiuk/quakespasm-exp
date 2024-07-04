@@ -71,44 +71,56 @@ public:
 	}
 };
 
-struct LS_ImGuiMember
+enum class LS_MemberType
+{
+	Invalid,
+	Boolean,
+	Signed,
+	Unsigned,
+	Float,
+	Vector2,
+	Vector3,
+	Vector4,
+};
+
+template <typename T>
+struct LS_MemberTypeResolver;
+
+template <>
+struct LS_MemberTypeResolver<bool>
+{
+	static constexpr LS_MemberType TYPE = LS_MemberType::Boolean;
+};
+
+template <>
+struct LS_MemberTypeResolver<int>
+{
+	static constexpr LS_MemberType TYPE = LS_MemberType::Signed;
+};
+
+template <>
+struct LS_MemberTypeResolver<unsigned>
+{
+	static constexpr LS_MemberType TYPE = LS_MemberType::Unsigned;
+};
+
+template <>
+struct LS_MemberTypeResolver<float>
+{
+	static constexpr LS_MemberType TYPE = LS_MemberType::Float;
+};
+
+struct LS_MemberDefinition
 {
 	uint32_t type:8;
 	uint32_t offset:24;
 };
 
-template <typename T>
-struct LS_ImGuiTypeHolder;
-
-enum LS_ImGuiType
-{
-	ImMemberType_bool,
-	ImMemberType_int,
-	ImMemberType_unsigned,
-//	ImMemberType_ImGuiDir,
-	ImMemberType_float,
-//	ImMemberType_ImVec2,
-//	ImMemberType_ImVec4,
-	ImMemberType_Vector2,
-	ImMemberType_Vector3,
-	ImMemberType_Vector4,
-
-	ImMemberType_FirstCustomType,
-};
-
-#define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
-	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
-
-LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
-LS_IMGUI_DEFINE_MEMBER_TYPE(int);
-LS_IMGUI_DEFINE_MEMBER_TYPE(unsigned);
-LS_IMGUI_DEFINE_MEMBER_TYPE(float);
-
-#define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
-	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
+#define LS_DEFINE_MEMBER(TYPENAME, MEMBERNAME) \
+	{ #MEMBERNAME, { uint8_t(LS_MemberTypeResolver<decltype(TYPENAME::MEMBERNAME)>::TYPE), offsetof(TYPENAME, MEMBERNAME) } }
 
 template <typename T>
-const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameoftype, const T& members)
+const LS_MemberDefinition& LS_GetMemberDefinition(lua_State* state, const char* nameoftype, const T& members)
 {
 	size_t length;
 	const char* key = luaL_checklstring(state, 2, &length);
@@ -119,14 +131,12 @@ const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameof
 	const auto valueit = members.find(keystr);
 
 	if (members.end() == valueit)
-		luaL_error(state, "unknown member '%s' of %s", key, nameoftype);
+		luaL_error(state, "unknown member '%s' of type '%s'", key, nameoftype);
 
 	return valueit->second;
 }
 
-//using CustomTypeHandler = bool(*)(lua_State*, uint32_t, const uint8_t*);
-//int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member, CustomTypeHandler hander = nullptr);
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member);
+int LS_GetMemberValue(lua_State* state, const LS_TypelessUserDataType& type, const LS_MemberDefinition& member);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);

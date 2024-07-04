@@ -36,30 +36,22 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
-//constexpr int ImMemberType_ImGuiDir = 100;
-//constexpr int ImMemberType_ImVec2 = 101;
-//constexpr int ImMemberType_ImVec4 = 102;
-
-//LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
-//LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
-//LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
-
 template <>
-struct LS_ImGuiTypeHolder<ImGuiDir>
+struct LS_MemberTypeResolver<ImGuiDir>
 {
-	static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_int;
+	static constexpr LS_MemberType TYPE = LS_MemberType::Signed;
 };
 
 template <>
-struct LS_ImGuiTypeHolder<ImVec2>
+struct LS_MemberTypeResolver<ImVec2>
 {
-	static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_Vector2;
+	static constexpr LS_MemberType TYPE = LS_MemberType::Vector2;
 };
 
 template <>
-struct LS_ImGuiTypeHolder<ImVec4>
+struct LS_MemberTypeResolver<ImVec4>
 {
-	static constexpr uint32_t IMGUI_MEMBER_TYPE = ImMemberType_Vector4;
+	static constexpr LS_MemberType TYPE = LS_MemberType::Vector4;
 };
 
 static LS_Vector2 FromImVec2(const ImVec2& value)
@@ -71,27 +63,6 @@ static ImVec2 ToImVec2(const LS_Vector2& value)
 {
 	return ImVec2(value[0], value[1]);
 }
-
-//static bool LS_ImGuiTypeHandler(lua_State* const state, const uint32_t type, const uint8_t* const memberptr)
-//{
-//	switch (type)
-//	{
-//	case ImMemberType_ImGuiDir:
-//		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
-//		return true;
-//
-//	case ImMemberType_ImVec2:
-//		LS_PushVectorValue(state, LS_Vector2(reinterpret_cast<const float*>(memberptr)));
-//		return true;
-//
-//	case ImMemberType_ImVec4:
-//		LS_PushVectorValue(state, LS_Vector4(reinterpret_cast<const float*>(memberptr)));
-//		return true;
-//
-//	default:
-//		return false;
-//	}
-//}
 
 
 struct LS_TextBuffer
@@ -171,9 +142,9 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 
 constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport");
 
-constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewport_members =
+constexpr frozen::unordered_map<frozen::string, LS_MemberDefinition, 6> ls_imguiviewport_members =
 {
-#define LS_IMGUI_VIEWPORT_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiViewport, NAME)
+#define LS_IMGUI_VIEWPORT_MEMBER(NAME) LS_DEFINE_MEMBER(ImGuiViewport, NAME)
 
 	LS_IMGUI_VIEWPORT_MEMBER(ID),
 	LS_IMGUI_VIEWPORT_MEMBER(Flags),
@@ -187,9 +158,9 @@ constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewp
 
 constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("ImGuiStyle");
 
-constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 51> ls_imguistyle_members =
+constexpr frozen::unordered_map<frozen::string, LS_MemberDefinition, 51> ls_imguistyle_members =
 {
-#define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
+#define LS_IMGUI_STYLE_MEMBER(NAME) LS_DEFINE_MEMBER(ImGuiStyle, NAME)
 
 	LS_IMGUI_STYLE_MEMBER(Alpha),
 	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
