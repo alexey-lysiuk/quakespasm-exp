@@ -51,7 +51,7 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
-int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_MemberDefinition& member)
+int LS_GetMemberValue(lua_State* state, const LS_TypelessUserDataType& type, const LS_MemberDefinition& member)
 {
 	void* userdataptr = type.GetValuePtr(state, 1);
 	assert(userdataptr);
