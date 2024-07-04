@@ -94,8 +94,8 @@ int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& t
 		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector3*>(memberptr)));
 		break;
 
-	case ImMemberType_Vector3:
-		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector3*>(memberptr)));
+	case ImMemberType_Vector4:
+		LS_PushVectorValue(state, (*reinterpret_cast<const LS_Vector4*>(memberptr)));
 		break;
 
 	default:
