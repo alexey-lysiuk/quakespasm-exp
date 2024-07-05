@@ -21,7 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include "frozen/string.h"
+#include <algorithm>
+#include <cstring>
+
 #include "lua.hpp"
 
 lua_State* LS_GetState(void);
@@ -30,46 +32,6 @@ lua_State* LS_GetState(void);
 int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
-
-class LS_TypelessUserDataType
-{
-public:
-	constexpr LS_TypelessUserDataType(const char* const name, const size_t size)
-	: name(name)
-	, size(size)
-	{
-	}
-
-	const char* const GetName() const { return name; }
-	const size_t GetSize() const { return size; }
-
-	void* NewPtr(lua_State* state) const;
-	void* GetValuePtr(lua_State* state, int index) const;
-
-protected:
-	const char* name;
-	size_t size;
-};
-
-template <typename T>
-class LS_UserDataType : public LS_TypelessUserDataType
-{
-public:
-	constexpr LS_UserDataType(const char* const name)
-	: LS_TypelessUserDataType(name, sizeof(void*) + sizeof(T))
-	{
-	}
-
-	T& New(lua_State* const state) const
-	{
-		return *static_cast<T*>(NewPtr(state));
-	}
-
-	T& GetValue(lua_State* const state, const int index) const
-	{
-		return *static_cast<T*>(GetValuePtr(state, index));
-	}
-};
 
 enum class LS_MemberType
 {
@@ -112,31 +74,65 @@ struct LS_MemberTypeResolver<float>
 
 struct LS_MemberDefinition
 {
-	uint32_t type:8;
-	uint32_t offset:24;
+	const char* name;
+	LS_MemberType type;
+	uint32_t offset;
+
+	bool operator<(const LS_MemberDefinition& other) const
+	{
+		return strcmp(name, other.name);
+	}
 };
 
 #define LS_DEFINE_MEMBER(TYPENAME, MEMBERNAME) \
-	{ #MEMBERNAME, { uint8_t(LS_MemberTypeResolver<decltype(TYPENAME::MEMBERNAME)>::TYPE), offsetof(TYPENAME, MEMBERNAME) } }
+	{ #MEMBERNAME, LS_MemberTypeResolver<decltype(TYPENAME::MEMBERNAME)>::TYPE, offsetof(TYPENAME, MEMBERNAME) }
+
+class LS_TypelessUserDataType
+{
+public:
+	const char* const GetName() const { return name; }
+	const size_t GetSize() const { return size; }
+
+	void* NewPtr(lua_State* state) const;
+	void* GetValuePtr(lua_State* state, int index) const;
+
+	int PushMemberValue(lua_State* state) const;
+
+protected:
+	const char* name;
+	const LS_MemberDefinition* members;
+	size_t size;
+	size_t membercount;
+
+	constexpr LS_TypelessUserDataType(const char* const name, const size_t size, const LS_MemberDefinition* const members = nullptr, const size_t membercount = 0)
+	: name(name)
+	, members(members)
+	, size(size)
+	, membercount(membercount)
+	{
+		assert((members == nullptr && membercount == 0) || (members != nullptr && membercount != 0));
+	}
+};
 
 template <typename T>
-const LS_MemberDefinition& LS_GetMemberDefinition(lua_State* state, const char* nameoftype, const T& members)
+class LS_UserDataType : public LS_TypelessUserDataType
 {
-	size_t length;
-	const char* key = luaL_checklstring(state, 2, &length);
-	assert(key);
-	assert(length > 0);
+public:
+	constexpr LS_UserDataType(const char* const name, const LS_MemberDefinition* const members = nullptr, const size_t membercount = 0)
+	: LS_TypelessUserDataType(name, sizeof(void*) + sizeof(T), members, membercount)
+	{
+	}
 
-	const frozen::string keystr(key, length);
-	const auto valueit = members.find(keystr);
+	T& New(lua_State* const state) const
+	{
+		return *static_cast<T*>(NewPtr(state));
+	}
 
-	if (members.end() == valueit)
-		luaL_error(state, "unknown member '%s' of type '%s'", key, nameoftype);
-
-	return valueit->second;
-}
-
-int LS_GetMemberValue(lua_State* state, const LS_TypelessUserDataType& type, const LS_MemberDefinition& member);
+	T& GetValue(lua_State* const state, const int index) const
+	{
+		return *static_cast<T*>(GetValuePtr(state, index));
+	}
+};
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);

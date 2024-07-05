@@ -250,23 +250,6 @@ set(HELLO_IMGUI_SOURCES
 	${HELLO_IMGUI_DIR}/imgui_theme.h
 )
 
-set(FROZEN_DIR Quake/frozen)
-
-set(FROZEN_SOURCES
-	${FROZEN_DIR}/bits/algorithms.h
-	${FROZEN_DIR}/bits/basic_types.h
-	${FROZEN_DIR}/bits/constexpr_assert.h
-	${FROZEN_DIR}/bits/defines.h
-	${FROZEN_DIR}/bits/elsa.h
-	${FROZEN_DIR}/bits/exceptions.h
-	${FROZEN_DIR}/bits/hash_string.h
-	${FROZEN_DIR}/bits/pmh.h
-	${FROZEN_DIR}/bits/version.h
-	${FROZEN_DIR}/random.h
-	${FROZEN_DIR}/string.h
-	${FROZEN_DIR}/unordered_map.h
-)
-
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
@@ -340,7 +323,6 @@ else()
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-	FROZEN_NO_EXCEPTIONS
 	IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 	USE_CODEC_UMX
 	USE_CODEC_WAVE
@@ -494,7 +476,6 @@ set(ENGINE_SOURCES
 )
 
 source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c)
-source_group("Frozen" FILES ${FROZEN_SOURCES})
 source_group("Hello ImGui" FILES ${HELLO_IMGUI_SOURCES})
 source_group("ImGui" FILES ${IMGUI_SOURCES})
 source_group("Lua" FILES ${LUA_SOURCES})
@@ -502,7 +483,6 @@ source_group("TLSF" FILES ${TLSF_SOURCES})
 
 target_sources(${PROJECT_NAME} PRIVATE
 	${ENGINE_SOURCES}
-	${FROZEN_SOURCES}
 	${HELLO_IMGUI_SOURCES}
 	${IMGUI_SOURCES}
 	${LUA_SOURCES}

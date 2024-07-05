@@ -51,17 +51,32 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
-int LS_GetMemberValue(lua_State* state, const LS_TypelessUserDataType& type, const LS_MemberDefinition& member)
+int LS_TypelessUserDataType::PushMemberValue(lua_State* state) const
 {
-	void* userdataptr = type.GetValuePtr(state, 1);
+	assert(members != nullptr);
+	assert(membercount != 0);
+
+	size_t length;
+	const char* key = luaL_checklstring(state, 2, &length);
+	assert(key);
+	assert(length > 0);
+
+	const LS_MemberDefinition* last = members + membercount;
+	const LS_MemberDefinition probe{ key };
+	const LS_MemberDefinition* member = std::lower_bound(members, last, probe);
+
+	if (member == last)
+		luaL_error(state, "unknown member '%s' of type '%s'", key, name);
+
+	void* userdataptr = GetValuePtr(state, 1);
 	assert(userdataptr);
 
 	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
 	assert(bytes);
 
-	const uint8_t* memberptr = bytes + member.offset;
+	const uint8_t* memberptr = bytes + member->offset;
 
-	switch (LS_MemberType(member.type))
+	switch (member->type)
 	{
 	case LS_MemberType::Boolean:
 		lua_pushboolean(state, *reinterpret_cast<const bool*>(memberptr));

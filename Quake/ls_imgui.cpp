@@ -33,8 +33,6 @@ extern "C"
 #include "quakedef.h"
 }
 
-#include "frozen/unordered_map.h"
-
 
 template <>
 struct LS_MemberTypeResolver<ImGuiDir>
@@ -140,9 +138,7 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 }
 
 
-constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport");
-
-constexpr frozen::unordered_map<frozen::string, LS_MemberDefinition, 6> ls_imguiviewport_members =
+constexpr const LS_MemberDefinition ls_imguiviewport_members[] =
 {
 #define LS_IMGUI_VIEWPORT_MEMBER(NAME) LS_DEFINE_MEMBER(ImGuiViewport, NAME)
 
@@ -156,9 +152,10 @@ constexpr frozen::unordered_map<frozen::string, LS_MemberDefinition, 6> ls_imgui
 #undef LS_IMGUI_VIEWPORT_MEMBER
 };
 
-constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("ImGuiStyle");
+constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport", ls_imguiviewport_members, Q_COUNTOF(ls_imguiviewport_members));
 
-constexpr frozen::unordered_map<frozen::string, LS_MemberDefinition, 51> ls_imguistyle_members =
+
+static const LS_MemberDefinition ls_imguistyle_members[] =
 {
 #define LS_IMGUI_STYLE_MEMBER(NAME) LS_DEFINE_MEMBER(ImGuiStyle, NAME)
 
@@ -219,7 +216,7 @@ constexpr frozen::unordered_map<frozen::string, LS_MemberDefinition, 51> ls_imgu
 #undef LS_IMGUI_STYLE_MEMBER
 };
 
-//#undef LS_IMGUI_MEMBER
+constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("ImGuiStyle", ls_imguistyle_members, Q_COUNTOF(ls_imguistyle_members));
 
 
 static bool ls_framescope;
