@@ -37,46 +37,14 @@ extern "C"
 #include "frozen/unordered_map.h"
 
 
-template <>
-LS_Vector2& LS_Vector2::operator=(const ImVec2& other)
+static LS_Vector2 FromImVec2(const ImVec2& value)
 {
-	value[0] = other.x;
-	value[1] = other.y;
-	return *this;
+	return LS_Vector2(reinterpret_cast<const float*>(&value.x));
 }
 
-template <>
-inline LS_Vector2::LS_Vector(const ImVec2& other)
-{
-	*this = other;
-}
-
-template <>
-LS_Vector2::operator ImVec2() const
+static ImVec2 ToImVec2(const LS_Vector2& value)
 {
 	return ImVec2(value[0], value[1]);
-}
-
-template <>
-LS_Vector4& LS_Vector4::operator=(const ImVec4& other)
-{
-	value[0] = other.x;
-	value[1] = other.y;
-	value[2] = other.z;
-	value[3] = other.w;
-	return *this;
-}
-
-template <>
-inline LS_Vector4::LS_Vector(const ImVec4& other)
-{
-	*this = other;
-}
-
-template <>
-LS_Vector4::operator ImVec4() const
-{
-	return ImVec4(value[0], value[1], value[2], value[3]);
 }
 
 
@@ -232,11 +200,11 @@ static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserData
 		break;
 
 	case ImMemberType_ImVec2:
-		LS_PushVectorValue(state, LS_Vector2(*reinterpret_cast<const ImVec2*>(memberptr)));
+		LS_PushVectorValue(state, *reinterpret_cast<const LS_Vector2*>(memberptr));
 		break;
 
 	case ImMemberType_ImVec4:
-		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
+		LS_PushVectorValue(state, *reinterpret_cast<const LS_Vector4*>(memberptr));
 		break;
 
 	default:
