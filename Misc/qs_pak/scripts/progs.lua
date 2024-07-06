@@ -7,11 +7,8 @@ function progs.func(index_or_name)
 		return func
 	end
 
-	-- TODO: add func.name()
-	index_or_name = index_or_name .. '()'
-
 	for _, func in functions() do
-		if tostring(func) == index_or_name then
+		if func:name() == index_or_name then
 			return func
 		end
 	end
