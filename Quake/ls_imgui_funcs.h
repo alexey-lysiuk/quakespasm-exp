@@ -21,7 +21,8 @@ static int LS_value_ImGuiStyle_index(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	return ls_imguistyle_type.PushMemberValue(state);
+	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiStyle", ls_imguistyle_members);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguistyle_type, member);
 }
 
 static int LS_global_imgui_GetStyle(lua_State* state)
@@ -133,7 +134,7 @@ static int LS_global_imgui_GetWindowPos(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const LS_Vector2 pos = FromImVec2(ImGui::GetWindowPos());
+	const LS_Vector2 pos{ ImGui::GetWindowPos() };
 	return LS_PushVectorValue(state, pos);
 }
 
@@ -141,7 +142,7 @@ static int LS_global_imgui_GetWindowSize(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
 
-	const LS_Vector2 size = FromImVec2(ImGui::GetWindowSize());
+	const LS_Vector2 size { ImGui::GetWindowSize() };
 	return LS_PushVectorValue(state, size);
 }
 
@@ -171,7 +172,7 @@ static int LS_global_imgui_SetNextWindowPos(lua_State* state)
 	const int cond = luaL_optinteger(state, 2, 0);
 	const LS_Vector2 pivot = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
 
-	ImGui::SetNextWindowPos(ToImVec2(pos), cond, ToImVec2(pivot));
+	ImGui::SetNextWindowPos(pos, cond, pivot);
 	return 0;
 }
 
@@ -182,7 +183,7 @@ static int LS_global_imgui_SetNextWindowSize(lua_State* state)
 	const LS_Vector2 size = LS_GetVectorValue<2>(state, 1);
 	const int cond = luaL_optinteger(state, 2, 0);
 
-	ImGui::SetNextWindowSize(ToImVec2(size), cond);
+	ImGui::SetNextWindowSize(size, cond);
 	return 0;
 }
 
@@ -194,7 +195,7 @@ static int LS_global_imgui_SetNextWindowSizeConstraints(lua_State* state)
 	const LS_Vector2 maxsize = LS_GetVectorValue<2>(state, 2);
 	// TODO: add support for callback
 
-	ImGui::SetNextWindowSizeConstraints(ToImVec2(minsize), ToImVec2(maxsize));
+	ImGui::SetNextWindowSizeConstraints(minsize, maxsize);
 	return 0;
 }
 
@@ -210,7 +211,7 @@ static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const LS_Vector2 result = FromImVec2(ImGui::GetWindowContentRegionMax());
+	const LS_Vector2 result { ImGui::GetWindowContentRegionMax() };
 	return LS_PushVectorValue(state, result);
 }
 
@@ -218,7 +219,7 @@ static int LS_global_imgui_GetCursorScreenPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const LS_Vector2 pos = FromImVec2(ImGui::GetCursorScreenPos());
+	const LS_Vector2 pos { ImGui::GetCursorScreenPos() };
 	return LS_PushVectorValue(state, pos);
 }
 
@@ -227,7 +228,7 @@ static int LS_global_imgui_SetCursorScreenPos(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	const LS_Vector2 pos = LS_GetVectorValue<2>(state, 1);
-	ImGui::SetCursorPos(ToImVec2(pos));
+	ImGui::SetCursorPos(pos);
 	return 0;
 }
 
@@ -235,7 +236,7 @@ static int LS_global_imgui_GetCursorPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const LS_Vector2 pos = FromImVec2(ImGui::GetCursorPos());
+	const LS_Vector2 pos { ImGui::GetCursorPos() };
 	return LS_PushVectorValue(state, pos);
 }
 
@@ -334,9 +335,9 @@ static int LS_global_imgui_Button(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	const char* const label = luaL_checkstring(state, 1);
-	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
+	const ImVec2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
 
-	const bool result = ImGui::Button(label, ToImVec2(size));
+	const bool result = ImGui::Button(label, size);
 	lua_pushboolean(state, result);
 	return 1;
 }
@@ -376,11 +377,11 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 	assert(label);
 
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
-	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
+	const ImVec2 size = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
 	const int flags = luaL_optinteger(state, 4, 0);
 
 	// TODO: Input text callback support
-	const bool changed = ImGui::InputTextMultiline(label, textbuffer.data, textbuffer.size, ToImVec2(size), flags);
+	const bool changed = ImGui::InputTextMultiline(label, textbuffer.data, textbuffer.size, size, flags);
 	lua_pushboolean(state, changed);
 	return 1;
 }
@@ -392,9 +393,9 @@ static int LS_global_imgui_Selectable(lua_State* state)
 	const char* const label = luaL_checkstring(state, 1);
 	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
 	const int flags = luaL_optinteger(state, 3, 0);
-	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
+	const ImVec2 size = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
 
-	const bool pressed = ImGui::Selectable(label, selected, flags, ToImVec2(size));
+	const bool pressed = ImGui::Selectable(label, selected, flags, size);
 	lua_pushboolean(state, pressed);
 	return 1;
 }
@@ -572,10 +573,10 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 	const int columncount = luaL_checkinteger(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
-	const LS_Vector2 outersize = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
+	const ImVec2 outersize = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
 	const float innerwidth = luaL_optnumber(state, 5, 0.f);
 
-	const bool visible = ImGui::BeginTable(strid, columncount, flags, ToImVec2(outersize), innerwidth);
+	const bool visible = ImGui::BeginTable(strid, columncount, flags, outersize, innerwidth);
 	lua_pushboolean(state, visible);
 
 	if (visible)
@@ -729,7 +730,7 @@ static int LS_global_imgui_GetItemRectMin(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const LS_Vector2 rect = FromImVec2(ImGui::GetItemRectMin());
+	const LS_Vector2 rect { ImGui::GetItemRectMin() };
 	return LS_PushVectorValue(state, rect);
 }
 
@@ -737,7 +738,7 @@ static int LS_global_imgui_GetItemRectMax(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const LS_Vector2 rect = FromImVec2(ImGui::GetItemRectMax());
+	const LS_Vector2 rect { ImGui::GetItemRectMax() };
 	return LS_PushVectorValue(state, rect);
 }
 
@@ -745,7 +746,8 @@ static int LS_value_ImGuiViewport_index(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	return ls_imguiviewport_type.PushMemberValue(state);
+	const LS_ImGuiMember member = LS_GetIndexMemberType(state, "ImGuiViewport", ls_imguiviewport_members);
+	return LS_ImGuiTypeOperatorIndex(state, ls_imguiviewport_type, member);
 }
 
 static int LS_global_imgui_GetMainViewport(lua_State* state)
@@ -779,7 +781,7 @@ static int LS_global_imgui_CalcTextSize(lua_State* state)
 	const bool hideafterhashes = luaL_opt(state, lua_toboolean, 2, false);
 	const float wrapwidth = luaL_optnumber(state, 3, -1.f);
 
-	const LS_Vector2 textsize = FromImVec2(ImGui::CalcTextSize(text, text + length, hideafterhashes, wrapwidth));
+	const LS_Vector2 textsize { ImGui::CalcTextSize(text, text + length, hideafterhashes, wrapwidth) };
 	return LS_PushVectorValue(state, textsize);
 }
 

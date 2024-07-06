@@ -24,6 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cassert>
 #include <cstring>
 
+#ifdef USE_IMGUI
+struct ImVec2;
+struct ImVec4;
+#endif // USE_IMGUI
+
 template <size_t N>
 class LS_Vector
 {
@@ -36,12 +41,12 @@ public:
 	LS_Vector& operator=(const LS_Vector&) = default;
 	LS_Vector& operator=(LS_Vector&&) = default;
 
-	explicit LS_Vector(const float* const array)
+	explicit LS_Vector(const float (&array)[N])
 	{
 		memcpy(value, array, sizeof value);
 	}
 
-	LS_Vector& operator=(const float* const array)
+	LS_Vector& operator=(const float (&array)[N])
 	{
 		memcpy(value, array, sizeof value);
 		return *this;
@@ -65,6 +70,16 @@ public:
 		memset(result.value, 0, sizeof result.value);
 		return result;
 	}
+
+#ifdef USE_IMGUI
+	explicit LS_Vector(const ImVec2& other);
+	LS_Vector& operator=(const ImVec2& other);
+	operator ImVec2() const;
+
+	explicit LS_Vector(const ImVec4& other);
+	LS_Vector& operator=(const ImVec4& other);
+	operator ImVec4() const;
+#endif // USE_IMGUI
 
 private:
 	float value[N];

@@ -33,33 +33,50 @@ extern "C"
 #include "quakedef.h"
 }
 
+#include "frozen/string.h"
+#include "frozen/unordered_map.h"
+
 
 template <>
-struct LS_MemberTypeResolver<ImGuiDir>
+LS_Vector2& LS_Vector2::operator=(const ImVec2& other)
 {
-	static constexpr LS_MemberType TYPE = LS_MemberType::Signed;
-};
-
-template <>
-struct LS_MemberTypeResolver<ImVec2>
-{
-	static constexpr LS_MemberType TYPE = LS_MemberType::Vector2;
-};
-
-template <>
-struct LS_MemberTypeResolver<ImVec4>
-{
-	static constexpr LS_MemberType TYPE = LS_MemberType::Vector4;
-};
-
-static LS_Vector2 FromImVec2(const ImVec2& value)
-{
-	return LS_Vector2(reinterpret_cast<const float*>(&value.x));
+	value[0] = other.x;
+	value[1] = other.y;
+	return *this;
 }
 
-static ImVec2 ToImVec2(const LS_Vector2& value)
+template <>
+inline LS_Vector2::LS_Vector(const ImVec2& other)
+{
+	*this = other;
+}
+
+template <>
+LS_Vector2::operator ImVec2() const
 {
 	return ImVec2(value[0], value[1]);
+}
+
+template <>
+LS_Vector4& LS_Vector4::operator=(const ImVec4& other)
+{
+	value[0] = other.x;
+	value[1] = other.y;
+	value[2] = other.z;
+	value[3] = other.w;
+	return *this;
+}
+
+template <>
+inline LS_Vector4::LS_Vector(const ImVec4& other)
+{
+	*this = other;
+}
+
+template <>
+LS_Vector4::operator ImVec4() const
+{
+	return ImVec4(value[0], value[1], value[2], value[3]);
 }
 
 
@@ -138,12 +155,111 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 }
 
 
-constexpr const LS_MemberDefinition ls_imguiviewport_members[] =
+enum LS_ImGuiType
 {
-#define LS_IMGUI_VIEWPORT_MEMBER(NAME) LS_DEFINE_MEMBER(ImGuiViewport, NAME)
+	ImMemberType_bool,
+	ImMemberType_int,
+	ImMemberType_unsigned,
+	ImMemberType_ImGuiDir,
+	ImMemberType_float,
+	ImMemberType_ImVec2,
+	ImMemberType_ImVec4,
+};
 
-	LS_IMGUI_VIEWPORT_MEMBER(Flags),
+struct LS_ImGuiMember
+{
+	size_t type:8;
+	size_t offset:24;
+};
+
+template <typename T>
+struct LS_ImGuiTypeHolder;
+
+#define LS_IMGUI_DEFINE_MEMBER_TYPE(TYPE) \
+	template <> struct LS_ImGuiTypeHolder<TYPE> { static constexpr LS_ImGuiType IMGUI_MEMBER_TYPE = ImMemberType_##TYPE; }
+
+LS_IMGUI_DEFINE_MEMBER_TYPE(bool);
+LS_IMGUI_DEFINE_MEMBER_TYPE(int);
+LS_IMGUI_DEFINE_MEMBER_TYPE(unsigned);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImGuiDir);
+LS_IMGUI_DEFINE_MEMBER_TYPE(float);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec2);
+LS_IMGUI_DEFINE_MEMBER_TYPE(ImVec4);
+
+#undef LS_IMGUI_DEFINE_MEMBER_TYPE
+
+template <typename T>
+static const LS_ImGuiMember& LS_GetIndexMemberType(lua_State* state, const char* nameoftype, const T& members)
+{
+	size_t length;
+	const char* key = luaL_checklstring(state, 2, &length);
+	assert(key);
+	assert(length > 0);
+
+	const frozen::string keystr(key, length);
+	const auto valueit = members.find(keystr);
+
+	if (members.end() == valueit)
+		luaL_error(state, "unknown member '%s' of %s", key, nameoftype);
+
+	return valueit->second;
+}
+
+static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserDataType& type, const LS_ImGuiMember& member)
+{
+	void* userdataptr = type.GetValuePtr(state, 1);
+	assert(userdataptr);
+
+	const uint8_t* bytes = *reinterpret_cast<const uint8_t**>(userdataptr);
+	assert(bytes);
+
+	const uint8_t* memberptr = bytes + member.offset;
+
+	switch (member.type)
+	{
+	case ImMemberType_bool:
+		lua_pushboolean(state, *reinterpret_cast<const bool*>(memberptr));
+		break;
+
+	case ImMemberType_int:
+	case ImMemberType_unsigned:
+	case ImMemberType_ImGuiDir:
+		lua_pushinteger(state, *reinterpret_cast<const int*>(memberptr));
+		break;
+
+	case ImMemberType_float:
+		lua_pushnumber(state, *reinterpret_cast<const float*>(memberptr));
+		break;
+
+	case ImMemberType_ImVec2:
+		LS_PushVectorValue(state, LS_Vector2(*reinterpret_cast<const ImVec2*>(memberptr)));
+		break;
+
+	case ImMemberType_ImVec4:
+		LS_PushVectorValue(state, LS_Vector4(*reinterpret_cast<const ImVec4*>(memberptr)));
+		break;
+
+	default:
+		assert(false);
+		lua_pushnil(state);
+		break;
+	}
+
+	return 1;
+}
+
+#define LS_IMGUI_MEMBER(TYPENAME, MEMBERNAME) \
+	{ #MEMBERNAME, { LS_ImGuiTypeHolder<decltype(TYPENAME::MEMBERNAME)>::IMGUI_MEMBER_TYPE, offsetof(TYPENAME, MEMBERNAME) } }
+
+
+constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport");
+
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 6> ls_imguiviewport_members =
+{
+#define LS_IMGUI_VIEWPORT_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiViewport, NAME)
+
 	LS_IMGUI_VIEWPORT_MEMBER(ID),
+	LS_IMGUI_VIEWPORT_MEMBER(Flags),
 	LS_IMGUI_VIEWPORT_MEMBER(Pos),
 	LS_IMGUI_VIEWPORT_MEMBER(Size),
 	LS_IMGUI_VIEWPORT_MEMBER(WorkPos),
@@ -152,71 +268,70 @@ constexpr const LS_MemberDefinition ls_imguiviewport_members[] =
 #undef LS_IMGUI_VIEWPORT_MEMBER
 };
 
-constexpr LS_UserDataType<ImGuiViewport*> ls_imguiviewport_type("ImGuiViewport", ls_imguiviewport_members, Q_COUNTOF(ls_imguiviewport_members));
+constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("ImGuiStyle");
 
-
-static const LS_MemberDefinition ls_imguistyle_members[] =
+constexpr frozen::unordered_map<frozen::string, LS_ImGuiMember, 51> ls_imguistyle_members =
 {
-#define LS_IMGUI_STYLE_MEMBER(NAME) LS_DEFINE_MEMBER(ImGuiStyle, NAME)
+#define LS_IMGUI_STYLE_MEMBER(NAME) LS_IMGUI_MEMBER(ImGuiStyle, NAME)
 
 	LS_IMGUI_STYLE_MEMBER(Alpha),
-	LS_IMGUI_STYLE_MEMBER(AntiAliasedFill),
-	LS_IMGUI_STYLE_MEMBER(AntiAliasedLines),
-	LS_IMGUI_STYLE_MEMBER(AntiAliasedLinesUseTex),
-	LS_IMGUI_STYLE_MEMBER(ButtonTextAlign),
-	LS_IMGUI_STYLE_MEMBER(CellPadding),
-	LS_IMGUI_STYLE_MEMBER(ChildBorderSize),
-	LS_IMGUI_STYLE_MEMBER(ChildRounding),
-	LS_IMGUI_STYLE_MEMBER(CircleTessellationMaxError),
-	LS_IMGUI_STYLE_MEMBER(ColorButtonPosition),
-	// TODO: Add support for arrays
-	// LS_IMGUI_STYLE_MEMBER(Colors),
-	LS_IMGUI_STYLE_MEMBER(ColumnsMinSpacing),
-	LS_IMGUI_STYLE_MEMBER(CurveTessellationTol),
 	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
-	LS_IMGUI_STYLE_MEMBER(DisplaySafeAreaPadding),
-	LS_IMGUI_STYLE_MEMBER(DisplayWindowPadding),
-	LS_IMGUI_STYLE_MEMBER(FrameBorderSize),
-	LS_IMGUI_STYLE_MEMBER(FramePadding),
-	LS_IMGUI_STYLE_MEMBER(FrameRounding),
-	LS_IMGUI_STYLE_MEMBER(GrabMinSize),
-	LS_IMGUI_STYLE_MEMBER(GrabRounding),
-	LS_IMGUI_STYLE_MEMBER(HoverDelayNormal),
-	LS_IMGUI_STYLE_MEMBER(HoverDelayShort),
-	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipMouse),
-	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipNav),
-	LS_IMGUI_STYLE_MEMBER(HoverStationaryDelay),
-	LS_IMGUI_STYLE_MEMBER(IndentSpacing),
-	LS_IMGUI_STYLE_MEMBER(ItemInnerSpacing),
-	LS_IMGUI_STYLE_MEMBER(ItemSpacing),
-	LS_IMGUI_STYLE_MEMBER(LogSliderDeadzone),
-	LS_IMGUI_STYLE_MEMBER(MouseCursorScale),
-	LS_IMGUI_STYLE_MEMBER(PopupBorderSize),
-	LS_IMGUI_STYLE_MEMBER(PopupRounding),
-	LS_IMGUI_STYLE_MEMBER(ScrollbarRounding),
-	LS_IMGUI_STYLE_MEMBER(ScrollbarSize),
-	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
-	LS_IMGUI_STYLE_MEMBER(SeparatorTextAlign),
-	LS_IMGUI_STYLE_MEMBER(SeparatorTextBorderSize),
-	LS_IMGUI_STYLE_MEMBER(SeparatorTextPadding),
-	LS_IMGUI_STYLE_MEMBER(TabBarBorderSize),
-	LS_IMGUI_STYLE_MEMBER(TabBorderSize),
-	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
-	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersTextAlign),
-	LS_IMGUI_STYLE_MEMBER(TabMinWidthForCloseButton),
-	LS_IMGUI_STYLE_MEMBER(TabRounding),
-	LS_IMGUI_STYLE_MEMBER(TouchExtraPadding),
-	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
-	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
-	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
 	LS_IMGUI_STYLE_MEMBER(WindowPadding),
 	LS_IMGUI_STYLE_MEMBER(WindowRounding),
+	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
+	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
 	LS_IMGUI_STYLE_MEMBER(WindowTitleAlign),
+	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ChildRounding),
+	LS_IMGUI_STYLE_MEMBER(ChildBorderSize),
+	LS_IMGUI_STYLE_MEMBER(PopupRounding),
+	LS_IMGUI_STYLE_MEMBER(PopupBorderSize),
+	LS_IMGUI_STYLE_MEMBER(FramePadding),
+	LS_IMGUI_STYLE_MEMBER(FrameRounding),
+	LS_IMGUI_STYLE_MEMBER(FrameBorderSize),
+	LS_IMGUI_STYLE_MEMBER(ItemSpacing),
+	LS_IMGUI_STYLE_MEMBER(ItemInnerSpacing),
+	LS_IMGUI_STYLE_MEMBER(CellPadding),
+	LS_IMGUI_STYLE_MEMBER(TouchExtraPadding),
+	LS_IMGUI_STYLE_MEMBER(IndentSpacing),
+	LS_IMGUI_STYLE_MEMBER(ColumnsMinSpacing),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarSize),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarRounding),
+	LS_IMGUI_STYLE_MEMBER(GrabMinSize),
+	LS_IMGUI_STYLE_MEMBER(GrabRounding),
+	LS_IMGUI_STYLE_MEMBER(LogSliderDeadzone),
+	LS_IMGUI_STYLE_MEMBER(TabRounding),
+	LS_IMGUI_STYLE_MEMBER(TabBorderSize),
+	LS_IMGUI_STYLE_MEMBER(TabMinWidthForCloseButton),
+	LS_IMGUI_STYLE_MEMBER(TabBarBorderSize),
+	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
+	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersTextAlign),
+	LS_IMGUI_STYLE_MEMBER(ColorButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ButtonTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextBorderSize),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorTextPadding),
+	LS_IMGUI_STYLE_MEMBER(DisplayWindowPadding),
+	LS_IMGUI_STYLE_MEMBER(DisplaySafeAreaPadding),
+	LS_IMGUI_STYLE_MEMBER(MouseCursorScale),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLines),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLinesUseTex),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedFill),
+	LS_IMGUI_STYLE_MEMBER(CurveTessellationTol),
+	LS_IMGUI_STYLE_MEMBER(CircleTessellationMaxError),
+	// TODO: Add support for arrays
+	// LS_IMGUI_STYLE_MEMBER(Colors),
+	LS_IMGUI_STYLE_MEMBER(HoverStationaryDelay),
+	LS_IMGUI_STYLE_MEMBER(HoverDelayShort),
+	LS_IMGUI_STYLE_MEMBER(HoverDelayNormal),
+	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipMouse),
+	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipNav),
 
 #undef LS_IMGUI_STYLE_MEMBER
 };
 
-constexpr LS_UserDataType<ImGuiStyle*> ls_imguistyle_type("ImGuiStyle", ls_imguistyle_members, Q_COUNTOF(ls_imguistyle_members));
+#undef LS_IMGUI_MEMBER
 
 
 static bool ls_framescope;

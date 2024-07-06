@@ -81,6 +81,33 @@ static void LS_tempfree(void* ptr)
 #endif // USE_TLSF
 
 
+void* LS_TypelessUserDataType::NewPtr(lua_State* state) const
+{
+	const LS_TypelessUserDataType** result = static_cast<const LS_TypelessUserDataType**>(lua_newuserdatauv(state, size, 0));
+	assert(result);
+
+	*result = this;
+	result += 1;
+
+	return result;
+}
+
+void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
+{
+	luaL_checktype(state, index, LUA_TUSERDATA);
+
+	const LS_TypelessUserDataType** result = static_cast<const LS_TypelessUserDataType**>(lua_touserdata(state, index));
+	assert(result && *result);
+
+	if (*result != this)
+		luaL_error(state, "invalid userdata type, expected '%s', got '%s'", name, (*result)->name);
+
+	result += 1;
+
+	return result;
+}
+
+
 //
 // Expose 'player' global table with corresponding helper functions
 //
