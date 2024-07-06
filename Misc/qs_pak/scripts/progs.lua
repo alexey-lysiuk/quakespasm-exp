@@ -3,7 +3,8 @@ local functions <const> = progs.functions
 
 function progs.func(index_or_name)
 	if type(index_or_name) == 'number' then
-		return functions(index_or_name - 1)(nil, index_or_name - 1)
+		local _, func = functions(index_or_name - 1)(nil, index_or_name - 1)
+		return func
 	end
 
 	-- TODO: add func.name()
