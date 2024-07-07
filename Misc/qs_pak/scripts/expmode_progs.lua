@@ -28,9 +28,10 @@ local function functions_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true)
 
-	if visible and opened and imBeginTable(title, 2, defaultTableFlags) then
+	if visible and opened and imBeginTable(title, 3, defaultTableFlags) then
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Name')
+		imTableSetupColumn('File')
 		imTableHeadersRow()
 
 		for _, entry in ipairs(self.entries) do
@@ -39,6 +40,8 @@ local function functions_onupdate(self)
 			imText(entry.index)
 			imTableNextColumn()
 			imText(entry.name)
+			imTableNextColumn()
+			imText(entry.file)
 		end
 
 		imEndTable()
@@ -53,7 +56,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in functions() do
-		local entry = { index = tostring(i), name = tostring(func) }
+		local entry = { index = tostring(i), name = tostring(func), file = func:file() }
 		insert(entries, entry)
 	end
 
