@@ -40,6 +40,17 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
+// Pushes file of 'function' userdata
+static int LS_value_function_file(lua_State* state)
+{
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
+		lua_pushstring(state, PR_GetString(function->s_file));
+	else
+		luaL_error(state, "invalid function");
+
+	return 1;
+}
+
 // Pushes name of 'function' userdata
 static int LS_value_function_name(lua_State* state)
 {
@@ -59,7 +70,9 @@ static int LS_value_function_index(lua_State* state)
 	assert(name);
 	assert(length > 0);
 
-	if (strncmp(name, "name", length) == 0)
+	if (strncmp(name, "file", length) == 0)
+		lua_pushcfunction(state, LS_value_function_file);
+	else if (strncmp(name, "name", length) == 0)
 		lua_pushcfunction(state, LS_value_function_name);
 	else
 		luaL_error(state, "unknown function '%s'", name);
