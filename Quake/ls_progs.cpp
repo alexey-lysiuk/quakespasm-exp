@@ -76,7 +76,7 @@ static int LS_value_function_name(lua_State* state)
 	return LS_CallFunctionMethod(state, LS_PushFunctionName);
 }
 
-static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
+static lua_Integer LS_GetFunctionReturnType(lua_State* state, const dfunction_t* function)
 {
 	const int first_statement = function->first_statement;
 	lua_Integer returntype;
@@ -105,6 +105,12 @@ static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* funct
 		returntype = ev_bad;
 	}
 
+	return returntype;
+}
+
+static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
+{
+	const lua_Integer returntype = LS_GetFunctionReturnType(state, function);
 	lua_pushinteger(state, returntype);
 }
 
@@ -136,7 +142,12 @@ static int LS_value_function_index(lua_State* state)
 
 static void LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
-	lua_pushfstring(state, "%s()", PR_SafeGetString(function->s_name));
+	const lua_Integer returntypeindex = LS_GetFunctionReturnType(state, function);
+	const char* const returntype = PR_GetTypeString(returntypeindex);
+	const char* name = PR_SafeGetString(function->s_name);
+	const char* args = "";  // TODO: arguments
+
+	lua_pushfstring(state, "%s %s(%s)", returntype, name, args);
 }
 
 // Pushes string representation of given 'function' userdata

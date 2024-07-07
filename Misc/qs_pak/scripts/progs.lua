@@ -16,16 +16,3 @@ function progs.func(index_or_name)
 		end
 	end
 end
-
-function progs.functionfullname(func)
-	local name = func:name()
-
-	if name == '' then
-		name = '???'
-	end
-
-	local returntype = typename(func:returntype())
-	local args = '???'  -- TODO
-
-	return format('%s %s(%s)', returntype, name, args)
-end
