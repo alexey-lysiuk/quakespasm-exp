@@ -28,6 +28,7 @@ extern "C"
 #include "quakedef.h"
 
 ddef_t *ED_GlobalAtOfs(int ofs);
+const char* PR_GetTypeString(unsigned short type);
 }
 
 constexpr LS_UserDataType<int> ls_function_type("function");
@@ -212,6 +213,15 @@ static int LS_global_progs_functions(lua_State* state)
 	return 3;
 }
 
+// Pushes name of type by its index
+static int LS_global_progs_typename(lua_State* state)
+{
+	const lua_Integer typeindex = luaL_checkinteger(state, 1);
+	const char* const nameoftype = PR_GetTypeString(typeindex);
+	lua_pushstring(state, nameoftype);
+	return 1;
+}
+
 // Returns progs version number (PROG_VERSION)
 static int LS_global_progs_version(lua_State* state)
 {
@@ -230,6 +240,7 @@ void LS_InitProgsType(lua_State* state)
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
 		{ "functions", LS_global_progs_functions },
+		{ "typename", LS_global_progs_typename },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
 	};

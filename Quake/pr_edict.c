@@ -1351,7 +1351,10 @@ void PR_LoadProgs (void)
 }
 
 
-static const char* PR_GetTypeString(unsigned short type)
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // USE_LUA_SCRIPTING
+const char* PR_GetTypeString(unsigned short type)
 {
 	switch (type & ~DEF_SAVEGLOBAL)
 	{
