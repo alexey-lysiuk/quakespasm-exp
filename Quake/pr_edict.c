@@ -1370,7 +1370,10 @@ const char* PR_GetTypeString(unsigned short type)
 	}
 }
 
-static const char* PR_SafeGetString(int offset)
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // USE_LUA_SCRIPTING
+const char* PR_SafeGetString(int offset)
 {
 	if (offset >= 0 && offset < pr_stringssize)
 		return pr_strings + offset;

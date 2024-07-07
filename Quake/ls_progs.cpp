@@ -29,6 +29,7 @@ extern "C"
 
 ddef_t *ED_GlobalAtOfs(int ofs);
 const char* PR_GetTypeString(unsigned short type);
+const char* PR_SafeGetString(int offset);
 }
 
 constexpr LS_UserDataType<int> ls_function_type("function");
@@ -55,7 +56,7 @@ static int LS_CallFunctionMethod(lua_State* state, void (*method)(lua_State* sta
 
 static void LS_PushFunctionFile(lua_State* state, const dfunction_t* function)
 {
-	lua_pushstring(state, PR_GetString(function->s_file));
+	lua_pushstring(state, PR_SafeGetString(function->s_file));
 }
 
 // Pushes file of 'function' userdata
@@ -66,7 +67,7 @@ static int LS_value_function_file(lua_State* state)
 
 static void LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 {
-	lua_pushstring(state, PR_GetString(function->s_name));
+	lua_pushstring(state, PR_SafeGetString(function->s_name));
 }
 
 // Pushes name of 'function' userdata
@@ -133,15 +134,15 @@ static int LS_value_function_index(lua_State* state)
 	return 1;
 }
 
+static void LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
+{
+	lua_pushfstring(state, "%s()", PR_SafeGetString(function->s_name));
+}
+
 // Pushes string representation of given 'function' userdata
 static int LS_value_function_tostring(lua_State* state)
 {
-	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		lua_pushfstring(state, "%s()", PR_GetString(function->s_name));
-	else
-		lua_pushstring(state, "invalid function");
-
-	return 1;
+	return LS_CallFunctionMethod(state, LS_PushFunctionToString);
 }
 
 // Sets metatable for 'function' userdata
