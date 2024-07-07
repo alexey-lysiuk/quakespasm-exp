@@ -174,7 +174,10 @@ void ED_Free (edict_t *ed)
 ED_GlobalAtOfs
 ============
 */
-static ddef_t *ED_GlobalAtOfs (int ofs)
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // USE_LUA_SCRIPTING
+ddef_t *ED_GlobalAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;

@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "quakedef.h"
+
+ddef_t *ED_GlobalAtOfs(int ofs);
 }
 
 constexpr LS_UserDataType<int> ls_function_type("function");
@@ -72,6 +74,44 @@ static int LS_value_function_name(lua_State* state)
 	return LS_CallFunctionMethod(state, LS_PushFunctionName);
 }
 
+static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
+{
+	const int first_statement = function->first_statement;
+	lua_Integer returntype;
+
+	if (first_statement > 0)
+	{
+		returntype = ev_void;
+
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			if (statement->op == OP_RETURN)
+			{
+				const ddef_t* def = ED_GlobalAtOfs(statement->a);
+				returntype = def ? def->type : ev_bad;
+				break;
+			}
+			else if (statement->op == OP_DONE)
+				break;
+		}
+	}
+	else
+	{
+		// TODO: create list of return types for built-in functions
+		returntype = ev_bad;
+	}
+
+	lua_pushinteger(state, returntype);
+}
+
+// Pushes return type of 'function' userdata
+static int LS_value_function_returntype(lua_State* state)
+{
+	return LS_CallFunctionMethod(state, LS_PushFunctionReturnType);
+}
+
 // Pushes method of 'function' userdata by its name
 static int LS_value_function_index(lua_State* state)
 {
@@ -84,6 +124,8 @@ static int LS_value_function_index(lua_State* state)
 		lua_pushcfunction(state, LS_value_function_file);
 	else if (strncmp(name, "name", length) == 0)
 		lua_pushcfunction(state, LS_value_function_name);
+	else if (strncmp(name, "returntype", length) == 0)
+		lua_pushcfunction(state, LS_value_function_returntype);
 	else
 		luaL_error(state, "unknown function '%s'", name);
 
