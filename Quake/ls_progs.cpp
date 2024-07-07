@@ -40,7 +40,34 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
-// Pushes string representation of given function
+// Pushes name of 'function' userdata
+static int LS_value_function_name(lua_State* state)
+{
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
+		lua_pushstring(state, PR_GetString(function->s_name));
+	else
+		luaL_error(state, "invalid function");
+
+	return 1;
+}
+
+// Pushes method of 'function' userdata by its name
+static int LS_value_function_index(lua_State* state)
+{
+	size_t length;
+	const char* name = luaL_checklstring(state, 2, &length);
+	assert(name);
+	assert(length > 0);
+
+	if (strncmp(name, "name", length) == 0)
+		lua_pushcfunction(state, LS_value_function_name);
+	else
+		luaL_error(state, "unknown function '%s'", name);
+
+	return 1;
+}
+
+// Pushes string representation of given 'function' userdata
 static int LS_value_function_tostring(lua_State* state)
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
@@ -56,6 +83,7 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
+		{ "__index", LS_value_function_index },
 		{ "__tostring", LS_value_function_tostring },
 		{ NULL, NULL }
 	};
