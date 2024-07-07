@@ -53,7 +53,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in functions() do
-		local entry = { index = tostring(i), name = tostring(func) }
+		local entry = { index = tostring(i), name = func:name() }
 		insert(entries, entry)
 	end
 
