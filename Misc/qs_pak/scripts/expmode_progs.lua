@@ -23,6 +23,7 @@ local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 
 local functions <const> = progs.functions
+local functionfullname <const> = progs.functionfullname
 
 local function functions_onupdate(self)
 	local title = self.title
@@ -53,8 +54,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in functions() do
-		local name = func:name()
-		local entry = { index = tostring(i), name = name == '' and '???' or name }
+		local entry = { index = tostring(i), name = functionfullname(func) }
 		insert(entries, entry)
 	end
 

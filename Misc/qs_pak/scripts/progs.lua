@@ -1,5 +1,8 @@
 
+local format <const> = string.format
+
 local functions <const> = progs.functions
+local typename <const> = progs.typename
 
 function progs.func(index_or_name)
 	if type(index_or_name) == 'number' then
@@ -12,4 +15,17 @@ function progs.func(index_or_name)
 			return func
 		end
 	end
+end
+
+function progs.functionfullname(func)
+	local name = func:name()
+
+	if name == '' then
+		name = '???'
+	end
+
+	local returntype = typename(func:returntype())
+	local args = '???'  -- TODO
+
+	return format('%s %s(%s)', returntype, name, args)
 end
