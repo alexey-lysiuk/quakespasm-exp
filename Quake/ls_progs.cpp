@@ -40,26 +40,36 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
-// Pushes file of 'function' userdata
-static int LS_value_function_file(lua_State* state)
+static int LS_CallFunctionMethod(lua_State* state, void (*method)(lua_State* state, const dfunction_t* function))
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		lua_pushstring(state, PR_GetString(function->s_file));
+		method(state, function);
 	else
 		luaL_error(state, "invalid function");
 
 	return 1;
 }
 
+static void LS_PushFunctionFile(lua_State* state, const dfunction_t* function)
+{
+	lua_pushstring(state, PR_GetString(function->s_file));
+}
+
+// Pushes file of 'function' userdata
+static int LS_value_function_file(lua_State* state)
+{
+	return LS_CallFunctionMethod(state, LS_PushFunctionFile);
+}
+
+static void LS_PushFunctionName(lua_State* state, const dfunction_t* function)
+{
+	lua_pushstring(state, PR_GetString(function->s_name));
+}
+
 // Pushes name of 'function' userdata
 static int LS_value_function_name(lua_State* state)
 {
-	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		lua_pushstring(state, PR_GetString(function->s_name));
-	else
-		luaL_error(state, "invalid function");
-
-	return 1;
+	return LS_CallFunctionMethod(state, LS_PushFunctionName);
 }
 
 // Pushes method of 'function' userdata by its name
