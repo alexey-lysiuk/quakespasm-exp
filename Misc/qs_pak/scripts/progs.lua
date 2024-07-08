@@ -1,8 +1,5 @@
 
-local format <const> = string.format
-
 local functions <const> = progs.functions
-local typename <const> = progs.typename
 
 function progs.func(index_or_name)
 	if type(index_or_name) == 'number' then
