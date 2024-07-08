@@ -174,7 +174,10 @@ void ED_Free (edict_t *ed)
 ED_GlobalAtOfs
 ============
 */
-static ddef_t *ED_GlobalAtOfs (int ofs)
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // USE_LUA_SCRIPTING
+ddef_t *ED_GlobalAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;
@@ -1348,7 +1351,10 @@ void PR_LoadProgs (void)
 }
 
 
-static const char* PR_GetTypeString(unsigned short type)
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // USE_LUA_SCRIPTING
+const char* PR_GetTypeString(unsigned short type)
 {
 	switch (type & ~DEF_SAVEGLOBAL)
 	{
@@ -1364,7 +1370,10 @@ static const char* PR_GetTypeString(unsigned short type)
 	}
 }
 
-static const char* PR_SafeGetString(int offset)
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // USE_LUA_SCRIPTING
+const char* PR_SafeGetString(int offset)
 {
 	if (offset >= 0 && offset < pr_stringssize)
 		return pr_strings + offset;
