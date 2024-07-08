@@ -501,3 +501,7 @@ function expmode.updatesearch(window, compfunc, modified)
 
 	return #searchbuffer > 0 and window.searchresults or window.entries
 end
+
+function expmode.resetsearch(window)
+	window.searchresults = nil
+end

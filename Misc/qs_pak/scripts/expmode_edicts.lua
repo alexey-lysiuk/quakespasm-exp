@@ -64,6 +64,7 @@ local type_vector <const> = edicts.valuetypes.vector
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
+local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
@@ -217,7 +218,7 @@ local function edictinfo_onshow(self)
 end
 
 local function edictinfo_onhide(self)
-	self.searchresults = nil
+	resetsearch(self)
 	self.fields = nil
 	return true
 end
@@ -382,7 +383,7 @@ local function edicts_onshow(self)
 end
 
 local function edicts_onhide(self)
-	self.searchresults = nil
+	resetsearch(self)
 	self.entries = nil
 	return true
 end
