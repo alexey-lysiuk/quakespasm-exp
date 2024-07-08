@@ -135,7 +135,8 @@ static int LS_value_function_index(lua_State* state)
 // Pushes string representation of given 'function' userdata
 static void LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
-	const char* const returntype = "???";  // TODO: return type
+	const lua_Integer returntypeindex = LS_GetFunctionReturnType(function);
+	const char* const returntype = PR_GetTypeString(returntypeindex);
 	const char* name = PR_SafeGetString(function->s_name);
 	const char* args = "";  // TODO: arguments
 
