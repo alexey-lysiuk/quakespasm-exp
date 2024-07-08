@@ -11,6 +11,7 @@ local format <const> = string.format
 local insert <const> = table.insert
 local remove <const> = table.remove
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
 local imBeginMenu <const> = ImGui.BeginMenu
@@ -22,22 +23,29 @@ local imEndMenu <const> = ImGui.EndMenu
 local imGetCursorPosX <const> = ImGui.GetCursorPosX
 local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
 local imGetMainViewport <const> = ImGui.GetMainViewport
+local imInputText <const> = ImGui.InputText
 local imInputTextMultiline <const> = ImGui.InputTextMultiline
+local imIsItemHovered <const> = ImGui.IsItemHovered
+local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
 local imMenuItem <const> = ImGui.MenuItem
 local imSameLine <const> = ImGui.SameLine
 local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
+local imSetKeyboardFocusHere <const> = ImGui.SetKeyboardFocusHere
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
 local imSetNextWindowSize <const> = ImGui.SetNextWindowSize
 local imSetNextWindowSizeConstraints <const> = ImGui.SetNextWindowSizeConstraints
+local imSetTooltip <const> = ImGui.SetTooltip
 local imSpacing <const> = ImGui.Spacing
 local imText <const> = ImGui.Text
+local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = vec2.new
 
 local imWindowFlags <const> = ImGui.WindowFlags
 local imCondFirstUseEver <const> = ImGui.Cond.FirstUseEver
+local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
 local imInputTextAllowTabInput <const> = ImGui.InputTextFlags.AllowTabInput
 
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse
@@ -431,4 +439,65 @@ function expmode.messagebox(title, text)
 	local messagebox = window(title, messagebox_onupdate)
 	messagebox.text = text
 	return messagebox
+end
+
+function expmode.searchbar(window)
+	imAlignTextToFramePadding()
+	imText('Search:')
+	imSameLine()
+
+	if imIsWindowAppearing() then
+		imSetKeyboardFocusHere()
+	end
+
+	local modified = imInputText('##search', window.searchbuffer)
+
+	if #window.searchbuffer > 0 then
+		if imIsItemHovered(imHoveredFlagsDelayNormal) then
+			local searchresults = window.searchresults
+			local count = searchresults and #searchresults or -1
+
+			if count >= 0 then
+				imSetTooltip(count .. ' result(s)')
+			end
+		end
+
+		imSameLine(0, 0)
+
+		if imButton('x') then
+			window.searchbuffer = nil
+			modified = true
+		end
+	end
+
+	return modified
+end
+
+function expmode.updatesearch(window, compfunc, modified)
+	local searchbuffer = window.searchbuffer
+
+	if not searchbuffer then
+		searchbuffer = imTextBuffer()
+		window.searchbuffer = searchbuffer
+	end
+
+	if modified then
+		local searchstring = tostring(searchbuffer):lower()
+
+		if #searchstring > 0 then
+			local searchresults = {}
+
+			for _, entry in ipairs(window.entries) do
+				if compfunc(entry, searchstring) then
+					insert(searchresults, entry)
+				end
+			end
+
+			window.searchresults = searchresults
+		else
+			window.searchresults = nil
+		end
+	end
+
+	return #searchbuffer > 0 and window.searchresults or window.entries
 end
