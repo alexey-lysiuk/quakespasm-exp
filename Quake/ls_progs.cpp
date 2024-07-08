@@ -28,6 +28,7 @@ extern "C"
 #include "quakedef.h"
 
 const char* PR_GetTypeString(unsigned short type);
+const char* PR_SafeGetString(int offset);
 }
 
 constexpr LS_UserDataType<int> ls_function_type("function");
@@ -46,7 +47,7 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 static int LS_value_function_file(lua_State* state)
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		lua_pushstring(state, PR_GetString(function->s_file));
+		lua_pushstring(state, PR_SafeGetString(function->s_file));
 	else
 		luaL_error(state, "invalid function");
 
@@ -57,7 +58,7 @@ static int LS_value_function_file(lua_State* state)
 static int LS_value_function_name(lua_State* state)
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		lua_pushstring(state, PR_GetString(function->s_name));
+		lua_pushstring(state, PR_SafeGetString(function->s_name));
 	else
 		luaL_error(state, "invalid function");
 
@@ -86,7 +87,7 @@ static int LS_value_function_index(lua_State* state)
 static int LS_value_function_tostring(lua_State* state)
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		lua_pushfstring(state, "%s()", PR_GetString(function->s_name));
+		lua_pushfstring(state, "%s()", PR_SafeGetString(function->s_name));
 	else
 		lua_pushstring(state, "invalid function");
 
