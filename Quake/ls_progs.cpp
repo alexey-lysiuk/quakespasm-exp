@@ -54,28 +54,25 @@ static int LS_CallFunctionMethod(lua_State* state, void (*method)(lua_State* sta
 	return 1;
 }
 
+template <void (*Func)(lua_State* state, const dfunction_t* function)>
+static int LS_FunctionMethod(lua_State* state)
+{
+	return LS_CallFunctionMethod(state, Func);
+}
+
+// Pushes file of 'function' userdata
 static void LS_PushFunctionFile(lua_State* state, const dfunction_t* function)
 {
 	lua_pushstring(state, PR_SafeGetString(function->s_file));
 }
 
-// Pushes file of 'function' userdata
-static int LS_value_function_file(lua_State* state)
-{
-	return LS_CallFunctionMethod(state, LS_PushFunctionFile);
-}
-
+// Pushes name of 'function' userdata
 static void LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 {
 	lua_pushstring(state, PR_SafeGetString(function->s_name));
 }
 
-// Pushes name of 'function' userdata
-static int LS_value_function_name(lua_State* state)
-{
-	return LS_CallFunctionMethod(state, LS_PushFunctionName);
-}
-
+// Returns function return type
 static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 {
 	const int first_statement = function->first_statement;
@@ -108,16 +105,11 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 	return returntype;
 }
 
+// Pushes return type of 'function' userdata
 static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
 {
 	const lua_Integer returntype = LS_GetFunctionReturnType(function);
 	lua_pushinteger(state, returntype);
-}
-
-// Pushes return type of 'function' userdata
-static int LS_value_function_returntype(lua_State* state)
-{
-	return LS_CallFunctionMethod(state, LS_PushFunctionReturnType);
 }
 
 // Pushes method of 'function' userdata by its name
@@ -129,17 +121,18 @@ static int LS_value_function_index(lua_State* state)
 	assert(length > 0);
 
 	if (strncmp(name, "file", length) == 0)
-		lua_pushcfunction(state, LS_value_function_file);
+		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionFile>);
 	else if (strncmp(name, "name", length) == 0)
-		lua_pushcfunction(state, LS_value_function_name);
+		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionName>);
 	else if (strncmp(name, "returntype", length) == 0)
-		lua_pushcfunction(state, LS_value_function_returntype);
+		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionReturnType>);
 	else
 		luaL_error(state, "unknown function '%s'", name);
 
 	return 1;
 }
 
+// Pushes string representation of given 'function' userdata
 static void LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
 	const lua_Integer returntypeindex = LS_GetFunctionReturnType(function);
@@ -150,19 +143,13 @@ static void LS_PushFunctionToString(lua_State* state, const dfunction_t* functio
 	lua_pushfstring(state, "%s %s(%s)", returntype, name, args);
 }
 
-// Pushes string representation of given 'function' userdata
-static int LS_value_function_tostring(lua_State* state)
-{
-	return LS_CallFunctionMethod(state, LS_PushFunctionToString);
-}
-
 // Sets metatable for 'function' userdata
 static void LS_SetFunctionMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_function_index },
-		{ "__tostring", LS_value_function_tostring },
+		{ "__tostring", LS_FunctionMethod<LS_PushFunctionToString> },
 		{ NULL, NULL }
 	};
 
