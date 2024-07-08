@@ -27,6 +27,7 @@ extern "C"
 {
 #include "quakedef.h"
 
+ddef_t *ED_GlobalAtOfs(int ofs);
 const char* PR_GetTypeString(unsigned short type);
 const char* PR_SafeGetString(int offset);
 }
@@ -71,6 +72,46 @@ static void LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 	lua_pushstring(state, PR_SafeGetString(function->s_name));
 }
 
+// Returns function return type
+static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
+{
+	const int first_statement = function->first_statement;
+	lua_Integer returntype;
+
+	if (first_statement > 0)
+	{
+		returntype = ev_void;
+
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			dstatement_t* statement = &pr_statements[i];
+
+			if (statement->op == OP_RETURN)
+			{
+				const ddef_t* def = ED_GlobalAtOfs(statement->a);
+				returntype = def ? def->type : ev_bad;
+				break;
+			}
+			else if (statement->op == OP_DONE)
+				break;
+		}
+	}
+	else
+	{
+		// TODO: create list of return types for built-in functions
+		returntype = ev_bad;
+	}
+
+	return returntype;
+}
+
+// Pushes return type of 'function' userdata
+static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
+{
+	const lua_Integer returntype = LS_GetFunctionReturnType(function);
+	lua_pushinteger(state, returntype);
+}
+
 // Pushes method of 'function' userdata by its name
 static int LS_value_function_index(lua_State* state)
 {
@@ -83,6 +124,8 @@ static int LS_value_function_index(lua_State* state)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionFile>);
 	else if (strncmp(name, "name", length) == 0)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionName>);
+	else if (strncmp(name, "returntype", length) == 0)
+		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionReturnType>);
 	else
 		luaL_error(state, "unknown function '%s'", name);
 
