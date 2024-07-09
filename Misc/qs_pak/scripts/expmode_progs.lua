@@ -24,27 +24,43 @@ local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable 
 
 local functions <const> = progs.functions
 
+local addaction <const> = expmode.addaction
+local resetsearch <const> = expmode.resetsearch
+local searchbar <const> = expmode.searchbar
+local updatesearch <const> = expmode.updatesearch
+local window <const> = expmode.window
+
+local function function_searchcompare(entry, string)
+	return entry.name:lower():find(string, 1, true)
+		or entry.file:lower():find(string, 1, true)
+end
+
 local function functions_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true)
 
-	if visible and opened and imBeginTable(title, 3, defaultTableFlags) then
-		imTableSetupColumn('Index', imTableColumnWidthFixed)
-		imTableSetupColumn('Name')
-		imTableSetupColumn('File')
-		imTableHeadersRow()
+	if visible and opened then
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, function_searchcompare, searchmodified)
 
-		for _, entry in ipairs(self.entries) do
-			imTableNextRow()
-			imTableNextColumn()
-			imText(entry.index)
-			imTableNextColumn()
-			imText(entry.name)
-			imTableNextColumn()
-			imText(entry.file)
+		if imBeginTable(title, 3, defaultTableFlags) then
+			imTableSetupColumn('Index', imTableColumnWidthFixed)
+			imTableSetupColumn('Name')
+			imTableSetupColumn('File')
+			imTableHeadersRow()
+
+			for _, entry in ipairs(entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry.index)
+				imTableNextColumn()
+				imText(entry.name)
+				imTableNextColumn()
+				imText(entry.file)
+			end
+
+			imEndTable()
 		end
-
-		imEndTable()
 	end
 
 	imEnd()
@@ -61,18 +77,21 @@ local function functions_onshow(self)
 	end
 
 	self.entries = entries
+
+	updatesearch(self, function_searchcompare, true)
 	return true
 end
 
 local function functions_onhide(self)
+	resetsearch(self)
 	self.entries = nil
 	return true
 end
 
-expmode.addaction(function ()
+addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions') then
-			expmode.window('Progs Functions', functions_onupdate, nil,
+			window('Progs Functions', functions_onupdate, nil,
 				functions_onshow, functions_onhide):setconstraints()
 		end
 
