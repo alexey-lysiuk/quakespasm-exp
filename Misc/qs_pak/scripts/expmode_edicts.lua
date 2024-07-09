@@ -9,7 +9,6 @@ local format <const> = string.format
 local concat <const> = table.concat
 local insert <const> = table.insert
 
-local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
@@ -21,17 +20,14 @@ local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
-local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
-local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
 local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
-local imSetKeyboardFocusHere <const> = ImGui.SetKeyboardFocusHere
 local imSetTooltip <const> = ImGui.SetTooltip
 local imSpacing <const> = ImGui.Spacing
 local imTableGetColumnFlags <const> = ImGui.TableGetColumnFlags
@@ -68,6 +64,9 @@ local type_vector <const> = edicts.valuetypes.vector
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
+local resetsearch <const> = expmode.resetsearch
+local searchbar <const> = expmode.searchbar
+local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
 
 local ghost <const> = player.ghost
@@ -94,67 +93,6 @@ local function moveplayer(edict, location, angles)
 
 		expmode.exit()
 	end
-end
-
-local function searchbar(window)
-	imAlignTextToFramePadding()
-	imText('Search:')
-	imSameLine()
-
-	if imIsWindowAppearing() then
-		imSetKeyboardFocusHere()
-	end
-
-	local modified = imInputText('##search', window.searchbuffer)
-
-	if #window.searchbuffer > 0 then
-		if imIsItemHovered(imHoveredFlagsDelayNormal) then
-			local searchresults = window.searchresults
-			local count = searchresults and #searchresults or -1
-
-			if count >= 0 then
-				imSetTooltip(count .. ' result(s)')
-			end
-		end
-
-		imSameLine(0, 0)
-
-		if imButton('x') then
-			window.searchbuffer = nil
-			modified = true
-		end
-	end
-
-	return modified
-end
-
-local function updatesearch(window, compfunc, modified)
-	local searchbuffer = window.searchbuffer
-
-	if not searchbuffer then
-		searchbuffer = imTextBuffer()
-		window.searchbuffer = searchbuffer
-	end
-
-	if modified then
-		local searchstring = tostring(searchbuffer):lower()
-
-		if #searchstring > 0 then
-			local searchresults = {}
-
-			for _, entry in ipairs(window.entries) do
-				if compfunc(entry, searchstring) then
-					insert(searchresults, entry)
-				end
-			end
-
-			window.searchresults = searchresults
-		else
-			window.searchresults = nil
-		end
-	end
-
-	return #searchbuffer > 0 and window.searchresults or window.entries
 end
 
 local function edictinfo_searchcompare(entry, string)
@@ -280,7 +218,7 @@ local function edictinfo_onshow(self)
 end
 
 local function edictinfo_onhide(self)
-	self.searchresults = nil
+	resetsearch(self)
 	self.fields = nil
 	return true
 end
@@ -445,7 +383,7 @@ local function edicts_onshow(self)
 end
 
 local function edicts_onhide(self)
-	self.searchresults = nil
+	resetsearch(self)
 	self.entries = nil
 	return true
 end
