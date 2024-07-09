@@ -20,7 +20,7 @@ local imTableFlags <const> = ImGui.TableFlags
 
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 
-local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
+local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
 local functions <const> = progs.functions
 
