@@ -181,7 +181,7 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 			ev_void,     // void(entity e) setspawnparms = #78
 		};
 
-		const int builtin = -first_statement;
+		const size_t builtin = -first_statement;
 		returntype = (builtin < Q_COUNTOF(BUILTIN_RETURN_TYPES)) ? BUILTIN_RETURN_TYPES[builtin] : ev_bad;
 	}
 
