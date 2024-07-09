@@ -179,10 +179,46 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 			ev_string,   // string(string s) precache_sound2 = #76
 			ev_string,   // string(string s) precache_file2 = #77
 			ev_void,     // void(entity e) setspawnparms = #78
+
+			// 2021 re-release, see PR_PatchRereleaseBuiltins()
+			ev_float,    // float() finaleFinished = #79
+			ev_void,     // void localsound (entity client, string sample) = #80
+			ev_void,     // void draw_point (vector point, float colormap, float lifetime, float depthtest) = #81
+			ev_void,     // void draw_line (vector start, vector end, float colormap, float lifetime, float depthtest) = #82
+			ev_void,     // void draw_arrow (vector start, vector end, float colormap, float size, float lifetime, float depthtest) = #83
+			ev_void,     // void draw_ray (vector start, vector direction, float length, float colormap, float size, float lifetime, float depthtest) = #84
+			ev_void,     // void draw_circle (vector origin, float radius, float colormap, float lifetime, float depthtest) = #85
+			ev_void,     // void draw_bounds (vector min, vector max, float colormap, float lifetime, float depthtest) = #86
+			ev_void,     // void draw_worldtext (string s, vector origin, float size, float lifetime, float depthtest) = #87
+			ev_void,     // void draw_sphere (vector origin, float radius, float colormap, float lifetime, float depthtest) = #88
+			ev_void,     // void draw_cylinder (vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest) = #89
+			ev_float,    // float CheckPlayerEXFlags( entity playerEnt ) = #90
+			ev_float,    // float walkpathtogoal( float movedist, vector goal ) = #91
+			ev_float,    // float bot_movetopoint( entity bot, vector point ) = #92
+			// same # as above, float bot_followentity( entity bot, entity goal ) = #92
 		};
 
 		const size_t builtin = -first_statement;
-		returntype = (builtin < Q_COUNTOF(BUILTIN_RETURN_TYPES)) ? BUILTIN_RETURN_TYPES[builtin] : ev_bad;
+
+		switch (builtin)
+		{
+		case 0:
+			// TODO: add return type detection by name for re-release progs
+			returntype = ev_bad;
+			break;
+
+		case 99:
+			returntype = ev_float;  // float checkextension( string s ) = #99
+			break;
+
+		case 401:
+			returntype = ev_void;  // void setcolor( entity client, float color ) = #401
+			break;
+
+		default:
+			returntype = (builtin < Q_COUNTOF(BUILTIN_RETURN_TYPES)) ? BUILTIN_RETURN_TYPES[builtin] : ev_bad;
+			break;
+		}
 	}
 
 	return returntype;
