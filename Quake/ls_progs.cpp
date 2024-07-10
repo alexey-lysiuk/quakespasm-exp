@@ -40,10 +40,37 @@ struct LS_FunctionParameter
 
 constexpr LS_UserDataType<LS_FunctionParameter> ls_functionparameter_type("function parameter");
 
+static int LS_value_functionparameter_name(lua_State* state)
+{
+	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
+	const char* const name = PR_SafeGetString(parameter.name);
+
+	lua_pushstring(state, name);
+	return 1;
+}
+
+static int LS_value_functionparameter_type(lua_State* state)
+{
+	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
+	lua_pushinteger(state, parameter.type);
+	return 1;
+}
+
 static int LS_value_functionparameter_index(lua_State* state)
 {
-	// TODO: name(), type()
-	return 0;
+	size_t length;
+	const char* name = luaL_checklstring(state, 2, &length);
+	assert(name);
+	assert(length > 0);
+
+	if (strncmp(name, "name", length) == 0)
+		lua_pushcfunction(state, LS_value_functionparameter_name);
+	else if (strncmp(name, "type", length) == 0)
+		lua_pushcfunction(state, LS_value_functionparameter_type);
+	else
+		luaL_error(state, "unknown function '%s'", name);
+
+	return 1;
 }
 
 static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, luaL_Buffer& buffer)
