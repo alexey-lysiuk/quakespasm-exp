@@ -32,6 +32,41 @@ const char* PR_GetTypeString(unsigned short type);
 const char* PR_SafeGetString(int offset);
 }
 
+struct LS_FunctionParameter
+{
+	int name;
+	int type;
+};
+
+//constexpr LS_UserDataType<LS_FunctionParameter> ls_functionparameter_type("function parameter");
+
+static int LS_GetFunctionParameters(const dfunction_t* const function, LS_FunctionParameter parameters[MAX_PARMS])
+{
+	assert(function);
+
+	const int first_statement = function->first_statement;
+	const int numparms = q_min(function->numparms, MAX_PARMS);
+
+	for (int i = 0; i < numparms; ++i)
+	{
+		LS_FunctionParameter& param = parameters[i];
+
+		if (first_statement > 0)
+		{
+			const ddef_t* def = ED_GlobalAtOfs(function->parm_start + i);
+			param.name = def ? def->s_name : 0;
+			param.type = def ? def->type : (function->parm_size[i] > 1 ? ev_vector : ev_bad);
+		}
+		else
+		{
+			param.name = 0 /* no name */;
+			param.type = function->parm_size[i] > 1 ? ev_vector : ev_bad;
+		}
+	}
+
+	return numparms;
+}
+
 constexpr LS_UserDataType<int> ls_function_type("function");
 
 // Gets pointer to dfunction_t from 'function' userdata
@@ -265,34 +300,8 @@ static void LS_PushFunctionToString(lua_State* state, const dfunction_t* functio
 	luaL_addstring(&buf, name);
 	luaL_addchar(&buf, '(');
 
-	struct Parameter
-	{
-		int name;
-		int type;
-	};
-	Parameter parameters[MAX_PARMS];
-
-	const int first_statement = function->first_statement;
-	const int numparms = q_min(function->numparms, MAX_PARMS);
-
-	for (int i = 0; i < numparms; ++i)
-	{
-		Parameter param;
-
-		if (first_statement > 0)
-		{
-			const ddef_t* def = ED_GlobalAtOfs(function->parm_start + i);
-			param.name = def ? def->s_name : 0;
-			param.type = def ? def->type : (function->parm_size[i] > 1 ? ev_vector : ev_bad);
-		}
-		else
-		{
-			param.name = 0 /* no name */;
-			param.type = function->parm_size[i] > 1 ? ev_vector : ev_bad;
-		}
-
-		parameters[i] = param;
-	}
+	LS_FunctionParameter parameters[MAX_PARMS];
+	const int numparms = LS_GetFunctionParameters(function, parameters);
 
 	for (int i = 0; i < numparms; ++i)
 	{
