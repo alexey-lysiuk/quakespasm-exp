@@ -259,7 +259,15 @@ static void LS_PushFunctionToString(lua_State* state, const dfunction_t* functio
 	const char* name = PR_SafeGetString(function->s_name);
 	const char* args = "";  // TODO: arguments
 
-	lua_pushfstring(state, "%s %s(%s)", returntype, name, args);
+	luaL_Buffer buf;
+	luaL_buffinitsize(state, &buf, 256);
+	luaL_addstring(&buf, returntype);
+	luaL_addchar(&buf, ' ');
+	luaL_addstring(&buf, name);
+	luaL_addchar(&buf, '(');
+	luaL_addstring(&buf, args);
+	luaL_addchar(&buf, ')');
+	luaL_pushresult(&buf);
 }
 
 // Sets metatable for 'function' userdata
