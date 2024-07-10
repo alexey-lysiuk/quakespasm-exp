@@ -259,7 +259,7 @@ static void LS_PushFunctionToString(lua_State* state, const dfunction_t* functio
 	const char* name = PR_SafeGetString(function->s_name);
 
 	luaL_Buffer buf;
-	luaL_buffinit(state, &buf);
+	luaL_buffinitsize(state, &buf, 256);
 	luaL_addstring(&buf, returntype);
 	luaL_addchar(&buf, ' ');
 	luaL_addstring(&buf, name);
