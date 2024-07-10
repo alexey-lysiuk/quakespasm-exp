@@ -268,7 +268,7 @@ static void LS_PushFunctionToString(lua_State* state, const dfunction_t* functio
 	struct Parameter
 	{
 		int name;
-		unsigned short type;
+		int type;
 	};
 	Parameter parameters[MAX_PARMS];
 
