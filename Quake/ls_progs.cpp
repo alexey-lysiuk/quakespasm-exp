@@ -42,28 +42,33 @@ constexpr LS_UserDataType<LS_FunctionParameter> ls_functionparameter_type("funct
 
 static int LS_value_functionparameter_index(lua_State* state)
 {
-	// TODO
+	// TODO: name(), type()
 	return 0;
 }
 
-static int LS_value_functionparameter_tostring(lua_State* state)
+static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, luaL_Buffer& buffer)
 {
-	const LS_FunctionParameter& param = ls_functionparameter_type.GetValue(state, 1);
+	const char* const type = PR_GetTypeString(parameter.type);
+	luaL_addstring(&buffer, type);
 
-	luaL_Buffer buf;
-	luaL_buffinitsize(state, &buf, 256);
-
-	const char* const type = PR_GetTypeString(param.type);
-	luaL_addstring(&buf, type);
-
-	const char* const name = PR_SafeGetString(param.name);
+	const char* const name = PR_SafeGetString(parameter.name);
 	if (name[0] != '\0')
 	{
-		luaL_addchar(&buf, ' ');
-		luaL_addstring(&buf, name);
+		luaL_addchar(&buffer, ' ');
+		luaL_addstring(&buffer, name);
 	}
+}
 
-	luaL_pushresult(&buf);
+// Pushes string representation of given 'function parameter' userdata
+static int LS_value_functionparameter_tostring(lua_State* state)
+{
+	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
+
+	luaL_Buffer buffer;
+	luaL_buffinitsize(state, &buffer, 256);
+	LS_FunctionParameterToBuffer(parameter, buffer);
+
+	luaL_pushresult(&buffer);
 	return 1;
 }
 
@@ -95,6 +100,23 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
+static void LS_MakeFunctionParameter(const dfunction_t* const function, const int paramindex, LS_FunctionParameter& parameter)
+{
+	assert(function);
+
+	if (function->first_statement > 0)
+	{
+		const ddef_t* def = ED_GlobalAtOfs(function->parm_start + paramindex);
+		parameter.name = def ? def->s_name : 0;
+		parameter.type = def ? def->type : (function->parm_size[paramindex] > 1 ? ev_vector : ev_bad);
+	}
+	else
+	{
+		parameter.name = 0; // TODO: set parameter name of built-in function
+		parameter.type = function->parm_size[paramindex] > 1 ? ev_vector : ev_bad;
+	}
+}
+
 static int LS_global_functionparameters_iterator(lua_State* state)
 {
 	const dfunction_t* function = LS_GetFunctionFromUserData(state);
@@ -104,20 +126,8 @@ static int LS_global_functionparameters_iterator(lua_State* state)
 	{
 		lua_pushinteger(state, index + 1);
 
-		LS_FunctionParameter& param = ls_functionparameter_type.New(state);
-
-		if (function->first_statement > 0)
-		{
-			const ddef_t* def = ED_GlobalAtOfs(function->parm_start + index);
-			param.name = def ? def->s_name : 0;
-			param.type = def ? def->type : (function->parm_size[index] > 1 ? ev_vector : ev_bad);
-		}
-		else
-		{
-			param.name = 0; // no name
-			param.type = function->parm_size[index] > 1 ? ev_vector : ev_bad;
-		}
-
+		LS_FunctionParameter& parameter = ls_functionparameter_type.New(state);
+		LS_MakeFunctionParameter(function, index, parameter);
 		LS_SetFunctionParameterMetaTable(state);
 		return 2;
 	}
@@ -126,29 +136,15 @@ static int LS_global_functionparameters_iterator(lua_State* state)
 	return 1;
 }
 
+// Fill array of function parameters
 static int LS_GetFunctionParameters(const dfunction_t* const function, LS_FunctionParameter parameters[MAX_PARMS])
 {
 	assert(function);
 
-	const int first_statement = function->first_statement;
 	const int numparms = q_min(function->numparms, MAX_PARMS);
 
 	for (int i = 0; i < numparms; ++i)
-	{
-		LS_FunctionParameter& param = parameters[i];
-
-		if (first_statement > 0)
-		{
-			const ddef_t* def = ED_GlobalAtOfs(function->parm_start + i);
-			param.name = def ? def->s_name : 0;
-			param.type = def ? def->type : (function->parm_size[i] > 1 ? ev_vector : ev_bad);
-		}
-		else
-		{
-			param.name = 0; // no name
-			param.type = function->parm_size[i] > 1 ? ev_vector : ev_bad;
-		}
-	}
+		LS_MakeFunctionParameter(function, i, parameters[i]);
 
 	return numparms;
 }
@@ -183,9 +179,6 @@ static int LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 	return 1;
 }
 
-// ???
-//static void LS_SetFunctionMetaTable(lua_State* state);
-
 // Pushes function parameters iterator, e.g., for i, p in func:parameters() do print(i, p) end
 static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* function)
 {
@@ -194,7 +187,7 @@ static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* functi
 
 	int& funcindex = ls_function_type.New(state);
 	funcindex = function - pr_functions;
-	//LS_SetFunctionMetaTable(state);
+	// No need to set metatable for 'function' userdata as its sole purpose is to get function index
 
 	lua_pushinteger(state, index);  // initial value
 	return 3;
@@ -405,15 +398,7 @@ static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function
 		if (i > 0)
 			luaL_addstring(&buf, ", ");
 
-		const char* type = PR_GetTypeString(parameters[i].type);
-		luaL_addstring(&buf, type);
-
-		const char* name = PR_SafeGetString(parameters[i].name);
-		if (name[0] != '\0')
-		{
-			luaL_addchar(&buf, ' ');
-			luaL_addstring(&buf, name);
-		}
+		LS_FunctionParameterToBuffer(parameters[i], buf);
 	}
 
 	luaL_addchar(&buf, ')');
