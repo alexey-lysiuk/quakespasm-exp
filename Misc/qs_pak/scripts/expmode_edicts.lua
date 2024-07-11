@@ -24,7 +24,6 @@ local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
-local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -36,7 +35,6 @@ local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imText <const> = ImGui.Text
-local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = vec2.new
 
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
