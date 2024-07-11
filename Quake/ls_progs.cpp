@@ -40,6 +40,7 @@ struct LS_FunctionParameter
 
 constexpr LS_UserDataType<LS_FunctionParameter> ls_functionparameter_type("function parameter");
 
+// Pushes name of given 'function parameter' userdata
 static int LS_value_functionparameter_name(lua_State* state)
 {
 	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
@@ -49,6 +50,7 @@ static int LS_value_functionparameter_name(lua_State* state)
 	return 1;
 }
 
+// Pushes type index of given 'function parameter' userdata
 static int LS_value_functionparameter_type(lua_State* state)
 {
 	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
@@ -56,6 +58,7 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
+// Pushes method of 'function parameter' userdata by its name
 static int LS_value_functionparameter_index(lua_State* state)
 {
 	size_t length;
@@ -73,6 +76,7 @@ static int LS_value_functionparameter_index(lua_State* state)
 	return 1;
 }
 
+// Adds function parameter type and name separated by space (if it's set) to given Lua buffer
 static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, luaL_Buffer& buffer)
 {
 	const char* const type = PR_GetTypeString(parameter.type);
@@ -127,6 +131,7 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
+// Assigns name and type indices to function parameter by its index
 static void LS_MakeFunctionParameter(const dfunction_t* const function, const int paramindex, LS_FunctionParameter& parameter)
 {
 	assert(function);
