@@ -83,6 +83,73 @@ static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, 
 	}
 }
 
+constexpr LS_UserDataType<LS_FunctionParameter> ls_functionparameter_type("function parameter");
+
+// Pushes name of given 'function parameter' userdata
+static int LS_value_functionparameter_name(lua_State* state)
+{
+	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
+	const char* const name = PR_SafeGetString(parameter.name);
+
+	lua_pushstring(state, name);
+	return 1;
+}
+
+// Pushes type index of given 'function parameter' userdata
+static int LS_value_functionparameter_type(lua_State* state)
+{
+	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
+	lua_pushinteger(state, parameter.type);
+	return 1;
+}
+
+// Pushes method of 'function parameter' userdata by its name
+static int LS_value_functionparameter_index(lua_State* state)
+{
+	size_t length;
+	const char* name = luaL_checklstring(state, 2, &length);
+	assert(name);
+	assert(length > 0);
+
+	if (strncmp(name, "name", length) == 0)
+		lua_pushcfunction(state, LS_value_functionparameter_name);
+	else if (strncmp(name, "type", length) == 0)
+		lua_pushcfunction(state, LS_value_functionparameter_type);
+	else
+		luaL_error(state, "unknown function '%s'", name);
+
+	return 1;
+}
+
+// Pushes string representation of given 'function parameter' userdata
+static int LS_value_functionparameter_tostring(lua_State* state)
+{
+	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
+
+	luaL_Buffer buffer;
+	luaL_buffinitsize(state, &buffer, 256);
+	LS_FunctionParameterToBuffer(parameter, buffer);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+// Sets metatable for 'function parameter' userdata
+static void LS_SetFunctionParameterMetaTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_functionparameter_index },
+		{ "__tostring", LS_value_functionparameter_tostring },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "funcparam"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+}
+
 constexpr LS_UserDataType<int> ls_function_type("function");
 
 // Gets pointer to dfunction_t from 'function' userdata
@@ -123,6 +190,39 @@ static int LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 {
 	lua_pushstring(state, PR_SafeGetString(function->s_name));
 	return 1;
+}
+
+static int LS_global_functionparameters_iterator(lua_State* state)
+{
+	const dfunction_t* function = LS_GetFunctionFromUserData(state);
+	const lua_Integer index = luaL_checkinteger(state, 2);
+
+	if (index < function->numparms)
+	{
+		lua_pushinteger(state, index + 1);
+
+		LS_FunctionParameter& parameter = ls_functionparameter_type.New(state);
+		LS_GetFunctionParameter(function, index, parameter);
+		LS_SetFunctionParameterMetaTable(state);
+		return 2;
+	}
+
+	lua_pushnil(state);
+	return 1;
+}
+
+// Pushes function parameters iterator, e.g., for i, p in func:parameters() do print(i, p) end
+static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* function)
+{
+	const lua_Integer index = luaL_optinteger(state, 2, 0);
+	lua_pushcfunction(state, LS_global_functionparameters_iterator);
+
+	int& funcindex = ls_function_type.New(state);
+	funcindex = function - pr_functions;
+	// No need to set metatable for 'function' userdata as its sole purpose is to get function index
+
+	lua_pushinteger(state, index);  // initial value
+	return 3;
 }
 
 // Returns function return type
@@ -298,6 +398,8 @@ static int LS_value_function_index(lua_State* state)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionFile>);
 	else if (strncmp(name, "name", length) == 0)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionName>);
+	else if (strncmp(name, "parameters", length) == 0)
+		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionParameters>);
 	else if (strncmp(name, "returntype", length) == 0)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionReturnType>);
 	else
