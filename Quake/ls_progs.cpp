@@ -32,6 +32,57 @@ const char* PR_GetTypeString(unsigned short type);
 const char* PR_SafeGetString(int offset);
 }
 
+struct LS_FunctionParameter
+{
+	int name;
+	int type;
+};
+
+// Assigns name and type indices to function parameter by its index
+static void LS_GetFunctionParameter(const dfunction_t* const function, const int paramindex, LS_FunctionParameter& parameter)
+{
+	assert(function);
+
+	if (function->first_statement > 0)
+	{
+		const ddef_t* def = ED_GlobalAtOfs(function->parm_start + paramindex);
+		parameter.name = def ? def->s_name : 0;
+		parameter.type = def ? def->type : (function->parm_size[paramindex] > 1 ? ev_vector : ev_bad);
+	}
+	else
+	{
+		parameter.name = 0; // TODO: set parameter name of built-in function
+		parameter.type = function->parm_size[paramindex] > 1 ? ev_vector : ev_bad;
+	}
+}
+
+// Fills array of function parameters
+static int LS_GetFunctionParameters(const dfunction_t* const function, LS_FunctionParameter parameters[MAX_PARMS])
+{
+	assert(function);
+
+	const int numparms = q_min(function->numparms, MAX_PARMS);
+
+	for (int i = 0; i < numparms; ++i)
+		LS_GetFunctionParameter(function, i, parameters[i]);
+
+	return numparms;
+}
+
+// Adds function parameter type and name separated by space (if it's set) to given Lua buffer
+static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, luaL_Buffer& buffer)
+{
+	const char* const type = PR_GetTypeString(parameter.type);
+	luaL_addstring(&buffer, type);
+
+	const char* const name = PR_SafeGetString(parameter.name);
+	if (name[0] != '\0')
+	{
+		luaL_addchar(&buffer, ' ');
+		luaL_addstring(&buffer, name);
+	}
+}
+
 constexpr LS_UserDataType<int> ls_function_type("function");
 
 // Gets pointer to dfunction_t from 'function' userdata
@@ -269,49 +320,15 @@ static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function
 	luaL_addstring(&buf, name);
 	luaL_addchar(&buf, '(');
 
-	struct Parameter
-	{
-		int name;
-		unsigned short type;
-	};
-	Parameter parameters[MAX_PARMS];
-
-	const int first_statement = function->first_statement;
-	const int numparms = q_min(function->numparms, MAX_PARMS);
-
-	for (int i = 0; i < numparms; ++i)
-	{
-		Parameter param;
-
-		if (first_statement > 0)
-		{
-			const ddef_t* def = ED_GlobalAtOfs(function->parm_start + i);
-			param.name = def ? def->s_name : 0;
-			param.type = def ? def->type : (function->parm_size[i] > 1 ? ev_vector : ev_bad);
-		}
-		else
-		{
-			param.name = 0 /* no name */;
-			param.type = function->parm_size[i] > 1 ? ev_vector : ev_bad;
-		}
-
-		parameters[i] = param;
-	}
+	LS_FunctionParameter parameters[MAX_PARMS];
+	const int numparms = LS_GetFunctionParameters(function, parameters);
 
 	for (int i = 0; i < numparms; ++i)
 	{
 		if (i > 0)
 			luaL_addstring(&buf, ", ");
 
-		const char* type = PR_GetTypeString(parameters[i].type);
-		luaL_addstring(&buf, type);
-
-		const char* name = PR_SafeGetString(parameters[i].name);
-		if (name[0] != '\0')
-		{
-			luaL_addchar(&buf, ' ');
-			luaL_addstring(&buf, name);
-		}
+		LS_FunctionParameterToBuffer(parameters[i], buf);
 	}
 
 	luaL_addchar(&buf, ')');
