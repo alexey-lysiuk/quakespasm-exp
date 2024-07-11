@@ -40,7 +40,10 @@ dfunction_t	*pr_xfunction;
 int		pr_xstatement;
 int		pr_argc;
 
-static const char *pr_opnames[] =
+#ifndef USE_LUA_SCRIPTING
+static
+#endif // !USE_LUA_SCRIPTING
+const char *pr_opnames[] =
 {
 	"DONE",
 
