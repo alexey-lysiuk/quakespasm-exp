@@ -44,32 +44,34 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
-static int LS_CallFunctionMethod(lua_State* state, void (*method)(lua_State* state, const dfunction_t* function))
+static int LS_CallFunctionMethod(lua_State* state, int (*method)(lua_State* state, const dfunction_t* function))
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		method(state, function);
+		return method(state, function);
 	else
 		luaL_error(state, "invalid function");
 
-	return 1;
+	return 0;
 }
 
-template <void (*Func)(lua_State* state, const dfunction_t* function)>
+template <int (*Func)(lua_State* state, const dfunction_t* function)>
 static int LS_FunctionMethod(lua_State* state)
 {
 	return LS_CallFunctionMethod(state, Func);
 }
 
 // Pushes file of 'function' userdata
-static void LS_PushFunctionFile(lua_State* state, const dfunction_t* function)
+static int LS_PushFunctionFile(lua_State* state, const dfunction_t* function)
 {
 	lua_pushstring(state, PR_SafeGetString(function->s_file));
+	return 1;
 }
 
 // Pushes name of 'function' userdata
-static void LS_PushFunctionName(lua_State* state, const dfunction_t* function)
+static int LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 {
 	lua_pushstring(state, PR_SafeGetString(function->s_name));
+	return 1;
 }
 
 // Returns function return type
@@ -225,10 +227,12 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 }
 
 // Pushes return type of 'function' userdata
-static void LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
+static int LS_PushFunctionReturnType(lua_State* state, const dfunction_t* function)
 {
 	const lua_Integer returntype = LS_GetFunctionReturnType(function);
 	lua_pushinteger(state, returntype);
+
+	return 1;
 }
 
 // Pushes method of 'function' userdata by its name
@@ -252,7 +256,7 @@ static int LS_value_function_index(lua_State* state)
 }
 
 // Pushes string representation of given 'function' userdata
-static void LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
+static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
 	const lua_Integer returntypeindex = LS_GetFunctionReturnType(function);
 	const char* const returntype = PR_GetTypeString(returntypeindex);
@@ -312,6 +316,8 @@ static void LS_PushFunctionToString(lua_State* state, const dfunction_t* functio
 
 	luaL_addchar(&buf, ')');
 	luaL_pushresult(&buf);
+
+	return 1;
 }
 
 // Sets metatable for 'function' userdata
