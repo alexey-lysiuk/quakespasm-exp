@@ -93,13 +93,9 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 	{
 		// Text doesn't fit the buffer, cut it
 		textlength = buffersize - 1;
-		bufferdata[textlength] = '\0';
 	}
 
-	if (textlength > 0)
-		strncpy(bufferdata, text, textlength);
-	else
-		bufferdata[0] = '\0';
+	strncpy(bufferdata, text, textlength + 1);
 
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.New(state);
 	textbuffer.data = bufferdata;

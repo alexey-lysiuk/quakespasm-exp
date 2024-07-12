@@ -50,36 +50,42 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 			luaL_addchar(&buffer, ' ');
 	}
 
-	if (statement.op == OP_IF || statement.op == OP_IFNOT)
+	switch (statement.op)
 	{
+	case OP_IF:
+	case OP_IFNOT:
 		luaL_addstring(&buffer, PR_GlobalString(statement.a));
 		luaL_addstring(&buffer, "branch ");
 
 		lua_pushinteger(buffer.L, statement.b);
 		luaL_addvalue(&buffer);
-	}
-	else if (statement.op == OP_GOTO)
-	{
+		break;
+
+	case OP_GOTO:
 		luaL_addstring(&buffer, "branch ");
 
-		lua_pushinteger(buffer.L, statement.b);
+		lua_pushinteger(buffer.L, statement.a);
 		luaL_addvalue(&buffer);
-	}
-	else if (statement.op - OP_STORE_F < 6)
-	{
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
 		luaL_addstring(&buffer, PR_GlobalString(statement.a));
 		luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.b));
-	}
-	else
-	{
+		break;
+
+	default:
 		if (statement.a)
 			luaL_addstring(&buffer, PR_GlobalString(statement.a));
-
 		if (statement.b)
 			luaL_addstring(&buffer, PR_GlobalString(statement.b));
-
 		if (statement.c)
 			luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.c));
+		break;
 	}
 
 	luaL_addchar(&buffer, '\n');
@@ -487,13 +493,12 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 
 	if (first_statement > 0)
 	{
+		char addrbuf[16];
+
 		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
 		{
-			// TODO: format
-			lua_pushinteger(state, i);
-			luaL_addvalue(&buffer);
-			luaL_addchar(&buffer, ':');
-			luaL_addchar(&buffer, ' ');
+			const size_t addrlen = q_snprintf(addrbuf, sizeof(addrbuf), "%06i: ", i);
+			luaL_addlstring(&buffer, addrbuf, addrlen);
 
 			const dstatement_t& statement = pr_statements[i];
 			LS_StatementToBuffer(statement, buffer);

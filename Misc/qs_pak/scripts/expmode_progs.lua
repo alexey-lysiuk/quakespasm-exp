@@ -22,7 +22,9 @@ local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
 
+local imInputTextReadOnly <const> = ImGui.InputTextFlags.ReadOnly
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
+local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
@@ -35,12 +37,13 @@ local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
 
 local autoexpandsize <const> = imVec2(-1, -1)
+local defaultDisassemblySize <const> = imVec2(640, 480)
 
 local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		imInputTextMultiline('##text', self.disassembly, autoexpandsize)
+		imInputTextMultiline('##text', self.disassembly, autoexpandsize, imInputTextReadOnly)
 	end
 
 	imEnd()
@@ -55,7 +58,7 @@ end
 
 local function functions_onupdate(self)
 	local title = self.title
-	local visible, opened = imBegin(title, true)
+	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		local searchmodified = searchbar(self)
@@ -75,7 +78,7 @@ local function functions_onupdate(self)
 				if imSelectable(entry.declaration) then
 					window(entry.name, functiondisassembly_onupdate,
 						function (self) self.disassembly = imTextBuffer(16 * 1024, entry.func:disassemble()) end)
-						:setconstraints():movetocursor()
+						:setconstraints():setsize(defaultDisassemblySize):movetocursor()
 				end
 				imTableNextColumn()
 				imText(entry.file)
