@@ -95,7 +95,10 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 		textlength = buffersize - 1;
 	}
 
-	strncpy(bufferdata, text, textlength + 1);
+	if (textlength > 0)
+		memcpy(bufferdata, text, textlength);
+
+	bufferdata[textlength] = '\0';
 
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.New(state);
 	textbuffer.data = bufferdata;

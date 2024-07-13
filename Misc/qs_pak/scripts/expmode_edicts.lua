@@ -53,7 +53,6 @@ local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.Scroll
 
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
-local getname <const> = edicts.getname
 local type_entity <const> = edicts.valuetypes.entity
 local type_float <const> = edicts.valuetypes.float
 local type_string <const> = edicts.valuetypes.string
