@@ -360,7 +360,7 @@ static int LS_global_loadfile(lua_State* state)
 
 static int LS_global_print(lua_State* state)
 {
-	enum PrintDummyEnum { MAX_LENGTH = 4096 };  // See MAXPRINTMSG
+	static const int MAX_LENGTH = 4096;  // See MAXPRINTMSG
 	char buf[MAX_LENGTH] = { '\0' };
 
 	char* bufptr = buf;
@@ -368,14 +368,20 @@ static int LS_global_print(lua_State* state)
 
 	for (int i = 1, n = lua_gettop(state); i <= n; ++i)
 	{
-		const char* str = luaL_tolstring(state, i, NULL);
-		int charscount = q_snprintf(bufptr, remain, "%s%s", (i == 1 ? "" : " "), str);
+		if (remain > 0)
+		{
+			const char* str = luaL_tolstring(state, i, NULL);
+			int charscount = q_snprintf(bufptr, remain, "%s%s", (i == 1 ? "" : " "), str);
+			
+			if (charscount > MAX_LENGTH)
+				charscount = MAX_LENGTH;
 
-		bufptr += charscount;
-		assert(bufptr <= &buf[MAX_LENGTH - 1]);
+			bufptr += charscount;
+			assert(bufptr <= buf + MAX_LENGTH);
 
-		remain -= charscount;
-		assert(remain >= 0);
+			remain -= charscount;
+			assert(remain >= 0);
+		}
 
 		lua_pop(state, 1);  // pop string value
 	}
@@ -384,6 +390,7 @@ static int LS_global_print(lua_State* state)
 
 	return 0;
 }
+
 static int LS_global_panic(lua_State* state)
 {
 	const char* message = lua_tostring(state, -1);
