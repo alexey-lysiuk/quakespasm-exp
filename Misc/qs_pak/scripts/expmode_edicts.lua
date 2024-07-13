@@ -24,7 +24,6 @@ local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
-local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -36,12 +35,10 @@ local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imText <const> = ImGui.Text
-local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = vec2.new
 
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
 local imTableFlags <const> = ImGui.TableFlags
-local imWindowFlags <const> = ImGui.WindowFlags
 
 local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
 local imMouseButtonRight <const> = ImGui.MouseButton.Right
@@ -49,14 +46,13 @@ local imNoOpenOverExistingPopup <const> = ImGui.PopupFlags.NoOpenOverExistingPop
 local imSelectableDisabled <const> = ImGui.SelectableFlags.Disabled
 local imTableColumnIsHovered <const> = imTableColumnFlags.IsHovered
 local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
-local imWindowNoSavedSettings <const> = imWindowFlags.NoSavedSettings
+local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
 
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
-local getname <const> = edicts.getname
 local type_entity <const> = edicts.valuetypes.entity
 local type_float <const> = edicts.valuetypes.float
 local type_string <const> = edicts.valuetypes.string
