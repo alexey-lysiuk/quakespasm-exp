@@ -360,7 +360,7 @@ static int LS_global_loadfile(lua_State* state)
 
 static int LS_global_print(lua_State* state)
 {
-	static const int MAX_LENGTH = 4096;  // See MAXPRINTMSG
+	static const int MAX_LENGTH = 4095;  // MAXPRINTMSG - 1 to allow terminating new line
 	char buf[MAX_LENGTH] = { '\0' };
 
 	char* bufptr = buf;
