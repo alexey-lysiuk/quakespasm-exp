@@ -16,6 +16,7 @@ local imTableHeadersRow <const> = ImGui.TableHeadersRow
 local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
+local imTableSetupScrollFreeze <const> = ImGui.TableSetupScrollFreeze
 local imText <const> = ImGui.Text
 local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = vec2.new
@@ -65,9 +66,10 @@ local function functions_onupdate(self)
 		local entries = updatesearch(self, function_searchcompare, searchmodified)
 
 		if imBeginTable(title, 3, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Declaration')
-			imTableSetupColumn('File')
+			imTableSetupColumn('File', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
 			for _, entry in ipairs(entries) do

@@ -639,6 +639,17 @@ static int LS_global_imgui_TableSetupColumn(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_TableSetupScrollFreeze(lua_State* state)
+{
+	LS_EnsureTableScope(state);
+
+	const int columns = luaL_checkinteger(state, 1);
+	const int rows = luaL_checkinteger(state, 2);
+
+	ImGui::TableSetupScrollFreeze(columns, rows);
+	return 0;
+}
+
 static int LS_global_imgui_TableHeader(lua_State* state)
 {
 	LS_EnsureTableScope(state);
@@ -1105,7 +1116,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 
 		// Tables: Headers & Columns declaration
 		{ "TableSetupColumn", LS_global_imgui_TableSetupColumn },
-		// * TableSetupScrollFreeze
+		{ "TableSetupScrollFreeze", LS_global_imgui_TableSetupScrollFreeze },
 		{ "TableHeader", LS_global_imgui_TableHeader },
 		{ "TableHeadersRow", LS_global_imgui_TableHeadersRow },
 		// * TableAngledHeadersRow
