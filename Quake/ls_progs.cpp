@@ -87,8 +87,6 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 			luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.c));
 		break;
 	}
-
-	luaL_addchar(&buffer, '\n');
 }
 
 struct LS_FunctionParameter
@@ -505,10 +503,12 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 
 			if (statement.op == OP_DONE)
 				break;
+			else
+				luaL_addchar(&buffer, '\n');
 		}
 	}
 	else
-		luaL_addstring(&buffer, "<built-in>\n");
+		luaL_addstring(&buffer, "<built-in>");
 
 	luaL_pushresult(&buffer);
 	return 1;

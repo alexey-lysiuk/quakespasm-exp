@@ -1,6 +1,8 @@
 
 local tostring <const> = tostring
 
+local format <const> = string.format
+
 local insert <const> = table.insert
 
 local imBegin <const> = ImGui.Begin
@@ -78,7 +80,7 @@ local function functions_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				if imSelectable(entry.declaration) then
-					window(entry.name, functiondisassembly_onupdate,
+					window(format('Disassembly of %s()', entry.name), functiondisassembly_onupdate,
 						function (self) self.disassembly = imTextBuffer(16 * 1024, entry.func:disassemble()) end)
 						:setconstraints():setsize(defaultDisassemblySize):movetocursor()
 				end
