@@ -83,6 +83,21 @@ static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, 
 	}
 }
 
+// Adds function parameters if any to given Lua buffer
+static void LS_FunctionParametersToBuffer(const dfunction_t* const function, luaL_Buffer& buffer)
+{
+	LS_FunctionParameter parameters[MAX_PARMS];
+	const int numparms = LS_GetFunctionParameters(function, parameters);
+
+	for (int i = 0; i < numparms; ++i)
+	{
+		if (i > 0)
+			luaL_addstring(&buffer, ", ");
+
+		LS_FunctionParameterToBuffer(parameters[i], buffer);
+	}
+}
+
 constexpr LS_UserDataType<LS_FunctionParameter> ls_functionparameter_type("function parameter");
 
 // Pushes name of given 'function parameter' userdata
@@ -421,18 +436,7 @@ static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function
 	luaL_addchar(&buf, ' ');
 	luaL_addstring(&buf, name);
 	luaL_addchar(&buf, '(');
-
-	LS_FunctionParameter parameters[MAX_PARMS];
-	const int numparms = LS_GetFunctionParameters(function, parameters);
-
-	for (int i = 0; i < numparms; ++i)
-	{
-		if (i > 0)
-			luaL_addstring(&buf, ", ");
-
-		LS_FunctionParameterToBuffer(parameters[i], buf);
-	}
-
+	LS_FunctionParametersToBuffer(function, buf);
 	luaL_addchar(&buf, ')');
 	luaL_pushresult(&buf);
 
