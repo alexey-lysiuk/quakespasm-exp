@@ -30,6 +30,63 @@ extern "C"
 ddef_t *ED_GlobalAtOfs(int ofs);
 const char* PR_GetTypeString(unsigned short type);
 const char* PR_SafeGetString(int offset);
+const char* PR_GlobalString(int offset);
+const char* PR_GlobalStringNoContents(int offset);
+
+extern const char *pr_opnames[66];
+}
+
+static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer)
+{
+	if (statement.op < Q_COUNTOF(pr_opnames))
+	{
+		const char* const op = pr_opnames[statement.op];
+		const size_t oplength = strlen(op);
+
+		luaL_addlstring(&buffer, op, oplength);
+		luaL_addchar(&buffer, ' ');
+
+		for (size_t i = oplength; i < 10; ++i)
+			luaL_addchar(&buffer, ' ');
+	}
+
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		luaL_addstring(&buffer, PR_GlobalString(statement.a));
+		luaL_addstring(&buffer, "branch ");
+
+		lua_pushinteger(buffer.L, statement.b);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_GOTO:
+		luaL_addstring(&buffer, "branch ");
+
+		lua_pushinteger(buffer.L, statement.a);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		luaL_addstring(&buffer, PR_GlobalString(statement.a));
+		luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.b));
+		break;
+
+	default:
+		if (statement.a)
+			luaL_addstring(&buffer, PR_GlobalString(statement.a));
+		if (statement.b)
+			luaL_addstring(&buffer, PR_GlobalString(statement.b));
+		if (statement.c)
+			luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.c));
+		break;
+	}
 }
 
 struct LS_FunctionParameter
@@ -401,6 +458,62 @@ static int LS_PushFunctionReturnType(lua_State* state, const dfunction_t* functi
 	return 1;
 }
 
+// Pushes disassembly of 'function' userdata as a string
+static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* function)
+{
+	luaL_Buffer buffer;
+	luaL_buffinitsize(state, &buffer, 4096);
+
+	const lua_Integer returntype = LS_GetFunctionReturnType(function);
+	const char* const returntypename = PR_GetTypeString(returntype);
+	luaL_addstring(&buffer, returntypename);
+	luaL_addchar(&buffer, ' ');
+
+	const char* const name = PR_SafeGetString(function->s_name);
+	luaL_addstring(&buffer, name);
+	luaL_addchar(&buffer, '(');
+	LS_FunctionParametersToBuffer(function, buffer);
+	luaL_addchar(&buffer, ')');
+
+	const int fileindex = function->s_file;
+	if (fileindex == 0)
+		luaL_addstring(&buffer, ":\n");
+	else
+	{
+		const char* const file = PR_SafeGetString(fileindex);
+		luaL_addstring(&buffer, ": // ");
+		luaL_addstring(&buffer, file);
+		luaL_addchar(&buffer, '\n');
+	}
+
+	// Code disassembly
+	const int first_statement = function->first_statement;
+
+	if (first_statement > 0)
+	{
+		char addrbuf[16];
+
+		for (int i = first_statement, ie = progs->numstatements; i < ie; ++i)
+		{
+			const size_t addrlen = q_snprintf(addrbuf, sizeof(addrbuf), "%06i: ", i);
+			luaL_addlstring(&buffer, addrbuf, addrlen);
+
+			const dstatement_t& statement = pr_statements[i];
+			LS_StatementToBuffer(statement, buffer);
+
+			if (statement.op == OP_DONE)
+				break;
+			else
+				luaL_addchar(&buffer, '\n');
+		}
+	}
+	else
+		luaL_addstring(&buffer, "<built-in>");
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
 // Pushes method of 'function' userdata by its name
 static int LS_value_function_index(lua_State* state)
 {
@@ -409,7 +522,9 @@ static int LS_value_function_index(lua_State* state)
 	assert(name);
 	assert(length > 0);
 
-	if (strncmp(name, "file", length) == 0)
+	if (strncmp(name, "disassemble", length) == 0)
+		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionDisassemble>);
+	else if (strncmp(name, "file", length) == 0)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionFile>);
 	else if (strncmp(name, "name", length) == 0)
 		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionName>);
