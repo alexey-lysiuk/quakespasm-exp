@@ -71,7 +71,7 @@ local function functions_onupdate(self)
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Declaration')
-			imTableSetupColumn('File')
+			imTableSetupColumn('File', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
 			for _, entry in ipairs(entries) do
