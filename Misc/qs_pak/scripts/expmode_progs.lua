@@ -43,7 +43,7 @@ local autoexpandsize <const> = imVec2(-1, -1)
 local defaultDisassemblySize <const> = imVec2(640, 480)
 
 local function functiondisassembly_onupdate(self)
-	local visible, opened = imBegin(self.title, true)
+	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		imInputTextMultiline('##text', self.disassembly, autoexpandsize, imInputTextReadOnly)
@@ -54,14 +54,30 @@ local function functiondisassembly_onupdate(self)
 	return opened
 end
 
+local function functiondisassembly_onshow(self)
+	local func = self.func
+
+	if self.name ~= func:name() then
+		return false
+	end
+
+	self.disassembly = imTextBuffer(16 * 1024, func:disassemble())
+	return true
+end
+
+local function functiondisassembly_onhide(self)
+	self.disassembly = nil
+	return true
+end
+
 local function function_searchcompare(entry, string)
-	return entry.name:lower():find(string, 1, true)
+	return entry.declaration:lower():find(string, 1, true)
 		or entry.file:lower():find(string, 1, true)
 end
 
 local function functions_onupdate(self)
 	local title = self.title
-	local visible, opened = imBegin(title, true, imWindowNoSavedSettings)
+	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
 		local searchmodified = searchbar(self)
@@ -80,8 +96,12 @@ local function functions_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				if imSelectable(entry.declaration) then
-					window(format('Disassembly of %s()', entry.name), functiondisassembly_onupdate,
-						function (self) self.disassembly = imTextBuffer(16 * 1024, entry.func:disassemble()) end)
+					local func = entry.func
+					local funcname = func:name()
+
+					window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
+						function (self) self.func = func self.name = funcname end,
+						functiondisassembly_onshow, functiondisassembly_onhide)
 						:setconstraints():setsize(defaultDisassemblySize):movetocursor()
 				end
 				imTableNextColumn()
@@ -101,7 +121,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in functions() do
-		local entry = { func = func, index = tostring(i), name = func:name(), declaration = tostring(func), file = func:file() }
+		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func:file() }
 		insert(entries, entry)
 	end
 

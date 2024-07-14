@@ -34,6 +34,7 @@ local imTableHeadersRow <const> = ImGui.TableHeadersRow
 local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
+local imTableSetupScrollFreeze <const> = ImGui.TableSetupScrollFreeze
 local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
@@ -109,6 +110,7 @@ local function edictinfo_onupdate(self)
 
 		-- Table of fields names and values
 		if imBeginTable(title, 2, defaultscrollytableflags) then
+			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Name', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
 			imTableHeadersRow()
@@ -244,6 +246,7 @@ end
 
 local function edictstable(title, entries, tableflags)
 	if imBeginTable(title, 3, tableflags or defaulttableflags) then
+		imTableSetupScrollFreeze(0, 1)
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
 		imTableSetupColumn('Location')
