@@ -360,33 +360,41 @@ static int LS_global_loadfile(lua_State* state)
 
 static int LS_global_print(lua_State* state)
 {
-	static const int MAX_LENGTH = 4095;  // MAXPRINTMSG - 1 to allow terminating new line
-	char buf[MAX_LENGTH] = { '\0' };
-
-	char* bufptr = buf;
-	int remain = MAX_LENGTH;
+	constexpr size_t BUFFER_LENGTH = 1023;
+	char buffer[BUFFER_LENGTH + 1];  // additional char for null terminator
+	buffer[BUFFER_LENGTH] = '\0';
 
 	for (int i = 1, n = lua_gettop(state); i <= n; ++i)
 	{
-		if (remain > 0)
+		size_t length;
+		const char* str = luaL_tolstring(state, i, &length);
+		assert(str);
+
+		if (i > 1)
+			Con_SafePrintf(" ");
+
+		if (length > 0)
 		{
-			const char* str = luaL_tolstring(state, i, NULL);
-			int charscount = q_snprintf(bufptr, remain, "%s%s", (i == 1 ? "" : " "), str);
-			
-			if (charscount > MAX_LENGTH)
-				charscount = MAX_LENGTH;
+			for (size_t ci = 0, ce = length / BUFFER_LENGTH; ci < ce; ++ci)
+			{
+				memcpy(buffer, &str[BUFFER_LENGTH * ci], BUFFER_LENGTH);
+				Con_SafePrintf("%s", buffer);
+			}
 
-			bufptr += charscount;
-			assert(bufptr <= buf + MAX_LENGTH);
+			const size_t charsleft = length % BUFFER_LENGTH;
 
-			remain -= charscount;
-			assert(remain >= 0);
+			if (charsleft > 0)
+			{
+				memcpy(buffer, &str[length - charsleft], charsleft);
+				buffer[charsleft] = '\0';
+				Con_SafePrintf("%s", buffer);
+			}
 		}
 
 		lua_pop(state, 1);  // pop string value
 	}
 
-	Con_SafePrintf("%s\n", buf);
+	Con_SafePrintf("\n");
 
 	return 0;
 }
