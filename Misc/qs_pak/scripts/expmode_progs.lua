@@ -1,6 +1,8 @@
 
 local tostring <const> = tostring
 
+local format <const> = string.format
+
 local insert <const> = table.insert
 
 local imBegin <const> = ImGui.Begin
@@ -9,16 +11,22 @@ local imBeginTable <const> = ImGui.BeginTable
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
+local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imMenuItem <const> = ImGui.MenuItem
+local imSelectable <const> = ImGui.Selectable
 local imTableHeadersRow <const> = ImGui.TableHeadersRow
 local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imText <const> = ImGui.Text
+local imTextBuffer <const> = ImGui.TextBuffer
+local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
 
+local imInputTextReadOnly <const> = ImGui.InputTextFlags.ReadOnly
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
+local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
@@ -30,8 +38,23 @@ local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
 
+local autoexpandsize <const> = imVec2(-1, -1)
+local defaultDisassemblySize <const> = imVec2(640, 480)
+
+local function functiondisassembly_onupdate(self)
+	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
+
+	if visible and opened then
+		imInputTextMultiline('##text', self.disassembly, autoexpandsize, imInputTextReadOnly)
+	end
+
+	imEnd()
+
+	return opened
+end
+
 local function function_searchcompare(entry, string)
-	return entry.name:lower():find(string, 1, true)
+	return entry.declaration:lower():find(string, 1, true)
 		or entry.file:lower():find(string, 1, true)
 end
 
@@ -45,7 +68,7 @@ local function functions_onupdate(self)
 
 		if imBeginTable(title, 3, defaultTableFlags) then
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
-			imTableSetupColumn('Name')
+			imTableSetupColumn('Declaration')
 			imTableSetupColumn('File')
 			imTableHeadersRow()
 
@@ -54,7 +77,11 @@ local function functions_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				imText(entry.name)
+				if imSelectable(entry.declaration) then
+					window(format('Disassembly of %s()', entry.func:name()), functiondisassembly_onupdate,
+						function (self) self.disassembly = imTextBuffer(16 * 1024, entry.func:disassemble()) end)
+						:setconstraints():setsize(defaultDisassemblySize):movetocursor()
+				end
 				imTableNextColumn()
 				imText(entry.file)
 			end
@@ -72,7 +99,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in functions() do
-		local entry = { index = tostring(i), name = tostring(func), file = func:file() }
+		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func:file() }
 		insert(entries, entry)
 	end
 
