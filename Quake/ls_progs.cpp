@@ -36,8 +36,16 @@ const char* PR_GlobalStringNoContents(int offset);
 extern const char *pr_opnames[66];
 }
 
-static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer)
+static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const bool withbinary)
 {
+	if (withbinary)
+	{
+		char binbuf[32];
+		const size_t binlen = q_snprintf(binbuf, sizeof binbuf, "%3u %5i %5i %5i  ",
+			statement.op, statement.a, statement.b, statement.c);
+		luaL_addlstring(&buffer, binbuf, binlen);
+	}
+
 	if (statement.op < Q_COUNTOF(pr_opnames))
 	{
 		const char* const op = pr_opnames[statement.op];
@@ -461,6 +469,8 @@ static int LS_PushFunctionReturnType(lua_State* state, const dfunction_t* functi
 // Pushes disassembly of 'function' userdata as a string
 static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* function)
 {
+	const bool withbinary = luaL_opt(state, lua_toboolean, 2, false);
+
 	luaL_Buffer buffer;
 	luaL_buffinitsize(state, &buffer, 4096);
 
@@ -499,7 +509,7 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 			luaL_addlstring(&buffer, addrbuf, addrlen);
 
 			const dstatement_t& statement = pr_statements[i];
-			LS_StatementToBuffer(statement, buffer);
+			LS_StatementToBuffer(statement, buffer, withbinary);
 
 			if (statement.op == OP_DONE)
 				break;
