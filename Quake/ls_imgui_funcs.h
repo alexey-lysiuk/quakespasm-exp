@@ -341,6 +341,20 @@ static int LS_global_imgui_Button(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_Checkbox(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	luaL_checktype(state, 2, LUA_TBOOLEAN);
+	bool value = lua_toboolean(state, 2);
+
+	const bool pressed = ImGui::Checkbox(label, &value);
+	lua_pushboolean(state, pressed);
+	lua_pushboolean(state, value);
+	return 2;
+}
+
 static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -976,8 +990,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "SmallButton", LS_global_imgui_SmallButton },
 		// * InvisibleButton
 		// * ArrowButton
-		// * Checkbox
-		// * CheckboxFlags
+		{ "Checkbox", LS_global_imgui_Checkbox },
 		// * CheckboxFlags
 		// * RadioButton
 		// * RadioButton
