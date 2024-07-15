@@ -46,6 +46,14 @@ local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		-- TODO: Do not show binary checkbox for built-in functions
+		local binarypressed, binaryenabled = ImGui.Checkbox('Show statements binaries', self.withbinary)
+
+		if binarypressed then
+			self.disassembly = imTextBuffer(16 * 1024, self.func:disassemble(binaryenabled))
+			self.withbinary = binaryenabled
+		end
+
 		imInputTextMultiline('##text', self.disassembly, autoexpandsize, imInputTextReadOnly)
 	end
 
@@ -61,7 +69,11 @@ local function functiondisassembly_onshow(self)
 		return false
 	end
 
-	self.disassembly = imTextBuffer(16 * 1024, func:disassemble())
+	if not self.withbinary then
+		self.withbinary = false
+	end
+
+	self.disassembly = imTextBuffer(16 * 1024, func:disassemble(self.withbinary))
 	return true
 end
 
