@@ -32,8 +32,7 @@ const char* PR_GetTypeString(unsigned short type);
 const char* PR_SafeGetString(int offset);
 const char* PR_GlobalString(int offset);
 const char* PR_GlobalStringNoContents(int offset);
-
-extern const char *pr_opnames[66];
+const char* LS_GetProgsOpName(unsigned short op);
 }
 
 static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const bool withbinary)
@@ -46,17 +45,14 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 		luaL_addlstring(&buffer, binbuf, binlen);
 	}
 
-	if (statement.op < Q_COUNTOF(pr_opnames))
-	{
-		const char* const op = pr_opnames[statement.op];
-		const size_t oplength = strlen(op);
+	const char* const op = LS_GetProgsOpName(statement.op);
+	const size_t oplength = strlen(op);
 
-		luaL_addlstring(&buffer, op, oplength);
+	luaL_addlstring(&buffer, op, oplength);
+	luaL_addchar(&buffer, ' ');
+
+	for (size_t i = oplength; i < 10; ++i)
 		luaL_addchar(&buffer, ' ');
-
-		for (size_t i = oplength; i < 10; ++i)
-			luaL_addchar(&buffer, ' ');
-	}
 
 	switch (statement.op)
 	{
