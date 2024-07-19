@@ -174,10 +174,7 @@ void ED_Free (edict_t *ed)
 ED_GlobalAtOfs
 ============
 */
-#ifndef USE_LUA_SCRIPTING
-static
-#endif // USE_LUA_SCRIPTING
-ddef_t *ED_GlobalAtOfs (int ofs)
+static ddef_t *ED_GlobalAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;
@@ -1489,6 +1486,11 @@ int PR_AllocString (int size, char **ptr)
 
 
 #ifdef USE_LUA_SCRIPTING
+
+const ddef_t* LS_GetProgsGlobalAtOffset(int offset)
+{
+	return ED_GlobalAtOfs(offset);
+}
 
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {

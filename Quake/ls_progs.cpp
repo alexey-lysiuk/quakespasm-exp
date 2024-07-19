@@ -27,7 +27,7 @@ extern "C"
 {
 #include "quakedef.h"
 
-ddef_t *ED_GlobalAtOfs(int ofs);
+const ddef_t* LS_GetProgsGlobalAtOffset(int offset);
 const char* PR_GetTypeString(unsigned short type);
 const char* PR_SafeGetString(int offset);
 const char* PR_GlobalString(int offset);
@@ -106,7 +106,7 @@ static void LS_GetFunctionParameter(const dfunction_t* const function, const int
 
 	if (function->first_statement > 0)
 	{
-		const ddef_t* def = ED_GlobalAtOfs(function->parm_start + paramindex);
+		const ddef_t* def = LS_GetProgsGlobalAtOffset(function->parm_start + paramindex);
 		parameter.name = def ? def->s_name : 0;
 		parameter.type = def ? def->type : (function->parm_size[paramindex] > 1 ? ev_vector : ev_bad);
 	}
@@ -317,7 +317,7 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 
 			if (statement->op == OP_RETURN)
 			{
-				const ddef_t* def = ED_GlobalAtOfs(statement->a);
+				const ddef_t* def = LS_GetProgsGlobalAtOffset(statement->a);
 				returntype = def ? def->type : ev_bad;
 				break;
 			}
