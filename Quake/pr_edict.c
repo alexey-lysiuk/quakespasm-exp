@@ -1487,7 +1487,7 @@ int PR_AllocString (int size, char **ptr)
 
 #ifdef USE_LUA_SCRIPTING
 
-qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
 		return false;
@@ -1525,7 +1525,7 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, e
 	return true;
 }
 
-qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
 {
 	// TODO: Use GetEdictFieldValue() cache?
 	// TODO: Optimize for fields from entvars_t?
@@ -1541,7 +1541,7 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 	return true;
 }
 
-const char* ED_GetFieldNameByOffset(int offset)
+const char* LS_GetEdictFieldName(int offset)
 {
 	const ddef_t* def = ED_FieldAtOfs(offset);
 	return def ? PR_GetString(def->s_name) : "";

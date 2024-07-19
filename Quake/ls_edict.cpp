@@ -28,9 +28,9 @@ extern "C"
 {
 #include "quakedef.h"
 
-qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
-qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
-const char* ED_GetFieldNameByOffset(int offset);
+qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
+qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
+const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(edict_t* entity);
 } // extern "C"
 
@@ -83,7 +83,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_field:
-		lua_pushfstring(state, ".%s", ED_GetFieldNameByOffset(value->_int));
+		lua_pushfstring(state, ".%s", LS_GetEdictFieldName(value->_int));
 		break;
 
 	case ev_function:
@@ -150,7 +150,7 @@ static int LS_value_edict_index(lua_State* state)
 	{
 		name = luaL_checkstring(state, 2);
 
-		if (ED_GetFieldByName(ed, name, &type, &value))
+		if (LS_GetEdictFieldByName(ed, name, &type, &value))
 			LS_PushEdictFieldValue(state, type, value);
 		else
 			lua_pushnil(state);
@@ -168,7 +168,7 @@ static int LS_value_edict_index(lua_State* state)
 			etype_t type;
 			const eval_t* value;
 
-			if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+			if (LS_GetEdictFieldByIndex(ed, i, &name, &type, &value))
 			{
 				++fieldswithvalues;
 
@@ -214,7 +214,7 @@ static int LS_value_edict_pairs(lua_State* state)
 			etype_t type;
 			const eval_t* value;
 
-			if (ED_GetFieldByIndex(ed, i, &name, &type, &value))
+			if (LS_GetEdictFieldByIndex(ed, i, &name, &type, &value))
 			{
 				LS_PushEdictFieldValue(state, type, value);
 				lua_setfield(state, -2, name);
@@ -412,7 +412,7 @@ static int LS_global_edicts_references(lua_State* state)
 		etype_t type;
 		const eval_t* value;
 		
-		if (ED_GetFieldByIndex(edict, f, &name, &type, &value))
+		if (LS_GetEdictFieldByIndex(edict, f, &name, &type, &value))
 		{
 			if (type == ev_entity)
 			{
@@ -450,7 +450,7 @@ static int LS_global_edicts_references(lua_State* state)
 			etype_t type;
 			const eval_t* value;
 
-			if (ED_GetFieldByIndex(probe, f, &name, &type, &value))
+			if (LS_GetEdictFieldByIndex(probe, f, &name, &type, &value))
 			{
 				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
 				{
