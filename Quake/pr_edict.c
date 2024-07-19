@@ -1487,11 +1487,6 @@ int PR_AllocString (int size, char **ptr)
 
 #ifdef USE_LUA_SCRIPTING
 
-const ddef_t* LS_GetProgsGlobalAtOffset(int offset)
-{
-	return ED_GlobalAtOfs(offset);
-}
-
 qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
@@ -1552,20 +1547,9 @@ const char* ED_GetFieldNameByOffset(int offset)
 	return def ? PR_GetString(def->s_name) : "";
 }
 
-const char* LS_GetProgsTypeString(unsigned short type)
+const ddef_t* LS_GetProgsGlobal(int offset)
 {
-	switch (type & ~DEF_SAVEGLOBAL)
-	{
-		case ev_void:     return "void";     break;
-		case ev_string:   return "string";   break;
-		case ev_float:    return "float";    break;
-		case ev_vector:   return "vector";   break;
-		case ev_entity:   return "entity";   break;
-		case ev_field:    return "field";    break;
-		case ev_function: return "function"; break;
-		case ev_pointer:  return "pointer";  break;
-		default:          return "???";      break;
-	}
+	return ED_GlobalAtOfs(offset);
 }
 
 const char* LS_GetProgsString(int offset)
@@ -1579,6 +1563,22 @@ const char* LS_GetProgsString(int offset)
 	}
 
 	return "???";
+}
+
+const char* LS_GetProgsTypeName(unsigned short type)
+{
+	switch (type & ~DEF_SAVEGLOBAL)
+	{
+		case ev_void:     return "void";     break;
+		case ev_string:   return "string";   break;
+		case ev_float:    return "float";    break;
+		case ev_vector:   return "vector";   break;
+		case ev_entity:   return "entity";   break;
+		case ev_field:    return "field";    break;
+		case ev_function: return "function"; break;
+		case ev_pointer:  return "pointer";  break;
+		default:          return "???";      break;
+	}
 }
 
 #endif // USE_LUA_SCRIPTING

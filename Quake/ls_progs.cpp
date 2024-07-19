@@ -27,12 +27,13 @@ extern "C"
 {
 #include "quakedef.h"
 
-const ddef_t* LS_GetProgsGlobalAtOffset(int offset);
-const char* LS_GetProgsTypeString(unsigned short type);
+const ddef_t* LS_GetProgsGlobal(int offset);
+const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
+const char* LS_GetProgsTypeName(unsigned short type);
+
 const char* PR_GlobalString(int offset);
 const char* PR_GlobalStringNoContents(int offset);
-const char* LS_GetProgsOpName(unsigned short op);
 }
 
 static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const bool withbinary)
@@ -106,7 +107,7 @@ static void LS_GetFunctionParameter(const dfunction_t* const function, const int
 
 	if (function->first_statement > 0)
 	{
-		const ddef_t* def = LS_GetProgsGlobalAtOffset(function->parm_start + paramindex);
+		const ddef_t* def = LS_GetProgsGlobal(function->parm_start + paramindex);
 		parameter.name = def ? def->s_name : 0;
 		parameter.type = def ? def->type : (function->parm_size[paramindex] > 1 ? ev_vector : ev_bad);
 	}
@@ -133,7 +134,7 @@ static int LS_GetFunctionParameters(const dfunction_t* const function, LS_Functi
 // Adds function parameter type and name separated by space (if it's set) to given Lua buffer
 static void LS_FunctionParameterToBuffer(const LS_FunctionParameter& parameter, luaL_Buffer& buffer)
 {
-	const char* const type = LS_GetProgsTypeString(parameter.type);
+	const char* const type = LS_GetProgsTypeName(parameter.type);
 	luaL_addstring(&buffer, type);
 
 	const char* const name = LS_GetProgsString(parameter.name);
@@ -317,7 +318,7 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 
 			if (statement->op == OP_RETURN)
 			{
-				const ddef_t* def = LS_GetProgsGlobalAtOffset(statement->a);
+				const ddef_t* def = LS_GetProgsGlobal(statement->a);
 				returntype = def ? def->type : ev_bad;
 				break;
 			}
@@ -471,7 +472,7 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 	luaL_buffinitsize(state, &buffer, 4096);
 
 	const lua_Integer returntype = LS_GetFunctionReturnType(function);
-	const char* const returntypename = LS_GetProgsTypeString(returntype);
+	const char* const returntypename = LS_GetProgsTypeName(returntype);
 	luaL_addstring(&buffer, returntypename);
 	luaL_addchar(&buffer, ' ');
 
@@ -548,7 +549,7 @@ static int LS_value_function_index(lua_State* state)
 static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
 	const lua_Integer returntypeindex = LS_GetFunctionReturnType(function);
-	const char* const returntype = LS_GetProgsTypeString(returntypeindex);
+	const char* const returntype = LS_GetProgsTypeName(returntypeindex);
 	const char* name = LS_GetProgsString(function->s_name);
 
 	luaL_Buffer buf;
@@ -637,7 +638,7 @@ static int LS_global_progs_functions(lua_State* state)
 static int LS_global_progs_typename(lua_State* state)
 {
 	const lua_Integer typeindex = luaL_checkinteger(state, 1);
-	const char* const nameoftype = LS_GetProgsTypeString(typeindex);
+	const char* const nameoftype = LS_GetProgsTypeName(typeindex);
 	lua_pushstring(state, nameoftype);
 	return 1;
 }
