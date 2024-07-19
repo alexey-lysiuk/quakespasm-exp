@@ -1552,7 +1552,7 @@ const char* ED_GetFieldNameByOffset(int offset)
 	return def ? PR_GetString(def->s_name) : "";
 }
 
-const char* PR_GetTypeString(unsigned short type)
+const char* LS_GetProgsTypeString(unsigned short type)
 {
 	switch (type & ~DEF_SAVEGLOBAL)
 	{
@@ -1568,7 +1568,7 @@ const char* PR_GetTypeString(unsigned short type)
 	}
 }
 
-const char* PR_SafeGetString(int offset)
+const char* LS_GetProgsString(int offset)
 {
 	if (offset >= 0 && offset < pr_stringssize)
 		return pr_strings + offset;
