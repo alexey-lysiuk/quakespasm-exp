@@ -28,6 +28,7 @@ extern "C"
 #include "quakedef.h"
 
 const ddef_t* LS_GetProgsGlobal(int offset);
+const ddef_t* LS_GetProgsGlobalDefinition(int index);
 const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
 const char* LS_GetProgsTypeName(unsigned short type);
@@ -634,6 +635,71 @@ static int LS_global_progs_functions(lua_State* state)
 	return 3;
 }
 
+constexpr LS_UserDataType<int> ls_definition_type("definition");
+
+// Pushes string representation of given 'definition' userdata
+static int LS_value_definition_tostring(lua_State* state)
+{
+	const int index = ls_definition_type.GetValue(state, 1);
+	const ddef_t* definition = LS_GetProgsGlobalDefinition(index);
+
+	if (definition)
+		lua_pushfstring(state, "%s %s", LS_GetProgsTypeName(definition->type), LS_GetProgsString(definition->s_name));
+	else
+		luaL_error(state, "invalid definition");
+
+	return 1;
+}
+
+// Sets metatable for 'definition' userdata
+static void LS_SetDefinitionMetaTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		//{ "__index", LS_value_definition_index },
+		{ "__tostring", LS_value_definition_tostring },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "func"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+}
+
+static int LS_global_globaldefinitions_iterator(lua_State* state)
+{
+	lua_Integer index = luaL_checkinteger(state, 2);
+	index = luaL_intop(+, index, 1);
+
+	if (index > 0 && index < progs->numglobaldefs)
+	{
+		lua_pushinteger(state, index);
+
+		int& newvalue = ls_definition_type.New(state);
+		newvalue = index;
+		LS_SetDefinitionMetaTable(state);
+
+		return 2;
+	}
+
+	lua_pushnil(state);
+	return 1;
+}
+
+// Returns progs global definitions iterator, e.g., for i, g in progs.globaldefinitions() do print(i, g) end
+static int LS_global_progs_globaldefinitions(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const lua_Integer index = luaL_optinteger(state, 1, 0);
+	lua_pushcfunction(state, LS_global_globaldefinitions_iterator);
+	lua_pushnil(state);  // unused
+	lua_pushinteger(state, index);  // initial value
+	return 3;
+}
+
 // Pushes name of type by its index
 static int LS_global_progs_typename(lua_State* state)
 {
@@ -661,6 +727,7 @@ void LS_InitProgsType(lua_State* state)
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
 		{ "functions", LS_global_progs_functions },
+		{ "globaldefinitions", LS_global_progs_globaldefinitions },
 		{ "typename", LS_global_progs_typename },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
