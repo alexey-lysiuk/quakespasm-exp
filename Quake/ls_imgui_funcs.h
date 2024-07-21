@@ -992,7 +992,6 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * ArrowButton
 		{ "Checkbox", LS_global_imgui_Checkbox },
 		// * CheckboxFlags
-		// * CheckboxFlags
 		// * RadioButton
 		// * RadioButton
 		// * ProgressBar

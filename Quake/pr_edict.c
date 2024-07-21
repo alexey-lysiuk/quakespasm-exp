@@ -174,10 +174,7 @@ void ED_Free (edict_t *ed)
 ED_GlobalAtOfs
 ============
 */
-#ifndef USE_LUA_SCRIPTING
-static
-#endif // USE_LUA_SCRIPTING
-ddef_t *ED_GlobalAtOfs (int ofs)
+static ddef_t *ED_GlobalAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;
@@ -1490,7 +1487,7 @@ int PR_AllocString (int size, char **ptr)
 
 #ifdef USE_LUA_SCRIPTING
 
-qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
 		return false;
@@ -1528,7 +1525,7 @@ qboolean ED_GetFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, e
 	return true;
 }
 
-qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
 {
 	// TODO: Use GetEdictFieldValue() cache?
 	// TODO: Optimize for fields from entvars_t?
@@ -1544,13 +1541,31 @@ qboolean ED_GetFieldByName(edict_t* ed, const char* name, etype_t* type, const e
 	return true;
 }
 
-const char* ED_GetFieldNameByOffset(int offset)
+const char* LS_GetEdictFieldName(int offset)
 {
 	const ddef_t* def = ED_FieldAtOfs(offset);
 	return def ? PR_GetString(def->s_name) : "";
 }
 
-const char* PR_GetTypeString(unsigned short type)
+const ddef_t* LS_GetProgsGlobal(int offset)
+{
+	return ED_GlobalAtOfs(offset);
+}
+
+const char* LS_GetProgsString(int offset)
+{
+	if (offset >= 0 && offset < pr_stringssize)
+		return pr_strings + offset;
+	else if (offset < 0 && offset >= -pr_numknownstrings)
+	{
+		const char* knownstring = pr_knownstrings[-1 - offset];
+		return knownstring ? knownstring : "???";
+	}
+
+	return "???";
+}
+
+const char* LS_GetProgsTypeName(unsigned short type)
 {
 	switch (type & ~DEF_SAVEGLOBAL)
 	{
@@ -1564,19 +1579,6 @@ const char* PR_GetTypeString(unsigned short type)
 		case ev_pointer:  return "pointer";  break;
 		default:          return "???";      break;
 	}
-}
-
-const char* PR_SafeGetString(int offset)
-{
-	if (offset >= 0 && offset < pr_stringssize)
-		return pr_strings + offset;
-	else if (offset < 0 && offset >= -pr_numknownstrings)
-	{
-		const char* knownstring = pr_knownstrings[-1 - offset];
-		return knownstring ? knownstring : "???";
-	}
-
-	return "???";
 }
 
 #endif // USE_LUA_SCRIPTING

@@ -40,10 +40,7 @@ dfunction_t	*pr_xfunction;
 int		pr_xstatement;
 int		pr_argc;
 
-#ifndef USE_LUA_SCRIPTING
-static
-#endif // !USE_LUA_SCRIPTING
-const char *pr_opnames[] =
+static const char *pr_opnames[] =
 {
 	"DONE",
 
@@ -654,3 +651,13 @@ void PR_ExecuteProgram (func_t fnum)
 #undef OPA
 #undef OPB
 #undef OPC
+
+
+#ifdef USE_LUA_SCRIPTING
+
+const char* LS_GetProgsOpName(unsigned short op)
+{
+	return op < Q_COUNTOF(pr_opnames) ? pr_opnames[op] : "???";
+}
+
+#endif // !USE_LUA_SCRIPTING

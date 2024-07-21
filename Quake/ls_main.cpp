@@ -439,7 +439,7 @@ static int LS_global_stacktrace(lua_State* state)
 	assert(traceback);
 	assert(length > 0);
 
-	char* cleaned = LS_tempalloc(state, length + 1);
+	char* cleaned = LS_tempalloc(state, length);
 	assert(cleaned);
 
 	qboolean skipnextquote = false;
@@ -469,8 +469,6 @@ static int LS_global_stacktrace(lua_State* state)
 		++s;
 		++d;
 	}
-
-	cleaned[d] = '\0';
 
 	lua_pushlstring(state, cleaned, d);
 	LS_tempfree(cleaned);
