@@ -1572,6 +1572,16 @@ const char* LS_GetEdictFieldName(int offset)
 	return def ? PR_GetString(def->s_name) : "";
 }
 
+const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index)
+{
+	return (index >= 0 && index < progs->numfielddefs) ? &pr_fielddefs[index] : NULL;
+}
+
+const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset)
+{
+	return ED_FieldAtOfs(offset);
+}
+
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index)
 {
 	return (index >= 0 && index < progs->numglobaldefs) ? &pr_globaldefs[index] : NULL;
