@@ -27,8 +27,8 @@ extern "C"
 {
 #include "quakedef.h"
 
-const ddef_t* LS_GetProgsGlobal(int offset);
-const ddef_t* LS_GetProgsGlobalDefinition(int index);
+const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset);
+const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
 const char* LS_GetProgsTypeName(unsigned short type);
@@ -108,7 +108,7 @@ static void LS_GetFunctionParameter(const dfunction_t* const function, const int
 
 	if (function->first_statement > 0)
 	{
-		const ddef_t* def = LS_GetProgsGlobal(function->parm_start + paramindex);
+		const ddef_t* def = LS_GetProgsFieldDefinitionByOffset(function->parm_start + paramindex);
 		parameter.name = def ? def->s_name : 0;
 		parameter.type = def ? def->type : (function->parm_size[paramindex] > 1 ? ev_vector : ev_bad);
 	}
@@ -319,7 +319,7 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 
 			if (statement->op == OP_RETURN)
 			{
-				const ddef_t* def = LS_GetProgsGlobal(statement->a);
+				const ddef_t* def = LS_GetProgsFieldDefinitionByOffset(statement->a);
 				returntype = def ? def->type : ev_bad;
 				break;
 			}
@@ -641,7 +641,7 @@ constexpr LS_UserDataType<int> ls_definition_type("definition");
 static int LS_value_definition_tostring(lua_State* state)
 {
 	const int index = ls_definition_type.GetValue(state, 1);
-	const ddef_t* definition = LS_GetProgsGlobalDefinition(index);
+	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
 
 	if (definition)
 		lua_pushfstring(state, "%s %s", LS_GetProgsTypeName(definition->type), LS_GetProgsString(definition->s_name));

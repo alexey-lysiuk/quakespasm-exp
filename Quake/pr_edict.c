@@ -1154,6 +1154,61 @@ static void PR_PatchRereleaseBuiltins (void)
 	}
 }
 
+static int PR_FindFishPatchOffset(const dfunction_t* function)
+{
+	static const short totalmonsters = offsetof(globalvars_t, total_monsters) / sizeof(int);
+	const int statementcount = progs->numstatements;
+
+	for (int i = function->first_statement; i < statementcount; ++i)
+	{
+		const dstatement_t* statement = &pr_statements[i];
+
+		switch (statement->op)
+		{
+		case OP_ADD_F:
+		{
+			if (statement->a != totalmonsters)
+				continue;
+
+			const int incrementimmediate = statement->c;
+			const int next = i + 1;
+
+			if (next == statementcount)
+				return 0;  // patch location not found
+
+			// Check if this addition is an increment
+			const int onefpconstoffset = statement->b;
+
+			if (onefpconstoffset >= progs->numglobals)
+				continue;
+
+			const ddef_t* onefpconstdef = ED_GlobalAtOfs(onefpconstoffset);
+			if (!onefpconstdef || onefpconstdef->type != ev_float)
+				continue;
+
+			if (pr_globals[onefpconstoffset] != 1.0f)
+				continue;
+
+			// Check if the next statement is store operation of incremented total monster count
+			statement = &pr_statements[next];
+
+			if (statement->op == OP_STORE_F && statement->a == incrementimmediate)
+				return i;  // patch location found
+
+			break;
+		}
+
+		case OP_DONE:
+			return 0;  // patch location not found
+
+		default:
+			break;
+		}
+	}
+
+	return 0;  // patch location not found
+}
+
 static void PR_PatchFishCountBug (void)
 {
 /*
@@ -1182,55 +1237,25 @@ static void PR_PatchFishCountBug (void)
 	if (strcmp(sv.name, "sm175_scampie") == 0)
 		return;
 
-	typedef struct
-	{
-		unsigned short progscrc;
-		short funcindex, funcstart, onefpconst, totalmonsters;
-	}
-	PatchDefinition;
-
-	static const PatchDefinition PATCHES[] =
-	{
-		{ 51103, 374, 8399,  214, 5464 },  // version 1.01
-		{ 24778, 373, 8600,  214, 5580 },  // version 1.06
-		{ 31741, 375, 8511,  214, 5520 },  // fc1
-		{ 16197, 391, 9730, 2616, 6344 },  // hrimturt
-		{  7339, 395, 9986, 2787, 6510 },  // n3sp02
-	};
-
-	static const size_t PATCH_COUNT = Q_COUNTOF(PATCHES);
-	size_t patchindex = 0;
-
-	for (; patchindex < PATCH_COUNT; ++patchindex)
-		if (PATCHES[patchindex].progscrc == pr_crc)
-			break;
-
-	if (patchindex == PATCH_COUNT)
-		return;  // no crc match found
-
-	short funcindex = PATCHES[patchindex].funcindex;
-	short funcstart = PATCHES[patchindex].funcstart;
-	short onefpconst = PATCHES[patchindex].onefpconst;
-	short totalmonsters = PATCHES[patchindex].totalmonsters;
-
-	if (progs->numfunctions <= funcindex ||
-		progs->numstatements <= funcstart ||
-		pr_functions[funcindex].first_statement != funcstart)
+	const dfunction_t* startfunc = ED_FindFunction("swimmonster_start");
+	if (!startfunc)
 		return;
 
-	// Check the second instruction
-	dstatement_t* st = &pr_statements[funcstart + 7];
-	if (st->op != OP_STORE_F || st->a != totalmonsters || st->b != 40 || st->c != 0)
+	const dfunction_t* startgofunc = ED_FindFunction("swimmonster_start_go");
+	if (!startgofunc)
 		return;
 
-	// Check the first instruction
-	st = &pr_statements[funcstart + 6];
-	if (st->op != OP_ADD_F || st->a != 40 || st->b != onefpconst || st->c != totalmonsters)
+	if (!PR_FindFishPatchOffset(startfunc))
+		return;
+
+	const int startgooffset = PR_FindFishPatchOffset(startgofunc);
+	if (!startgooffset)
 		return;
 
 	// Replace the first instruction with goto to skip the second one
-	st->op = OP_GOTO;
-	st->a = 2;  // skip the current and the next instructions
+	dstatement_t* statement = &pr_statements[startgooffset];
+	statement->op = OP_GOTO;
+	statement->a = 2;  // skip the current and the next instructions
 
 	Con_DPrintf("Patch for rotfish total monster count bug applied\n");
 }
@@ -1547,7 +1572,22 @@ const char* LS_GetEdictFieldName(int offset)
 	return def ? PR_GetString(def->s_name) : "";
 }
 
-const ddef_t* LS_GetProgsGlobal(int offset)
+const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index)
+{
+	return (index >= 0 && index < progs->numfielddefs) ? &pr_fielddefs[index] : NULL;
+}
+
+const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset)
+{
+	return ED_FieldAtOfs(offset);
+}
+
+const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index)
+{
+	return (index >= 0 && index < progs->numglobaldefs) ? &pr_globaldefs[index] : NULL;
+}
+
+const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset)
 {
 	return ED_GlobalAtOfs(offset);
 }
