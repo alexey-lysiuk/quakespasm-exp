@@ -635,29 +635,33 @@ static int LS_global_progs_functions(lua_State* state)
 	return 3;
 }
 
-constexpr LS_UserDataType<int> ls_definition_type("definition");
+constexpr LS_UserDataType<int> ls_globaldefinition_type("global definition");
 
-// Pushes string representation of given 'definition' userdata
-static int LS_value_definition_tostring(lua_State* state)
+// Pushes string representation of given 'global definition' userdata
+static int LS_value_globaldefinition_tostring(lua_State* state)
 {
-	const int index = ls_definition_type.GetValue(state, 1);
+	const int index = ls_globaldefinition_type.GetValue(state, 1);
 	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
 
 	if (definition)
-		lua_pushfstring(state, "%s %s", LS_GetProgsTypeName(definition->type), LS_GetProgsString(definition->s_name));
+	{
+		const char* const name = LS_GetProgsString(definition->s_name);
+		const char* const type = LS_GetProgsTypeName(definition->type);
+		lua_pushfstring(state, "global definition '%s' of type '%s' at offset %d", name, type, definition->ofs);
+	}
 	else
-		luaL_error(state, "invalid definition");
+		luaL_error(state, "invalid global definition");
 
 	return 1;
 }
 
-// Sets metatable for 'definition' userdata
+// Sets metatable for 'global definition' userdata
 static void LS_SetDefinitionMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
 		//{ "__index", LS_value_definition_index },
-		{ "__tostring", LS_value_definition_tostring },
+		{ "__tostring", LS_value_globaldefinition_tostring },
 		{ NULL, NULL }
 	};
 
@@ -676,7 +680,7 @@ static int LS_global_globaldefinitions_iterator(lua_State* state)
 	{
 		lua_pushinteger(state, index);
 
-		int& newvalue = ls_definition_type.New(state);
+		int& newvalue = ls_globaldefinition_type.New(state);
 		newvalue = index;
 		LS_SetDefinitionMetaTable(state);
 
