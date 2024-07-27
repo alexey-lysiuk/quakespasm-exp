@@ -212,7 +212,7 @@ static int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, c
 	const LS_Member probe{ length, name };
 	const LS_Member* member = std::lower_bound(members, last, probe);
 
-	if (member == last)
+	if (member == last || !(*member < probe))
 		luaL_error(state, "unknown member '%s' of type '%s'", name, type.GetName());
 
 	return member->getter(state);
@@ -732,7 +732,7 @@ static int LS_GlobalDefinitionTypeGetter(lua_State* state)
 //		const char* const type = LS_GetProgsString(definition->type);
 //		lua_pushstring(state, name);
 //	}
-		lua_pushinteger(state, definition->type);
+		lua_pushinteger(state, definition->type & ~DEF_SAVEGLOBAL);
 	else
 		luaL_error(state, "invalid global definition");
 
