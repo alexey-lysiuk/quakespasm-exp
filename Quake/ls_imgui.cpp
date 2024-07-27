@@ -140,7 +140,7 @@ struct LS_ImGuiMember
 
 	bool operator<(const LS_ImGuiMember& other) const
 	{
-		return strcmp(name, other.name);
+		return strcmp(name, other.name) < 0;
 	}
 };
 

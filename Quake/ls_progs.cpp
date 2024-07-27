@@ -19,7 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <assert.h>
+#include <algorithm>
+#include <cassert>
 
 #include "ls_common.h"
 
@@ -181,22 +182,89 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
-// Pushes method of 'function parameter' userdata by its name
-static int LS_value_functionparameter_index(lua_State* state)
+
+struct LS_Member
 {
+	size_t length;
+	const char* name;
+
+	using Getter = int(*)(lua_State* state);
+	Getter getter;
+
+	bool operator<(const LS_Member& other) const
+	{
+		return (length < other.length)
+			|| (length == other.length && strncmp(name, other.name, length) < 0);
+	}
+};
+
+static int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount)
+{
+	// TODO: Check userdata type?
+	//type.GetValuePtr(state, 1);
+
 	size_t length;
 	const char* name = luaL_checklstring(state, 2, &length);
 	assert(name);
 	assert(length > 0);
 
-	if (strncmp(name, "name", length) == 0)
-		lua_pushcfunction(state, LS_value_functionparameter_name);
-	else if (strncmp(name, "type", length) == 0)
-		lua_pushcfunction(state, LS_value_functionparameter_type);
-	else
-		luaL_error(state, "unknown function '%s'", name);
+	const LS_Member* last = members + membercount;
+	const LS_Member probe{ length, name };
+	const LS_Member* member = std::lower_bound(members, last, probe);
 
+	if (member == last)
+		luaL_error(state, "unknown member '%s' of type '%s'", name, type.GetName());
+
+	return member->getter(state);
+}
+
+
+static int LS_FunctionParameterNameGetter(lua_State* state)
+{
+	lua_pushcfunction(state, LS_value_functionparameter_name);
 	return 1;
+}
+
+static int LS_FunctionParameterTypeGetter(lua_State* state)
+{
+	lua_pushcfunction(state, LS_value_functionparameter_type);
+	return 1;
+}
+
+constexpr LS_Member ls_functionparameter_members[] =
+{
+	{ 4, "name", LS_FunctionParameterNameGetter },
+	{ 4, "type", LS_FunctionParameterTypeGetter },
+};
+
+
+// Pushes method of 'function parameter' userdata by its name
+static int LS_value_functionparameter_index(lua_State* state)
+{
+//	size_t length;
+//	const char* name = luaL_checklstring(state, 2, &length);
+//	assert(name);
+//	assert(length > 0);
+
+//	switch (length)
+//	{
+//		case 4:
+//			if (strncmp(name, "name", length) == 0)
+//				lua_pushcfunction(state, LS_value_functionparameter_name);
+//			else if (strncmp(name, "type", length) == 0)
+//				lua_pushcfunction(state, LS_value_functionparameter_type);
+//			break;
+//
+//		default:
+//			break;
+//	}
+//	if (length == 4)
+//	{
+//
+//	}
+	//else
+
+	return LS_GetMember(state, ls_functionparameter_type, ls_functionparameter_members, Q_COUNTOF(ls_functionparameter_members));
 }
 
 // Pushes string representation of given 'function parameter' userdata
@@ -635,7 +703,69 @@ static int LS_global_progs_functions(lua_State* state)
 	return 3;
 }
 
+
 constexpr LS_UserDataType<int> ls_globaldefinition_type("global definition");
+
+static int LS_GlobalDefinitionNameGetter(lua_State* state)
+{
+	const int index = ls_globaldefinition_type.GetValue(state, 1);
+	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
+
+	if (definition)
+	{
+		const char* const name = LS_GetProgsString(definition->s_name);
+		lua_pushstring(state, name);
+	}
+	else
+		luaL_error(state, "invalid global definition");
+
+	return 1;
+}
+
+static int LS_GlobalDefinitionTypeGetter(lua_State* state)
+{
+	const int index = ls_globaldefinition_type.GetValue(state, 1);
+	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
+
+	if (definition)
+//	{
+//		const char* const type = LS_GetProgsString(definition->type);
+//		lua_pushstring(state, name);
+//	}
+		lua_pushinteger(state, definition->type);
+	else
+		luaL_error(state, "invalid global definition");
+
+	return 1;
+}
+
+static int LS_GlobalDefinitionOffsetGetter(lua_State* state)
+{
+	const int index = ls_globaldefinition_type.GetValue(state, 1);
+	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
+
+	if (definition)
+	{
+		lua_pushinteger(state, definition->ofs);
+	}
+	else
+		luaL_error(state, "invalid global definition");
+
+	return 1;
+}
+
+constexpr LS_Member ls_globaldefinition_members[] =
+{
+	{ 4, "name", LS_GlobalDefinitionNameGetter },
+	{ 4, "type", LS_GlobalDefinitionTypeGetter },
+	{ 6, "offset", LS_GlobalDefinitionOffsetGetter },
+};
+
+// Pushes value by member name of given 'global definition' userdata
+static int LS_value_globaldefinition_index(lua_State* state)
+{
+	return LS_GetMember(state, ls_globaldefinition_type, ls_globaldefinition_members, Q_COUNTOF(ls_globaldefinition_members));
+}
 
 // Pushes string representation of given 'global definition' userdata
 static int LS_value_globaldefinition_tostring(lua_State* state)
@@ -660,7 +790,7 @@ static void LS_SetDefinitionMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
-		//{ "__index", LS_value_definition_index },
+		{ "__index", LS_value_globaldefinition_index },
 		{ "__tostring", LS_value_globaldefinition_tostring },
 		{ NULL, NULL }
 	};
