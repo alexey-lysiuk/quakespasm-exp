@@ -140,7 +140,7 @@ struct LS_ImGuiMember
 
 	bool operator<(const LS_ImGuiMember& other) const
 	{
-		return strcmp(name, other.name);
+		return strcmp(name, other.name) < 0;
 	}
 };
 
@@ -174,7 +174,7 @@ static int LS_ImGuiTypeOperatorIndex(lua_State* state, const LS_TypelessUserData
 	const LS_ImGuiMember probe{ key };
 	const LS_ImGuiMember* member = std::lower_bound(members, last, probe);
 
-	if (member == last)
+	if (member == last || probe < *member)
 		luaL_error(state, "unknown member '%s' of type '%s'", key, type.GetName());
 
 	void* userdataptr = type.GetValuePtr(state, 1);
