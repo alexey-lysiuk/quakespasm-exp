@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
+#include <algorithm>
 #include <cassert>
 
 #include "ls_common.h"
@@ -79,6 +80,26 @@ static void LS_tempfree(void* ptr)
 }
 
 #endif // USE_TLSF
+
+
+int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount)
+{
+	// TODO: Check userdata type? I.e., type.GetValuePtr(state, 1);
+
+	size_t length;
+	const char* name = luaL_checklstring(state, 2, &length);
+	assert(name);
+	assert(length > 0);
+
+	const LS_Member* last = members + membercount;
+	const LS_Member probe{ length, name };
+	const LS_Member* member = std::lower_bound(members, last, probe);
+
+	if (member == last || probe < *member)
+		luaL_error(state, "unknown member '%s' of type '%s'", name, type.GetName());
+
+	return member->getter(state);
+}
 
 
 void* LS_TypelessUserDataType::NewPtr(lua_State* state) const

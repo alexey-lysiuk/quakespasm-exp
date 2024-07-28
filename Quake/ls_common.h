@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
+#include <cstring>
+
 #include "lua.hpp"
 
 lua_State* LS_GetState(void);
@@ -29,6 +31,21 @@ lua_State* LS_GetState(void);
 int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
+
+struct LS_Member
+{
+	size_t length;
+	const char* name;
+
+	using Getter = int(*)(lua_State* state);
+	Getter getter;
+
+	bool operator<(const LS_Member& other) const
+	{
+		return (length < other.length)
+			|| (length == other.length && strncmp(name, other.name, length) < 0);
+	}
+};
 
 class LS_TypelessUserDataType
 {
@@ -69,6 +86,8 @@ public:
 		return *static_cast<T*>(GetValuePtr(state, index));
 	}
 };
+
+int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);

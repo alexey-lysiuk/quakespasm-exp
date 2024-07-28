@@ -19,8 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <algorithm>
-#include <cassert>
+#include <assert.h>
 
 #include "ls_common.h"
 
@@ -182,42 +181,6 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
-
-struct LS_Member
-{
-	size_t length;
-	const char* name;
-
-	using Getter = int(*)(lua_State* state);
-	Getter getter;
-
-	bool operator<(const LS_Member& other) const
-	{
-		return (length < other.length)
-			|| (length == other.length && strncmp(name, other.name, length) < 0);
-	}
-};
-
-static int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount)
-{
-	// TODO: Check userdata type? I.e., type.GetValuePtr(state, 1);
-
-	size_t length;
-	const char* name = luaL_checklstring(state, 2, &length);
-	assert(name);
-	assert(length > 0);
-
-	const LS_Member* last = members + membercount;
-	const LS_Member probe{ length, name };
-	const LS_Member* member = std::lower_bound(members, last, probe);
-
-	if (member == last || probe < *member)
-		luaL_error(state, "unknown member '%s' of type '%s'", name, type.GetName());
-
-	return member->getter(state);
-}
-
-
 static int LS_FunctionParameterNameGetter(lua_State* state)
 {
 	lua_pushcfunction(state, LS_value_functionparameter_name);
@@ -235,7 +198,6 @@ constexpr LS_Member ls_functionparameter_members[] =
 	{ 4, "name", LS_FunctionParameterNameGetter },
 	{ 4, "type", LS_FunctionParameterTypeGetter },
 };
-
 
 // Pushes method of 'function parameter' userdata by its name
 static int LS_value_functionparameter_index(lua_State* state)
@@ -676,7 +638,6 @@ static int LS_global_progs_functions(lua_State* state)
 	lua_pushinteger(state, index);  // initial value
 	return 3;
 }
-
 
 constexpr LS_UserDataType<int> ls_globaldefinition_type("global definition");
 
