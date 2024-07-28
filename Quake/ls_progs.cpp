@@ -180,22 +180,28 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
+static int LS_FunctionParameterNameGetter(lua_State* state)
+{
+	lua_pushcfunction(state, LS_value_functionparameter_name);
+	return 1;
+}
+
+static int LS_FunctionParameterTypeGetter(lua_State* state)
+{
+	lua_pushcfunction(state, LS_value_functionparameter_type);
+	return 1;
+}
+
+constexpr LS_Member ls_functionparameter_members[] =
+{
+	{ 4, "name", LS_FunctionParameterNameGetter },
+	{ 4, "type", LS_FunctionParameterTypeGetter },
+};
+
 // Pushes method of 'function parameter' userdata by its name
 static int LS_value_functionparameter_index(lua_State* state)
 {
-	size_t length;
-	const char* name = luaL_checklstring(state, 2, &length);
-	assert(name);
-	assert(length > 0);
-
-	if (strncmp(name, "name", length) == 0)
-		lua_pushcfunction(state, LS_value_functionparameter_name);
-	else if (strncmp(name, "type", length) == 0)
-		lua_pushcfunction(state, LS_value_functionparameter_type);
-	else
-		luaL_error(state, "unknown function '%s'", name);
-
-	return 1;
+	return LS_GetMember(state, ls_functionparameter_type, ls_functionparameter_members, Q_COUNTOF(ls_functionparameter_members));
 }
 
 // Pushes string representation of given 'function parameter' userdata
