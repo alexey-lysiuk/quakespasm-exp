@@ -1592,11 +1592,6 @@ const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset)
 	return ED_GlobalAtOfs(offset);
 }
 
-const ddef_t* LS_GetProgsGlobalDefinition(int index)
-{
-	return (index >= 0 && index < progs->numglobaldefs) ? &pr_globaldefs[index] : NULL;
-}
-
 const char* LS_GetProgsString(int offset)
 {
 	if (offset >= 0 && offset < pr_stringssize)
