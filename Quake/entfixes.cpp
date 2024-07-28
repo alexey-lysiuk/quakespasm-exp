@@ -49,11 +49,6 @@ struct EF_Fix
 	unsigned patchindex;
 	unsigned patchcount;
 
-	bool operator==(const EF_Fix& other) const
-	{
-		return crc == other.crc && oldsize == other.oldsize && q_strcasecmp(mapname, other.mapname) == 0;
-	}
-
 	bool operator<(const EF_Fix& other) const
 	{
 		return (crc < other.crc) 
@@ -70,7 +65,7 @@ static const EF_Fix* EF_FindEntitiesFix(const char* mapname, unsigned size, unsi
 	const EF_Fix* last = ef_fixes + Q_COUNTOF(ef_fixes);
 	const EF_Fix probe{ mapname, crc, size };
 	const EF_Fix* fix = std::lower_bound(ef_fixes, last, probe);
-	return (fix != last && probe == *fix) ? fix : nullptr;
+	return (fix == last || probe < *fix) ? nullptr : fix;
 }
 
 extern "C" char* EF_ApplyEntitiesFix(const char* mapname, const byte* entities, unsigned size, unsigned crc)
