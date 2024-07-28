@@ -590,28 +590,52 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 	return 1;
 }
 
+template <int (*Func)(lua_State* state, const dfunction_t* function)>
+static int LS_FunctionGetter(lua_State* state)
+{
+	lua_pushcfunction(state, LS_FunctionMethod<Func>);
+	return 1;
+}
+
+//static int LS_FunctionFileGetter(lua_State* state)
+//{
+//	lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionDisassemble>);
+//	return 1;
+//}
+
+constexpr LS_Member ls_function_members[] =
+{
+	{ 4, "file", LS_FunctionGetter<LS_PushFunctionFile> },
+	{ 4, "name", LS_FunctionGetter<LS_PushFunctionName> },
+	{ 10, "parameters", LS_FunctionGetter<LS_PushFunctionParameters> },
+	{ 10, "returntype", LS_FunctionGetter<LS_PushFunctionReturnType> },
+	{ 11, "disassemble", LS_FunctionGetter<LS_PushFunctionDisassemble> },
+};
+
 // Pushes method of 'function' userdata by its name
 static int LS_value_function_index(lua_State* state)
 {
-	size_t length;
-	const char* name = luaL_checklstring(state, 2, &length);
-	assert(name);
-	assert(length > 0);
+//	size_t length;
+//	const char* name = luaL_checklstring(state, 2, &length);
+//	assert(name);
+//	assert(length > 0);
+//
+//	if (strncmp(name, "disassemble", length) == 0)
+//		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionDisassemble>);
+//	else if (strncmp(name, "file", length) == 0)
+//		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionFile>);
+//	else if (strncmp(name, "name", length) == 0)
+//		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionName>);
+//	else if (strncmp(name, "parameters", length) == 0)
+//		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionParameters>);
+//	else if (strncmp(name, "returntype", length) == 0)
+//		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionReturnType>);
+//	else
+//		luaL_error(state, "unknown function '%s'", name);
+//
+//	return 1;
 
-	if (strncmp(name, "disassemble", length) == 0)
-		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionDisassemble>);
-	else if (strncmp(name, "file", length) == 0)
-		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionFile>);
-	else if (strncmp(name, "name", length) == 0)
-		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionName>);
-	else if (strncmp(name, "parameters", length) == 0)
-		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionParameters>);
-	else if (strncmp(name, "returntype", length) == 0)
-		lua_pushcfunction(state, LS_FunctionMethod<LS_PushFunctionReturnType>);
-	else
-		luaL_error(state, "unknown function '%s'", name);
-
-	return 1;
+	return LS_GetMember(state, ls_function_type, ls_function_members, Q_COUNTOF(ls_function_members));
 }
 
 // Pushes string representation of given 'function' userdata
