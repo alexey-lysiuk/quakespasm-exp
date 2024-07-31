@@ -908,10 +908,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PushStyleVar
 		// * PushStyleVar
 		// * PopStyleVar
-		// * PushTabStop
-		// * PopTabStop
-		// * PushButtonRepeat
-		// * PopButtonRepeat
+		// * PushItemFlag
+		// * PopItemFlag
 
 		// Parameters stacks
 		// * PushItemWidth
@@ -983,6 +981,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * RadioButton
 		// * ProgressBar
 		// * Bullet
+		// * TextLink
+		// * TextLinkOpenURL
 
 		// Widgets: Images
 		// * Image
@@ -1055,9 +1055,16 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * GetTreeNodeToLabelSpacing
 		// * CollapsingHeader
 		// * SetNextItemOpen
+		// * SetNextItemStorageID
 
 		// Widgets: Selectables
 		{ "Selectable", LS_global_imgui_Selectable },
+
+		// Multi-selection system for Selectable(), Checkbox(), TreeNode() functions
+		// * BeginMultiSelect
+		// * EndMultiSelect
+		// * SetNextItemSelectionUserData
+		// * IsItemToggledSelection
 
 		// Widgets: List Boxes
 		// * BeginListBox
@@ -1230,6 +1237,13 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * GetKeyPressedAmount
 		// * GetKeyName
 		// * SetNextFrameWantCaptureKeyboard
+
+		// Inputs Utilities: Shortcut Testing & Routing
+		// * Shortcut
+		// * SetNextItemShortcut
+
+		// Inputs Utilities: Key/Input Ownership
+		// * SetItemKeyOwner
 
 		// Inputs Utilities: Mouse specific
 		// * IsMouseDown
