@@ -83,6 +83,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 #undef LS_IMGUI_WINDOW_FLAG
 
 	// * ImGuiChildFlags
+	// * ImGuiItemFlags
 
 #define LS_IMGUI_INPUT_TEXT_FLAG(NAME) LS_IMGUI_ENUM_VALUE(InputTextFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
@@ -186,7 +187,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 	// * ImGuiDir
 	// * ImGuiSortDirection
 	// * ImGuiKey
-	// * ImGuiNavInput
+	// * ImGuiInputFlags
 	// * ImGuiConfigFlags
 	// * ImGuiBackendFlags
 	// * ImGuiCol
@@ -295,11 +296,11 @@ static void LS_InitImGuiEnums(lua_State* state)
 #undef LS_IMGUI_TABLE_ROW_FLAG
 
 	// * ImGuiTableBgTarget
+	// * ImGuiMultiSelectFlags
 	// * ImDrawFlags
 	// * ImDrawListFlags
 	// * ImFontAtlasFlags
 	// * ImGuiViewportFlags
-	// * ImGuiModFlags
 
 #undef LS_IMGUI_ENUM_END
 #undef LS_IMGUI_ENUM_VALUE
