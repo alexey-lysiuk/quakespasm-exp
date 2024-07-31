@@ -206,14 +206,6 @@ static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
 	return 0;
 }
 
-static int LS_global_imgui_GetWindowContentRegionMax(lua_State* state)
-{
-	LS_EnsureFrameScope(state);
-
-	const LS_Vector2 result = FromImVec2(ImGui::GetWindowContentRegionMax());
-	return LS_PushVectorValue(state, result);
-}
-
 static int LS_global_imgui_GetCursorScreenPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -895,12 +887,6 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * SetWindowCollapsed
 		// * SetWindowFocus
 
-		// Content region
-		// * GetContentRegionAvail
-		// * GetContentRegionMax
-		// * GetWindowContentRegionMin
-		{ "GetWindowContentRegionMax", LS_global_imgui_GetWindowContentRegionMax },
-
 		// Windows Scrolling
 		// * GetScrollX
 		// * GetScrollY
@@ -947,6 +933,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Layout cursor positioning
 		{ "GetCursorScreenPos", LS_global_imgui_GetCursorScreenPos },
 		{ "SetCursorScreenPos", LS_global_imgui_SetCursorScreenPos },
+		// * GetContentRegionAvail
 		{ "GetCursorPos", LS_global_imgui_GetCursorPos },
 		{ "GetCursorPosX", LS_global_imgui_GetCursorPosX },
 		{ "GetCursorPosY", LS_global_imgui_GetCursorPosY },
