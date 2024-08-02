@@ -151,7 +151,7 @@ end
 
 addaction(function ()
 	if imBeginMenu('Progs') then
-		if imMenuItem('Functions') then
+		if imMenuItem('Functions\u{85}') then
 			window('Progs Functions', functions_onupdate, nil,
 				functions_onshow, functions_onhide):setconstraints()
 		end

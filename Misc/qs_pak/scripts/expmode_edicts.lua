@@ -491,7 +491,7 @@ addaction(function ()
 		for _, tool in ipairs(edictstools) do
 			local title = tool[1]
 
-			if imMenuItem(title) then
+			if imMenuItem(title .. '\u{85}') then
 				local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
 				local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
 
@@ -503,7 +503,7 @@ addaction(function ()
 
 		imSeparator()
 
-		if imMenuItem('Trace Entity') then
+		if imMenuItem('Trace Entity\u{85}') then
 			local edict = traceentity()
 
 			if edict then
