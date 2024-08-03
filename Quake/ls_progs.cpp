@@ -27,6 +27,7 @@ extern "C"
 {
 #include "quakedef.h"
 
+const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index);
 const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsOpName(unsigned short op);
@@ -639,6 +640,116 @@ static int LS_global_progs_functions(lua_State* state)
 	return 3;
 }
 
+
+//
+// Field and global definitions
+//
+
+static int LS_PushDefinitionName(lua_State* state, const ddef_t* definition)
+{
+	const char* const name = LS_GetProgsString(definition->s_name);
+	lua_pushstring(state, name);
+	return 1;
+}
+
+static int LS_PushDefinitionType(lua_State* state, const ddef_t* definition)
+{
+	lua_pushinteger(state, definition->type & ~DEF_SAVEGLOBAL);
+	return 1;
+}
+
+static int LS_PushDefinitionOffset(lua_State* state, const ddef_t* definition)
+{
+	lua_pushinteger(state, definition->ofs);
+	return 1;
+}
+
+constexpr LS_UserDataType<int> ls_fielddefinition_type("field definition");
+
+static int LS_CallFieldDefinitionMethod(lua_State* state, int (*method)(lua_State* state, const ddef_t* definition))
+{
+	const int index = ls_fielddefinition_type.GetValue(state, 1);
+	const ddef_t* definition = LS_GetProgsFieldDefinitionByIndex(index);
+
+	if (definition)
+		return method(state, definition);
+	else
+		luaL_error(state, "invalid field definition");
+
+	return 0;
+}
+
+template <int (*Func)(lua_State* state, const ddef_t* definition)>
+static int LS_FieldDefinitionMethod(lua_State* state)
+{
+	return LS_CallFieldDefinitionMethod(state, Func);
+}
+
+template <int (*Func)(lua_State* state, const ddef_t* definition)>
+static int LS_FieldDefinitionGetter(lua_State* state)
+{
+	lua_pushcfunction(state, LS_FieldDefinitionMethod<Func>);
+	return 1;
+}
+
+constexpr LS_Member ls_fielddefinition_members[] =
+{
+	{ 4, "name", LS_FieldDefinitionGetter<LS_PushDefinitionName> },
+	{ 4, "type", LS_FieldDefinitionGetter<LS_PushDefinitionType> },
+	{ 6, "offset", LS_FieldDefinitionGetter<LS_PushDefinitionOffset> },
+};
+
+// Pushes value by member name of given 'field definition' userdata
+static int LS_value_fielddefinition_index(lua_State* state)
+{
+	return LS_GetMember(state, ls_fielddefinition_type, ls_fielddefinition_members, Q_COUNTOF(ls_fielddefinition_members));
+}
+
+// Pushes string representation of given field definition
+static int LS_PushFieldDefinitionToString(lua_State* state, const ddef_t* definition)
+{
+	const char* const name = LS_GetProgsString(definition->s_name);
+	const char* const type = LS_GetProgsTypeName(definition->type);
+	lua_pushfstring(state, "field definition '%s' of type '%s' at offset %d", name, type, definition->ofs);
+	return 1;
+}
+
+// Sets metatable for 'field definition' userdata
+static void LS_SetFieldDefinitionMetaTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "__index", LS_value_fielddefinition_index },
+		{ "__tostring", LS_FieldDefinitionMethod<LS_PushFieldDefinitionToString> },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "fielddef"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+}
+
+static int LS_global_fielddefinitions_iterator(lua_State* state)
+{
+	lua_Integer index = luaL_checkinteger(state, 2);
+	index = luaL_intop(+, index, 1);
+
+	if (index > 0 && index < progs->numfielddefs)
+	{
+		lua_pushinteger(state, index);
+
+		int& newvalue = ls_fielddefinition_type.New(state);
+		newvalue = index;
+		LS_SetFieldDefinitionMetaTable(state);
+
+		return 2;
+	}
+
+	lua_pushnil(state);
+	return 1;
+}
+
 constexpr LS_UserDataType<int> ls_globaldefinition_type("global definition");
 
 static int LS_CallGlobalDefinitionMethod(lua_State* state, int (*method)(lua_State* state, const ddef_t* definition))
@@ -647,9 +758,7 @@ static int LS_CallGlobalDefinitionMethod(lua_State* state, int (*method)(lua_Sta
 	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
 
 	if (definition)
-	{
 		return method(state, definition);
-	}
 	else
 		luaL_error(state, "invalid global definition");
 
@@ -669,30 +778,11 @@ static int LS_GlobalDefinitionGetter(lua_State* state)
 	return 1;
 }
 
-static int LS_PushGlobalDefinitionName(lua_State* state, const ddef_t* definition)
-{
-	const char* const name = LS_GetProgsString(definition->s_name);
-	lua_pushstring(state, name);
-	return 1;
-}
-
-static int LS_PushGlobalDefinitionType(lua_State* state, const ddef_t* definition)
-{
-	lua_pushinteger(state, definition->type & ~DEF_SAVEGLOBAL);
-	return 1;
-}
-
-static int LS_PushGlobalDefinitionOffset(lua_State* state, const ddef_t* definition)
-{
-	lua_pushinteger(state, definition->ofs);
-	return 1;
-}
-
 constexpr LS_Member ls_globaldefinition_members[] =
 {
-	{ 4, "name", LS_GlobalDefinitionGetter<LS_PushGlobalDefinitionName> },
-	{ 4, "type", LS_GlobalDefinitionGetter<LS_PushGlobalDefinitionType> },
-	{ 6, "offset", LS_GlobalDefinitionGetter<LS_PushGlobalDefinitionOffset> },
+	{ 4, "name", LS_GlobalDefinitionGetter<LS_PushDefinitionName> },
+	{ 4, "type", LS_GlobalDefinitionGetter<LS_PushDefinitionType> },
+	{ 6, "offset", LS_GlobalDefinitionGetter<LS_PushDefinitionOffset> },
 };
 
 // Pushes value by member name of given 'global definition' userdata
@@ -711,7 +801,7 @@ static int LS_PushGlobalDefinitionToString(lua_State* state, const ddef_t* defin
 }
 
 // Sets metatable for 'global definition' userdata
-static void LS_SetDefinitionMetaTable(lua_State* state)
+static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 {
 	static const luaL_Reg functions[] =
 	{
@@ -737,13 +827,26 @@ static int LS_global_globaldefinitions_iterator(lua_State* state)
 
 		int& newvalue = ls_globaldefinition_type.New(state);
 		newvalue = index;
-		LS_SetDefinitionMetaTable(state);
+		LS_SetGlobalDefinitionMetaTable(state);
 
 		return 2;
 	}
 
 	lua_pushnil(state);
 	return 1;
+}
+
+// Returns progs field definitions iterator, e.g., for i, f in progs.fielddefinitions() do print(i, f) end
+static int LS_global_progs_fielddefinitions(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const lua_Integer index = luaL_optinteger(state, 1, 0);
+	lua_pushcfunction(state, LS_global_fielddefinitions_iterator);
+	lua_pushnil(state);  // unused
+	lua_pushinteger(state, index);  // initial value
+	return 3;
 }
 
 // Returns progs global definitions iterator, e.g., for i, g in progs.globaldefinitions() do print(i, g) end
@@ -785,6 +888,7 @@ void LS_InitProgsType(lua_State* state)
 	{
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
+		{ "fielddefinitions", LS_global_progs_fielddefinitions },
 		{ "functions", LS_global_progs_functions },
 		{ "globaldefinitions", LS_global_progs_globaldefinitions },
 		{ "typename", LS_global_progs_typename },
