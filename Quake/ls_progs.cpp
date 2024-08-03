@@ -720,7 +720,7 @@ static void LS_SetDefinitionMetaTable(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	if (luaL_newmetatable(state, "func"))
+	if (luaL_newmetatable(state, "globaldef"))
 		luaL_setfuncs(state, functions, 0);
 
 	lua_setmetatable(state, -2);
