@@ -262,10 +262,10 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
-static int LS_CallFunctionMethod(lua_State* state, int (*method)(lua_State* state, const dfunction_t* function))
+static int LS_GetFunctionMemberValue(lua_State* state, int (*getter)(lua_State* state, const dfunction_t* function))
 {
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
-		return method(state, function);
+		return getter(state, function);
 	else
 		luaL_error(state, "invalid function");
 
@@ -273,9 +273,16 @@ static int LS_CallFunctionMethod(lua_State* state, int (*method)(lua_State* stat
 }
 
 template <int (*Func)(lua_State* state, const dfunction_t* function)>
+static int LS_FunctionMember(lua_State* state)
+{
+	return LS_GetFunctionMemberValue(state, Func);
+}
+
+template <int (*Func)(lua_State* state, const dfunction_t* function)>
 static int LS_FunctionMethod(lua_State* state)
 {
-	return LS_CallFunctionMethod(state, Func);
+	lua_pushcfunction(state, LS_FunctionMember<Func>);
+	return 1;
 }
 
 // Pushes file of 'function' userdata
@@ -544,20 +551,13 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 	return 1;
 }
 
-template <int (*Func)(lua_State* state, const dfunction_t* function)>
-static int LS_FunctionGetter(lua_State* state)
-{
-	lua_pushcfunction(state, LS_FunctionMethod<Func>);
-	return 1;
-}
-
 constexpr LS_Member ls_function_members[] =
 {
-	{ 4, "file", LS_FunctionGetter<LS_PushFunctionFile> },
-	{ 4, "name", LS_FunctionGetter<LS_PushFunctionName> },
-	{ 10, "parameters", LS_FunctionGetter<LS_PushFunctionParameters> },
-	{ 10, "returntype", LS_FunctionGetter<LS_PushFunctionReturnType> },
-	{ 11, "disassemble", LS_FunctionGetter<LS_PushFunctionDisassemble> },
+	{ 4, "file", LS_FunctionMember<LS_PushFunctionFile> },
+	{ 4, "name", LS_FunctionMember<LS_PushFunctionName> },
+	{ 10, "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
+	{ 10, "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
+	{ 11, "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
 };
 
 // Pushes method of 'function' userdata by its name
@@ -592,7 +592,7 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_function_index },
-		{ "__tostring", LS_FunctionMethod<LS_PushFunctionToString> },
+		{ "__tostring", LS_FunctionMember<LS_PushFunctionToString> },
 		{ NULL, NULL }
 	};
 
