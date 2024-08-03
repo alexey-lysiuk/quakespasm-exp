@@ -366,6 +366,12 @@ else()
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
 	set_source_files_properties(Quake/imgui/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-variable")
 
+	# Disable G++ format string truncation warning
+	#   warning: ‘%s’ directive output may be truncated writing up to 31 bytes into a region of size 28
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		set_source_files_properties(Quake/imgui/imgui_demo.cpp PROPERTIES COMPILE_FLAGS "-Wno-format-truncation")
+	endif()
+
 	# Disable C++ exceptions and RTTI
 	# target_compile_options() doesn't fit very well as GCC complains on every C file
 	#   warning: command-line option ‘-fno-rtti’ is valid for C++/D/ObjC++ but not for C

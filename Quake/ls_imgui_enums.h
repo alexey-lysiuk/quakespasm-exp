@@ -83,6 +83,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 #undef LS_IMGUI_WINDOW_FLAG
 
 	// * ImGuiChildFlags
+	// * ImGuiItemFlags
 
 #define LS_IMGUI_INPUT_TEXT_FLAG(NAME) LS_IMGUI_ENUM_VALUE(InputTextFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
@@ -132,11 +133,12 @@ static void LS_InitImGuiEnums(lua_State* state)
 #define LS_IMGUI_SELECTABLE_FLAG(NAME) LS_IMGUI_ENUM_VALUE(SelectableFlags, NAME)
 	LS_IMGUI_ENUM_BEGIN()
 	LS_IMGUI_SELECTABLE_FLAG(None)
-	LS_IMGUI_SELECTABLE_FLAG(DontClosePopups)
+	LS_IMGUI_SELECTABLE_FLAG(NoAutoClosePopups)
 	LS_IMGUI_SELECTABLE_FLAG(SpanAllColumns)
 	LS_IMGUI_SELECTABLE_FLAG(AllowDoubleClick)
 	LS_IMGUI_SELECTABLE_FLAG(Disabled)
 	LS_IMGUI_SELECTABLE_FLAG(AllowOverlap)
+	LS_IMGUI_SELECTABLE_FLAG(Highlight)
 	LS_IMGUI_ENUM_END(SelectableFlags)
 #undef LS_IMGUI_SELECTABLE_FLAG
 
@@ -185,7 +187,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 	// * ImGuiDir
 	// * ImGuiSortDirection
 	// * ImGuiKey
-	// * ImGuiNavInput
+	// * ImGuiInputFlags
 	// * ImGuiConfigFlags
 	// * ImGuiBackendFlags
 	// * ImGuiCol
@@ -294,11 +296,11 @@ static void LS_InitImGuiEnums(lua_State* state)
 #undef LS_IMGUI_TABLE_ROW_FLAG
 
 	// * ImGuiTableBgTarget
+	// * ImGuiMultiSelectFlags
 	// * ImDrawFlags
 	// * ImDrawListFlags
 	// * ImFontAtlasFlags
 	// * ImGuiViewportFlags
-	// * ImGuiModFlags
 
 #undef LS_IMGUI_ENUM_END
 #undef LS_IMGUI_ENUM_VALUE

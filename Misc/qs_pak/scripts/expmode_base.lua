@@ -281,13 +281,13 @@ local function updateexpmenu()
 	if imBeginMenu('EXP') then
 		local title = 'Scratchpad'
 
-		if imMenuItem(title) then
+		if imMenuItem(title .. '\u{85}') then
 			window(title, scratchpad_update):setconstraints()
 		end
 
 		title = 'Stats'
 
-		if imMenuItem(title) then
+		if imMenuItem(title .. '\u{85}') then
 			window(title, stats_update):setconstraints()
 		end
 
