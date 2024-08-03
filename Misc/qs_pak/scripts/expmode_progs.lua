@@ -203,9 +203,9 @@ local function definitions_onshow(self)
 		local entry =
 		{
 			index = tostring(i),
-			name = definition:name(),
-			type = typename(definition:type()),
-			offset = tostring(definition:offset())
+			name = definition.name,
+			type = typename(definition.type),
+			offset = tostring(definition.offset)
 		}
 		insert(entries, entry)
 	end
