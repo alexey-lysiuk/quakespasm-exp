@@ -555,7 +555,7 @@ constexpr LS_Member ls_function_members[] =
 {
 	{ 4, "file", LS_FunctionMember<LS_PushFunctionFile> },
 	{ 4, "name", LS_FunctionMember<LS_PushFunctionName> },
-	{ 10, "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
+	{ 10, "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
 	{ 10, "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
 	{ 11, "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
 };
