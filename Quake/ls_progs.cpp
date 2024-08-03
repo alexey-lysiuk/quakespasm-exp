@@ -209,11 +209,14 @@ static int LS_value_functionparameter_tostring(lua_State* state)
 {
 	const LS_FunctionParameter& parameter = ls_functionparameter_type.GetValue(state, 1);
 
-	luaL_Buffer buffer;
-	luaL_buffinitsize(state, &buffer, 256);
-	LS_FunctionParameterToBuffer(parameter, buffer);
+	const char* const type = LS_GetProgsTypeName(parameter.type);
+	const char* name = LS_GetProgsString(parameter.name);
 
-	luaL_pushresult(&buffer);
+	if (name[0] == '\0')
+		lua_pushfstring(state, "unnamed function parameter of type '%s'", type);
+	else
+		lua_pushfstring(state, "function parameter '%s' of type '%s'", name, type);
+
 	return 1;
 }
 
