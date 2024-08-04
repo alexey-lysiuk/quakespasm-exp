@@ -497,6 +497,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 # TODO: Remove when USE_HELLO_IMGUI is defined
 set(OTHER_FILES ${OTHER_FILES} ${HELLO_IMGUI_SOURCES})
 
+set_source_files_properties(Quake/progdefs.q1 PROPERTIES LANGUAGE C HEADER_FILE_ONLY TRUE)
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties(${ENTFIXES_HEADER} PROPERTIES GENERATED TRUE)
 
