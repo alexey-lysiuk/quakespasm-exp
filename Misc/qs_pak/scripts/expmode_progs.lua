@@ -212,7 +212,7 @@ local function definitions_onshow(self)
 
 	self.entries = entries
 
-	updatesearch(self, function_searchcompare, true)
+	updatesearch(self, definitions_searchcompare, true)
 	return true
 end
 
