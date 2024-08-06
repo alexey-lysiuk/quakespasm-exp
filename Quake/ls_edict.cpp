@@ -32,6 +32,7 @@ qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** na
 qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(edict_t* entity);
+const char* LS_GetProgsString(int offset);
 } // extern "C"
 
 constexpr LS_UserDataType<int> ls_edict_type("edict");
@@ -64,7 +65,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_string:
-		lua_pushstring(state, PR_GetString(value->string));
+		lua_pushstring(state, LS_GetProgsString(value->string));
 		break;
 
 	case ev_float:
@@ -87,7 +88,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		break;
 
 	case ev_function:
-		lua_pushfstring(state, "%s()", PR_GetString((pr_functions + value->function)->s_name));
+		lua_pushfstring(state, "%s()", LS_GetProgsString((pr_functions + value->function)->s_name));
 		break;
 
 	case ev_pointer:
@@ -344,13 +345,13 @@ static int LS_global_edicts_getname(lua_State* state)
 
 static const char* LS_references_GetString(int num)
 {
-	const char* result = PR_GetString(num);
+	const char* result = LS_GetProgsString(num);
 	return result[0] == '\0' ? NULL : result;
 }
 
 static qboolean LS_references_StringsEqual(const char* string, int num)
 {
-	const char* other = PR_GetString(num);
+	const char* other = LS_GetProgsString(num);
 	return strcmp(string, other) == 0;
 }
 
