@@ -38,6 +38,11 @@ const char* PR_GlobalString(int offset);
 const char* PR_GlobalStringNoContents(int offset);
 }
 
+
+//
+// Statements
+//
+
 static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const bool withbinary)
 {
 	if (withbinary)
@@ -95,6 +100,11 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 		break;
 	}
 }
+
+
+//
+// Function parameters
+//
 
 struct LS_FunctionParameter
 {
@@ -234,6 +244,11 @@ static void LS_SetFunctionParameterMetaTable(lua_State* state)
 
 	lua_setmetatable(state, -2);
 }
+
+
+//
+// Functions
+//
 
 constexpr LS_UserDataType<int> ls_function_type("function");
 
@@ -587,26 +602,6 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-// Returns CRC of progdefs header (PROGHEADER_CRC)
-static int LS_global_progs_crc(lua_State* state)
-{
-	if (progs == nullptr)
-		return 0;
-
-	lua_pushinteger(state, progs->crc);
-	return 1;
-}
-
-// Returns CRC of 'progs.dat' file
-static int LS_global_progs_datcrc(lua_State* state)
-{
-	if (progs == nullptr)
-		return 0;
-
-	lua_pushinteger(state, pr_crc);
-	return 1;
-}
-
 static int LS_global_functions_iterator(lua_State* state)
 {
 	lua_Integer index = luaL_checkinteger(state, 2);
@@ -625,19 +620,6 @@ static int LS_global_functions_iterator(lua_State* state)
 
 	lua_pushnil(state);
 	return 1;
-}
-
-// Returns progs function iterator, e.g., for i, f in progs.functions() do print(i, f) end
-static int LS_global_progs_functions(lua_State* state)
-{
-	if (progs == nullptr)
-		return 0;
-
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_functions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
 }
 
 
@@ -834,6 +816,44 @@ static int LS_global_globaldefinitions_iterator(lua_State* state)
 
 	lua_pushnil(state);
 	return 1;
+}
+
+
+//
+// Global 'progs' table
+//
+
+// Returns CRC of progdefs header (PROGHEADER_CRC)
+static int LS_global_progs_crc(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_pushinteger(state, progs->crc);
+	return 1;
+}
+
+// Returns CRC of 'progs.dat' file
+static int LS_global_progs_datcrc(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_pushinteger(state, pr_crc);
+	return 1;
+}
+
+// Returns progs function iterator, e.g., for i, f in progs.functions() do print(i, f) end
+static int LS_global_progs_functions(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const lua_Integer index = luaL_optinteger(state, 1, 0);
+	lua_pushcfunction(state, LS_global_functions_iterator);
+	lua_pushnil(state);  // unused
+	lua_pushinteger(state, index);  // initial value
+	return 3;
 }
 
 // Returns progs field definitions iterator, e.g., for i, f in progs.fielddefinitions() do print(i, f) end
