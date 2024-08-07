@@ -69,7 +69,7 @@ end
 local function functiondisassembly_onshow(self)
 	local func = self.func
 
-	if self.name ~= func:name() then
+	if self.name ~= func.name then
 		return false
 	end
 
@@ -113,7 +113,7 @@ local function functions_onupdate(self)
 				imTableNextColumn()
 				if imSelectable(entry.declaration) then
 					local func = entry.func
-					local funcname = func:name()
+					local funcname = func.name
 
 					window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
 						function (self) self.func = func self.name = funcname end,
@@ -137,7 +137,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in functions() do
-		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func:file() }
+		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func.file }
 		insert(entries, entry)
 	end
 
