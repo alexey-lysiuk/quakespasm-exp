@@ -192,22 +192,10 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
-static int LS_FunctionParameterNameGetter(lua_State* state)
-{
-	lua_pushcfunction(state, LS_value_functionparameter_name);
-	return 1;
-}
-
-static int LS_FunctionParameterTypeGetter(lua_State* state)
-{
-	lua_pushcfunction(state, LS_value_functionparameter_type);
-	return 1;
-}
-
 constexpr LS_Member ls_functionparameter_members[] =
 {
-	{ 4, "name", LS_FunctionParameterNameGetter },
-	{ 4, "type", LS_FunctionParameterTypeGetter },
+	{ 4, "name", LS_value_functionparameter_name },
+	{ 4, "type", LS_value_functionparameter_type },
 };
 
 // Pushes method of 'function parameter' userdata by its name
