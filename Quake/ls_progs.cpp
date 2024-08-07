@@ -651,13 +651,13 @@ static int LS_PushDefinitionOffset(lua_State* state, const ddef_t* definition)
 
 constexpr LS_UserDataType<int> ls_fielddefinition_type("field definition");
 
-static int LS_CallFieldDefinitionMethod(lua_State* state, int (*method)(lua_State* state, const ddef_t* definition))
+static int LS_GetFieldDefinitionMemberValue(lua_State* state, int (*getter)(lua_State* state, const ddef_t* definition))
 {
 	const int index = ls_fielddefinition_type.GetValue(state, 1);
 	const ddef_t* definition = LS_GetProgsFieldDefinitionByIndex(index);
 
 	if (definition)
-		return method(state, definition);
+		return getter(state, definition);
 	else
 		luaL_error(state, "invalid field definition");
 
@@ -665,23 +665,16 @@ static int LS_CallFieldDefinitionMethod(lua_State* state, int (*method)(lua_Stat
 }
 
 template <int (*Func)(lua_State* state, const ddef_t* definition)>
-static int LS_FieldDefinitionMethod(lua_State* state)
+static int LS_FieldDefinitionMember(lua_State* state)
 {
-	return LS_CallFieldDefinitionMethod(state, Func);
-}
-
-template <int (*Func)(lua_State* state, const ddef_t* definition)>
-static int LS_FieldDefinitionGetter(lua_State* state)
-{
-	lua_pushcfunction(state, LS_FieldDefinitionMethod<Func>);
-	return 1;
+	return LS_GetFieldDefinitionMemberValue(state, Func);
 }
 
 constexpr LS_Member ls_fielddefinition_members[] =
 {
-	{ 4, "name", LS_FieldDefinitionGetter<LS_PushDefinitionName> },
-	{ 4, "type", LS_FieldDefinitionGetter<LS_PushDefinitionType> },
-	{ 6, "offset", LS_FieldDefinitionGetter<LS_PushDefinitionOffset> },
+	{ 4, "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
+	{ 4, "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
+	{ 6, "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
 };
 
 // Pushes value by member name of given 'field definition' userdata
@@ -705,7 +698,7 @@ static void LS_SetFieldDefinitionMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_fielddefinition_index },
-		{ "__tostring", LS_FieldDefinitionMethod<LS_PushFieldDefinitionToString> },
+		{ "__tostring", LS_FieldDefinitionMember<LS_PushFieldDefinitionToString> },
 		{ NULL, NULL }
 	};
 
@@ -737,13 +730,13 @@ static int LS_global_fielddefinitions_iterator(lua_State* state)
 
 constexpr LS_UserDataType<int> ls_globaldefinition_type("global definition");
 
-static int LS_CallGlobalDefinitionMethod(lua_State* state, int (*method)(lua_State* state, const ddef_t* definition))
+static int LS_GetGlobalDefinitionMemberValue(lua_State* state, int (*getter)(lua_State* state, const ddef_t* definition))
 {
 	const int index = ls_globaldefinition_type.GetValue(state, 1);
 	const ddef_t* definition = LS_GetProgsGlobalDefinitionByIndex(index);
 
 	if (definition)
-		return method(state, definition);
+		return getter(state, definition);
 	else
 		luaL_error(state, "invalid global definition");
 
@@ -751,23 +744,16 @@ static int LS_CallGlobalDefinitionMethod(lua_State* state, int (*method)(lua_Sta
 }
 
 template <int (*Func)(lua_State* state, const ddef_t* definition)>
-static int LS_GlobalDefinitionMethod(lua_State* state)
+static int LS_GlobalDefinitionMember(lua_State* state)
 {
-	return LS_CallGlobalDefinitionMethod(state, Func);
-}
-
-template <int (*Func)(lua_State* state, const ddef_t* definition)>
-static int LS_GlobalDefinitionGetter(lua_State* state)
-{
-	lua_pushcfunction(state, LS_GlobalDefinitionMethod<Func>);
-	return 1;
+	return LS_GetGlobalDefinitionMemberValue(state, Func);
 }
 
 constexpr LS_Member ls_globaldefinition_members[] =
 {
-	{ 4, "name", LS_GlobalDefinitionGetter<LS_PushDefinitionName> },
-	{ 4, "type", LS_GlobalDefinitionGetter<LS_PushDefinitionType> },
-	{ 6, "offset", LS_GlobalDefinitionGetter<LS_PushDefinitionOffset> },
+	{ 4, "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
+	{ 4, "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
+	{ 6, "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
 };
 
 // Pushes value by member name of given 'global definition' userdata
@@ -791,7 +777,7 @@ static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 	static const luaL_Reg functions[] =
 	{
 		{ "__index", LS_value_globaldefinition_index },
-		{ "__tostring", LS_GlobalDefinitionMethod<LS_PushGlobalDefinitionToString> },
+		{ "__tostring", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString> },
 		{ NULL, NULL }
 	};
 
