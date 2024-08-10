@@ -298,14 +298,20 @@ local function updateexpmenu()
 			window(title, stats_update):setconstraints()
 		end
 
-		if imMenuItem('Stop All Sounds') then
-			sound.stopall()
-		end
-
 		imSeparator()
 
 		if imMenuItem('Exit', 'Esc') then
 			exit()
+		end
+
+		imEndMenu()
+	end
+end
+
+local function updateenginemenu()
+	if imBeginMenu('Engine') then
+		if imMenuItem('Stop All Sounds') then
+			sound.stopall()
 		end
 
 		imEndMenu()
@@ -358,6 +364,7 @@ end
 local function updateactions()
 	if imBeginMainMenuBar() then
 		updateexpmenu()
+		updateenginemenu()
 
 		for _, action in ipairs(actions) do
 			safecall(action)
