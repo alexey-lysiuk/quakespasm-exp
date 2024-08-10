@@ -155,7 +155,7 @@ local function edictinfo_onupdate(self)
 				if imSelectable('References') then
 					expmode.edictreferences(self.edict):movetocursor()
 				end
-				if imSelectable('Copy all') then
+				if imSelectable('Copy All') then
 					local fields = {}
 
 					for i, field in ipairs(entries) do
@@ -271,13 +271,13 @@ local function edictstable(title, entries, tableflags)
 							expmode.edictreferences(entry.edict):movetocursor()
 						end
 						imSeparator()
-						if imSelectable('Copy cell') then
+						if imSelectable('Copy Cell') then
 							imSetClipboardText(tostring(cellvalue))
 						end
-						if imSelectable('Copy row') then
+						if imSelectable('Copy Row') then
 							imSetClipboardText(format('%s\t%s\t%s\n', entry.index, description, location))
 						end
-						if imSelectable('Copy table') then
+						if imSelectable('Copy Table') then
 							imSetClipboardText(edictstable_tostring(entries))
 						end
 						imEndPopup()
