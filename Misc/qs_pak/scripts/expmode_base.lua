@@ -310,6 +310,19 @@ end
 
 local function updateenginemenu()
 	if imBeginMenu('Engine') then
+		if imMenuItem('Move to Start') then
+			for _, edict in ipairs(edicts) do
+				if edict.classname == 'info_player_start' then
+					player.setpos(edict.origin, edict.angles)
+					player.ghost(false)
+					expmode.exit()
+					break
+				end
+			end
+		end
+
+		imSeparator()
+
 		if imMenuItem('Stop All Sounds') then
 			sound.stopall()
 		end
