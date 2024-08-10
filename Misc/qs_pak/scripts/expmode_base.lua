@@ -319,10 +319,9 @@ local function updateenginemenu()
 end
 
 local function updatewindowsmenu()
-	local closeall = 'Close all'
-
 	if imBeginMenu('Windows') then
 		local haswindows = #windows > 0
+		local closeall = 'Close All'
 
 		if haswindows then
 			for _, window in ipairs(windows) do
