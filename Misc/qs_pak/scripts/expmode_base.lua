@@ -279,6 +279,13 @@ end
 
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
+		if imMenuItem('About\u{85}') then
+			-- TODO: Add version information
+			expmode.messagebox('About Quakespasm-EXP', format('\nQuakespasm-EXP\n\n%s\n', _VERSION))
+		end
+
+		imSeparator()
+
 		local title = 'Scratchpad'
 
 		if imMenuItem(title .. '\u{85}') then
