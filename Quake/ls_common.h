@@ -25,6 +25,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "lua.hpp"
 
+class LS_TempAllocatorBase
+{
+protected:
+	static void* Alloc(size_t size);
+	static void Free(void* pointer);
+};
+
+template <typename T>
+class LS_TempAllocator : LS_TempAllocatorBase
+{
+public:
+	using value_type = T;
+
+	static T* allocate(const size_t count)
+	{
+		return static_cast<T*>(Alloc(sizeof(T) * count));
+	}
+
+	static void deallocate(T* pointer, size_t) noexcept
+	{
+		Free(pointer);
+	}
+};
+
 lua_State* LS_GetState(void);
 
 // Default message handler for lua_pcall() and xpcall()
