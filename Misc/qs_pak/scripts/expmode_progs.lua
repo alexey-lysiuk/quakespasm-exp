@@ -115,10 +115,17 @@ local function functions_onupdate(self)
 					local func = entry.func
 					local funcname = func.name
 
+					local function oncreate(self)
+						self:setconstraints()
+						self:setsize(defaultDisassemblySize)
+						self:movetocursor()
+
+						self.func = func
+						self.name = funcname
+					end
+
 					window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
-						function (self) self.func = func self.name = funcname end,
-						functiondisassembly_onshow, functiondisassembly_onhide)
-						:setconstraints():setsize(defaultDisassemblySize):movetocursor()
+						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 				end
 				imTableNextColumn()
 				imText(entry.file)
@@ -225,22 +232,31 @@ end
 addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions\u{85}') then
-			window('Progs Functions', functions_onupdate, nil,
-				functions_onshow, functions_onhide):setconstraints()
+			window('Progs Functions', functions_onupdate,
+				function (self) self:setconstraints() end,
+				functions_onshow, functions_onhide)
 		end
 
 		imSeparator()
 
 		if imMenuItem('Field Definitions\u{85}') then
+			local function oncreate(self)
+				self:setconstraints()
+				self.getter = fielddefinitions
+			end
+
 			window('Field Definitions', definitions_onupdate,
-				function (self) self.getter = fielddefinitions end,
-				definitions_onshow, definitions_onhide):setconstraints()
+				oncreate, definitions_onshow, definitions_onhide)
 		end
 
 		if imMenuItem('Global Definitions\u{85}') then
+			local function oncreate(self)
+				self:setconstraints()
+				self.getter = globaldefinitions
+			end
+
 			window('Global Definitions', definitions_onupdate,
-				function (self) self.getter = globaldefinitions end,
-				definitions_onshow, definitions_onhide):setconstraints()
+				oncreate, definitions_onshow, definitions_onhide)
 		end
 
 		imEndMenu()

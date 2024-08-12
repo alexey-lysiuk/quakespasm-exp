@@ -279,6 +279,13 @@ end
 
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
+		if imMenuItem('About\u{85}') then
+			-- TODO: Add version information
+			expmode.messagebox('About Quakespasm-EXP', format('\nQuakespasm-EXP\n\n%s\n', _VERSION))
+		end
+
+		imSeparator()
+
 		local title = 'Scratchpad'
 
 		if imMenuItem(title .. '\u{85}') then
@@ -291,10 +298,6 @@ local function updateexpmenu()
 			window(title, stats_update):setconstraints()
 		end
 
-		if imMenuItem('Stop All Sounds') then
-			sound.stopall()
-		end
-
 		imSeparator()
 
 		if imMenuItem('Exit', 'Esc') then
@@ -305,11 +308,33 @@ local function updateexpmenu()
 	end
 end
 
-local function updatewindowsmenu()
-	local closeall = 'Close all'
+local function updateenginemenu()
+	if imBeginMenu('Engine') then
+		if imMenuItem('Move to Start') then
+			for _, edict in ipairs(edicts) do
+				if edict.classname == 'info_player_start' then
+					player.setpos(edict.origin, edict.angles)
+					player.ghost(false)
+					expmode.exit()
+					break
+				end
+			end
+		end
 
+		imSeparator()
+
+		if imMenuItem('Stop All Sounds') then
+			sound.stopall()
+		end
+
+		imEndMenu()
+	end
+end
+
+local function updatewindowsmenu()
 	if imBeginMenu('Windows') then
 		local haswindows = #windows > 0
+		local closeall = 'Close All'
 
 		if haswindows then
 			for _, window in ipairs(windows) do
@@ -351,6 +376,7 @@ end
 local function updateactions()
 	if imBeginMainMenuBar() then
 		updateexpmenu()
+		updateenginemenu()
 
 		for _, action in ipairs(actions) do
 			safecall(action)

@@ -155,7 +155,7 @@ local function edictinfo_onupdate(self)
 				if imSelectable('References') then
 					expmode.edictreferences(self.edict):movetocursor()
 				end
-				if imSelectable('Copy all') then
+				if imSelectable('Copy All') then
 					local fields = {}
 
 					for i, field in ipairs(entries) do
@@ -226,9 +226,12 @@ function expmode.edictinfo(edict)
 		return
 	end
 
-	return window(tostring(edict), edictinfo_onupdate,
-		function (self) self.edict = edict end,
-		edictinfo_onshow, edictinfo_onhide):setconstraints()
+	local function oncreate(self)
+		self:setconstraints()
+		self.edict = edict
+	end
+
+	return window(tostring(edict), edictinfo_onupdate, oncreate, edictinfo_onshow, edictinfo_onhide)
 end
 
 local edictinfo <const> = expmode.edictinfo
@@ -271,13 +274,13 @@ local function edictstable(title, entries, tableflags)
 							expmode.edictreferences(entry.edict):movetocursor()
 						end
 						imSeparator()
-						if imSelectable('Copy cell') then
+						if imSelectable('Copy Cell') then
 							imSetClipboardText(tostring(cellvalue))
 						end
-						if imSelectable('Copy row') then
+						if imSelectable('Copy Row') then
 							imSetClipboardText(format('%s\t%s\t%s\n', entry.index, description, location))
 						end
-						if imSelectable('Copy table') then
+						if imSelectable('Copy Table') then
 							imSetClipboardText(edictstable_tostring(entries))
 						end
 						imEndPopup()
@@ -461,13 +464,12 @@ function expmode.edictreferences(edict)
 	local title = 'References of ' .. edictid
 
 	local function oncreate(self)
+		self:setconstraints()
 		self.edict = edict
 		self.edictid = edictid
 	end
 
-	local refswin = window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
-	return refswin
-		and refswin:setconstraints()
+	return window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
 		or messagebox('No references', format("'%s' has no references.", edict))
 end
 
@@ -492,12 +494,16 @@ addaction(function ()
 			local title = tool[1]
 
 			if imMenuItem(title .. '\u{85}') then
-				local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
-				local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
+				local function oncreate(self)
+					local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
+					local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
 
-				window(title, edicts_onupdate,
-					function (self) self.filter = tool[2] end,
-					edicts_onshow, edicts_onhide):setconstraints():setsize(imVec2(width, 0))
+					self:setconstraints()
+					self:setsize(imVec2(width, 0))
+					self.filter = tool[2]
+				end
+
+				window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
 			end
 		end
 

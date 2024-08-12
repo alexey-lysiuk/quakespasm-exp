@@ -194,8 +194,8 @@ static int LS_value_functionparameter_type(lua_State* state)
 
 constexpr LS_Member ls_functionparameter_members[] =
 {
-	{ 4, "name", LS_value_functionparameter_name },
-	{ 4, "type", LS_value_functionparameter_type },
+	{ "name", LS_value_functionparameter_name },
+	{ "type", LS_value_functionparameter_type },
 };
 
 // Pushes method of 'function parameter' userdata by its name
@@ -544,11 +544,11 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 
 constexpr LS_Member ls_function_members[] =
 {
-	{ 4, "file", LS_FunctionMember<LS_PushFunctionFile> },
-	{ 4, "name", LS_FunctionMember<LS_PushFunctionName> },
-	{ 10, "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
-	{ 10, "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
-	{ 11, "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
+	{ "file", LS_FunctionMember<LS_PushFunctionFile> },
+	{ "name", LS_FunctionMember<LS_PushFunctionName> },
+	{ "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
+	{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
+	{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
 };
 
 // Pushes method of 'function' userdata by its name
@@ -660,9 +660,9 @@ static int LS_FieldDefinitionMember(lua_State* state)
 
 constexpr LS_Member ls_fielddefinition_members[] =
 {
-	{ 4, "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
-	{ 4, "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
-	{ 6, "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
+	{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
+	{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
+	{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
 };
 
 // Pushes value by member name of given 'field definition' userdata
@@ -739,9 +739,9 @@ static int LS_GlobalDefinitionMember(lua_State* state)
 
 constexpr LS_Member ls_globaldefinition_members[] =
 {
-	{ 4, "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
-	{ 4, "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
-	{ 6, "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
+	{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
+	{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
+	{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
 };
 
 // Pushes value by member name of given 'global definition' userdata

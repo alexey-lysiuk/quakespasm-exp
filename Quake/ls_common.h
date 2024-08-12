@@ -25,6 +25,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "lua.hpp"
 
+class LS_TempAllocatorBase
+{
+protected:
+	static void* Alloc(size_t size);
+	static void Free(void* pointer);
+};
+
+template <typename T>
+class LS_TempAllocator : LS_TempAllocatorBase
+{
+public:
+	using value_type = T;
+
+	static T* allocate(const size_t count)
+	{
+		return static_cast<T*>(Alloc(sizeof(T) * count));
+	}
+
+	static void deallocate(T* pointer, size_t) noexcept
+	{
+		Free(pointer);
+	}
+};
+
 lua_State* LS_GetState(void);
 
 // Default message handler for lua_pcall() and xpcall()
@@ -39,6 +63,20 @@ struct LS_Member
 
 	using Getter = int(*)(lua_State* state);
 	Getter getter;
+
+	constexpr LS_Member(size_t length, const char* name, Getter getter)
+	: length(length)
+	, name(name)
+	, getter(getter)
+	{
+	}
+
+	template <size_t N>
+	constexpr LS_Member(const char (&name)[N], Getter getter)
+	: LS_Member(N - 1, name, getter)
+	{
+		static_assert(N > 1);
+	}
 
 	bool operator<(const LS_Member& other) const
 	{

@@ -81,6 +81,17 @@ static void LS_tempfree(void* ptr)
 
 #endif // USE_TLSF
 
+void* LS_TempAllocatorBase::Alloc(size_t size)
+{
+	assert(ls_state);
+	return LS_tempalloc(ls_state, size);
+}
+
+void LS_TempAllocatorBase::Free(void* pointer)
+{
+	LS_tempfree(pointer);
+}
+
 
 int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount)
 {
@@ -92,7 +103,7 @@ int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS
 	assert(length > 0);
 
 	const LS_Member* last = members + membercount;
-	const LS_Member probe{ length, name };
+	const LS_Member probe{ length, name, nullptr };
 	const LS_Member* member = std::lower_bound(members, last, probe);
 
 	if (member == last || probe < *member)
