@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef USE_LUA_SCRIPTING
 
 #include <cassert>
+#include <set>
 
 #include "ls_common.h"
 #include "ls_vector.h"
@@ -355,35 +356,6 @@ static qboolean LS_references_StringsEqual(const char* string, int num)
 	return strcmp(string, other) == 0;
 }
 
-static void LS_references_ConvertTable(lua_State* state, int index)
-{
-	lua_newtable(state);
-
-	int destindex = lua_gettop(state);
-	lua_Integer counter = 1;
-
-	lua_pushnil(state);  // first key
-
-	while (lua_next(state, index) != 0)
-	{
-		lua_pop(state, 1);  // remove value (zero)
-
-		LS_PushEdictValue(state, lua_tointeger(state, -1));
-		lua_rawseti(state, destindex, counter++);
-	}
-
-	// Replace initial table
-	lua_remove(state, index);
-	lua_insert(state, index);
-}
-
-static void LS_references_PushEdictIndex(lua_State* state, int tableindex, edict_t* edict)
-{
-	lua_pushinteger(state, NUM_FOR_EDICT(edict));
-	lua_pushinteger(state, 0);
-	lua_rawset(state, tableindex);
-}
-
 // Push two tables:
 // * The first one contains list of edicts referenced by edict passed as argument (outgoing references)
 // * The second one contains list of edicts that refer edict passed as argument (incoming references)
@@ -394,14 +366,25 @@ static int LS_global_edicts_references(lua_State* state)
 	if (!edict)
 		return 0;
 
-	lua_settop(state, 0);
-
-	// These tables maps edict indices to dummy value (zero)
-	lua_newtable(state);  // [1] this edict references other edicts (outgoing references)
-	lua_newtable(state);  // [2] this edict is referenced by other edicts (incoming references)
-
 	if (edict->free)
-		return 2;  // return two empty tables
+	{
+		// return two empty tables
+		lua_newtable(state);
+		lua_newtable(state);
+		return 2;
+	}
+
+	using ReferenceSet = std::set<int, std::less<int>, LS_TempAllocator<int>>;
+	ReferenceSet outgoing;  // Other edicts referenced by the given edict (outgoing references)
+	ReferenceSet incoming;  // The given edict is referenced by other edicts (incoming references)
+
+	enum ReferenceKind { Outgoing, Incoming };
+
+	const auto AddReference = [&outgoing, &incoming](ReferenceKind kind, edict_t* edict)
+	{
+		ReferenceSet& references = kind == Outgoing ? outgoing : incoming;
+		references.insert(NUM_FOR_EDICT(edict));
+	};
 
 	const char* targetname = NULL;
 	const char* target = NULL;
@@ -422,7 +405,7 @@ static int LS_global_edicts_references(lua_State* state)
 				if (!refedict->free && refedict != edict)
 				{
 					qboolean owner = strcmp(name, "owner") == 0;
-					LS_references_PushEdictIndex(state, owner ? 2 : 1, refedict);
+					AddReference(owner ? Incoming : Outgoing, refedict);
 				}
 			}
 			else if (type == ev_string)
@@ -456,35 +439,36 @@ static int LS_global_edicts_references(lua_State* state)
 				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
 				{
 					qboolean owner = strcmp(name, "owner") == 0;
-					LS_references_PushEdictIndex(state, owner ? 1 : 2, probe);
+					AddReference(owner ? Outgoing : Incoming, probe);
 				}
 				else if (type == ev_string)
 				{
 					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_references_StringsEqual(targetname, value->string))
-						LS_references_PushEdictIndex(state, 2, probe);
+						AddReference(Incoming, probe);
 					else if (target && strcmp(name, "targetname") == 0 && LS_references_StringsEqual(target, value->string))
-						LS_references_PushEdictIndex(state, 1, probe);
+						AddReference(Outgoing, probe);
 					else if (killtarget && strcmp(name, "targetname") == 0 && LS_references_StringsEqual(killtarget, value->string))
-						LS_references_PushEdictIndex(state, 1, probe);
+						AddReference(Outgoing, probe);
 				}
 			}
 		}
 	}
 
-	// Convert tables with edict indices as keys to sequences of edicts
-	LS_references_ConvertTable(state, 1);
-	LS_references_ConvertTable(state, 2);
+	const auto ConvertToTable = [state](const ReferenceSet& references)
+	{
+		lua_newtable(state);
 
-	// Sort reference tables by edict index
-	lua_getglobal(state, "table");
-	lua_pushstring(state, "sort");
-	lua_rawget(state, 3);
-	lua_remove(state, 3);  // remove 'table' global table
-	lua_pushvalue(state, 3);  // copy of table.sort() for the second call
-	lua_pushvalue(state, 1);  // 'references' table
-	lua_call(state, 1, 0);
-	lua_pushvalue(state, 2);  // 'referenced by' table
-	lua_call(state, 1, 0);
+		lua_Integer counter = 1;
+
+		for (const int reference : references)
+		{
+			LS_PushEdictValue(state, reference);
+			lua_rawseti(state, -2, counter++);
+		}
+	};
+
+	ConvertToTable(outgoing);
+	ConvertToTable(incoming);
 
 	return 2;
 }
