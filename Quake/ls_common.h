@@ -64,6 +64,20 @@ struct LS_Member
 	using Getter = int(*)(lua_State* state);
 	Getter getter;
 
+	constexpr LS_Member(size_t length, const char* name, Getter getter)
+	: length(length)
+	, name(name)
+	, getter(getter)
+	{
+	}
+
+	template <size_t N>
+	constexpr LS_Member(const char (&name)[N], Getter getter)
+	: LS_Member(N - 1, name, getter)
+	{
+		static_assert(N > 1);
+	}
+
 	bool operator<(const LS_Member& other) const
 	{
 		return (length < other.length)

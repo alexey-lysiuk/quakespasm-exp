@@ -103,7 +103,7 @@ int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS
 	assert(length > 0);
 
 	const LS_Member* last = members + membercount;
-	const LS_Member probe{ length, name };
+	const LS_Member probe{ length, name, nullptr };
 	const LS_Member* member = std::lower_bound(members, last, probe);
 
 	if (member == last || probe < *member)
