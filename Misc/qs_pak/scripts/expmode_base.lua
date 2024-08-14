@@ -55,6 +55,9 @@ local framecount <const> = host.framecount
 local frametime <const> = host.frametime
 local realtime <const> = host.realtime
 
+local ghost <const> = player.ghost
+local setpos <const> = player.setpos
+
 local actions = {}
 local windows = {}
 
@@ -313,9 +316,9 @@ local function updateenginemenu()
 		if imMenuItem('Move to Start') then
 			for _, edict in ipairs(edicts) do
 				if edict.classname == 'info_player_start' then
-					player.setpos(edict.origin, edict.angles)
-					player.ghost(false)
-					expmode.exit()
+					setpos(edict.origin, edict.angles)
+					ghost(false)
+					exit()
 					break
 				end
 			end
