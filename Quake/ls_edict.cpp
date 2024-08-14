@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <cassert>
 #include <set>
+#include <vector>
 
 #include "ls_common.h"
 #include "ls_vector.h"
@@ -386,9 +387,27 @@ static int LS_global_edicts_references(lua_State* state)
 		references.insert(NUM_FOR_EDICT(edict));
 	};
 
-	const char* targetname = NULL;
-	const char* target = NULL;
-	const char* killtarget = NULL;
+	using TargetList = std::vector<const char*, LS_TempAllocator<const char*>>;
+	TargetList targetnames;
+	TargetList targets;
+	TargetList killtargets;
+
+	const auto IsTarget = [](const char* name)
+	{
+		return strncmp(name, "target", 6) == 0
+			// Do not match 'targetname' field name
+			&& (name[6] == '\0' || (name[6] >= '0' && name[6] <= '9'));
+	};
+
+	const auto IsTargetName = [](const char* name)
+	{
+		return strncmp(name, "targetname", 10) == 0;
+	};
+
+	const auto IsKillTarget = [](const char* name)
+	{
+		return strncmp(name, "killtarget", 10) == 0;
+	};
 
 	for (int f = 1; f < progs->numfielddefs; ++f)
 	{
@@ -410,12 +429,12 @@ static int LS_global_edicts_references(lua_State* state)
 			}
 			else if (type == ev_string)
 			{
-				if (strcmp(name, "targetname") == 0)
-					targetname = LS_references_GetString(value->string);
-				else if (strcmp(name, "target") == 0)
-					target = LS_references_GetString(value->string);
-				else if (strcmp(name, "killtarget") == 0)
-					killtarget = LS_references_GetString(value->string);
+				if (IsTargetName(name))
+					targetnames.push_back(LS_references_GetString(value->string));
+				else if (IsTarget(name))
+					targets.push_back(LS_references_GetString(value->string));
+				else if (IsKillTarget(name))
+					killtargets.push_back(LS_references_GetString(value->string));
 			}
 		}
 	}
@@ -434,21 +453,48 @@ static int LS_global_edicts_references(lua_State* state)
 			etype_t type;
 			const eval_t* value;
 
-			if (LS_GetEdictFieldByIndex(probe, f, &name, &type, &value))
+			if (!LS_GetEdictFieldByIndex(probe, f, &name, &type, &value))
+				continue;
+
+			if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
 			{
-				if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
+				qboolean owner = strcmp(name, "owner") == 0;
+				AddReference(owner ? Outgoing : Incoming, probe);
+			}
+			else if (type == ev_string)
+			{
+				if (!targetnames.empty() && (IsTarget(name) || IsKillTarget(name)))
 				{
-					qboolean owner = strcmp(name, "owner") == 0;
-					AddReference(owner ? Outgoing : Incoming, probe);
+					for (const char* targetname : targetnames)
+					{
+						if (LS_references_StringsEqual(targetname, value->string))
+						{
+							AddReference(Incoming, probe);
+							break;
+						}
+					}
 				}
-				else if (type == ev_string)
+				else if (!targets.empty() && IsTargetName(name))
 				{
-					if (targetname && (strcmp(name, "target") == 0 || strcmp(name, "killtarget") == 0) && LS_references_StringsEqual(targetname, value->string))
-						AddReference(Incoming, probe);
-					else if (target && strcmp(name, "targetname") == 0 && LS_references_StringsEqual(target, value->string))
-						AddReference(Outgoing, probe);
-					else if (killtarget && strcmp(name, "targetname") == 0 && LS_references_StringsEqual(killtarget, value->string))
-						AddReference(Outgoing, probe);
+					for (const char* target : targets)
+					{
+						if (LS_references_StringsEqual(target, value->string))
+						{
+							AddReference(Outgoing, probe);
+							break;
+						}
+					}
+				}
+				else if (!killtargets.empty() && IsTargetName(name))
+				{
+					for (const char* killtarget : killtargets)
+					{
+						if (LS_references_StringsEqual(killtarget, value->string))
+						{
+							AddReference(Outgoing, probe);
+							break;
+						}
+					}
 				}
 			}
 		}
