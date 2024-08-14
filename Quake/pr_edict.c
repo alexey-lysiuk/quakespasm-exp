@@ -1510,7 +1510,7 @@ int PR_AllocString (int size, char **ptr)
 
 #ifdef USE_LUA_SCRIPTING
 
-qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByIndex(const edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
 		return false;
@@ -1548,18 +1548,18 @@ qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** na
 	return true;
 }
 
-qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByName(const edict_t* ed, const char* name, etype_t* type, const eval_t** value)
 {
 	// TODO: Use GetEdictFieldValue() cache?
 	// TODO: Optimize for fields from entvars_t?
 
-	ddef_t*	def = ED_FindField(name);
+	const ddef_t* def = ED_FindField(name);
 
 	if (!def)
 		return false;
 
 	*type = def->type;
-	*value = (eval_t*)((byte*)&ed->v + def->ofs * 4);
+	*value = (const eval_t*)((const byte*)&ed->v + def->ofs * 4);
 
 	return true;
 }

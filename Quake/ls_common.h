@@ -129,6 +129,7 @@ int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
+void LS_PushEdictValue(lua_State* state, const struct edict_s* edict);
 
 void LS_InitProgsType(lua_State* state);
 

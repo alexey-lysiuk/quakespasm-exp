@@ -1158,7 +1158,7 @@ static const entitynamefunc_t en_functions[] =
 	EN_GetUseFunc,
 };
 
-const char* SV_GetEntityName(edict_t* entity)
+const char* SV_GetEntityName(const edict_t* entity)
 {
 	if (entity->free)
 		return "<free>";

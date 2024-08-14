@@ -30,14 +30,24 @@ extern "C"
 {
 #include "quakedef.h"
 
-qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
-qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value);
+qboolean LS_GetEdictFieldByIndex(const edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value);
+qboolean LS_GetEdictFieldByName(const edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* LS_GetEdictFieldName(int offset);
-const char* SV_GetEntityName(edict_t* entity);
+const char* SV_GetEntityName(const edict_t* entity);
 const char* LS_GetProgsString(int offset);
 } // extern "C"
 
 constexpr LS_UserDataType<int> ls_edict_type("edict");
+
+static int LS_GetEdictIndex(lua_State* state, const edict_t* edict)
+{
+	const int index = (reinterpret_cast<const byte*>(edict) - reinterpret_cast<const byte*>(sv.edicts)) / pr_edict_size;
+
+	if (index < 0 || index >= sv.num_edicts)
+		luaL_error(state, "invalid edict index %d for pointer %p", index, edict);
+
+	return index;
+}
 
 //
 // Expose edict_t as 'edict' userdata
@@ -52,6 +62,11 @@ void LS_PushEdictValue(lua_State* state, int edictindex)
 	newvalue = edictindex;
 
 	LS_SetEdictMetaTable(state);
+}
+
+void LS_PushEdictValue(lua_State* state, const edict_t* edict)
+{
+	LS_PushEdictValue(state, LS_GetEdictIndex(state, edict));
 }
 
 // Pushes field value by its type and name
@@ -82,7 +97,7 @@ static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t*
 		if (value->edict == 0)
 			lua_pushnil(state);
 		else
-			LS_PushEdictValue(state, NUM_FOR_EDICT(PROG_TO_EDICT(value->edict)));
+			LS_PushEdictValue(state, PROG_TO_EDICT(value->edict));
 		break;
 
 	case ev_field:
@@ -237,7 +252,7 @@ static int LS_value_edict_tostring(lua_State* state)
 	if (ed == NULL)
 		lua_pushstring(state, "invalid edict");
 	else
-		lua_pushfstring(state, "edict %d: %s", NUM_FOR_EDICT(ed), SV_GetEntityName(ed));
+		lua_pushfstring(state, "edict %d: %s", LS_GetEdictIndex(state, ed), SV_GetEntityName(ed));
 
 	return 1;
 }
@@ -362,7 +377,7 @@ static qboolean LS_references_StringsEqual(const char* string, int num)
 // * The second one contains list of edicts that refer edict passed as argument (incoming references)
 static int LS_global_edicts_references(lua_State* state)
 {
-	edict_t* edict = LS_GetEdictFromParameter(state);
+	const edict_t* const edict = LS_GetEdictFromParameter(state);
 
 	if (!edict)
 		return 0;
@@ -381,10 +396,10 @@ static int LS_global_edicts_references(lua_State* state)
 
 	enum ReferenceKind { Outgoing, Incoming };
 
-	const auto AddReference = [&outgoing, &incoming](ReferenceKind kind, edict_t* edict)
+	const auto AddReference = [&state, &outgoing, &incoming](ReferenceKind kind, const edict_t* const edict)
 	{
 		ReferenceSet& references = kind == Outgoing ? outgoing : incoming;
-		references.insert(NUM_FOR_EDICT(edict));
+		references.insert(LS_GetEdictIndex(state, edict));
 	};
 
 	using TargetList = std::vector<const char*, LS_TempAllocator<const char*>>;
@@ -392,19 +407,19 @@ static int LS_global_edicts_references(lua_State* state)
 	TargetList targets;
 	TargetList killtargets;
 
-	const auto IsTarget = [](const char* name)
+	const auto IsTarget = [](const char* const name)
 	{
 		return strncmp(name, "target", 6) == 0
 			// Do not match 'targetname' field name
 			&& (name[6] == '\0' || (name[6] >= '0' && name[6] <= '9'));
 	};
 
-	const auto IsTargetName = [](const char* name)
+	const auto IsTargetName = [](const char* const name)
 	{
 		return strncmp(name, "targetname", 10) == 0;
 	};
 
-	const auto IsKillTarget = [](const char* name)
+	const auto IsKillTarget = [](const char* const name)
 	{
 		return strncmp(name, "killtarget", 10) == 0;
 	};
@@ -419,11 +434,11 @@ static int LS_global_edicts_references(lua_State* state)
 		{
 			if (type == ev_entity)
 			{
-				edict_t* refedict = PROG_TO_EDICT(value->edict);
+				const edict_t* const refedict = PROG_TO_EDICT(value->edict);
 
 				if (!refedict->free && refedict != edict)
 				{
-					qboolean owner = strcmp(name, "owner") == 0;
+					const bool owner = strcmp(name, "owner") == 0;
 					AddReference(owner ? Incoming : Outgoing, refedict);
 				}
 			}
@@ -441,7 +456,7 @@ static int LS_global_edicts_references(lua_State* state)
 
 	for (int e = 0; e < sv.num_edicts; ++e)
 	{
-		edict_t* probe = EDICT_NUM(e);
+		const edict_t* const probe = EDICT_NUM(e);
 		assert(probe);
 
 		if (probe->free || probe == edict)
@@ -458,14 +473,14 @@ static int LS_global_edicts_references(lua_State* state)
 
 			if (type == ev_entity && EDICT_TO_PROG(edict) == value->edict)
 			{
-				qboolean owner = strcmp(name, "owner") == 0;
+				const bool owner = strcmp(name, "owner") == 0;
 				AddReference(owner ? Outgoing : Incoming, probe);
 			}
 			else if (type == ev_string)
 			{
 				if (!targetnames.empty() && (IsTarget(name) || IsKillTarget(name)))
 				{
-					for (const char* targetname : targetnames)
+					for (const char* const targetname : targetnames)
 					{
 						if (LS_references_StringsEqual(targetname, value->string))
 						{
@@ -476,7 +491,7 @@ static int LS_global_edicts_references(lua_State* state)
 				}
 				else if (!targets.empty() && IsTargetName(name))
 				{
-					for (const char* target : targets)
+					for (const char* const target : targets)
 					{
 						if (LS_references_StringsEqual(target, value->string))
 						{
@@ -487,7 +502,7 @@ static int LS_global_edicts_references(lua_State* state)
 				}
 				else if (!killtargets.empty() && IsTargetName(name))
 				{
-					for (const char* killtarget : killtargets)
+					for (const char* const killtarget : killtargets)
 					{
 						if (LS_references_StringsEqual(killtarget, value->string))
 						{

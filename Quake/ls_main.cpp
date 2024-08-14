@@ -169,7 +169,7 @@ static int LS_global_player_traceentity(lua_State* state)
 	if (ed == NULL)
 		lua_pushnil(state);
 	else
-		LS_PushEdictValue(state, NUM_FOR_EDICT(ed));
+		LS_PushEdictValue(state, ed);
 
 	return 1;
 }
