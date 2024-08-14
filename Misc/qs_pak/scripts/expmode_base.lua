@@ -313,12 +313,32 @@ end
 
 local function updateenginemenu()
 	if imBeginMenu('Engine') then
+		local function GhostAndExit(enable)
+			ghost(enable)
+			exit()
+		end
+
+		if imBeginMenu('Ghost Mode') then
+			if imMenuItem('Toggle Ghost Mode') then
+				GhostAndExit()
+			end
+
+			if imMenuItem('Enter Ghost Mode') then
+				GhostAndExit(true)
+			end
+
+			if imMenuItem('Exit Ghost Mode') then
+				GhostAndExit(false)
+			end
+
+			imEndMenu()
+		end
+
 		if imMenuItem('Move to Start') then
 			for _, edict in ipairs(edicts) do
 				if edict.classname == 'info_player_start' then
 					setpos(edict.origin, edict.angles)
-					ghost(false)
-					exit()
+					GhostAndExit(false)
 					break
 				end
 			end
