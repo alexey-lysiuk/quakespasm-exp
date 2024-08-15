@@ -303,7 +303,7 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 		return 0;
 
 	const int index = ls_function_type.GetValue(state, 1);
-	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
+	return (index > 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
 static int LS_GetFunctionMemberValue(lua_State* state, int (*getter)(lua_State* state, const dfunction_t* function))
