@@ -646,23 +646,49 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static int LS_global_functions_iterator(lua_State* state)
+static int LS_progs_functions_index(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 2);
-	index = luaL_intop(+, index, 1);
+	if (progs == nullptr)
+		return 0;
 
+	int indextype = lua_type(state, 2);
+	int index = 0;  // error function at index zero is not valid function
+
+	if (indextype == LUA_TSTRING)
+	{
+		const char* name = lua_tostring(state, 2);
+
+		for (int i = 1; i < progs->numfunctions; ++i)
+		{
+			if (strcmp(LS_GetProgsString(pr_functions[i].s_name), name) == 0)
+			{
+				index = i;
+				break;
+			}
+		}
+	}
+	else if (indextype == LUA_TNUMBER)
+		index = lua_tointeger(state, 2);
+	else
+		luaL_error(state, "invalid type '%s' of function index, need number or string", lua_typename(state, indextype));
+
+	// Check function index, [1..progs->numfunctions], for validity
 	if (index > 0 && index < progs->numfunctions)
 	{
-		lua_pushinteger(state, index);
-
-		int& newvalue = ls_function_type.New(state);
-		newvalue = index;
+		ls_function_type.New(state) = index;
 		LS_SetFunctionMetaTable(state);
-
-		return 2;
+		return 1;
 	}
 
-	lua_pushnil(state);
+	return 0;
+}
+
+static int LS_progs_functions_len(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_pushinteger(state, progs->numfunctions - 1);  // without error function at index zero
 	return 1;
 }
 
@@ -873,17 +899,30 @@ static int LS_global_progs_datcrc(lua_State* state)
 	return 1;
 }
 
-// Returns progs function iterator, e.g., for i, f in progs.functions() do print(i, f) end
+// Returns table of progs functions
 static int LS_global_progs_functions(lua_State* state)
 {
 	if (progs == nullptr)
 		return 0;
 
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_functions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	lua_newtable(state);
+	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
+
+	if (luaL_newmetatable(state, "functions"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_functions_index },
+			{ "__len", LS_progs_functions_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
 }
 
 // Returns progs field definitions iterator, e.g., for i, f in progs.fielddefinitions() do print(i, f) end

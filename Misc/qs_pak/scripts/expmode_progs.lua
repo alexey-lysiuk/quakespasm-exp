@@ -143,7 +143,7 @@ end
 local function functions_onshow(self)
 	local entries = {}
 
-	for i, func in functions() do
+	for i, func in ipairs(functions()) do
 		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func.file }
 		insert(entries, entry)
 	end
