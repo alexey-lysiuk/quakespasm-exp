@@ -70,7 +70,7 @@ void LS_PushEdictValue(lua_State* state, const edict_t* edict)
 }
 
 // Pushes field value by its type and name
-static void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
+void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
 	assert(type != ev_bad);
 	assert(value);

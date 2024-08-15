@@ -28,14 +28,67 @@ extern "C"
 #include "quakedef.h"
 
 const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index);
+const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
 const char* LS_GetProgsTypeName(unsigned short type);
+}
 
-const char* PR_GlobalString(int offset);
-const char* PR_GlobalStringNoContents(int offset);
+void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value);
+
+
+static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
+{
+	lua_State* state = buffer.L;
+	size_t length;
+
+	lua_pushinteger(state, offset);
+	lua_tolstring(state, -1, &length);
+	luaL_addvalue(&buffer);
+
+	const ddef_t* definition = LS_GetProgsGlobalDefinitionByOffset(offset);
+
+	if (definition)
+	{
+		const char* const name = LS_GetProgsString(definition->s_name);
+		const size_t namelength = strlen(name);
+
+		luaL_addchar(&buffer, '(');
+		luaL_addlstring(&buffer, name, namelength);
+		luaL_addchar(&buffer, ')');
+
+		length += namelength + 2;  // with two round brackets
+
+		if (withcontent)
+		{
+			if (offset >= progs->numglobals)
+				luaL_error(state, "invalid global offset %d", offset);
+
+			const eval_t* value = reinterpret_cast<const eval_t*>(&pr_globals[offset]);
+			const int type = definition->type & ~DEF_SAVEGLOBAL;
+			size_t valuelength;
+
+			LS_PushEdictFieldValue(state, etype_t(type), value);
+			lua_tolstring(state, -1, &valuelength);
+			luaL_addvalue(&buffer);
+
+			length += valuelength;
+		}
+	}
+	else
+	{
+		luaL_addlstring(&buffer, "(?)", 3);
+		length += 3;
+	}
+
+	do
+	{
+		luaL_addchar(&buffer, ' ');
+		++length;
+	}
+	while (length < 20);
 }
 
 
@@ -66,7 +119,7 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	{
 	case OP_IF:
 	case OP_IFNOT:
-		luaL_addstring(&buffer, PR_GlobalString(statement.a));
+		LS_GlobalStringToBuffer(statement.a, buffer);
 		luaL_addstring(&buffer, "branch ");
 
 		lua_pushinteger(buffer.L, statement.b);
@@ -86,17 +139,17 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	case OP_STORE_ENT:
 	case OP_STORE_FLD:
 	case OP_STORE_FNC:
-		luaL_addstring(&buffer, PR_GlobalString(statement.a));
-		luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.b));
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		LS_GlobalStringToBuffer(statement.b, buffer, false);
 		break;
 
 	default:
 		if (statement.a)
-			luaL_addstring(&buffer, PR_GlobalString(statement.a));
+			LS_GlobalStringToBuffer(statement.a, buffer);
 		if (statement.b)
-			luaL_addstring(&buffer, PR_GlobalString(statement.b));
+			LS_GlobalStringToBuffer(statement.b, buffer);
 		if (statement.c)
-			luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.c));
+			LS_GlobalStringToBuffer(statement.c, buffer, false);
 		break;
 	}
 }
