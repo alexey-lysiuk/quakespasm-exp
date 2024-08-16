@@ -311,7 +311,7 @@ Returns a string describing *data in a type specific manner
 */
 static const char *PR_ValueString (int type, eval_t *val)
 {
-	static char	line[4096];
+	static char	line[512];
 	ddef_t		*def;
 	dfunction_t	*f;
 
@@ -413,7 +413,7 @@ padded to 20 field width
 */
 const char *PR_GlobalString (int ofs)
 {
-	static char	line[4096];
+	static char	line[512];
 	static const int lastchari = Q_COUNTOF(line) - 2;
 	const char	*s;
 	int		i;
@@ -444,7 +444,7 @@ const char *PR_GlobalString (int ofs)
 
 const char *PR_GlobalStringNoContents (int ofs)
 {
-	static char	line[4096];
+	static char	line[512];
 	static const int lastchari = Q_COUNTOF(line) - 2;
 	int		i;
 	ddef_t		*def;
