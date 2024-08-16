@@ -816,23 +816,30 @@ static void LS_SetFieldDefinitionMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static int LS_global_fielddefinitions_iterator(lua_State* state)
+// Pushes 'field definitions' userdata by the given numerical index, [1..progs->numfielddefs]
+static int LS_progs_fielddefinitions_index(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 2);
-	index = luaL_intop(+, index, 1);
+	if (progs == nullptr)
+		return 0;
 
-	if (index > 0 && index < progs->numfielddefs)
-	{
-		lua_pushinteger(state, index);
+	const int index = luaL_checkinteger(state, 2);
 
-		int& newvalue = ls_fielddefinition_type.New(state);
-		newvalue = index;
-		LS_SetFieldDefinitionMetaTable(state);
+	if (index <= 0 || index >= progs->numfielddefs)
+		return 0;
 
-		return 2;
-	}
+	ls_fielddefinition_type.New(state) = index;
+	LS_SetFieldDefinitionMetaTable(state);
 
-	lua_pushnil(state);
+	return 1;
+}
+
+// Pushes number of progs field definitions
+static int LS_progs_fielddefinitions_len(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_pushinteger(state, progs->numfielddefs - 1);  // without unnamed void field at index zero
 	return 1;
 }
 
@@ -895,23 +902,30 @@ static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 	lua_setmetatable(state, -2);
 }
 
-static int LS_global_globaldefinitions_iterator(lua_State* state)
+// Pushes 'global definitions' userdata by the given numerical index, [1..progs->numglobaldefs]
+static int LS_progs_globaldefinitions_index(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 2);
-	index = luaL_intop(+, index, 1);
+	if (progs == nullptr)
+		return 0;
 
-	if (index > 0 && index < progs->numglobaldefs)
-	{
-		lua_pushinteger(state, index);
+	const int index = luaL_checkinteger(state, 2);
 
-		int& newvalue = ls_globaldefinition_type.New(state);
-		newvalue = index;
-		LS_SetGlobalDefinitionMetaTable(state);
+	if (index <= 0 || index >= progs->numglobaldefs)
+		return 0;
 
-		return 2;
-	}
+	ls_globaldefinition_type.New(state) = index;
+	LS_SetGlobalDefinitionMetaTable(state);
 
-	lua_pushnil(state);
+	return 1;
+}
+
+// Pushes number of progs global definitions
+static int LS_progs_globaldefinitions_len(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_pushinteger(state, progs->numglobaldefs - 1);  // without unnamed void field at index zero
 	return 1;
 }
 
@@ -965,30 +979,54 @@ static int LS_global_progs_functions(lua_State* state)
 	return 1;
 }
 
-// Returns progs field definitions iterator, e.g., for i, f in progs.fielddefinitions() do print(i, f) end
+// Returns table of progs field definitions
 static int LS_global_progs_fielddefinitions(lua_State* state)
 {
 	if (progs == nullptr)
 		return 0;
 
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_fielddefinitions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	lua_newtable(state);
+
+	if (luaL_newmetatable(state, "field definitions"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_fielddefinitions_index },
+			{ "__len", LS_progs_fielddefinitions_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
 }
 
-// Returns progs global definitions iterator, e.g., for i, g in progs.globaldefinitions() do print(i, g) end
+// Returns table of progs global definitions
 static int LS_global_progs_globaldefinitions(lua_State* state)
 {
 	if (progs == nullptr)
 		return 0;
 
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_globaldefinitions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	lua_newtable(state);
+
+	if (luaL_newmetatable(state, "global definitions"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_globaldefinitions_index },
+			{ "__len", LS_progs_globaldefinitions_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
 }
 
 // Pushes name of type by its index

@@ -206,7 +206,7 @@ end
 local function definitions_onshow(self)
 	local entries = {}
 
-	for i, definition in self.getter() do
+	for i, definition in ipairs(self.getter()) do
 		local entry =
 		{
 			index = tostring(i),
