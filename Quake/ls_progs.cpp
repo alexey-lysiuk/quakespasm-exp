@@ -343,37 +343,78 @@ static int LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 	return 1;
 }
 
-static int LS_global_functionparameters_iterator(lua_State* state)
+// Pushes 'function parameter' userdata by the given numerical index, [1..function->numparms]
+static int LS_progs_functionparameters_index(lua_State* state)
 {
-	const dfunction_t* function = LS_GetFunctionFromUserData(state);
-	const lua_Integer index = luaL_checkinteger(state, 2);
+	const int index = luaL_checkinteger(state, 2) - 1;
 
-	if (index < function->numparms)
+	luaL_checktype(state, 1, LUA_TTABLE);
+	lua_pushlstring(state, "function", 8);
+	lua_rawget(state, 1);
+	lua_copy(state, 3, 1);
+	lua_settop(state, 1);
+
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
 	{
-		lua_pushinteger(state, index + 1);
+		if (index < 0 || index >= function->numparms)
+			return 0;
 
 		LS_FunctionParameter& parameter = ls_functionparameter_type.New(state);
 		LS_GetFunctionParameter(function, index, parameter);
 		LS_SetFunctionParameterMetaTable(state);
-		return 2;
 	}
+	else
+		luaL_error(state, "invalid function");
 
-	lua_pushnil(state);
 	return 1;
 }
 
-// Pushes function parameters iterator, e.g., for i, p in func:parameters() do print(i, p) end
+// Pushes number of function parameters
+static int LS_progs_functionparameters_len(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TTABLE);
+	lua_pushlstring(state, "function", 8);
+	lua_rawget(state, 1);
+	lua_copy(state, 3, 1);
+	lua_settop(state, 1);
+
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
+		lua_pushinteger(state, function->numparms);
+	else
+		luaL_error(state, "invalid function");
+
+	return 1;
+}
+
+static void LS_SetFunctionMetaTable(lua_State* state);
+
+// Pushes table of progs function parameters
 static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* function)
 {
-	const lua_Integer index = luaL_optinteger(state, 2, 0);
-	lua_pushcfunction(state, LS_global_functionparameters_iterator);
+	assert(function);
 
-	int& funcindex = ls_function_type.New(state);
-	funcindex = function - pr_functions;
-	// No need to set metatable for 'function' userdata as its sole purpose is to get function index
+	lua_newtable(state);
 
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	if (luaL_newmetatable(state, "function parameters"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_functionparameters_index },
+			{ "__len", LS_progs_functionparameters_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	// Set self as value for 'function' key
+	lua_pushlstring(state, "function", 8);
+	lua_pushvalue(state, 1);  // 'function' userdata
+	lua_rawset(state, 2);  // 'function parameters' table
+
+	return 1;
 }
 
 // Returns function return type
