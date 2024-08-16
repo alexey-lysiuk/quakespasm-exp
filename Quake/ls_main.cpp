@@ -330,14 +330,21 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = LS_tempalloc(state, length);
-	int bytesread = Sys_FileRead(handle, script, length);
+	char* script = nullptr;
+	int bytesread = 0;
+
+	if (length > 0)
+	{
+		script = LS_tempalloc(state, length);
+		bytesread = Sys_FileRead(handle, script, length);
+	}
+
 	COM_CloseFile(handle);
 
 	int result;
 
 	if (bytesread == length)
-		result = luaL_loadbufferx(state, script, length, filename, mode);
+		result = luaL_loadbufferx(state, script ? script : "", length, filename, mode);
 	else
 	{
 		lua_pushfstring(state,
@@ -346,7 +353,8 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		result = LUA_ERRFILE;
 	}
 
-	LS_tempfree(script);
+	if (script)
+		LS_tempfree(script);
 
 	return result;
 }
