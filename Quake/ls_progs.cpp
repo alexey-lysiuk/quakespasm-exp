@@ -947,7 +947,6 @@ static int LS_global_progs_functions(lua_State* state)
 		return 0;
 
 	lua_newtable(state);
-	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
 
 	if (luaL_newmetatable(state, "functions"))
 	{
