@@ -245,6 +245,20 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
+// Pushes value of 'function parameter' userdata by calling a function with passed name
+static int LS_value_functionparameter_index(lua_State* state)
+{
+	const int functableindex = lua_upvalueindex(1);
+	luaL_checktype(state, functableindex, LUA_TTABLE);
+
+	const char* name = luaL_checkstring(state, 2);
+	lua_getfield(state, functableindex, name);
+	lua_rotate(state, 1, 2);  // move 'self' to argument position
+	lua_call(state, 1, 1);
+
+	return 1;
+}
+
 // Pushes string representation of given 'function parameter' userdata
 static int LS_value_functionparameter_tostring(lua_State* state)
 {
@@ -269,6 +283,7 @@ static void LS_SetFunctionParameterMetaTable(lua_State* state)
 		lua_pushcfunction(state, LS_value_functionparameter_tostring);
 		lua_setfield(state, -2, "__tostring");
 
+		// Create table with functions to return member values
 		static const luaL_Reg functions[] =
 		{
 			{ "name", LS_value_functionparameter_name },
@@ -278,6 +293,9 @@ static void LS_SetFunctionParameterMetaTable(lua_State* state)
 
 		lua_createtable(state, 0, 2);
 		luaL_setfuncs(state, functions, 0);
+
+		// Set member values returning functions as upvalue for __index metamethod
+		lua_pushcclosure(state, LS_value_functionparameter_index, 1);
 		lua_setfield(state, -2, "__index");
 	}
 
