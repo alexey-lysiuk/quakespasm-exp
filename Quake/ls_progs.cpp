@@ -870,19 +870,6 @@ static int LS_GlobalDefinitionMember(lua_State* state)
 	return LS_GetGlobalDefinitionMemberValue(state, Func);
 }
 
-constexpr LS_Member ls_globaldefinition_members[] =
-{
-	{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
-	{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
-	{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
-};
-
-// Pushes value by member name of given 'global definition' userdata
-static int LS_value_globaldefinition_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_globaldefinition_type, ls_globaldefinition_members, Q_COUNTOF(ls_globaldefinition_members));
-}
-
 // Pushes string representation of given global definition
 static int LS_PushGlobalDefinitionToString(lua_State* state, const ddef_t* definition)
 {
@@ -895,15 +882,21 @@ static int LS_PushGlobalDefinitionToString(lua_State* state, const ddef_t* defin
 // Sets metatable for 'global definition' userdata
 static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_globaldefinition_index },
-		{ "__tostring", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString> },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "globaldef"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString>);
+		lua_setfield(state, -2, "__tostring");
+
+		static const luaL_Reg functions[] =
+		{
+			{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
+			{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
+			{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
