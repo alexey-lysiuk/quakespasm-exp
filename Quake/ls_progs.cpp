@@ -689,7 +689,7 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
 			{ "file", LS_FunctionMember<LS_PushFunctionFile> },
 			{ "name", LS_FunctionMember<LS_PushFunctionName> },
-			{ "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
+			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
 			{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
 			{ nullptr, nullptr }
 		};
