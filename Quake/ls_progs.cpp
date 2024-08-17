@@ -46,7 +46,11 @@ static int LS_CallIndexTableMember(lua_State* state)
 	luaL_checktype(state, functableindex, LUA_TTABLE);
 
 	const char* name = luaL_checkstring(state, 2);
-	lua_getfield(state, functableindex, name);
+	const int type = lua_getfield(state, functableindex, name);
+
+	if (type == LUA_TNIL)
+		return 0;
+
 	lua_rotate(state, 1, 2);  // move 'self' to argument position
 	lua_call(state, 1, 1);
 
