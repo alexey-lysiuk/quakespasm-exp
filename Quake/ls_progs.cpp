@@ -39,6 +39,34 @@ const char* LS_GetProgsTypeName(unsigned short type);
 void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value);
 
 
+// Pushes member value by calling a function with given name from index table
+static int LS_CallIndexTableMember(lua_State* state)
+{
+	const int functableindex = lua_upvalueindex(1);
+	luaL_checktype(state, functableindex, LUA_TTABLE);
+
+	const char* name = luaL_checkstring(state, 2);
+	lua_getfield(state, functableindex, name);
+	lua_rotate(state, 1, 2);  // move 'self' to argument position
+	lua_call(state, 1, 1);
+
+	return 1;
+}
+
+// Creates index table, and assigns __index metamethod that calls functions from this table to make member values
+static void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions)
+{
+	assert(lua_type(state, -1) == LUA_TTABLE);
+
+	lua_newtable(state);
+	luaL_setfuncs(state, functions, 0);
+
+	// Set member values returning functions as upvalue for __index metamethod
+	lua_pushcclosure(state, LS_CallIndexTableMember, 1);
+	lua_setfield(state, -2, "__index");
+}
+
+
 static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
 {
 	lua_State* state = buffer.L;
@@ -245,20 +273,6 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
-// Pushes value of 'function parameter' userdata by calling a function with passed name
-static int LS_value_functionparameter_index(lua_State* state)
-{
-	const int functableindex = lua_upvalueindex(1);
-	luaL_checktype(state, functableindex, LUA_TTABLE);
-
-	const char* name = luaL_checkstring(state, 2);
-	lua_getfield(state, functableindex, name);
-	lua_rotate(state, 1, 2);  // move 'self' to argument position
-	lua_call(state, 1, 1);
-
-	return 1;
-}
-
 // Pushes string representation of given 'function parameter' userdata
 static int LS_value_functionparameter_tostring(lua_State* state)
 {
@@ -291,12 +305,7 @@ static void LS_SetFunctionParameterMetaTable(lua_State* state)
 			{ nullptr, nullptr }
 		};
 
-		lua_createtable(state, 0, 2);
-		luaL_setfuncs(state, functions, 0);
-
-		// Set member values returning functions as upvalue for __index metamethod
-		lua_pushcclosure(state, LS_value_functionparameter_index, 1);
-		lua_setfield(state, -2, "__index");
+		LS_SetIndexTable(state, functions);
 	}
 
 	lua_setmetatable(state, -2);
