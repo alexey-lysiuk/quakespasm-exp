@@ -791,19 +791,6 @@ static int LS_FieldDefinitionMember(lua_State* state)
 	return LS_GetFieldDefinitionMemberValue(state, Func);
 }
 
-constexpr LS_Member ls_fielddefinition_members[] =
-{
-	{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
-	{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
-	{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
-};
-
-// Pushes value by member name of given 'field definition' userdata
-static int LS_value_fielddefinition_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_fielddefinition_type, ls_fielddefinition_members, Q_COUNTOF(ls_fielddefinition_members));
-}
-
 // Pushes string representation of given field definition
 static int LS_PushFieldDefinitionToString(lua_State* state, const ddef_t* definition)
 {
@@ -816,15 +803,21 @@ static int LS_PushFieldDefinitionToString(lua_State* state, const ddef_t* defini
 // Sets metatable for 'field definition' userdata
 static void LS_SetFieldDefinitionMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_fielddefinition_index },
-		{ "__tostring", LS_FieldDefinitionMember<LS_PushFieldDefinitionToString> },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "fielddef"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_FieldDefinitionMember<LS_PushFieldDefinitionToString>);
+		lua_setfield(state, -2, "__tostring");
+
+		static const luaL_Reg functions[] =
+		{
+			{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
+			{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
+			{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
