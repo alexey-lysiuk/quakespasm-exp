@@ -655,21 +655,6 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 	return 1;
 }
 
-constexpr LS_Member ls_function_members[] =
-{
-	{ "file", LS_FunctionMember<LS_PushFunctionFile> },
-	{ "name", LS_FunctionMember<LS_PushFunctionName> },
-	{ "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
-	{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
-	{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
-};
-
-// Pushes method of 'function' userdata by its name
-static int LS_value_function_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_function_type, ls_function_members, Q_COUNTOF(ls_function_members));
-}
-
 // Pushes string representation of given 'function' userdata
 static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
@@ -693,15 +678,24 @@ static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function
 // Sets metatable for 'function' userdata
 static void LS_SetFunctionMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_function_index },
-		{ "__tostring", LS_FunctionMember<LS_PushFunctionToString> },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "func"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_FunctionMember<LS_PushFunctionToString>);
+		lua_setfield(state, -2, "__tostring");
+
+		// Create table with functions to return member values
+		static const luaL_Reg functions[] =
+		{
+			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
+			{ "file", LS_FunctionMember<LS_PushFunctionFile> },
+			{ "name", LS_FunctionMember<LS_PushFunctionName> },
+			{ "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
+			{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
