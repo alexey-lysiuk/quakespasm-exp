@@ -56,35 +56,6 @@ int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
 
-struct LS_Member
-{
-	size_t length;
-	const char* name;
-
-	using Getter = int(*)(lua_State* state);
-	Getter getter;
-
-	constexpr LS_Member(size_t length, const char* name, Getter getter)
-	: length(length)
-	, name(name)
-	, getter(getter)
-	{
-	}
-
-	template <size_t N>
-	constexpr LS_Member(const char (&name)[N], Getter getter)
-	: LS_Member(N - 1, name, getter)
-	{
-		static_assert(N > 1);
-	}
-
-	bool operator<(const LS_Member& other) const
-	{
-		return (length < other.length)
-			|| (length == other.length && strncmp(name, other.name, length) < 0);
-	}
-};
-
 class LS_TypelessUserDataType
 {
 public:
@@ -124,8 +95,6 @@ public:
 		return *static_cast<T*>(GetValuePtr(state, index));
 	}
 };
-
-int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount);
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
