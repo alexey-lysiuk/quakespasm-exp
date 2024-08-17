@@ -245,18 +245,6 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
-constexpr LS_Member ls_functionparameter_members[] =
-{
-	{ "name", LS_value_functionparameter_name },
-	{ "type", LS_value_functionparameter_type },
-};
-
-// Pushes method of 'function parameter' userdata by its name
-static int LS_value_functionparameter_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_functionparameter_type, ls_functionparameter_members, Q_COUNTOF(ls_functionparameter_members));
-}
-
 // Pushes string representation of given 'function parameter' userdata
 static int LS_value_functionparameter_tostring(lua_State* state)
 {
@@ -276,15 +264,22 @@ static int LS_value_functionparameter_tostring(lua_State* state)
 // Sets metatable for 'function parameter' userdata
 static void LS_SetFunctionParameterMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_functionparameter_index },
-		{ "__tostring", LS_value_functionparameter_tostring },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "funcparam"))
+	{
+		lua_pushcfunction(state, LS_value_functionparameter_tostring);
+		lua_setfield(state, -2, "__tostring");
+
+		static const luaL_Reg functions[] =
+		{
+			{ "name", LS_value_functionparameter_name },
+			{ "type", LS_value_functionparameter_type },
+			{ nullptr, nullptr }
+		};
+
+		lua_createtable(state, 0, 2);
 		luaL_setfuncs(state, functions, 0);
+		lua_setfield(state, -2, "__index");
+	}
 
 	lua_setmetatable(state, -2);
 }
