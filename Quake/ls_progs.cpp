@@ -399,8 +399,6 @@ static int LS_progs_functionparameters_len(lua_State* state)
 	return 1;
 }
 
-static void LS_SetFunctionMetaTable(lua_State* state);
-
 // Pushes table of progs function parameters
 static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* function)
 {
