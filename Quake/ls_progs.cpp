@@ -343,16 +343,20 @@ static int LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 	return 1;
 }
 
+static void LS_GetFunctionForParameters(lua_State* state)
+{
+	luaL_checktype(state, 1, LUA_TTABLE);
+	lua_getfield(state, 1, "function");
+	lua_copy(state, 3, 1);
+	lua_settop(state, 1);
+}
+
 // Pushes 'function parameter' userdata by the given numerical index, [1..function->numparms]
 static int LS_progs_functionparameters_index(lua_State* state)
 {
 	const int index = luaL_checkinteger(state, 2) - 1;
 
-	luaL_checktype(state, 1, LUA_TTABLE);
-	lua_pushlstring(state, "function", 8);
-	lua_rawget(state, 1);
-	lua_copy(state, 3, 1);
-	lua_settop(state, 1);
+	LS_GetFunctionForParameters(state);
 
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
 	{
@@ -372,11 +376,7 @@ static int LS_progs_functionparameters_index(lua_State* state)
 // Pushes number of function parameters
 static int LS_progs_functionparameters_len(lua_State* state)
 {
-	luaL_checktype(state, 1, LUA_TTABLE);
-	lua_pushlstring(state, "function", 8);
-	lua_rawget(state, 1);
-	lua_copy(state, 3, 1);
-	lua_settop(state, 1);
+	LS_GetFunctionForParameters(state);
 
 	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
 		lua_pushinteger(state, function->numparms);
@@ -410,9 +410,8 @@ static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* functi
 	lua_setmetatable(state, -2);
 
 	// Set self as value for 'function' key
-	lua_pushlstring(state, "function", 8);
-	lua_pushvalue(state, 1);  // 'function' userdata
-	lua_rawset(state, 2);  // 'function parameters' table
+	lua_pushvalue(state, 1);
+	lua_setfield(state, 2, "function");
 
 	return 1;
 }
