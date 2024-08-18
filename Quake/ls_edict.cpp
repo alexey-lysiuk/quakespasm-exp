@@ -538,18 +538,19 @@ static int LS_global_edicts_references(lua_State* state)
 // Creates 'edicts' table with helper functions for 'edict' values
 void LS_InitEdictType(lua_State* state)
 {
-	static const luaL_Reg edicts_metatable[] =
+	constexpr luaL_Reg metatable[] =
 	{
 		{ "__index", LS_global_edicts_index },
 		{ "__len", LS_global_edicts_len },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 
 	lua_newtable(state);
-	lua_pushvalue(state, -1);  // copy for lua_setmetatable()
-	lua_setglobal(state, "edicts");
+	luaL_newmetatable(state, "edicts");
+	luaL_setfuncs(state, metatable, 0);
+	lua_setmetatable(state, -2);
 
-	static const luaL_Reg edicts_functions[] =
+	constexpr luaL_Reg functions[] =
 	{
 		{ "references", LS_global_edicts_references },
 		{ "getname", LS_global_edicts_getname },
@@ -557,13 +558,8 @@ void LS_InitEdictType(lua_State* state)
 		{ NULL, NULL }
 	};
 
-	luaL_setfuncs(state, edicts_functions, 0);
-
-	luaL_newmetatable(state, "edicts");
-	luaL_setfuncs(state, edicts_metatable, 0);
-	lua_setmetatable(state, -2);
-
-	lua_pop(state, 1);  // remove table
+	luaL_setfuncs(state, functions, 0);
+	lua_setglobal(state, "edicts");
 
 	LS_LoadScript(state, "scripts/edicts.lua");
 }
