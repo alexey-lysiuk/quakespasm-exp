@@ -19,7 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <assert.h>
+#include <cassert>
+#include <vector>
+#include <utility>
 
 #include "ls_common.h"
 #include "ls_progs_builtins.h"
@@ -835,6 +837,101 @@ static int LS_progs_globaldefinitions_len(lua_State* state)
 
 
 //
+// Strings
+//
+
+class LS_StringCache
+{
+public:
+	std::pair<const char*, uint32_t> Get(const size_t index)
+	{
+		Update();
+
+		if (offsets.size() - 1 <= index)
+			return { nullptr, 0 };
+
+		const uint32_t offset = offsets[index];
+		const uint32_t nextoffset = offsets[index + 1];
+
+		return { &strings[offset], nextoffset - offset - 1 };
+	}
+
+	size_t Count()
+	{
+		Update();
+
+		return offsets.size();
+	}
+
+	void Reset()
+	{
+		OffsetList empty;
+		offsets.swap(empty);
+
+		strings = nullptr;
+		endoffset = 0;
+		crc = 0;
+	}
+
+private:
+	using OffsetList = std::vector<uint32_t, LS_TempAllocator<uint32_t>>;
+	OffsetList offsets;
+
+	const char* strings = nullptr;
+	int endoffset = 0;
+	unsigned short crc = 0;
+
+	void Update()
+	{
+		assert(progs);
+
+		if (endoffset == progs->numstrings && crc == pr_crc)
+			return;
+
+		offsets.clear();
+
+		strings = LS_GetProgsString(0);
+		endoffset = progs->numstrings;
+		crc = pr_crc;
+
+		for (size_t offset = 0; offset < endoffset; ++offset)
+		{
+			if (strings[offset] == '\0')
+				offsets.push_back(offset + 1);
+		}
+	}
+};
+
+static LS_StringCache ls_stringcache;
+
+// Pushes string by the given numerical index starting with 1
+static int LS_progs_strings_index(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2) - 1;  // without empty string at offset zero
+	const auto [ string, length ] = ls_stringcache.Get(index);
+
+	if (string == nullptr)
+		return 0;
+
+	lua_pushlstring(state, string, length);
+	return 1;
+}
+
+// Pushes number of progs strings
+static int LS_progs_strings_len(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_pushinteger(state, ls_stringcache.Count() - 1);  // without offset to end of the last string
+	return 1;
+}
+
+
+//
 // Global 'progs' table
 //
 
@@ -942,6 +1039,31 @@ static int LS_global_progs_typename(lua_State* state)
 	return 1;
 }
 
+// Pushes table of progs strings
+static int LS_global_progs_strings(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	lua_newtable(state);
+
+	if (luaL_newmetatable(state, "strings"))
+	{
+		constexpr luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_strings_index },
+			{ "__len", LS_progs_strings_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
+}
+
 // Returns progs version number (PROG_VERSION)
 static int LS_global_progs_version(lua_State* state)
 {
@@ -962,6 +1084,7 @@ void LS_InitProgsType(lua_State* state)
 		{ "fielddefinitions", LS_global_progs_fielddefinitions },
 		{ "functions", LS_global_progs_functions },
 		{ "globaldefinitions", LS_global_progs_globaldefinitions },
+		{ "strings", LS_global_progs_strings },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
 	};
@@ -975,6 +1098,11 @@ void LS_InitProgsType(lua_State* state)
 	lua_setglobal(state, "progs");
 
 	LS_LoadScript(state, "scripts/progs.lua");
+}
+
+void LS_ResetProgsType()
+{
+	ls_stringcache.Reset();
 }
 
 #endif // USE_LUA_SCRIPTING
