@@ -143,7 +143,7 @@ end
 local function functions_onshow(self)
 	local entries = {}
 
-	for i, func in ipairs(functions()) do
+	for i, func in ipairs(functions) do
 		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func.file }
 		insert(entries, entry)
 	end
@@ -206,7 +206,7 @@ end
 local function definitions_onshow(self)
 	local entries = {}
 
-	for i, definition in ipairs(self.getter()) do
+	for i, definition in ipairs(self.definitions) do
 		local entry =
 		{
 			index = tostring(i),
@@ -242,7 +242,7 @@ addaction(function ()
 		if imMenuItem('Field Definitions\u{85}') then
 			local function oncreate(self)
 				self:setconstraints()
-				self.getter = fielddefinitions
+				self.definitions = fielddefinitions
 			end
 
 			window('Field Definitions', definitions_onupdate,
@@ -252,7 +252,7 @@ addaction(function ()
 		if imMenuItem('Global Definitions\u{85}') then
 			local function oncreate(self)
 				self:setconstraints()
-				self.getter = globaldefinitions
+				self.definitions = globaldefinitions
 			end
 
 			window('Global Definitions', definitions_onupdate,

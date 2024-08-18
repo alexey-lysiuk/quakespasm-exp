@@ -955,19 +955,23 @@ static int LS_global_progs_version(lua_State* state)
 
 void LS_InitProgsType(lua_State* state)
 {
-	static const luaL_Reg progs_functions[] =
+	constexpr luaL_Reg functions[] =
 	{
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
 		{ "fielddefinitions", LS_global_progs_fielddefinitions },
 		{ "functions", LS_global_progs_functions },
 		{ "globaldefinitions", LS_global_progs_globaldefinitions },
-		{ "typename", LS_global_progs_typename },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
 	};
 
-	luaL_newlib(state, progs_functions);
+	lua_newtable(state);
+	luaL_newmetatable(state, "progs");
+	LS_SetIndexTable(state, functions);
+	lua_setmetatable(state, -2);
+	lua_pushcfunction(state, LS_global_progs_typename);
+	lua_setfield(state, -2, "typename");
 	lua_setglobal(state, "progs");
 
 	LS_LoadScript(state, "scripts/progs.lua");
