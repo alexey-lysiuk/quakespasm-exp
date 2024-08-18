@@ -47,6 +47,18 @@ public:
 	}
 };
 
+template <typename T, typename U>
+bool operator==(const LS_TempAllocator<T>&, const LS_TempAllocator<U>&)
+{
+	return true;
+}
+
+template <typename T, typename U>
+bool operator!=(const LS_TempAllocator<T>&, const LS_TempAllocator<U>&)
+{
+	return false;
+}
+
 lua_State* LS_GetState(void);
 
 // Default message handler for lua_pcall() and xpcall()

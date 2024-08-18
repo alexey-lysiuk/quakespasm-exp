@@ -843,15 +843,15 @@ static int LS_progs_globaldefinitions_len(lua_State* state)
 class LS_StringCache
 {
 public:
-	std::pair<const char*, uint32_t> Get(const size_t index)
+	std::pair<const char*, int> Get(const size_t index)
 	{
 		Update();
 
 		if (offsets.size() - 1 <= index)
 			return { nullptr, 0 };
 
-		const uint32_t offset = offsets[index];
-		const uint32_t nextoffset = offsets[index + 1];
+		const int offset = offsets[index];
+		const int nextoffset = offsets[index + 1];
 
 		return { &strings[offset], nextoffset - offset - 1 };
 	}
@@ -874,7 +874,7 @@ public:
 	}
 
 private:
-	using OffsetList = std::vector<uint32_t, LS_TempAllocator<uint32_t>>;
+	using OffsetList = std::vector<int, LS_TempAllocator<int>>;
 	OffsetList offsets;
 
 	const char* strings = nullptr;
@@ -894,7 +894,7 @@ private:
 		endoffset = progs->numstrings;
 		crc = pr_crc;
 
-		for (size_t offset = 0; offset < endoffset; ++offset)
+		for (int offset = 0; offset < endoffset; ++offset)
 		{
 			if (strings[offset] == '\0')
 				offsets.push_back(offset + 1);
