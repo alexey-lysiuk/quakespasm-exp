@@ -36,6 +36,7 @@ local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
 local typename <const> = progs.typename
+local strings <const> = progs.strings
 
 local addaction <const> = expmode.addaction
 local resetsearch <const> = expmode.resetsearch
@@ -229,6 +230,65 @@ local function definitions_onhide(self)
 	return true
 end
 
+local function strings_searchcompare(entry, string)
+	return entry.value:lower():find(string, 1, true)
+end
+
+local function strings_onupdate(self)
+	local title = self.title
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, strings_searchcompare, searchmodified)
+
+		if imBeginTable(title, 2, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
+			imTableSetupColumn('Index', imTableColumnWidthFixed)
+			imTableSetupColumn('Value')
+			imTableHeadersRow()
+
+			for _, entry in ipairs(entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry.index)
+				imTableNextColumn()
+				imText(entry.value)
+			end
+
+			imEndTable()
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function strings_onshow(self)
+	local entries = {}
+
+	for i, value in ipairs(strings) do
+		local entry =
+		{
+			index = tostring(i),
+			value = value
+		}
+		insert(entries, entry)
+	end
+
+	self.entries = entries
+
+	updatesearch(self, strings_searchcompare, true)
+	return true
+end
+
+local function strings_onhide(self)
+	resetsearch(self)
+	self.entries = nil
+	return true
+end
+
 addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions\u{85}') then
@@ -257,6 +317,14 @@ addaction(function ()
 
 			window('Global Definitions', definitions_onupdate,
 				oncreate, definitions_onshow, definitions_onhide)
+		end
+
+		imSeparator()
+
+		if imMenuItem('Strings\u{85}') then
+			window('Progs Strings', strings_onupdate,
+				function (self) self:setconstraints() end,
+				strings_onshow, strings_onhide)
 		end
 
 		imEndMenu()
