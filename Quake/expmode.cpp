@@ -215,6 +215,10 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 	exp_glcontext = context;
 
 	Cmd_AddCommand("expmode", EXP_EnterMode);
+
+#ifdef USE_LUA_SCRIPTING
+	LS_InitExpMode();
+#endif // USE_LUA_SCRIPTING
 }
 
 void EXP_Shutdown()
