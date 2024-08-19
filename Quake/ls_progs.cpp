@@ -958,9 +958,6 @@ static int LS_global_progs_datcrc(lua_State* state)
 // Returns table of progs functions
 static int LS_global_progs_functions(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
-
 	lua_newtable(state);
 
 	if (luaL_newmetatable(state, "functions"))
@@ -983,9 +980,6 @@ static int LS_global_progs_functions(lua_State* state)
 // Returns table of progs field definitions
 static int LS_global_progs_fielddefinitions(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
-
 	lua_newtable(state);
 
 	if (luaL_newmetatable(state, "field definitions"))
@@ -1008,9 +1002,6 @@ static int LS_global_progs_fielddefinitions(lua_State* state)
 // Returns table of progs global definitions
 static int LS_global_progs_globaldefinitions(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
-
 	lua_newtable(state);
 
 	if (luaL_newmetatable(state, "global definitions"))
@@ -1042,9 +1033,6 @@ static int LS_global_progs_typename(lua_State* state)
 // Pushes table of progs strings
 static int LS_global_progs_strings(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
-
 	lua_newtable(state);
 
 	if (luaL_newmetatable(state, "strings"))
