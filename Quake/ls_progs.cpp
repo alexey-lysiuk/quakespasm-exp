@@ -646,10 +646,10 @@ static int LS_progs_functions_index(lua_State* state)
 
 static int LS_progs_functions_len(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numfunctions - 1;  // without error function at index zero
 
-	lua_pushinteger(state, progs->numfunctions - 1);  // without error function at index zero
+	lua_pushinteger(state, count);
 	return 1;
 }
 
@@ -749,10 +749,10 @@ static int LS_progs_fielddefinitions_index(lua_State* state)
 // Pushes number of progs field definitions
 static int LS_progs_fielddefinitions_len(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numfielddefs - 1;  // without unnamed void field at index zero
 
-	lua_pushinteger(state, progs->numfielddefs - 1);  // without unnamed void field at index zero
+	lua_pushinteger(state, count);
 	return 1;
 }
 
@@ -828,10 +828,10 @@ static int LS_progs_globaldefinitions_index(lua_State* state)
 // Pushes number of progs global definitions
 static int LS_progs_globaldefinitions_len(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numglobaldefs - 1;  // without unnamed void field at index zero
 
-	lua_pushinteger(state, progs->numglobaldefs - 1);  // without unnamed void field at index zero
+	lua_pushinteger(state, count);
 	return 1;
 }
 
@@ -923,10 +923,10 @@ static int LS_progs_strings_index(lua_State* state)
 // Pushes number of progs strings
 static int LS_progs_strings_len(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	const lua_Integer count = progs == nullptr ? 0 :
+		ls_stringcache.Count() - 1;  // without offset to end of the last string
 
-	lua_pushinteger(state, ls_stringcache.Count() - 1);  // without offset to end of the last string
+	lua_pushinteger(state, count);
 	return 1;
 }
 
