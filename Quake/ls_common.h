@@ -21,8 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <cstring>
-
 #include "lua.hpp"
 
 class LS_TempAllocatorBase
@@ -49,41 +47,24 @@ public:
 	}
 };
 
+template <typename T, typename U>
+bool operator==(const LS_TempAllocator<T>&, const LS_TempAllocator<U>&)
+{
+	return true;
+}
+
+template <typename T, typename U>
+bool operator!=(const LS_TempAllocator<T>&, const LS_TempAllocator<U>&)
+{
+	return false;
+}
+
 lua_State* LS_GetState(void);
 
 // Default message handler for lua_pcall() and xpcall()
 int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
-
-struct LS_Member
-{
-	size_t length;
-	const char* name;
-
-	using Getter = int(*)(lua_State* state);
-	Getter getter;
-
-	constexpr LS_Member(size_t length, const char* name, Getter getter)
-	: length(length)
-	, name(name)
-	, getter(getter)
-	{
-	}
-
-	template <size_t N>
-	constexpr LS_Member(const char (&name)[N], Getter getter)
-	: LS_Member(N - 1, name, getter)
-	{
-		static_assert(N > 1);
-	}
-
-	bool operator<(const LS_Member& other) const
-	{
-		return (length < other.length)
-			|| (length == other.length && strncmp(name, other.name, length) < 0);
-	}
-};
 
 class LS_TypelessUserDataType
 {
@@ -125,11 +106,11 @@ public:
 	}
 };
 
-int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount);
-
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
+void LS_PushEdictValue(lua_State* state, const struct edict_s* edict);
 
 void LS_InitProgsType(lua_State* state);
+void LS_ResetProgsType();
 
 #endif // USE_LUA_SCRIPTING

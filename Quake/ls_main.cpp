@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <algorithm>
 #include <cassert>
 
 #include "ls_common.h"
@@ -93,26 +92,6 @@ void LS_TempAllocatorBase::Free(void* pointer)
 }
 
 
-int LS_GetMember(lua_State* state, const LS_TypelessUserDataType& type, const LS_Member* members, const size_t membercount)
-{
-	// TODO: Check userdata type? I.e., type.GetValuePtr(state, 1);
-
-	size_t length;
-	const char* name = luaL_checklstring(state, 2, &length);
-	assert(name);
-	assert(length > 0);
-
-	const LS_Member* last = members + membercount;
-	const LS_Member probe{ length, name, nullptr };
-	const LS_Member* member = std::lower_bound(members, last, probe);
-
-	if (member == last || probe < *member)
-		luaL_error(state, "unknown member '%s' of type '%s'", name, type.GetName());
-
-	return member->getter(state);
-}
-
-
 void* LS_TypelessUserDataType::NewPtr(lua_State* state) const
 {
 	const LS_TypelessUserDataType** result = static_cast<const LS_TypelessUserDataType**>(lua_newuserdatauv(state, size, 0));
@@ -169,7 +148,7 @@ static int LS_global_player_traceentity(lua_State* state)
 	if (ed == NULL)
 		lua_pushnil(state);
 	else
-		LS_PushEdictValue(state, NUM_FOR_EDICT(ed));
+		LS_PushEdictValue(state, ed);
 
 	return 1;
 }
@@ -330,14 +309,21 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		return LUA_ERRFILE;
 	}
 
-	char* script = LS_tempalloc(state, length);
-	int bytesread = Sys_FileRead(handle, script, length);
+	char* script = nullptr;
+	int bytesread = 0;
+
+	if (length > 0)
+	{
+		script = LS_tempalloc(state, length);
+		bytesread = Sys_FileRead(handle, script, length);
+	}
+
 	COM_CloseFile(handle);
 
 	int result;
 
 	if (bytesread == length)
-		result = luaL_loadbufferx(state, script, length, filename, mode);
+		result = luaL_loadbufferx(state, script ? script : "", length, filename, mode);
 	else
 	{
 		lua_pushfstring(state,
@@ -346,7 +332,8 @@ static int LS_LoadFile(lua_State* state, const char* filename, const char* mode)
 		result = LUA_ERRFILE;
 	}
 
-	LS_tempfree(script);
+	if (script)
+		LS_tempfree(script);
 
 	return result;
 }
@@ -792,6 +779,8 @@ static void LS_ResetState(void)
 {
 	if (ls_state == NULL)
 		return;
+
+	LS_ResetProgsType();
 
 	lua_close(ls_state);
 	ls_state = NULL;

@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 //gl_sky.c
 
+#ifdef __WATCOMC__
+#include <malloc.h>  /* for alloca(). */
+#endif
 #include "quakedef.h"
 
 #define	MAX_CLIP_VERTS 64
@@ -289,6 +292,7 @@ void Sky_ClearAll (void)
 		skybox_textures[i] = NULL;
 	solidskytexture = NULL;
 	alphaskytexture = NULL;
+	Cvar_SetQuick (&r_skyfog, r_skyfog.default_string);
 }
 
 /*

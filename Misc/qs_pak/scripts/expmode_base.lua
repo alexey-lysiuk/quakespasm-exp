@@ -55,6 +55,9 @@ local framecount <const> = host.framecount
 local frametime <const> = host.frametime
 local realtime <const> = host.realtime
 
+local ghost <const> = player.ghost
+local setpos <const> = player.setpos
+
 local actions = {}
 local windows = {}
 
@@ -310,12 +313,32 @@ end
 
 local function updateenginemenu()
 	if imBeginMenu('Engine') then
+		local function GhostAndExit(enable)
+			ghost(enable)
+			exit()
+		end
+
+		if imBeginMenu('Ghost Mode') then
+			if imMenuItem('Toggle Ghost Mode') then
+				GhostAndExit()
+			end
+
+			if imMenuItem('Enter Ghost Mode') then
+				GhostAndExit(true)
+			end
+
+			if imMenuItem('Exit Ghost Mode') then
+				GhostAndExit(false)
+			end
+
+			imEndMenu()
+		end
+
 		if imMenuItem('Move to Start') then
 			for _, edict in ipairs(edicts) do
 				if edict.classname == 'info_player_start' then
-					player.setpos(edict.origin, edict.angles)
-					player.ghost(false)
-					expmode.exit()
+					setpos(edict.origin, edict.angles)
+					GhostAndExit(false)
 					break
 				end
 			end

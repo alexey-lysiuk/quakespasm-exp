@@ -36,6 +36,7 @@ local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
 local typename <const> = progs.typename
+local strings <const> = progs.strings
 
 local addaction <const> = expmode.addaction
 local resetsearch <const> = expmode.resetsearch
@@ -143,7 +144,7 @@ end
 local function functions_onshow(self)
 	local entries = {}
 
-	for i, func in functions() do
+	for i, func in ipairs(functions) do
 		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func.file }
 		insert(entries, entry)
 	end
@@ -206,7 +207,7 @@ end
 local function definitions_onshow(self)
 	local entries = {}
 
-	for i, definition in self.getter() do
+	for i, definition in ipairs(self.definitions) do
 		local entry =
 		{
 			index = tostring(i),
@@ -229,6 +230,65 @@ local function definitions_onhide(self)
 	return true
 end
 
+local function strings_searchcompare(entry, string)
+	return entry.value:lower():find(string, 1, true)
+end
+
+local function strings_onupdate(self)
+	local title = self.title
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, strings_searchcompare, searchmodified)
+
+		if imBeginTable(title, 2, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
+			imTableSetupColumn('Index', imTableColumnWidthFixed)
+			imTableSetupColumn('Value')
+			imTableHeadersRow()
+
+			for _, entry in ipairs(entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry.index)
+				imTableNextColumn()
+				imText(entry.value)
+			end
+
+			imEndTable()
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function strings_onshow(self)
+	local entries = {}
+
+	for i, value in ipairs(strings) do
+		local entry =
+		{
+			index = tostring(i),
+			value = value
+		}
+		insert(entries, entry)
+	end
+
+	self.entries = entries
+
+	updatesearch(self, strings_searchcompare, true)
+	return true
+end
+
+local function strings_onhide(self)
+	resetsearch(self)
+	self.entries = nil
+	return true
+end
+
 addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions\u{85}') then
@@ -242,7 +302,7 @@ addaction(function ()
 		if imMenuItem('Field Definitions\u{85}') then
 			local function oncreate(self)
 				self:setconstraints()
-				self.getter = fielddefinitions
+				self.definitions = fielddefinitions
 			end
 
 			window('Field Definitions', definitions_onupdate,
@@ -252,11 +312,19 @@ addaction(function ()
 		if imMenuItem('Global Definitions\u{85}') then
 			local function oncreate(self)
 				self:setconstraints()
-				self.getter = globaldefinitions
+				self.definitions = globaldefinitions
 			end
 
 			window('Global Definitions', definitions_onupdate,
 				oncreate, definitions_onshow, definitions_onhide)
+		end
+
+		imSeparator()
+
+		if imMenuItem('Strings\u{85}') then
+			window('Progs Strings', strings_onupdate,
+				function (self) self:setconstraints() end,
+				strings_onshow, strings_onhide)
 		end
 
 		imEndMenu()

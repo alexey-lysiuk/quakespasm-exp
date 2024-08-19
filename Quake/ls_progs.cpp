@@ -19,23 +19,111 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_LUA_SCRIPTING
 
-#include <assert.h>
+#include <cassert>
+#include <vector>
+#include <utility>
 
 #include "ls_common.h"
+#include "ls_progs_builtins.h"
 
 extern "C"
 {
 #include "quakedef.h"
 
 const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index);
+const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
 const char* LS_GetProgsTypeName(unsigned short type);
+}
 
-const char* PR_GlobalString(int offset);
-const char* PR_GlobalStringNoContents(int offset);
+void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value);
+
+
+// Pushes member value by calling a function with given name from index table
+static int LS_CallIndexTableMember(lua_State* state)
+{
+	const int functableindex = lua_upvalueindex(1);
+	luaL_checktype(state, functableindex, LUA_TTABLE);
+
+	const char* name = luaL_checkstring(state, 2);
+	const int type = lua_getfield(state, functableindex, name);
+
+	if (type == LUA_TNIL)
+		return 0;
+
+	lua_rotate(state, 1, 2);  // move 'self' to argument position
+	lua_call(state, 1, 1);
+
+	return 1;
+}
+
+// Creates index table, and assigns __index metamethod that calls functions from this table to make member values
+static void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions)
+{
+	assert(lua_type(state, -1) == LUA_TTABLE);
+
+	lua_newtable(state);
+	luaL_setfuncs(state, functions, 0);
+
+	// Set member values returning functions as upvalue for __index metamethod
+	lua_pushcclosure(state, LS_CallIndexTableMember, 1);
+	lua_setfield(state, -2, "__index");
+}
+
+
+static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
+{
+	lua_State* state = buffer.L;
+	size_t length;
+
+	lua_pushinteger(state, offset);
+	lua_tolstring(state, -1, &length);
+	luaL_addvalue(&buffer);
+
+	const ddef_t* definition = LS_GetProgsGlobalDefinitionByOffset(offset);
+
+	if (definition)
+	{
+		const char* const name = LS_GetProgsString(definition->s_name);
+		const size_t namelength = strlen(name);
+
+		luaL_addchar(&buffer, '(');
+		luaL_addlstring(&buffer, name, namelength);
+		luaL_addchar(&buffer, ')');
+
+		length += namelength + 2;  // with two round brackets
+
+		if (withcontent)
+		{
+			if (offset >= progs->numglobals)
+				luaL_error(state, "invalid global offset %d", offset);
+
+			const eval_t* value = reinterpret_cast<const eval_t*>(&pr_globals[offset]);
+			const int type = definition->type & ~DEF_SAVEGLOBAL;
+			size_t valuelength;
+
+			LS_PushEdictFieldValue(state, etype_t(type), value);
+			lua_tolstring(state, -1, &valuelength);
+			luaL_addvalue(&buffer);
+
+			length += valuelength;
+		}
+	}
+	else
+	{
+		luaL_addlstring(&buffer, "(?)", 3);
+		length += 3;
+	}
+
+	do
+	{
+		luaL_addchar(&buffer, ' ');
+		++length;
+	}
+	while (length < 20);
 }
 
 
@@ -66,7 +154,7 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	{
 	case OP_IF:
 	case OP_IFNOT:
-		luaL_addstring(&buffer, PR_GlobalString(statement.a));
+		LS_GlobalStringToBuffer(statement.a, buffer);
 		luaL_addstring(&buffer, "branch ");
 
 		lua_pushinteger(buffer.L, statement.b);
@@ -86,17 +174,17 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	case OP_STORE_ENT:
 	case OP_STORE_FLD:
 	case OP_STORE_FNC:
-		luaL_addstring(&buffer, PR_GlobalString(statement.a));
-		luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.b));
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		LS_GlobalStringToBuffer(statement.b, buffer, false);
 		break;
 
 	default:
 		if (statement.a)
-			luaL_addstring(&buffer, PR_GlobalString(statement.a));
+			LS_GlobalStringToBuffer(statement.a, buffer);
 		if (statement.b)
-			luaL_addstring(&buffer, PR_GlobalString(statement.b));
+			LS_GlobalStringToBuffer(statement.b, buffer);
 		if (statement.c)
-			luaL_addstring(&buffer, PR_GlobalStringNoContents(statement.c));
+			LS_GlobalStringToBuffer(statement.c, buffer, false);
 		break;
 	}
 }
@@ -192,18 +280,6 @@ static int LS_value_functionparameter_type(lua_State* state)
 	return 1;
 }
 
-constexpr LS_Member ls_functionparameter_members[] =
-{
-	{ "name", LS_value_functionparameter_name },
-	{ "type", LS_value_functionparameter_type },
-};
-
-// Pushes method of 'function parameter' userdata by its name
-static int LS_value_functionparameter_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_functionparameter_type, ls_functionparameter_members, Q_COUNTOF(ls_functionparameter_members));
-}
-
 // Pushes string representation of given 'function parameter' userdata
 static int LS_value_functionparameter_tostring(lua_State* state)
 {
@@ -223,15 +299,21 @@ static int LS_value_functionparameter_tostring(lua_State* state)
 // Sets metatable for 'function parameter' userdata
 static void LS_SetFunctionParameterMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_functionparameter_index },
-		{ "__tostring", LS_value_functionparameter_tostring },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "funcparam"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_value_functionparameter_tostring);
+		lua_setfield(state, -2, "__tostring");
+
+		// Create table with functions to return member values
+		static const luaL_Reg functions[] =
+		{
+			{ "name", LS_value_functionparameter_name },
+			{ "type", LS_value_functionparameter_type },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
@@ -250,7 +332,7 @@ static dfunction_t* LS_GetFunctionFromUserData(lua_State* state)
 		return 0;
 
 	const int index = ls_function_type.GetValue(state, 1);
-	return (index >= 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
+	return (index > 0 && index < progs->numfunctions) ? &pr_functions[index] : nullptr;
 }
 
 static int LS_GetFunctionMemberValue(lua_State* state, int (*getter)(lua_State* state, const dfunction_t* function))
@@ -290,37 +372,75 @@ static int LS_PushFunctionName(lua_State* state, const dfunction_t* function)
 	return 1;
 }
 
-static int LS_global_functionparameters_iterator(lua_State* state)
+static void LS_GetFunctionForParameters(lua_State* state)
 {
-	const dfunction_t* function = LS_GetFunctionFromUserData(state);
-	const lua_Integer index = luaL_checkinteger(state, 2);
+	luaL_checktype(state, 1, LUA_TTABLE);
+	lua_getfield(state, 1, "function");
+	lua_copy(state, 3, 1);
+	lua_settop(state, 1);
+}
 
-	if (index < function->numparms)
+// Pushes 'function parameter' userdata by the given numerical index, [1..function->numparms]
+static int LS_progs_functionparameters_index(lua_State* state)
+{
+	const int index = luaL_checkinteger(state, 2) - 1;
+
+	LS_GetFunctionForParameters(state);
+
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
 	{
-		lua_pushinteger(state, index + 1);
+		if (index < 0 || index >= function->numparms)
+			return 0;
 
 		LS_FunctionParameter& parameter = ls_functionparameter_type.New(state);
 		LS_GetFunctionParameter(function, index, parameter);
 		LS_SetFunctionParameterMetaTable(state);
-		return 2;
 	}
+	else
+		luaL_error(state, "invalid function");
 
-	lua_pushnil(state);
 	return 1;
 }
 
-// Pushes function parameters iterator, e.g., for i, p in func:parameters() do print(i, p) end
+// Pushes number of function parameters
+static int LS_progs_functionparameters_len(lua_State* state)
+{
+	LS_GetFunctionForParameters(state);
+
+	if (dfunction_t* function = LS_GetFunctionFromUserData(state))
+		lua_pushinteger(state, function->numparms);
+	else
+		luaL_error(state, "invalid function");
+
+	return 1;
+}
+
+// Pushes table of progs function parameters
 static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* function)
 {
-	const lua_Integer index = luaL_optinteger(state, 2, 0);
-	lua_pushcfunction(state, LS_global_functionparameters_iterator);
+	assert(function);
 
-	int& funcindex = ls_function_type.New(state);
-	funcindex = function - pr_functions;
-	// No need to set metatable for 'function' userdata as its sole purpose is to get function index
+	lua_newtable(state);
 
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	if (luaL_newmetatable(state, "function parameters"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_functionparameters_index },
+			{ "__len", LS_progs_functionparameters_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	// Set self as value for 'function' key
+	lua_pushvalue(state, 1);
+	lua_setfield(state, 2, "function");
+
+	return 1;
 }
 
 // Returns function return type
@@ -349,106 +469,6 @@ static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
 	}
 	else
 	{
-		static const etype_t BUILTIN_RETURN_TYPES[] =
-		{
-			ev_bad,
-			ev_void,     // void(entity e) makevectors = #1
-			ev_void,     // void(entity e, vector o) setorigin = #2
-			ev_void,     // void(entity e, string m) setmodel = #3
-			ev_void,     // void(entity e, vector min, vector max) setsize = #4
-			ev_void,     // void(entity e, vector min, vector max) setabssize = #5
-			ev_void,     // void() break = #6
-			ev_float,    // float() random = #7
-			ev_void,     // void(entity e, float chan, string samp) sound = #8
-			ev_vector,   // vector(vector v) normalize = #9
-			ev_void,     // void(string e) error = #10
-			ev_void,     // void(string e) objerror = #11
-			ev_float,    // float(vector v) vlen = #12
-			ev_float,    // float(vector v) vectoyaw = #13
-			ev_entity,   // entity() spawn = #14
-			ev_void,     // void(entity e) remove = #15
-			ev_float,    // float(vector v1, vector v2, float tryents) traceline = #16
-			ev_entity,   // entity() clientlist = #17
-			ev_entity,   // entity(entity start, .string fld, string match) find = #18
-			ev_void,     // void(string s) precache_sound = #19
-			ev_void,     // void(string s) precache_model = #20
-			ev_void,     // void(entity client, string s)stuffcmd = #21
-			ev_entity,   // entity(vector org, float rad) findradius = #22
-			ev_void,     // void(string s) bprint = #23
-			ev_void,     // void(entity client, string s) sprint = #24
-			ev_void,     // void(string s) dprint = #25
-			ev_void,     // void(string s) ftos = #26
-			ev_void,     // void(string s) vtos = #27
-			ev_void,     // void() coredump = #28
-			ev_void,     // void() traceon = #29
-			ev_void,     // void() traceoff = #30
-			ev_void,     // void(entity e) eprint = #31
-			ev_float,    // float(float yaw, float dist) walkmove = #32
-			ev_bad,      // #33 was removed
-			ev_float,    // float(float yaw, float dist) droptofloor = #34
-			ev_void,     // void(float style, string value) lightstyle = #35
-			ev_float,    // float(float v) rint = #36
-			ev_float,    // float(float v) floor = #37
-			ev_float,    // float(float v) ceil = #38
-			ev_bad,      // #39 was removed
-			ev_float,    // float(entity e) checkbottom = #40
-			ev_float,    // float(vector v) pointcontents = #41
-			ev_bad,      // #42 was removed
-			ev_float,    // float(float f) fabs = #43
-			ev_vector,   // vector(entity e, float speed) aim = #44
-			ev_float,    // float(string s) cvar = #45
-			ev_void,     // void(string s) localcmd = #46
-			ev_entity,   // entity(entity e) nextent = #47
-			ev_void,     // void(vector o, vector d, float color, float count) particle = #48
-			ev_void,     // void() ChangeYaw = #49
-			ev_bad,      // #50 was removed
-			ev_vector,   // vector(vector v) vectoangles = #51
-			ev_void,     // void(float to, float f) WriteByte = #52
-			ev_void,     // void(float to, float f) WriteChar = #53
-			ev_void,     // void(float to, float f) WriteShort = #54
-			ev_void,     // void(float to, float f) WriteLong = #55
-			ev_void,     // void(float to, float f) WriteCoord = #56
-			ev_void,     // void(float to, float f) WriteAngle = #57
-			ev_void,     // void(float to, string s) WriteString = #58
-			ev_void,     // void(float to, entity s) WriteEntity = #59
-			ev_bad,      // #60 was removed
-			ev_bad,      // #61 was removed
-			ev_bad,      // #62 was removed
-			ev_bad,      // #63 was removed
-			ev_bad,      // #64 was removed
-			ev_bad,      // #65 was removed
-			ev_bad,      // #66 was removed
-			ev_void,     // void(float step) movetogoal = #67
-			ev_string,   // string(string s) precache_file = #68
-			ev_void,     // void(entity e) makestatic = #69
-			ev_void,     // void(string s) changelevel = #70
-			ev_bad,      // #71 was removed
-			ev_void,     // void(string var, string val) cvar_set = #72
-			ev_void,     // void(entity client, string s) centerprint = #73
-			ev_void,     // void(vector pos, string samp, float vol, float atten) ambientsound = #74
-			ev_string,   // string(string s) precache_model2 = #75
-			ev_string,   // string(string s) precache_sound2 = #76
-			ev_string,   // string(string s) precache_file2 = #77
-			ev_void,     // void(entity e) setspawnparms = #78
-
-			// 2021 re-release, see PR_PatchRereleaseBuiltins()
-			ev_float,    // float() finaleFinished = #79
-			ev_void,     // void localsound (entity client, string sample) = #80
-			ev_void,     // void draw_point (vector point, float colormap, float lifetime, float depthtest) = #81
-			ev_void,     // void draw_line (vector start, vector end, float colormap, float lifetime, float depthtest) = #82
-			ev_void,     // void draw_arrow (vector start, vector end, float colormap, float size, float lifetime, float depthtest) = #83
-			ev_void,     // void draw_ray (vector start, vector direction, float length, float colormap, float size, float lifetime, float depthtest) = #84
-			ev_void,     // void draw_circle (vector origin, float radius, float colormap, float lifetime, float depthtest) = #85
-			ev_void,     // void draw_bounds (vector min, vector max, float colormap, float lifetime, float depthtest) = #86
-			ev_void,     // void draw_worldtext (string s, vector origin, float size, float lifetime, float depthtest) = #87
-			ev_void,     // void draw_sphere (vector origin, float radius, float colormap, float lifetime, float depthtest) = #88
-			ev_void,     // void draw_cylinder (vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest) = #89
-			ev_float,    // float CheckPlayerEXFlags( entity playerEnt ) = #90
-			ev_float,    // float walkpathtogoal( float movedist, vector goal ) = #91
-			ev_float,    // float bot_movetopoint( entity bot, vector point ) = #92
-			// same # as above, float bot_followentity( entity bot, entity goal ) = #92
-		};
-
 		const size_t builtin = -first_statement;
 
 		switch (builtin)
@@ -542,21 +562,6 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 	return 1;
 }
 
-constexpr LS_Member ls_function_members[] =
-{
-	{ "file", LS_FunctionMember<LS_PushFunctionFile> },
-	{ "name", LS_FunctionMember<LS_PushFunctionName> },
-	{ "parameters", LS_FunctionMethod<LS_PushFunctionParameters> },
-	{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
-	{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
-};
-
-// Pushes method of 'function' userdata by its name
-static int LS_value_function_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_function_type, ls_function_members, Q_COUNTOF(ls_function_members));
-}
-
 // Pushes string representation of given 'function' userdata
 static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function)
 {
@@ -580,36 +585,71 @@ static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function
 // Sets metatable for 'function' userdata
 static void LS_SetFunctionMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_function_index },
-		{ "__tostring", LS_FunctionMember<LS_PushFunctionToString> },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "func"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_FunctionMember<LS_PushFunctionToString>);
+		lua_setfield(state, -2, "__tostring");
+
+		// Create table with functions to return member values
+		static const luaL_Reg functions[] =
+		{
+			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
+			{ "file", LS_FunctionMember<LS_PushFunctionFile> },
+			{ "name", LS_FunctionMember<LS_PushFunctionName> },
+			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
+			{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
 
-static int LS_global_functions_iterator(lua_State* state)
+static int LS_progs_functions_index(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 2);
-	index = luaL_intop(+, index, 1);
+	if (progs == nullptr)
+		return 0;
 
+	int indextype = lua_type(state, 2);
+	int index = 0;  // error function at index zero is not valid function
+
+	if (indextype == LUA_TSTRING)
+	{
+		const char* name = lua_tostring(state, 2);
+
+		for (int i = 1; i < progs->numfunctions; ++i)
+		{
+			if (strcmp(LS_GetProgsString(pr_functions[i].s_name), name) == 0)
+			{
+				index = i;
+				break;
+			}
+		}
+	}
+	else if (indextype == LUA_TNUMBER)
+		index = lua_tointeger(state, 2);
+	else
+		luaL_error(state, "invalid type '%s' of function index, need number or string", lua_typename(state, indextype));
+
+	// Check function index, [1..progs->numfunctions], for validity
 	if (index > 0 && index < progs->numfunctions)
 	{
-		lua_pushinteger(state, index);
-
-		int& newvalue = ls_function_type.New(state);
-		newvalue = index;
+		ls_function_type.New(state) = index;
 		LS_SetFunctionMetaTable(state);
-
-		return 2;
+		return 1;
 	}
 
-	lua_pushnil(state);
+	return 0;
+}
+
+static int LS_progs_functions_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numfunctions - 1;  // without error function at index zero
+
+	lua_pushinteger(state, count);
 	return 1;
 }
 
@@ -658,19 +698,6 @@ static int LS_FieldDefinitionMember(lua_State* state)
 	return LS_GetFieldDefinitionMemberValue(state, Func);
 }
 
-constexpr LS_Member ls_fielddefinition_members[] =
-{
-	{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
-	{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
-	{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
-};
-
-// Pushes value by member name of given 'field definition' userdata
-static int LS_value_fielddefinition_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_fielddefinition_type, ls_fielddefinition_members, Q_COUNTOF(ls_fielddefinition_members));
-}
-
 // Pushes string representation of given field definition
 static int LS_PushFieldDefinitionToString(lua_State* state, const ddef_t* definition)
 {
@@ -683,36 +710,49 @@ static int LS_PushFieldDefinitionToString(lua_State* state, const ddef_t* defini
 // Sets metatable for 'field definition' userdata
 static void LS_SetFieldDefinitionMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_fielddefinition_index },
-		{ "__tostring", LS_FieldDefinitionMember<LS_PushFieldDefinitionToString> },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "fielddef"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_FieldDefinitionMember<LS_PushFieldDefinitionToString>);
+		lua_setfield(state, -2, "__tostring");
+
+		static const luaL_Reg functions[] =
+		{
+			{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
+			{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
+			{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
 
-static int LS_global_fielddefinitions_iterator(lua_State* state)
+// Pushes 'field definitions' userdata by the given numerical index, [1..progs->numfielddefs]
+static int LS_progs_fielddefinitions_index(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 2);
-	index = luaL_intop(+, index, 1);
+	if (progs == nullptr)
+		return 0;
 
-	if (index > 0 && index < progs->numfielddefs)
-	{
-		lua_pushinteger(state, index);
+	const int index = luaL_checkinteger(state, 2);
 
-		int& newvalue = ls_fielddefinition_type.New(state);
-		newvalue = index;
-		LS_SetFieldDefinitionMetaTable(state);
+	if (index <= 0 || index >= progs->numfielddefs)
+		return 0;
 
-		return 2;
-	}
+	ls_fielddefinition_type.New(state) = index;
+	LS_SetFieldDefinitionMetaTable(state);
 
-	lua_pushnil(state);
+	return 1;
+}
+
+// Pushes number of progs field definitions
+static int LS_progs_fielddefinitions_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numfielddefs - 1;  // without unnamed void field at index zero
+
+	lua_pushinteger(state, count);
 	return 1;
 }
 
@@ -737,19 +777,6 @@ static int LS_GlobalDefinitionMember(lua_State* state)
 	return LS_GetGlobalDefinitionMemberValue(state, Func);
 }
 
-constexpr LS_Member ls_globaldefinition_members[] =
-{
-	{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
-	{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
-	{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
-};
-
-// Pushes value by member name of given 'global definition' userdata
-static int LS_value_globaldefinition_index(lua_State* state)
-{
-	return LS_GetMember(state, ls_globaldefinition_type, ls_globaldefinition_members, Q_COUNTOF(ls_globaldefinition_members));
-}
-
 // Pushes string representation of given global definition
 static int LS_PushGlobalDefinitionToString(lua_State* state, const ddef_t* definition)
 {
@@ -762,36 +789,144 @@ static int LS_PushGlobalDefinitionToString(lua_State* state, const ddef_t* defin
 // Sets metatable for 'global definition' userdata
 static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 {
-	static const luaL_Reg functions[] =
-	{
-		{ "__index", LS_value_globaldefinition_index },
-		{ "__tostring", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString> },
-		{ NULL, NULL }
-	};
-
 	if (luaL_newmetatable(state, "globaldef"))
-		luaL_setfuncs(state, functions, 0);
+	{
+		lua_pushcfunction(state, LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString>);
+		lua_setfield(state, -2, "__tostring");
+
+		static const luaL_Reg functions[] =
+		{
+			{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
+			{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
+			{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
+			{ nullptr, nullptr }
+		};
+
+		LS_SetIndexTable(state, functions);
+	}
 
 	lua_setmetatable(state, -2);
 }
 
-static int LS_global_globaldefinitions_iterator(lua_State* state)
+// Pushes 'global definitions' userdata by the given numerical index, [1..progs->numglobaldefs]
+static int LS_progs_globaldefinitions_index(lua_State* state)
 {
-	lua_Integer index = luaL_checkinteger(state, 2);
-	index = luaL_intop(+, index, 1);
+	if (progs == nullptr)
+		return 0;
 
-	if (index > 0 && index < progs->numglobaldefs)
+	const int index = luaL_checkinteger(state, 2);
+
+	if (index <= 0 || index >= progs->numglobaldefs)
+		return 0;
+
+	ls_globaldefinition_type.New(state) = index;
+	LS_SetGlobalDefinitionMetaTable(state);
+
+	return 1;
+}
+
+// Pushes number of progs global definitions
+static int LS_progs_globaldefinitions_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numglobaldefs - 1;  // without unnamed void field at index zero
+
+	lua_pushinteger(state, count);
+	return 1;
+}
+
+
+//
+// Strings
+//
+
+class LS_StringCache
+{
+public:
+	std::pair<const char*, int> Get(const size_t index)
 	{
-		lua_pushinteger(state, index);
+		Update();
 
-		int& newvalue = ls_globaldefinition_type.New(state);
-		newvalue = index;
-		LS_SetGlobalDefinitionMetaTable(state);
+		if (offsets.size() - 1 <= index)
+			return { nullptr, 0 };
 
-		return 2;
+		const int offset = offsets[index];
+		const int nextoffset = offsets[index + 1];
+
+		return { &strings[offset], nextoffset - offset - 1 };
 	}
 
-	lua_pushnil(state);
+	size_t Count()
+	{
+		Update();
+
+		return offsets.size();
+	}
+
+	void Reset()
+	{
+		OffsetList empty;
+		offsets.swap(empty);
+
+		strings = nullptr;
+		endoffset = 0;
+		crc = 0;
+	}
+
+private:
+	using OffsetList = std::vector<int, LS_TempAllocator<int>>;
+	OffsetList offsets;
+
+	const char* strings = nullptr;
+	int endoffset = 0;
+	unsigned short crc = 0;
+
+	void Update()
+	{
+		assert(progs);
+
+		if (endoffset == progs->numstrings && crc == pr_crc)
+			return;
+
+		offsets.clear();
+
+		strings = LS_GetProgsString(0);
+		endoffset = progs->numstrings;
+		crc = pr_crc;
+
+		for (int offset = 0; offset < endoffset; ++offset)
+		{
+			if (strings[offset] == '\0')
+				offsets.push_back(offset + 1);
+		}
+	}
+};
+
+static LS_StringCache ls_stringcache;
+
+// Pushes string by the given numerical index starting with 1
+static int LS_progs_strings_index(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2) - 1;  // without empty string at offset zero
+	const auto [ string, length ] = ls_stringcache.Get(index);
+
+	if (string == nullptr)
+		return 0;
+
+	lua_pushlstring(state, string, length);
+	return 1;
+}
+
+// Pushes number of progs strings
+static int LS_progs_strings_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 :
+		ls_stringcache.Count() - 1;  // without offset to end of the last string
+
+	lua_pushinteger(state, count);
 	return 1;
 }
 
@@ -820,43 +955,70 @@ static int LS_global_progs_datcrc(lua_State* state)
 	return 1;
 }
 
-// Returns progs function iterator, e.g., for i, f in progs.functions() do print(i, f) end
+// Returns table of progs functions
 static int LS_global_progs_functions(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	lua_newtable(state);
 
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_functions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	if (luaL_newmetatable(state, "functions"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_functions_index },
+			{ "__len", LS_progs_functions_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
 }
 
-// Returns progs field definitions iterator, e.g., for i, f in progs.fielddefinitions() do print(i, f) end
+// Returns table of progs field definitions
 static int LS_global_progs_fielddefinitions(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	lua_newtable(state);
 
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_fielddefinitions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	if (luaL_newmetatable(state, "field definitions"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_fielddefinitions_index },
+			{ "__len", LS_progs_fielddefinitions_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
 }
 
-// Returns progs global definitions iterator, e.g., for i, g in progs.globaldefinitions() do print(i, g) end
+// Returns table of progs global definitions
 static int LS_global_progs_globaldefinitions(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
+	lua_newtable(state);
 
-	const lua_Integer index = luaL_optinteger(state, 1, 0);
-	lua_pushcfunction(state, LS_global_globaldefinitions_iterator);
-	lua_pushnil(state);  // unused
-	lua_pushinteger(state, index);  // initial value
-	return 3;
+	if (luaL_newmetatable(state, "global definitions"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_globaldefinitions_index },
+			{ "__len", LS_progs_globaldefinitions_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
 }
 
 // Pushes name of type by its index
@@ -865,6 +1027,28 @@ static int LS_global_progs_typename(lua_State* state)
 	const lua_Integer typeindex = luaL_checkinteger(state, 1);
 	const char* const nameoftype = LS_GetProgsTypeName(typeindex);
 	lua_pushstring(state, nameoftype);
+	return 1;
+}
+
+// Pushes table of progs strings
+static int LS_global_progs_strings(lua_State* state)
+{
+	lua_newtable(state);
+
+	if (luaL_newmetatable(state, "strings"))
+	{
+		constexpr luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_strings_index },
+			{ "__len", LS_progs_strings_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
 	return 1;
 }
 
@@ -881,22 +1065,32 @@ static int LS_global_progs_version(lua_State* state)
 
 void LS_InitProgsType(lua_State* state)
 {
-	static const luaL_Reg progs_functions[] =
+	constexpr luaL_Reg functions[] =
 	{
 		{ "crc", LS_global_progs_crc },
 		{ "datcrc", LS_global_progs_datcrc },
 		{ "fielddefinitions", LS_global_progs_fielddefinitions },
 		{ "functions", LS_global_progs_functions },
 		{ "globaldefinitions", LS_global_progs_globaldefinitions },
-		{ "typename", LS_global_progs_typename },
+		{ "strings", LS_global_progs_strings },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
 	};
 
-	luaL_newlib(state, progs_functions);
+	lua_newtable(state);
+	luaL_newmetatable(state, "progs");
+	LS_SetIndexTable(state, functions);
+	lua_setmetatable(state, -2);
+	lua_pushcfunction(state, LS_global_progs_typename);
+	lua_setfield(state, -2, "typename");
 	lua_setglobal(state, "progs");
 
 	LS_LoadScript(state, "scripts/progs.lua");
+}
+
+void LS_ResetProgsType()
+{
+	ls_stringcache.Reset();
 }
 
 #endif // USE_LUA_SCRIPTING

@@ -75,12 +75,20 @@ static bool LS_CallExpModeFunction(const char* const name)
 	return result;
 }
 
+static void EXP_EnterMode();
+
+static int LS_EnterMode(lua_State* state)
+{
+	EXP_EnterMode();
+	return 0;
+}
+
 static void LS_InitExpMode()
 {
 	lua_State* state = LS_GetState();
 	assert(state);
 
-	const bool initialized = lua_getglobal(state, ls_expmode_name) != LUA_TNIL;
+	const bool initialized = lua_getglobal(state, ls_expmode_name) == LUA_TTABLE;
 	lua_pop(state, 1);  // remove 'expmode' table or nil
 
 	if (initialized)
@@ -92,6 +100,8 @@ static void LS_InitExpMode()
 
 	// Register 'expmode' table
 	lua_createtable(state, 0, 16);
+	lua_pushcfunction(state, LS_EnterMode);
+	lua_setfield(state, -2, "enter");
 	lua_setglobal(state, ls_expmode_name);
 
 	LS_LoadScript(state, "scripts/expmode_base.lua");
@@ -215,6 +225,10 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 	exp_glcontext = context;
 
 	Cmd_AddCommand("expmode", EXP_EnterMode);
+
+#ifdef USE_LUA_SCRIPTING
+	LS_InitExpMode();
+#endif // USE_LUA_SCRIPTING
 }
 
 void EXP_Shutdown()

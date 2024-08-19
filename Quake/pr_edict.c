@@ -311,7 +311,7 @@ Returns a string describing *data in a type specific manner
 */
 static const char *PR_ValueString (int type, eval_t *val)
 {
-	static char	line[4096];
+	static char	line[512];
 	ddef_t		*def;
 	dfunction_t	*f;
 
@@ -413,7 +413,7 @@ padded to 20 field width
 */
 const char *PR_GlobalString (int ofs)
 {
-	static char	line[4096];
+	static char	line[512];
 	static const int lastchari = Q_COUNTOF(line) - 2;
 	const char	*s;
 	int		i;
@@ -444,7 +444,7 @@ const char *PR_GlobalString (int ofs)
 
 const char *PR_GlobalStringNoContents (int ofs)
 {
-	static char	line[4096];
+	static char	line[512];
 	static const int lastchari = Q_COUNTOF(line) - 2;
 	int		i;
 	ddef_t		*def;
@@ -1510,7 +1510,7 @@ int PR_AllocString (int size, char **ptr)
 
 #ifdef USE_LUA_SCRIPTING
 
-qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByIndex(const edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
 		return false;
@@ -1548,18 +1548,18 @@ qboolean LS_GetEdictFieldByIndex(edict_t* ed, size_t fieldindex, const char** na
 	return true;
 }
 
-qboolean LS_GetEdictFieldByName(edict_t* ed, const char* name, etype_t* type, const eval_t** value)
+qboolean LS_GetEdictFieldByName(const edict_t* ed, const char* name, etype_t* type, const eval_t** value)
 {
 	// TODO: Use GetEdictFieldValue() cache?
 	// TODO: Optimize for fields from entvars_t?
 
-	ddef_t*	def = ED_FindField(name);
+	const ddef_t* def = ED_FindField(name);
 
 	if (!def)
 		return false;
 
 	*type = def->type;
-	*value = (eval_t*)((byte*)&ed->v + def->ofs * 4);
+	*value = (const eval_t*)((const byte*)&ed->v + def->ofs * 4);
 
 	return true;
 }
