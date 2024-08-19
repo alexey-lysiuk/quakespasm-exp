@@ -473,6 +473,16 @@ function expmode.edictreferences(edict)
 		or messagebox('No references', format("'%s' has no references.", edict))
 end
 
+function expmode.traceentity()
+	local edict = traceentity()
+
+	if edict then
+		edictinfo(edict)
+	else
+		messagebox('No entity', 'Player is not looking at an interactible entity.')
+	end
+end
+
 local edictstools <const> =
 {
 	-- Name, filter function, default width of 'Description' cell in characters
@@ -510,13 +520,7 @@ addaction(function ()
 		imSeparator()
 
 		if imMenuItem('Trace Entity\u{85}') then
-			local edict = traceentity()
-
-			if edict then
-				edictinfo(edict)
-			else
-				messagebox('No entity', 'Player is not looking at an interactible entity.')
-			end
+			expmode.traceentity()
 		end
 
 		imEndMenu()
