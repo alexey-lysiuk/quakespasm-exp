@@ -75,6 +75,14 @@ static bool LS_CallExpModeFunction(const char* const name)
 	return result;
 }
 
+static void EXP_EnterMode();
+
+static int EXP_EnterMode(lua_State* state)
+{
+	EXP_EnterMode();
+	return 0;
+}
+
 static void LS_InitExpMode()
 {
 	lua_State* state = LS_GetState();
@@ -92,6 +100,8 @@ static void LS_InitExpMode()
 
 	// Register 'expmode' table
 	lua_createtable(state, 0, 16);
+	lua_pushcfunction(state, EXP_EnterMode);
+	lua_setfield(state, -2, "enter");
 	lua_setglobal(state, ls_expmode_name);
 
 	LS_LoadScript(state, "scripts/expmode_base.lua");
