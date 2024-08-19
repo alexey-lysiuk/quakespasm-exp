@@ -80,7 +80,7 @@ static void LS_InitExpMode()
 	lua_State* state = LS_GetState();
 	assert(state);
 
-	const bool initialized = lua_getglobal(state, ls_expmode_name) != LUA_TNIL;
+	const bool initialized = lua_getglobal(state, ls_expmode_name) == LUA_TTABLE;
 	lua_pop(state, 1);  // remove 'expmode' table or nil
 
 	if (initialized)
