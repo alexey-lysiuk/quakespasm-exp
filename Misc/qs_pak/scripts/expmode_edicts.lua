@@ -473,7 +473,9 @@ function expmode.edictreferences(edict)
 		or messagebox('No references', format("'%s' has no references.", edict))
 end
 
-function expmode.traceentity()
+expmode.edicts = {}
+
+function expmode.edicts.traceentity()
 	local edict = traceentity()
 
 	if edict then
@@ -498,29 +500,43 @@ local edictstools <const> =
 	{ 'Models', edicts.ismodel, 25 },
 }
 
+for _, tool in ipairs(edictstools) do
+	local title = tool[1]
+	local filter = tool[2]
+	local extrawidth = tool[3]
+	local name = filter and title:lower() or 'all'
+
+	local function toolfunc()
+		local function oncreate(self)
+			local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
+			local width = imCalcTextSize('A').x * (defaultwidthchars + extrawidth)
+
+			self:setconstraints()
+			self:setsize(imVec2(width, 0))
+			self.filter = filter
+		end
+
+		window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
+	end
+
+	tool[2] = toolfunc
+	tool[3] = nil
+
+	expmode.edicts[name] = toolfunc
+end
+
 addaction(function ()
 	if imBeginMenu('Edicts') then
 		for _, tool in ipairs(edictstools) do
-			local title = tool[1]
-
-			if imMenuItem(title .. '\u{85}') then
-				local function oncreate(self)
-					local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
-					local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
-
-					self:setconstraints()
-					self:setsize(imVec2(width, 0))
-					self.filter = tool[2]
-				end
-
-				window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
+			if imMenuItem(tool[1] .. '\u{85}') then
+				tool[2]()
 			end
 		end
 
 		imSeparator()
 
 		if imMenuItem('Trace Entity\u{85}') then
-			expmode.traceentity()
+			expmode.edicts.traceentity()
 		end
 
 		imEndMenu()
