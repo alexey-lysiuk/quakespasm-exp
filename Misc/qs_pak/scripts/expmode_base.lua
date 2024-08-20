@@ -59,11 +59,16 @@ local ghost <const> = player.ghost
 local setpos <const> = player.setpos
 
 local actions = {}
+local oneshots = {}
 local windows = {}
 
 local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
 local screensize, shouldexit, wintofocus
+
+function expmode.addoneshot(func)
+	insert(oneshots, func)
+end
 
 function expmode.addaction(func)
 	insert(actions, func)
@@ -412,6 +417,18 @@ local function updateactions()
 	end
 end
 
+local function updateoneshots()
+	if #oneshots == 0 then
+		return
+	end
+
+	for _, oneshot in ipairs(oneshots) do
+		safecall(oneshot)
+	end
+
+	oneshots = {}
+end
+
 local function updatewindows()
 	foreachwindow(function (window)
 		if wintofocus == window then
@@ -451,6 +468,7 @@ function expmode.onupdate()
 		screensize = imGetMainViewport().Size
 	end
 
+	updateoneshots()
 	updateactions()
 	updatewindows()
 
