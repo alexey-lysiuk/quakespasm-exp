@@ -113,9 +113,6 @@ static void LS_InitExpMode()
 
 	lua_gc(state, LUA_GCRESTART);
 	lua_gc(state, LUA_GCCOLLECT);
-
-	// Add alias for entity trace
-	Cbuf_AddText("alias expmode_traceentity \"lua local e = expmode e.enter() e.addoneshot(e.traceentity)\"");
 }
 
 #endif // USE_LUA_SCRIPTING
