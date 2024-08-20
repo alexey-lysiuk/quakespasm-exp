@@ -289,42 +289,67 @@ local function strings_onhide(self)
 	return true
 end
 
+expmode.progs = {}
+
+local exprpogs <const> = expmode.progs
+
+function exprpogs.functions()
+	window('Progs Functions', functions_onupdate,
+		function (self) self:setconstraints() end,
+		functions_onshow, functions_onhide)
+end
+
+function exprpogs.fielddefinitions()
+	local function oncreate(self)
+		self:setconstraints()
+		self.definitions = fielddefinitions
+	end
+
+	window('Field Definitions', definitions_onupdate,
+		oncreate, definitions_onshow, definitions_onhide)
+end
+
+function exprpogs.globaldefinitions()
+	local function oncreate(self)
+		self:setconstraints()
+		self.definitions = globaldefinitions
+	end
+
+	window('Global Definitions', definitions_onupdate,
+		oncreate, definitions_onshow, definitions_onhide)
+end
+
+function exprpogs.strings()
+	window('Progs Strings', strings_onupdate,
+		function (self) self:setconstraints() end,
+		strings_onshow, strings_onhide)
+end
+
+local expfunctions <const> = exprpogs.functions
+local expfielddefinitions <const> = exprpogs.fielddefinitions
+local expglobaldefinitions <const> = exprpogs.globaldefinitions
+local expstrings <const> = exprpogs.strings
+
 addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions\u{85}') then
-			window('Progs Functions', functions_onupdate,
-				function (self) self:setconstraints() end,
-				functions_onshow, functions_onhide)
+			expfunctions()
 		end
 
 		imSeparator()
 
 		if imMenuItem('Field Definitions\u{85}') then
-			local function oncreate(self)
-				self:setconstraints()
-				self.definitions = fielddefinitions
-			end
-
-			window('Field Definitions', definitions_onupdate,
-				oncreate, definitions_onshow, definitions_onhide)
+			expfielddefinitions()
 		end
 
 		if imMenuItem('Global Definitions\u{85}') then
-			local function oncreate(self)
-				self:setconstraints()
-				self.definitions = globaldefinitions
-			end
-
-			window('Global Definitions', definitions_onupdate,
-				oncreate, definitions_onshow, definitions_onhide)
+			expglobaldefinitions()
 		end
 
 		imSeparator()
 
 		if imMenuItem('Strings\u{85}') then
-			window('Progs Strings', strings_onupdate,
-				function (self) self:setconstraints() end,
-				strings_onshow, strings_onhide)
+			expstrings()
 		end
 
 		imEndMenu()
