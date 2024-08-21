@@ -30,6 +30,7 @@ extern "C"
 {
 #include "quakedef.h"
 
+int LS_GetKnownStringCount();
 const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index);
 const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset);
@@ -843,24 +844,49 @@ static int LS_progs_globaldefinitions_len(lua_State* state)
 class LS_StringCache
 {
 public:
-	std::pair<const char*, int> Get(const size_t index)
+	std::pair<const char*, int> Get(size_t index)
 	{
 		Update();
 
-		if (offsets.size() - 1 <= index)
+		if (offsets.empty())
 			return { nullptr, 0 };
 
-		const int offset = offsets[index];
-		const int nextoffset = offsets[index + 1];
+		const size_t progscount = offsets.size() - 1;  // without offset to end of the last progs string
+		const size_t knowncount = LS_GetKnownStringCount() - 1;  // without first empty string
 
-		return { &strings[offset], nextoffset - offset - 1 };
+		if (index < progscount)
+		{
+			const int offset = offsets[index];
+			const int nextoffset = offsets[index + 1];
+
+			return { &strings[offset], nextoffset - offset - 1 };
+		}
+		else
+			index -= progscount;  // switch to known strings
+
+		if (index < knowncount)
+		{
+			const int offset = -int(index) - 2;  // known strings indices start with -1, skip first empty string as well
+			const char* const string = LS_GetProgsString(offset);
+
+			if (string)
+				return { string, strlen(string) };
+			else
+				return { "", 0 };  // unused known string
+		}
+
+		return { nullptr, 0 };  // index out of range, index >= progscount + knowncount
 	}
 
 	size_t Count()
 	{
 		Update();
 
-		return offsets.size();
+		if (offsets.empty())
+			return 0;
+
+		return offsets.size() - 1  // without offset to end of the last string
+			+ LS_GetKnownStringCount() - 1;  // without first empty string
 	}
 
 	void Reset()
@@ -883,7 +909,11 @@ private:
 
 	void Update()
 	{
-		assert(progs);
+		if (progs == nullptr)
+		{
+			Reset();
+			return;
+		}
 
 		if (endoffset == progs->numstrings && crc == pr_crc)
 			return;
@@ -907,9 +937,6 @@ static LS_StringCache ls_stringcache;
 // Pushes string by the given numerical index starting with 1
 static int LS_progs_strings_index(lua_State* state)
 {
-	if (progs == nullptr)
-		return 0;
-
 	const int index = luaL_checkinteger(state, 2) - 1;  // without empty string at offset zero
 	const auto [ string, length ] = ls_stringcache.Get(index);
 
@@ -923,9 +950,7 @@ static int LS_progs_strings_index(lua_State* state)
 // Pushes number of progs strings
 static int LS_progs_strings_len(lua_State* state)
 {
-	const lua_Integer count = progs == nullptr ? 0 :
-		ls_stringcache.Count() - 1;  // without offset to end of the last string
-
+	const lua_Integer count = ls_stringcache.Count();
 	lua_pushinteger(state, count);
 	return 1;
 }
