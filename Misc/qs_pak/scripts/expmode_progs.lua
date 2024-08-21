@@ -37,6 +37,7 @@ local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
 local typename <const> = progs.typename
 local strings <const> = progs.strings
+local stringoffset <const> = strings.offset
 
 local addaction <const> = expmode.addaction
 local resetsearch <const> = expmode.resetsearch
@@ -242,10 +243,11 @@ local function strings_onupdate(self)
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, strings_searchcompare, searchmodified)
 
-		if imBeginTable(title, 2, defaultTableFlags) then
+		if imBeginTable(title, 3, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
+			imTableSetupColumn('Offset', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
 			for _, entry in ipairs(entries) do
@@ -254,6 +256,8 @@ local function strings_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.value)
+				imTableNextColumn()
+				imText(entry.offset)
 			end
 
 			imEndTable()
@@ -272,7 +276,8 @@ local function strings_onshow(self)
 		local entry =
 		{
 			index = tostring(i),
-			value = value
+			value = value,
+			offset = stringoffset(i)
 		}
 		insert(entries, entry)
 	end
