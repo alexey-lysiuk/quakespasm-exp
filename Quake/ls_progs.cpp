@@ -840,7 +840,7 @@ static int LS_progs_globaldefinitions_len(lua_State* state)
 // Global variables
 //
 
-// Pushes floating point value of global variable by its index, [1..progs->numglobals]
+// Pushes floating point value of global variable by its index, [1..progs->numglobals)
 static int LS_progs_globalvariables_index(lua_State* state)
 {
 	if (progs == nullptr)
@@ -864,6 +864,24 @@ static int LS_progs_globalvariables_len(lua_State* state)
 		progs->numglobals - 1;  // without null value at index zero (OFS_NULL)
 
 	lua_pushinteger(state, count);
+	return 1;
+}
+
+// Pushes integer value of global variable by its index, [1..progs->numglobals)
+static int LS_progs_globalvariables_integer(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 1);
+
+	if (index <= 0 || index >= progs->numglobals)
+		return 0;
+
+	assert(pr_globals);
+	const int* integerglobals = reinterpret_cast<const int*>(pr_globals);
+
+	lua_pushinteger(state, integerglobals[index]);
 	return 1;
 }
 
@@ -1120,6 +1138,8 @@ static int LS_global_progs_globalvariables(lua_State* state)
 
 	lua_setmetatable(state, -2);
 
+	lua_pushcfunction(state, LS_progs_globalvariables_integer);
+	lua_setfield(state, -2, "integer");
 	return 1;
 }
 
