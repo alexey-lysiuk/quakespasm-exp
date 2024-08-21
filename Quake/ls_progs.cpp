@@ -20,8 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef USE_LUA_SCRIPTING
 
 #include <cassert>
+#include <tuple>
 #include <vector>
-#include <utility>
 
 #include "ls_common.h"
 #include "ls_progs_builtins.h"
@@ -844,12 +844,14 @@ static int LS_progs_globaldefinitions_len(lua_State* state)
 class LS_StringCache
 {
 public:
-	std::pair<const char*, int> Get(size_t index)
+	std::tuple<const char*, int, int> Get(size_t index)
 	{
 		Update();
 
-		if (offsets.empty())
-			return { nullptr, 0 };
+		if (offsets.empty() || index == 0)
+			return std::make_tuple(nullptr, 0, 0);
+
+		--index;  // on Lua side, indices start with one
 
 		const size_t progscount = offsets.size() - 1;  // without offset to end of the last progs string
 		const size_t knowncount = LS_GetKnownStringCount() - 1;  // without first empty string
@@ -859,7 +861,7 @@ public:
 			const int offset = offsets[index];
 			const int nextoffset = offsets[index + 1];
 
-			return { &strings[offset], nextoffset - offset - 1 };
+			return { &strings[offset], nextoffset - offset - 1, offset };
 		}
 		else
 			index -= progscount;  // switch to known strings
@@ -870,12 +872,12 @@ public:
 			const char* const string = LS_GetProgsString(offset);
 
 			if (string)
-				return { string, strlen(string) };
+				return { string, strlen(string), offset };
 			else
-				return { "", 0 };  // unused known string
+				return std::make_tuple("", 0, offset);
 		}
 
-		return { nullptr, 0 };  // index out of range, index >= progscount + knowncount
+		return std::make_tuple(nullptr, 0, 0);  // index out of range, index >= progscount + knowncount
 	}
 
 	size_t Count()
@@ -937,8 +939,8 @@ static LS_StringCache ls_stringcache;
 // Pushes string by the given numerical index starting with 1
 static int LS_progs_strings_index(lua_State* state)
 {
-	const int index = luaL_checkinteger(state, 2) - 1;  // without empty string at offset zero
-	const auto [ string, length ] = ls_stringcache.Get(index);
+	const int index = luaL_checkinteger(state, 2);
+	const auto [ string, length, offset ] = ls_stringcache.Get(index);
 
 	if (string == nullptr)
 		return 0;
@@ -952,6 +954,16 @@ static int LS_progs_strings_len(lua_State* state)
 {
 	const lua_Integer count = ls_stringcache.Count();
 	lua_pushinteger(state, count);
+	return 1;
+}
+
+// Pushes offset of progs strings by its index
+static int LS_global_strings_offset(lua_State* state)
+{
+	const int index = luaL_checkinteger(state, 1);
+	const auto [ string, length, offset ] = ls_stringcache.Get(index);
+
+	lua_pushinteger(state, offset);
 	return 1;
 }
 
@@ -1074,6 +1086,8 @@ static int LS_global_progs_strings(lua_State* state)
 
 	lua_setmetatable(state, -2);
 
+	lua_pushcfunction(state, LS_global_strings_offset);
+	lua_setfield(state, -2, "offset");
 	return 1;
 }
 
