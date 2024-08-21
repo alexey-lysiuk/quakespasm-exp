@@ -1017,7 +1017,7 @@ static int LS_progs_strings_len(lua_State* state)
 }
 
 // Pushes offset of progs strings by its index
-static int LS_global_strings_offset(lua_State* state)
+static int LS_progs_strings_offset(lua_State* state)
 {
 	const int index = luaL_checkinteger(state, 1);
 
@@ -1171,7 +1171,7 @@ static int LS_global_progs_strings(lua_State* state)
 
 	lua_setmetatable(state, -2);
 
-	lua_pushcfunction(state, LS_global_strings_offset);
+	lua_pushcfunction(state, LS_progs_strings_offset);
 	lua_setfield(state, -2, "offset");
 	return 1;
 }
