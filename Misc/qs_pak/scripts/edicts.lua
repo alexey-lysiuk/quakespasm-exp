@@ -123,6 +123,8 @@ local format <const> = string.format
 local gsub <const> = string.gsub
 local sub <const> = string.sub
 
+local concat <const> = table.concat
+local insert <const> = table.insert
 
 function edicts.isclass(edict, ...)
 	for _, classname in ipairs({...}) do
@@ -374,6 +376,17 @@ end
 -- Items
 --
 
+local itemExtraDefitions <const> =
+{
+	{ 'aflag' },
+	{ 'ammo_shells', 'Shells' },
+	{ 'ammo_nails', 'Nails' },
+	{ 'ammo_rockets', 'Rockets' },
+	{ 'ammo_cells', 'Cells' },
+	{ 'armorvalue', 'Armor' },
+	{ 'healamount', 'Health' },
+}
+
 function edicts.isitem(edict)
 	if not edict or isfree(edict) then
 		return
@@ -430,20 +443,24 @@ function edicts.isitem(edict)
 
 	name = titlecase(name)
 
-	-- Health
-	local healamount = edict.healamount
-	if healamount and healamount ~= 0 then
-		name = format('%i %s', healamount, name)
+	local extras = {}
+
+	for _, def in ipairs(itemExtraDefitions) do
+		local value = edict[def[1]]
+
+		if value and value ~= 0 then
+			local defname = def[2]
+			local extra = (defname and defname ~= name)
+				and format('%i %s', value, defname)
+				or math.floor(value)
+
+			insert(extras, extra)
+		end
 	end
 
-	-- Ammo
-	local ammoamount = edict.aflag
-		or classname == 'item_shells' and edict.ammo_shells
-		or classname == 'item_spikes' and edict.ammo_nails
-		or classname == 'item_rockets' and edict.ammo_rockets
-		or classname == 'item_cells' and edict.ammo_cells
-	if ammoamount and ammoamount ~= 0 then
-		name = format('%i %s', ammoamount, name)
+	if #extras > 0 then
+		local extrastr = concat(extras, ', ')
+		name = format('%s (%s)', name, extrastr)
 	end
 
 	return name, edict.origin
