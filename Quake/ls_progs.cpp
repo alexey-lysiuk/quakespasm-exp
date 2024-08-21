@@ -837,6 +837,38 @@ static int LS_progs_globaldefinitions_len(lua_State* state)
 
 
 //
+// Global variables
+//
+
+// Pushes floating point value of global variable by its index, [1..progs->numglobals]
+static int LS_progs_globalvariables_index(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2);
+
+	if (index <= 0 || index >= progs->numglobals)
+		return 0;
+
+	assert(pr_globals);
+
+	lua_pushnumber(state, pr_globals[index]);
+	return 1;
+}
+
+// Pushes number of progs global variables
+static int LS_progs_globalvariables_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 :
+		progs->numglobals - 1;  // without null value at index zero (OFS_NULL)
+
+	lua_pushinteger(state, count);
+	return 1;
+}
+
+
+//
 // Strings
 //
 
@@ -1069,6 +1101,28 @@ static int LS_global_progs_globaldefinitions(lua_State* state)
 	return 1;
 }
 
+// Returns table of progs global variables
+static int LS_global_progs_globalvariables(lua_State* state)
+{
+	lua_newtable(state);
+
+	if (luaL_newmetatable(state, "global variables"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_progs_globalvariables_index },
+			{ "__len", LS_progs_globalvariables_len },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+
+	return 1;
+}
+
 // Pushes name of type by its index
 static int LS_global_progs_typename(lua_State* state)
 {
@@ -1122,6 +1176,7 @@ void LS_InitProgsType(lua_State* state)
 		{ "fielddefinitions", LS_global_progs_fielddefinitions },
 		{ "functions", LS_global_progs_functions },
 		{ "globaldefinitions", LS_global_progs_globaldefinitions },
+		{ "globalvariables", LS_global_progs_globalvariables },
 		{ "strings", LS_global_progs_strings },
 		{ "version", LS_global_progs_version },
 		{ nullptr, nullptr }
