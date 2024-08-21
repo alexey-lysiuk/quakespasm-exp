@@ -1603,6 +1603,11 @@ const char* LS_GetProgsString(int offset)
 	return "???";
 }
 
+int LS_GetKnownStringCount(void)
+{
+	return pr_numknownstrings;
+}
+
 const char* LS_GetProgsTypeName(unsigned short type)
 {
 	switch (type & ~DEF_SAVEGLOBAL)
