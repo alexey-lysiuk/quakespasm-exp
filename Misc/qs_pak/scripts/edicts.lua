@@ -381,7 +381,7 @@ function edicts.isitem(edict)
 
 	if edict.solid == SOLID_NOT then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
-		return current
+		return
 	end
 
 	local classname = edict.classname
