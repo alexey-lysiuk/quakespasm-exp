@@ -561,7 +561,8 @@ static int LS_global_memstats(lua_State* state)
 
 static int LS_global_memstats(lua_State* state)
 {
-	lua_pushstring(state, "");
+	const int used = lua_gc(state, LUA_GCCOUNT) * 1024 + lua_gc(state, LUA_GCCOUNTB);
+	lua_pushfstring(state, "Used: %d bytes", used);
 	return 1;
 }
 
