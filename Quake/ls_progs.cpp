@@ -358,8 +358,8 @@ static int LS_FunctionMethod(lua_State* state)
 	return 1;
 }
 
-// Pushes file of 'function' userdata
-static int LS_PushFunctionFile(lua_State* state, const dfunction_t* function)
+// Pushes source file name of 'function' userdata
+static int LS_PushFunctionFileName(lua_State* state, const dfunction_t* function)
 {
 	lua_pushstring(state, LS_GetProgsString(function->s_file));
 	return 1;
@@ -594,7 +594,7 @@ static void LS_SetFunctionMetaTable(lua_State* state)
 		static const luaL_Reg functions[] =
 		{
 			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
-			{ "file", LS_FunctionMember<LS_PushFunctionFile> },
+			{ "filename", LS_FunctionMember<LS_PushFunctionFileName> },
 			{ "name", LS_FunctionMember<LS_PushFunctionName> },
 			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
 			{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },

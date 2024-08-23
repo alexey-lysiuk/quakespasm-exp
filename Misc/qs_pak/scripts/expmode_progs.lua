@@ -90,7 +90,7 @@ end
 
 local function function_searchcompare(entry, string)
 	return entry.declaration:lower():find(string, 1, true)
-		or entry.file:lower():find(string, 1, true)
+		or entry.filename:lower():find(string, 1, true)
 end
 
 local function functions_onupdate(self)
@@ -130,7 +130,7 @@ local function functions_onupdate(self)
 						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 				end
 				imTableNextColumn()
-				imText(entry.file)
+				imText(entry.filename)
 			end
 
 			imEndTable()
@@ -146,7 +146,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in ipairs(functions) do
-		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func.file }
+		local entry = { func = func, index = tostring(i), declaration = tostring(func), filename = func.filename }
 		insert(entries, entry)
 	end
 
