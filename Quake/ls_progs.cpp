@@ -1056,20 +1056,16 @@ static int LS_global_progs_datcrc(lua_State* state)
 // Returns table of progs functions
 static int LS_global_progs_functions(lua_State* state)
 {
-	lua_newtable(state);
-
-	if (luaL_newmetatable(state, "functions"))
+	constexpr luaL_Reg functions[] =
 	{
-		static const luaL_Reg functions[] =
-		{
-			{ "__index", LS_progs_functions_index },
-			{ "__len", LS_progs_functions_len },
-			{ nullptr, nullptr }
-		};
+		{ "__index", LS_progs_functions_index },
+		{ "__len", LS_progs_functions_len },
+		{ nullptr, nullptr }
+	};
 
-		luaL_setfuncs(state, functions, 0);
-	}
-
+	lua_newtable(state);
+	luaL_newmetatable(state, "functions");
+	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
 
 	return 1;
@@ -1078,20 +1074,16 @@ static int LS_global_progs_functions(lua_State* state)
 // Returns table of progs field definitions
 static int LS_global_progs_fielddefinitions(lua_State* state)
 {
-	lua_newtable(state);
-
-	if (luaL_newmetatable(state, "field definitions"))
+	constexpr luaL_Reg functions[] =
 	{
-		static const luaL_Reg functions[] =
-		{
-			{ "__index", LS_progs_fielddefinitions_index },
-			{ "__len", LS_progs_fielddefinitions_len },
-			{ nullptr, nullptr }
-		};
+		{ "__index", LS_progs_fielddefinitions_index },
+		{ "__len", LS_progs_fielddefinitions_len },
+		{ nullptr, nullptr }
+	};
 
-		luaL_setfuncs(state, functions, 0);
-	}
-
+	lua_newtable(state);
+	luaL_newmetatable(state, "field definitions");
+	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
 
 	return 1;
@@ -1100,20 +1092,16 @@ static int LS_global_progs_fielddefinitions(lua_State* state)
 // Returns table of progs global definitions
 static int LS_global_progs_globaldefinitions(lua_State* state)
 {
-	lua_newtable(state);
-
-	if (luaL_newmetatable(state, "global definitions"))
+	constexpr luaL_Reg functions[] =
 	{
-		static const luaL_Reg functions[] =
-		{
-			{ "__index", LS_progs_globaldefinitions_index },
-			{ "__len", LS_progs_globaldefinitions_len },
-			{ nullptr, nullptr }
-		};
+		{ "__index", LS_progs_globaldefinitions_index },
+		{ "__len", LS_progs_globaldefinitions_len },
+		{ nullptr, nullptr }
+	};
 
-		luaL_setfuncs(state, functions, 0);
-	}
-
+	lua_newtable(state);
+	luaL_newmetatable(state, "global definitions");
+	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
 
 	return 1;
@@ -1122,20 +1110,16 @@ static int LS_global_progs_globaldefinitions(lua_State* state)
 // Returns table of progs global variables
 static int LS_global_progs_globalvariables(lua_State* state)
 {
-	lua_newtable(state);
-
-	if (luaL_newmetatable(state, "global variables"))
+	constexpr luaL_Reg functions[] =
 	{
-		static const luaL_Reg functions[] =
-		{
-			{ "__index", LS_progs_globalvariables_index },
-			{ "__len", LS_progs_globalvariables_len },
-			{ nullptr, nullptr }
-		};
+		{ "__index", LS_progs_globalvariables_index },
+		{ "__len", LS_progs_globalvariables_len },
+		{ nullptr, nullptr }
+	};
 
-		luaL_setfuncs(state, functions, 0);
-	}
-
+	lua_newtable(state);
+	luaL_newmetatable(state, "global variables");
+	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
 
 	lua_pushcfunction(state, LS_progs_globalvariables_integer);
@@ -1155,20 +1139,16 @@ static int LS_global_progs_typename(lua_State* state)
 // Pushes table of progs strings
 static int LS_global_progs_strings(lua_State* state)
 {
-	lua_newtable(state);
-
-	if (luaL_newmetatable(state, "strings"))
+	constexpr luaL_Reg functions[] =
 	{
-		constexpr luaL_Reg functions[] =
-		{
-			{ "__index", LS_progs_strings_index },
-			{ "__len", LS_progs_strings_len },
-			{ nullptr, nullptr }
-		};
+		{ "__index", LS_progs_strings_index },
+		{ "__len", LS_progs_strings_len },
+		{ nullptr, nullptr }
+	};
 
-		luaL_setfuncs(state, functions, 0);
-	}
-
+	lua_newtable(state);
+	luaL_newmetatable(state, "strings");
+	luaL_setfuncs(state, functions, 0);
 	lua_setmetatable(state, -2);
 
 	lua_pushcfunction(state, LS_progs_strings_offset);
@@ -1189,25 +1169,52 @@ static int LS_global_progs_version(lua_State* state)
 
 void LS_InitProgsType(lua_State* state)
 {
-	constexpr luaL_Reg functions[] =
-	{
-		{ "crc", LS_global_progs_crc },
-		{ "datcrc", LS_global_progs_datcrc },
-		{ "fielddefinitions", LS_global_progs_fielddefinitions },
-		{ "functions", LS_global_progs_functions },
-		{ "globaldefinitions", LS_global_progs_globaldefinitions },
-		{ "globalvariables", LS_global_progs_globalvariables },
-		{ "strings", LS_global_progs_strings },
-		{ "version", LS_global_progs_version },
-		{ nullptr, nullptr }
-	};
-
 	lua_newtable(state);
-	luaL_newmetatable(state, "progs");
-	LS_SetIndexTable(state, functions);
-	lua_setmetatable(state, -2);
-	lua_pushcfunction(state, LS_global_progs_typename);
-	lua_setfield(state, -2, "typename");
+
+	// Metatable
+	{
+		constexpr luaL_Reg functions[] =
+		{
+			{ "crc", LS_global_progs_crc },
+			{ "datcrc", LS_global_progs_datcrc },
+			{ "version", LS_global_progs_version },
+			{ nullptr, nullptr }
+		};
+
+		luaL_newmetatable(state, "progs");
+		LS_SetIndexTable(state, functions);
+		lua_setmetatable(state, -2);
+	}
+
+	// Fields
+	{
+		constexpr luaL_Reg fields[] =
+		{
+			{ "fielddefinitions", LS_global_progs_fielddefinitions },
+			{ "functions", LS_global_progs_functions },
+			{ "globaldefinitions", LS_global_progs_globaldefinitions },
+			{ "globalvariables", LS_global_progs_globalvariables },
+			{ "strings", LS_global_progs_strings },
+		};
+
+		for (const luaL_Reg& field : fields)
+		{
+			field.func(state);
+			lua_setfield(state, -2, field.name);
+		}
+	}
+
+	// Functions
+	{
+		constexpr luaL_Reg functions[] =
+		{
+			{ "typename", LS_global_progs_typename },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
 	lua_setglobal(state, "progs");
 
 	LS_LoadScript(state, "scripts/progs.lua");
