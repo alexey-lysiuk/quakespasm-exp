@@ -236,15 +236,30 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
-local function edictstable_tostring(entries)
-	local lines = {}
+local function edictstable_contextmenu(entries, entry, cellvalue)
+	if imBeginPopupContextItem() then
+		if imSelectable('References') then
+			expmode.edictreferences(entry.edict):movetocursor()
+		end
+		imSeparator()
+		if imSelectable('Copy Cell') then
+			imSetClipboardText(tostring(cellvalue))
+		end
+		if imSelectable('Copy Row') then
+			imSetClipboardText(format('%d\t%s\t%s\n', entry.index, entry.description, entry.location))
+		end
+		if imSelectable('Copy Table') then
+			local lines = {}
 
-	for _, entry in ipairs(entries) do
-		local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
-		insert(lines, line)
+			for _, entry in ipairs(entries) do
+				local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
+				insert(lines, line)
+			end
+
+			imSetClipboardText(concat(lines, '\n') .. '\n')
+		end
+		imEndPopup()
 	end
-
-	return concat(lines, '\n') .. '\n'
 end
 
 local function edictstable(title, entries, tableflags)
@@ -266,39 +281,18 @@ local function edictstable(title, entries, tableflags)
 			if entry.isfree then
 				imSelectable(description, false, imSelectableDisabled)
 			else
-				local location = entry.location
-
-				local function contextmenu(cellvalue)
-					if imBeginPopupContextItem() then
-						if imSelectable('References') then
-							expmode.edictreferences(entry.edict):movetocursor()
-						end
-						imSeparator()
-						if imSelectable('Copy Cell') then
-							imSetClipboardText(tostring(cellvalue))
-						end
-						if imSelectable('Copy Row') then
-							imSetClipboardText(format('%s\t%s\t%s\n', entry.index, description, location))
-						end
-						if imSelectable('Copy Table') then
-							imSetClipboardText(edictstable_tostring(entries))
-						end
-						imEndPopup()
-					end
-				end
-
 				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict):movetocursor()
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					imSetTooltip(tostring(entry.edict))
 				end
-				contextmenu(description)
+				edictstable_contextmenu(entries, entry, description)
 
 				imTableNextColumn()
 
 				if imSelectable(entry.locationid) then
-					moveplayer(entry.edict, location, entry.angles)
+					moveplayer(entry.edict, entry.location, entry.angles)
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					local edict = entry.edict
@@ -310,7 +304,7 @@ local function edictstable(title, entries, tableflags)
 						imSetTooltip(bounds)
 					end
 				end
-				contextmenu(location)
+				edictstable_contextmenu(entries, entry, entry.location)
 			end
 		end
 
