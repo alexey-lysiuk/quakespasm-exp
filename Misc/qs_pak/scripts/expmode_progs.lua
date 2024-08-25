@@ -233,6 +233,7 @@ end
 
 local function strings_searchcompare(entry, string)
 	return entry.value:lower():find(string, 1, true)
+		or entry.offset:find(string, 1, true)
 end
 
 local function strings_onupdate(self)
@@ -277,7 +278,7 @@ local function strings_onshow(self)
 		{
 			index = tostring(i),
 			value = value,
-			offset = stringoffset(i)
+			offset = tostring(stringoffset(i))
 		}
 		insert(entries, entry)
 	end
