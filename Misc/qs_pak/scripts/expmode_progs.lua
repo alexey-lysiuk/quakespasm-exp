@@ -32,6 +32,7 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local enginestrings <const> = progs.enginestrings
 local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
@@ -233,7 +234,7 @@ end
 
 local function strings_searchcompare(entry, string)
 	return entry.value:lower():find(string, 1, true)
-		or entry.offset:find(string, 1, true)
+		or entry.offset and entry.offset:find(string, 1, true)
 end
 
 local function strings_onupdate(self)
@@ -243,12 +244,15 @@ local function strings_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, strings_searchcompare, searchmodified)
+		local hasoffset = self.offsetfunc
 
-		if imBeginTable(title, 3, defaultTableFlags) then
+		if imBeginTable(title, hasoffset and 3 or 2, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
-			imTableSetupColumn('Offset', imTableColumnWidthFixed)
+			if hasoffset then
+				imTableSetupColumn('Offset', imTableColumnWidthFixed)
+			end
 			imTableHeadersRow()
 
 			for _, entry in ipairs(entries) do
@@ -257,8 +261,11 @@ local function strings_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.value)
-				imTableNextColumn()
-				imText(entry.offset)
+
+				if hasoffset then
+					imTableNextColumn()
+					imText(entry.offset)
+				end
 			end
 
 			imEndTable()
@@ -272,14 +279,20 @@ end
 
 local function strings_onshow(self)
 	local entries = {}
+	local hasoffset = self.offsetfunc
 
-	for i, value in ipairs(strings) do
+	for i, value in ipairs(self.strings) do
 		local entry =
 		{
 			index = tostring(i),
 			value = value,
-			offset = tostring(stringoffset(i))
+
 		}
+
+		if hasoffset then
+			entry.offset = tostring(stringoffset(i))
+		end
+
 		insert(entries, entry)
 	end
 
@@ -325,16 +338,29 @@ function exprpogs.globaldefinitions()
 		oncreate, definitions_onshow, definitions_onhide)
 end
 
+local function stringstool(name, table, offsetfunc)
+	local function oncreate(self)
+		self:setconstraints()
+		self.strings = table
+		self.offsetfunc = offsetfunc
+	end
+
+	window(name, strings_onupdate, oncreate, strings_onshow, strings_onhide)
+end
+
 function exprpogs.strings()
-	window('Progs Strings', strings_onupdate,
-		function (self) self:setconstraints() end,
-		strings_onshow, strings_onhide)
+	stringstool('Progs Strings', strings, stringoffset)
+end
+
+function exprpogs.enginestrings()
+	stringstool('Engine/Known Strings', enginestrings)
 end
 
 local expfunctions <const> = exprpogs.functions
 local expfielddefinitions <const> = exprpogs.fielddefinitions
 local expglobaldefinitions <const> = exprpogs.globaldefinitions
 local expstrings <const> = exprpogs.strings
+local expenginestrings <const> = exprpogs.enginestrings
 
 addaction(function ()
 	if imBeginMenu('Progs') then
@@ -356,6 +382,10 @@ addaction(function ()
 
 		if imMenuItem('Strings\u{85}') then
 			expstrings()
+		end
+
+		if imMenuItem('Engine Strings\u{85}') then
+			expenginestrings()
 		end
 
 		imEndMenu()
