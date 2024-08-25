@@ -318,24 +318,21 @@ function exprpogs.functions()
 		functions_onshow, functions_onhide)
 end
 
-function exprpogs.fielddefinitions()
+local function definitionstool(name, table)
 	local function oncreate(self)
 		self:setconstraints()
-		self.definitions = fielddefinitions
+		self.definitions = table
 	end
 
-	window('Field Definitions', definitions_onupdate,
-		oncreate, definitions_onshow, definitions_onhide)
+	window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
+end
+
+function exprpogs.fielddefinitions()
+	definitionstool('Field Definitions', fielddefinitions)
 end
 
 function exprpogs.globaldefinitions()
-	local function oncreate(self)
-		self:setconstraints()
-		self.definitions = globaldefinitions
-	end
-
-	window('Global Definitions', definitions_onupdate,
-		oncreate, definitions_onshow, definitions_onhide)
+	definitionstool('Global Definitions', globaldefinitions)
 end
 
 local function stringstool(name, table, offsetfunc)
