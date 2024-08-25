@@ -52,12 +52,13 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
 
+local type_entity <const> = progs.types.entity
+local type_float  <const> = progs.types.float
+local type_string <const> = progs.types.string
+local type_vector <const> = progs.types.vector
+
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
-local type_entity <const> = edicts.valuetypes.entity
-local type_float <const> = edicts.valuetypes.float
-local type_string <const> = edicts.valuetypes.string
-local type_vector <const> = edicts.valuetypes.vector
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox

@@ -103,20 +103,6 @@ edicts.itemnames =
 local itemnames <const> = edicts.itemnames
 
 
-edicts.valuetypes =
-{
-	bad      = -1,
-	void     = 0,
-	string   = 1,
-	float    = 2,
-	vector   = 3,
-	entity   = 4,
-	field    = 5,
-	functn   = 6,
-	pointer  = 7,
-}
-
-
 local ipairs <const> = ipairs
 
 local format <const> = string.format
@@ -147,7 +133,6 @@ local vec3mid <const> = vec3.mid
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
-local float <const> = edicts.valuetypes.float
 
 local isclass <const> = edicts.isclass
 local isfree <const> = edicts.isfree
