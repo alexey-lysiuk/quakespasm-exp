@@ -128,6 +128,39 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 
 
 //
+// Engine/known strings
+//
+
+// Pushes engine/known by the given numerical index starting with 1
+static int LS_progs_enginestrings_index(lua_State* state)
+{
+	const int index = luaL_checkinteger(state, 2);
+	const int count = LS_GetKnownStringCount();
+
+	if (index <= 0 || index >= count)
+		return 0;
+
+	// Known strings indices start with -1, so skip first empty string as well
+	const char* const string = LS_GetProgsString(-index - 1);
+
+	if (string == nullptr)
+		lua_pushlstring(state, "", 0);
+	else
+		lua_pushstring(state, string);
+
+	return 1;
+}
+
+// Pushes number of engine/known strings
+static int LS_progs_enginestrings_len(lua_State* state)
+{
+	const int count = LS_GetKnownStringCount() - 1;  // without first empty string
+	lua_pushinteger(state, count);
+	return 1;
+}
+
+
+//
 // Statements
 //
 
@@ -902,39 +935,20 @@ public:
 
 		--index;  // on Lua side, indices start with one
 
-		const size_t progscount = offsets.size() - 1;  // without offset to end of the last progs string
-		const size_t knowncount = LS_GetKnownStringCount() - 1;  // without first empty string
+		const size_t count = offsets.size() - 1;  // without offset to end of the last progs string
 
-		if (index < progscount)
-		{
-			const int progsoffset = offsets[index];
+		if (index >= count)
+			return nullptr;
 
-			if (length)
-				*length = offsets[index + 1] - progsoffset - 1;
+		const int progsoffset = offsets[index];
 
-			if (offset)
-				*offset = progsoffset;
+		if (length)
+			*length = offsets[index + 1] - progsoffset - 1;
 
-			return &strings[progsoffset];
-		}
-		else
-			index -= progscount;  // switch to known strings
+		if (offset)
+			*offset = progsoffset;
 
-		if (index < knowncount)
-		{
-			const int knownoffset = -int(index) - 2;  // known strings indices start with -1, skip first empty string as well
-			const char* const string = LS_GetProgsString(knownoffset);
-
-			if (length)
-				*length = string ? strlen(string) : 0;
-
-			if (offset)
-				*offset = knownoffset;
-
-			return string ? string : "";
-		}
-
-		return nullptr;  // index out of range, index >= progscount + knowncount
+		return &strings[progsoffset];
 	}
 
 	size_t Count()
@@ -944,8 +958,7 @@ public:
 		if (offsets.empty())
 			return 0;
 
-		return offsets.size() - 1  // without offset to end of the last string
-			+ LS_GetKnownStringCount() - 1;  // without first empty string
+		return offsets.size() - 1;  // without offset to end of the last string
 	}
 
 	void Reset()
@@ -1050,6 +1063,24 @@ static int LS_global_progs_datcrc(lua_State* state)
 		return 0;
 
 	lua_pushinteger(state, pr_crc);
+	return 1;
+}
+
+// Returns table of engine/known strings
+static int LS_global_progs_enginestrings(lua_State* state)
+{
+	constexpr luaL_Reg functions[] =
+	{
+		{ "__index", LS_progs_enginestrings_index },
+		{ "__len", LS_progs_enginestrings_len },
+		{ nullptr, nullptr }
+	};
+
+	lua_newtable(state);
+	luaL_newmetatable(state, "engine strings");
+	luaL_setfuncs(state, functions, 0);
+	lua_setmetatable(state, -2);
+
 	return 1;
 }
 
@@ -1190,6 +1221,7 @@ void LS_InitProgsType(lua_State* state)
 	{
 		constexpr luaL_Reg fields[] =
 		{
+			{ "enginestrings", LS_global_progs_enginestrings },
 			{ "fielddefinitions", LS_global_progs_fielddefinitions },
 			{ "functions", LS_global_progs_functions },
 			{ "globaldefinitions", LS_global_progs_globaldefinitions },
