@@ -226,6 +226,13 @@ static int LS_global_host_frametime(lua_State* state)
 	return 1;
 }
 
+static int LS_global_host_gamedir(lua_State* state)
+{
+	const char* const gamedir = COM_SkipPath(com_gamedir);
+	lua_pushstring(state, gamedir);
+	return 1;
+}
+
 static int LS_global_host_realtime(lua_State* state)
 {
 	lua_pushnumber(state, realtime);
@@ -750,6 +757,7 @@ static void LS_InitGlobalTables(lua_State* state)
 		{
 			{ "framecount", LS_global_host_framecount },
 			{ "frametime", LS_global_host_frametime },
+			{ "gamedir", LS_global_host_gamedir },
 			{ "realtime", LS_global_host_realtime },
 			{ "realtimes", LS_global_host_realtimes },
 			{ NULL, NULL }
