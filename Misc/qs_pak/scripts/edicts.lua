@@ -533,3 +533,13 @@ function edicts.ismodel(edict)
 
 	return description, location
 end
+
+
+---
+--- Host helpers
+---
+
+function host.levelname()
+	local world = edicts[1]
+	return world and world.message
+end
