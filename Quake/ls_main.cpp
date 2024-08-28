@@ -762,6 +762,10 @@ static void LS_InitGlobalTables(lua_State* state)
 	LS_InitVectorType(state);
 	LS_InitProgsType(state);
 	LS_InitEdictType(state);
+
+#ifndef NDEBUG
+	LS_LoadScript(state, "scripts/debug.lua");
+#endif // !NDEBUG
 }
 
 void LS_LoadScript(lua_State* state, const char* filename)
