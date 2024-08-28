@@ -27,3 +27,9 @@ function progs.print()
 		print(string)
 	end
 end
+
+function progs.disassemble()
+	for _, func in ipairs(progs.functions) do
+		print(func:disassemble(), '\n')
+	end
+end
