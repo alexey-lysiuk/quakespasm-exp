@@ -64,7 +64,35 @@ progs.mods =
 	SPEED_MAPPING      = 26,  -- SMP
 }
 
+local mods <const> = progs.mods
+
+local functions <const> = progs.functions
+local strings <const> = progs.strings
+
+local function isrerelease()
+	for _, string in ipairs(strings) do
+		if string == '$qc_item_health' then
+			return true
+		end
+	end
+
+	return false
+end
+
 function progs.detectmod()
-	-- TODO: ...
-	return progs.mods.ID1
+	if functions['UpdateCharmerGoal'] then
+		return isrerelease() and mods.HIPNOTIC_RE or mods.HIPNOTIC
+	elseif functions['EnableComboWeapons'] then
+		return isrerelease() and mods.ROGUE_RE or mods.ROGUE
+	elseif functions['HordeFindTarget'] then
+		return mods.MG1
+	elseif functions['BlastBeltCheat'] then
+		return mods.ARCANE_DIMENSIONS
+	elseif functions['CheckGugAttack'] then
+		return mods.QUOTH
+	else
+		-- TODO: ...
+	end
+
+	return isrerelease() and mods.ID1_RE or mods.ID1
 end
