@@ -52,12 +52,13 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 local defaulttableflags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg
 local defaultscrollytableflags <const> = defaulttableflags | imTableFlags.ScrollY
 
+local type_entity <const> = progs.types.entity
+local type_float  <const> = progs.types.float
+local type_string <const> = progs.types.string
+local type_vector <const> = progs.types.vector
+
 local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
-local type_entity <const> = edicts.valuetypes.entity
-local type_float <const> = edicts.valuetypes.float
-local type_string <const> = edicts.valuetypes.string
-local type_vector <const> = edicts.valuetypes.vector
 
 local addaction <const> = expmode.addaction
 local messagebox <const> = expmode.messagebox
@@ -236,15 +237,30 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
-local function edictstable_tostring(entries)
-	local lines = {}
+local function edictstable_contextmenu(entries, entry, cellvalue)
+	if imBeginPopupContextItem() then
+		if imSelectable('References') then
+			expmode.edictreferences(entry.edict):movetocursor()
+		end
+		imSeparator()
+		if imSelectable('Copy Cell') then
+			imSetClipboardText(tostring(cellvalue))
+		end
+		if imSelectable('Copy Row') then
+			imSetClipboardText(format('%d\t%s\t%s\n', entry.index, entry.description, entry.location))
+		end
+		if imSelectable('Copy Table') then
+			local lines = {}
 
-	for _, entry in ipairs(entries) do
-		local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
-		insert(lines, line)
+			for _, entry in ipairs(entries) do
+				local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
+				insert(lines, line)
+			end
+
+			imSetClipboardText(concat(lines, '\n') .. '\n')
+		end
+		imEndPopup()
 	end
-
-	return concat(lines, '\n') .. '\n'
 end
 
 local function edictstable(title, entries, tableflags)
@@ -266,39 +282,18 @@ local function edictstable(title, entries, tableflags)
 			if entry.isfree then
 				imSelectable(description, false, imSelectableDisabled)
 			else
-				local location = entry.location
-
-				local function contextmenu(cellvalue)
-					if imBeginPopupContextItem() then
-						if imSelectable('References') then
-							expmode.edictreferences(entry.edict):movetocursor()
-						end
-						imSeparator()
-						if imSelectable('Copy Cell') then
-							imSetClipboardText(tostring(cellvalue))
-						end
-						if imSelectable('Copy Row') then
-							imSetClipboardText(format('%s\t%s\t%s\n', entry.index, description, location))
-						end
-						if imSelectable('Copy Table') then
-							imSetClipboardText(edictstable_tostring(entries))
-						end
-						imEndPopup()
-					end
-				end
-
 				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict):movetocursor()
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					imSetTooltip(tostring(entry.edict))
 				end
-				contextmenu(description)
+				edictstable_contextmenu(entries, entry, description)
 
 				imTableNextColumn()
 
 				if imSelectable(entry.locationid) then
-					moveplayer(entry.edict, location, entry.angles)
+					moveplayer(entry.edict, entry.location, entry.angles)
 				end
 				if imIsItemHovered(imHoveredFlagsDelayNormal) then
 					local edict = entry.edict
@@ -310,7 +305,7 @@ local function edictstable(title, entries, tableflags)
 						imSetTooltip(bounds)
 					end
 				end
-				contextmenu(location)
+				edictstable_contextmenu(entries, entry, entry.location)
 			end
 		end
 
@@ -473,7 +468,9 @@ function expmode.edictreferences(edict)
 		or messagebox('No references', format("'%s' has no references.", edict))
 end
 
-function expmode.traceentity()
+expmode.edicts = {}
+
+function expmode.edicts.traceentity()
 	local edict = traceentity()
 
 	if edict then
@@ -498,29 +495,43 @@ local edictstools <const> =
 	{ 'Models', edicts.ismodel, 25 },
 }
 
+for _, tool in ipairs(edictstools) do
+	local title = tool[1]
+	local filter = tool[2]
+	local extrawidth = tool[3]
+	local name = filter and title:lower() or 'all'
+
+	local function toolfunc()
+		local function oncreate(self)
+			local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
+			local width = imCalcTextSize('A').x * (defaultwidthchars + extrawidth)
+
+			self:setconstraints()
+			self:setsize(imVec2(width, 0))
+			self.filter = filter
+		end
+
+		window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
+	end
+
+	tool[2] = toolfunc
+	tool[3] = nil
+
+	expmode.edicts[name] = toolfunc
+end
+
 addaction(function ()
 	if imBeginMenu('Edicts') then
 		for _, tool in ipairs(edictstools) do
-			local title = tool[1]
-
-			if imMenuItem(title .. '\u{85}') then
-				local function oncreate(self)
-					local defaultwidthchars <const> = 35  -- in characters, for whole window except 'Description' cell
-					local width = imCalcTextSize('A').x * (defaultwidthchars + tool[3])
-
-					self:setconstraints()
-					self:setsize(imVec2(width, 0))
-					self.filter = tool[2]
-				end
-
-				window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
+			if imMenuItem(tool[1] .. '\u{85}') then
+				tool[2]()
 			end
 		end
 
 		imSeparator()
 
 		if imMenuItem('Trace Entity\u{85}') then
-			expmode.traceentity()
+			expmode.edicts.traceentity()
 		end
 
 		imEndMenu()

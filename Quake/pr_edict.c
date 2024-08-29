@@ -993,6 +993,7 @@ to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
 void ED_LoadFromFile (const char *data)
 {
+	const char	*classname;
 	dfunction_t	*func;
 	edict_t		*ent = NULL;
 	int		inhibit = 0;
@@ -1045,8 +1046,16 @@ void ED_LoadFromFile (const char *data)
 			continue;
 		}
 
+		classname = PR_GetString (ent->v.classname);
+		if (sv.nomonsters && !Q_strncmp (classname, "monster_", 8))
+		{
+			ED_Free (ent);
+			inhibit++;
+			continue;
+		}
+
 	// look for the spawn function
-		func = ED_FindFunction ( PR_GetString(ent->v.classname) );
+		func = ED_FindFunction (classname);
 
 		if (!func)
 		{
@@ -1370,6 +1379,17 @@ void PR_LoadProgs (void)
 	PR_PatchFishCountBug ();
 }
 
+/*
+===============
+ED_Nomonsters_f
+===============
+*/
+static void ED_Nomonsters_f (cvar_t *cvar)
+{
+	if (cvar->value)
+		Con_Warning ("\"%s\" can break gameplay.\n", cvar->name);
+}
+
 
 /*
 ===============
@@ -1383,6 +1403,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
 	Cvar_RegisterVariable (&nomonsters);
+	Cvar_SetCallback (&nomonsters, ED_Nomonsters_f);
 	Cvar_RegisterVariable (&gamecfg);
 	Cvar_RegisterVariable (&scratch1);
 	Cvar_RegisterVariable (&scratch2);
@@ -1601,6 +1622,11 @@ const char* LS_GetProgsString(int offset)
 	}
 
 	return "???";
+}
+
+int LS_GetKnownStringCount(void)
+{
+	return pr_numknownstrings;
 }
 
 const char* LS_GetProgsTypeName(unsigned short type)

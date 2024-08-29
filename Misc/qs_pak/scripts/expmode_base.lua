@@ -285,6 +285,19 @@ local function stats_update(self)
 	return opened
 end
 
+expmode.common = {}
+
+function expmode.common.scratchpad()
+	window('Scratchpad', scratchpad_update):setconstraints()
+end
+
+function expmode.common.stats()
+	window('Stats', stats_update):setconstraints()
+end
+
+local scratchpad <const> = expmode.common.scratchpad
+local stats <const> = expmode.common.stats
+
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
 		if imMenuItem('About\u{85}') then
@@ -294,16 +307,12 @@ local function updateexpmenu()
 
 		imSeparator()
 
-		local title = 'Scratchpad'
-
-		if imMenuItem(title .. '\u{85}') then
-			window(title, scratchpad_update):setconstraints()
+		if imMenuItem('Scratchpad\u{85}') then
+			scratchpad()
 		end
 
-		title = 'Stats'
-
-		if imMenuItem(title .. '\u{85}') then
-			window(title, stats_update):setconstraints()
+		if imMenuItem('Stats\u{85}') then
+			stats()
 		end
 
 		imSeparator()

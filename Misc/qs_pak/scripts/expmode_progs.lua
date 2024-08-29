@@ -32,11 +32,13 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local enginestrings <const> = progs.enginestrings
 local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
 local typename <const> = progs.typename
 local strings <const> = progs.strings
+local stringoffset <const> = strings.offset
 
 local addaction <const> = expmode.addaction
 local resetsearch <const> = expmode.resetsearch
@@ -89,7 +91,7 @@ end
 
 local function function_searchcompare(entry, string)
 	return entry.declaration:lower():find(string, 1, true)
-		or entry.file:lower():find(string, 1, true)
+		or entry.filename:lower():find(string, 1, true)
 end
 
 local function functions_onupdate(self)
@@ -129,7 +131,7 @@ local function functions_onupdate(self)
 						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 				end
 				imTableNextColumn()
-				imText(entry.file)
+				imText(entry.filename)
 			end
 
 			imEndTable()
@@ -145,7 +147,7 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in ipairs(functions) do
-		local entry = { func = func, index = tostring(i), declaration = tostring(func), file = func.file }
+		local entry = { func = func, index = tostring(i), declaration = tostring(func), filename = func.filename }
 		insert(entries, entry)
 	end
 
@@ -232,6 +234,7 @@ end
 
 local function strings_searchcompare(entry, string)
 	return entry.value:lower():find(string, 1, true)
+		or entry.offset and entry.offset:find(string, 1, true)
 end
 
 local function strings_onupdate(self)
@@ -241,11 +244,15 @@ local function strings_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, strings_searchcompare, searchmodified)
+		local hasoffset = self.offsetfunc
 
-		if imBeginTable(title, 2, defaultTableFlags) then
+		if imBeginTable(title, hasoffset and 3 or 2, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Value')
+			if hasoffset then
+				imTableSetupColumn('Offset', imTableColumnWidthFixed)
+			end
 			imTableHeadersRow()
 
 			for _, entry in ipairs(entries) do
@@ -254,6 +261,11 @@ local function strings_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.value)
+
+				if hasoffset then
+					imTableNextColumn()
+					imText(entry.offset)
+				end
 			end
 
 			imEndTable()
@@ -267,13 +279,20 @@ end
 
 local function strings_onshow(self)
 	local entries = {}
+	local hasoffset = self.offsetfunc
 
-	for i, value in ipairs(strings) do
+	for i, value in ipairs(self.strings) do
 		local entry =
 		{
 			index = tostring(i),
-			value = value
+			value = value,
+
 		}
+
+		if hasoffset then
+			entry.offset = tostring(stringoffset(i))
+		end
+
 		insert(entries, entry)
 	end
 
@@ -289,42 +308,81 @@ local function strings_onhide(self)
 	return true
 end
 
+expmode.progs = {}
+
+local exprpogs <const> = expmode.progs
+
+function exprpogs.functions()
+	window('Progs Functions', functions_onupdate,
+		function (self) self:setconstraints() end,
+		functions_onshow, functions_onhide)
+end
+
+local function definitionstool(name, table)
+	local function oncreate(self)
+		self:setconstraints()
+		self.definitions = table
+	end
+
+	window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
+end
+
+function exprpogs.fielddefinitions()
+	definitionstool('Field Definitions', fielddefinitions)
+end
+
+function exprpogs.globaldefinitions()
+	definitionstool('Global Definitions', globaldefinitions)
+end
+
+local function stringstool(name, table, offsetfunc)
+	local function oncreate(self)
+		self:setconstraints()
+		self.strings = table
+		self.offsetfunc = offsetfunc
+	end
+
+	window(name, strings_onupdate, oncreate, strings_onshow, strings_onhide)
+end
+
+function exprpogs.strings()
+	stringstool('Progs Strings', strings, stringoffset)
+end
+
+function exprpogs.enginestrings()
+	stringstool('Engine/Known Strings', enginestrings)
+end
+
+local expfunctions <const> = exprpogs.functions
+local expfielddefinitions <const> = exprpogs.fielddefinitions
+local expglobaldefinitions <const> = exprpogs.globaldefinitions
+local expstrings <const> = exprpogs.strings
+local expenginestrings <const> = exprpogs.enginestrings
+
 addaction(function ()
 	if imBeginMenu('Progs') then
 		if imMenuItem('Functions\u{85}') then
-			window('Progs Functions', functions_onupdate,
-				function (self) self:setconstraints() end,
-				functions_onshow, functions_onhide)
+			expfunctions()
 		end
 
 		imSeparator()
 
 		if imMenuItem('Field Definitions\u{85}') then
-			local function oncreate(self)
-				self:setconstraints()
-				self.definitions = fielddefinitions
-			end
-
-			window('Field Definitions', definitions_onupdate,
-				oncreate, definitions_onshow, definitions_onhide)
+			expfielddefinitions()
 		end
 
 		if imMenuItem('Global Definitions\u{85}') then
-			local function oncreate(self)
-				self:setconstraints()
-				self.definitions = globaldefinitions
-			end
-
-			window('Global Definitions', definitions_onupdate,
-				oncreate, definitions_onshow, definitions_onhide)
+			expglobaldefinitions()
 		end
 
 		imSeparator()
 
 		if imMenuItem('Strings\u{85}') then
-			window('Progs Strings', strings_onupdate,
-				function (self) self:setconstraints() end,
-				strings_onshow, strings_onhide)
+			expstrings()
+		end
+
+		if imMenuItem('Engine Strings\u{85}') then
+			expenginestrings()
 		end
 
 		imEndMenu()
