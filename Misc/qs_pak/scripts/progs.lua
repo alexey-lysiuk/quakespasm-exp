@@ -79,20 +79,39 @@ local function isrerelease()
 	return false
 end
 
-function progs.detectmod()
+local function detectmod()
 	if functions['UpdateCharmerGoal'] then
 		return isrerelease() and mods.HIPNOTIC_RE or mods.HIPNOTIC
 	elseif functions['EnableComboWeapons'] then
 		return isrerelease() and mods.ROGUE_RE or mods.ROGUE
 	elseif functions['HordeFindTarget'] then
 		return mods.MG1
+	elseif functions['Mutant_Melee'] then
+		return mods.ALKALINE
 	elseif functions['BlastBeltCheat'] then
 		return mods.ARCANE_DIMENSIONS
+	elseif functions['TransferKeys'] then
+		return mods.COPPER
+	elseif functions['PrintInhibitionSummary'] then
+		return functions['CheckGrapple'] and mods.REMOBILIZE or mods.PROGS_DUMP
 	elseif functions['CheckGugAttack'] then
 		return mods.QUOTH
-	else
-		-- TODO: ...
+	elseif functions['GibSoundsRandom'] then
+		return mods.SPEED_MAPPING
 	end
 
 	return isrerelease() and mods.ID1_RE or mods.ID1
+end
+
+local datcrc, functioncount, stringcount, cachedmod
+
+function progs.detectmod(force)
+	if force or datcrc ~= progs.datcrc or functioncount ~= #functions or stringcount ~= #strings then
+		cachedmod = detectmod()
+		datcrc = progs.datcrc
+		functioncount = #functions
+		stringcount = #strings
+	end
+
+	return cachedmod
 end

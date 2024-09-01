@@ -198,26 +198,24 @@ function edicts.issecret(edict)
 		return
 	end
 
-	-- Try to handle Arcane Dimensions secret
 	local min = edict.absmin
 	local max = edict.absmax
-	local count, location
+	local location
 
-	if min == vec3minusone and max == vec3one then
-		count = edict.count
+	if progs.detectmod() == progs.mods.ARCANE_DIMENSIONS then
+		if min == vec3minusone and max == vec3one and edict.count == 0 then
+			-- Revealed Arcane Dimensions secret, skip it
+			return
+		else
+			-- Disabled or switched off Arcane Dimensions secret
+			-- Actual coodinates are stored in oldorigin member
+			location = edict.oldorigin
+		end
 	end
 
-	if not count then
-		-- Regular or Arcane Dimensions secret that was not revealed yet
+	if not location then
 		local midpoint = vec3mid(min, max)
 		location = midpoint == vec3origin and edict.origin or midpoint
-	elseif count == 0 then
-		-- Revealed Arcane Dimensions secret, skip it
-		return
-	else
-		-- Disabled or switched off Arcane Dimensions secret
-		-- Actual coodinates are stored in oldorigin member
-		location = edict.oldorigin
 	end
 
 	local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
