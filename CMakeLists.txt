@@ -694,7 +694,7 @@ else()
 	set_target_properties(entfixesgenerator PROPERTIES EXCLUDE_FROM_ALL YES)
 	target_include_directories(entfixesgenerator PRIVATE ${OPENVCDIFF_ZLIB_DIR} ${OPENVCDIFF_DIR})
 
-	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGenerator.cmake")
+	export(TARGETS entfixesgenerator FILE "${CMAKE_BINARY_DIR}/EntFixesGeneratorConfig.cmake")
 endif()
 
 add_custom_target(genentfixes
