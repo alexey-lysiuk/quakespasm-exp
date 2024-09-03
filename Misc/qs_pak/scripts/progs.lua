@@ -70,13 +70,7 @@ local functions <const> = progs.functions
 local strings <const> = progs.strings
 
 local function isrerelease()
-	for _, string in ipairs(strings) do
-		if string == '$qc_item_health' then
-			return true
-		end
-	end
-
-	return false
+	return strings['$qc_item_health']
 end
 
 local function detectmod()
