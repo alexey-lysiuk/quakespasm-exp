@@ -951,6 +951,24 @@ public:
 		return &strings[progsoffset];
 	}
 
+	size_t Get(const char* const string)
+	{
+		Update();
+
+		if (offsets.empty())
+			return 0;
+
+		for (size_t i = 0, count = offsets.size() - 1; i < count; ++i)
+		{
+			const int offset = offsets[i];
+
+			if (strcmp(&strings[offset], string) == 0)
+				return i + 1;  // on Lua side, indices start with one
+		}
+
+		return 0;
+	}
+
 	size_t Count()
 	{
 		Update();
@@ -1009,15 +1027,33 @@ static LS_StringCache ls_stringcache;
 // Pushes string by the given numerical index starting with 1
 static int LS_progs_strings_index(lua_State* state)
 {
-	const int index = luaL_checkinteger(state, 2);
+	const int indextype = lua_type(state, 2);
 
-	int length;
-	const char* const string = ls_stringcache.Get(index, &length, nullptr);
+	if (indextype == LUA_TNUMBER)
+	{
+		const int index = luaL_checkinteger(state, 2);
 
-	if (string == nullptr)
-		return 0;
+		int length;
+		const char* const string = ls_stringcache.Get(index, &length, nullptr);
 
-	lua_pushlstring(state, string, length);
+		if (string == nullptr)
+			return 0;
+
+		lua_pushlstring(state, string, length);
+	}
+	else if (indextype == LUA_TSTRING)
+	{
+		const char* string = lua_tostring(state, 2);
+		const size_t index = ls_stringcache.Get(string);
+
+		if (index == 0)
+			return 0;
+
+		lua_pushinteger(state, lua_Integer(index));
+	}
+	else
+		luaL_error(state, "invalid type '%s' of function index, need number or string", lua_typename(state, indextype));
+
 	return 1;
 }
 
