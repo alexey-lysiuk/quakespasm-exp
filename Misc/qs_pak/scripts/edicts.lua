@@ -123,6 +123,9 @@ function edicts.isclass(edict, ...)
 end
 
 
+local detectmod <const> = progs.detectmod
+local mods <const> = progs.mods
+
 local localize <const> = text.localize
 
 local vec3origin <const> = vec3.new()
@@ -202,7 +205,7 @@ function edicts.issecret(edict)
 	local max = edict.absmax
 	local location
 
-	if progs.detectmod() == progs.mods.ARCANE_DIMENSIONS then
+	if detectmod() == mods.ARCANE_DIMENSIONS then
 		if min == vec3minusone and max == vec3one and edict.count == 0 then
 			-- Revealed Arcane Dimensions secret, skip it
 			return
@@ -289,13 +292,15 @@ function edicts.isteleport(edict)
 	local targetlocation
 
 	if target then
+		local isad = detectmod() == mods.ARCANE_DIMENSIONS
+
 		for _, testedict in ipairs(edicts) do
 			if target == testedict.targetname then
 				-- Special case for Arcane Dimensions, ad_tears map in particular
 				-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
 				-- Some teleport destinations were missing despite their valid setup
 				-- Actual destination coordinates are stored in oldorigin member
-				if testedict.origin == vec3origin then
+				if isad and testedict.origin == vec3origin then
 					targetlocation = testedict.oldorigin
 				else
 					targetlocation = testedict.origin
