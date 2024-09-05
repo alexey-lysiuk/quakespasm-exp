@@ -109,3 +109,25 @@ function progs.detectmod(force)
 
 	return cachedmod
 end
+
+local modnames <const> =
+{
+	[mods.ID1]                = 'Vanilla Quake',
+	[mods.HIPNOTIC]           = 'Scourge of Armagon',
+	[mods.ROGUE]              = 'Dissolution of Eternity',
+	[mods.ID1_RE]             = 'Vanilla Quake Re-release',
+	[mods.HIPNOTIC_RE]        = 'Scourge of Armagon Re-release',
+	[mods.ROGUE_RE]           = 'Dissolution of Eternity Re-release',
+	[mods.MG1]                = 'Dimension of the Machine',
+	[mods.ALKALINE]           = 'Alkaline',
+	[mods.ARCANE_DIMENSIONS]  = 'Arcane Dimensions',
+	[mods.COPPER]             = 'Copper',
+	[mods.PROGS_DUMP]         = 'progs_dump',
+	[mods.QUOTH]              = 'Quoth',
+	[mods.REMOBILIZE]         = 'Re:Mobilize',
+	[mods.SPEED_MAPPING]      = 'Speed Mapping Progs',
+}
+
+function progs.modname(mod)
+	return modnames[mod] or '???'
+end
