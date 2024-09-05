@@ -842,6 +842,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
 		// * should not be exposed
 #endif // !NDEBUG
+		// * GetVersion
 
 		// Styles
 		// * StyleColorsDark
@@ -907,6 +908,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PopStyleColor
 		// * PushStyleVar
 		// * PushStyleVar
+		// * PushStyleVarX
+		// * PushStyleVarY
 		// * PopStyleVar
 		// * PushItemFlag
 		// * PopItemFlag
