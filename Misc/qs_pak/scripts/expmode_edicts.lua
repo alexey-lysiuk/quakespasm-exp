@@ -511,7 +511,7 @@ for _, tool in ipairs(edictstools) do
 			self.filter = filter
 		end
 
-		window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
+		return window(title, edicts_onupdate, oncreate, edicts_onshow, edicts_onhide)
 	end
 
 	tool[2] = toolfunc

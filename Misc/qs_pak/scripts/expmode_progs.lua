@@ -127,7 +127,7 @@ local function functions_onupdate(self)
 						self.name = funcname
 					end
 
-					window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
+					return window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
 						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 				end
 				imTableNextColumn()
@@ -313,7 +313,7 @@ expmode.progs = {}
 local exprpogs <const> = expmode.progs
 
 function exprpogs.functions()
-	window('Progs Functions', functions_onupdate,
+	return window('Progs Functions', functions_onupdate,
 		function (self) self:setconstraints() end,
 		functions_onshow, functions_onhide)
 end
@@ -324,7 +324,7 @@ local function definitionstool(name, table)
 		self.definitions = table
 	end
 
-	window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
+	return window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
 end
 
 function exprpogs.fielddefinitions()
@@ -342,7 +342,7 @@ local function stringstool(name, table, offsetfunc)
 		self.offsetfunc = offsetfunc
 	end
 
-	window(name, strings_onupdate, oncreate, strings_onshow, strings_onhide)
+	return window(name, strings_onupdate, oncreate, strings_onshow, strings_onhide)
 end
 
 function exprpogs.strings()
