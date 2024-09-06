@@ -119,8 +119,15 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 	if (!data)
 	{
-		Con_Printf ("Couldn't load %s\n", namebuffer);
-		return NULL;
+		extern cvar_t allowloaderrors;
+
+		if (allowloaderrors.value)
+			data = COM_LoadStackFile("sound/misc/null.wav", stackbuf, sizeof(stackbuf), NULL);
+		else
+		{
+			Con_Printf ("Couldn't load %s\n", namebuffer);
+			return NULL;
+		}
 	}
 
 	info = GetWavinfo (s->name, data, com_filesize);

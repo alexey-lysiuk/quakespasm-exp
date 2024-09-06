@@ -344,7 +344,24 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	if (!buf)
 	{
 		if (crash)
-			Host_Error ("Mod_LoadModel: %s not found", mod->name); //johnfitz -- was "Mod_NumForName"
+		{
+			extern cvar_t allowloaderrors;
+
+			if (allowloaderrors.value)
+			{
+				char realname[MAX_QPATH];
+				strcpy(realname, mod->name);
+				strcpy(mod->name, "progs/spike.mdl");
+
+				if (!Mod_LoadModel(mod, false))
+					return NULL;
+
+				strcpy(mod->name, realname);
+				return mod;
+			}
+			else
+				Host_Error ("Mod_LoadModel: %s not found", mod->name); //johnfitz -- was "Mod_NumForName"
+		}
 		return NULL;
 	}
 
