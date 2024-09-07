@@ -250,6 +250,13 @@ set(HELLO_IMGUI_SOURCES
 	${HELLO_IMGUI_DIR}/imgui_theme.h
 )
 
+set(IMGUI_COLOR_TEXT_EDIT_DIR Quake/ImGuiColorTextEdit)
+set(IMGUI_COLOR_TEXT_EDIT_SOURCES
+	${IMGUI_COLOR_TEXT_EDIT_DIR}/LanguageDefinitions.cpp
+	${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
+	${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.h
+)
+
 set(POSIX_SOURCES
 	Quake/net_bsd.c
 	Quake/net_udp.c
@@ -324,6 +331,7 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+	IMGUI_EDITOR_NO_BOOST
 	USE_CODEC_UMX
 	USE_CODEC_WAVE
 	# USE_HELLO_IMGUI
@@ -342,6 +350,9 @@ if(MSVC)
 		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
 		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 	endif()
+
+	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
+		PROPERTIES COMPILE_FLAGS "/wd4018 /wd4244 /wd4267")
 
 	# Disable C++ exceptions and RTTI
 	# Altering of global CMAKE_CXX_FLAGS is required because the following line
@@ -366,6 +377,9 @@ else()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
 	set_source_files_properties(${IMGUI_DIR}/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-variable")
+
+	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
+		PROPERTIES COMPILE_FLAGS "-Wno-unused-variable -Wno-sign-compare")
 
 	# Disable G++ format string truncation warning
 	#   warning: ‘%s’ directive output may be truncated writing up to 31 bytes into a region of size 28
@@ -484,6 +498,7 @@ set(ENGINE_SOURCES
 source_group("Engine" FILES ${ENGINE_SOURCES} Quake/snd_mp3.c Quake/snd_mpg123.c)
 source_group("Hello ImGui" FILES ${HELLO_IMGUI_SOURCES})
 source_group("ImGui" FILES ${IMGUI_SOURCES})
+source_group("ImGuiColorTextEdit" FILES ${IMGUI_COLOR_TEXT_EDIT_SOURCES})
 source_group("Lua" FILES ${LUA_SOURCES})
 source_group("TLSF" FILES ${TLSF_SOURCES})
 
@@ -491,6 +506,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${ENGINE_SOURCES}
 	${HELLO_IMGUI_SOURCES}
 	${IMGUI_SOURCES}
+	${IMGUI_COLOR_TEXT_EDIT_SOURCES}
 	${LUA_SOURCES}
 	${TLSF_SOURCES}
 )
