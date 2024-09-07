@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "hello_imgui/imgui_theme.h"
 #endif // USE_HELLO_IMGUI
 
+#include "ImGuiColorTextEdit/TextEditor.h"
+
 extern "C"
 {
 #include "quakedef.h"
@@ -302,6 +304,35 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 };
 
 #undef LS_IMGUI_MEMBER
+
+
+constexpr LS_UserDataType<TextEditor*> ls_imguicolortextedit_type("ImGuiColorTextEdit");
+
+static int LS_value_ImGuiColorTextEdit_gc(lua_State* state)
+{
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	delete texteditor;
+	return 0;
+}
+
+static int LS_global_imgui_ColorTextEdit(lua_State* state)
+{
+	TextEditor*& texteditor = ls_imguicolortextedit_type.New(state);
+	texteditor = new TextEditor;
+
+	// Create and set 'ImGui.ColorTextEdit' metatable
+	static const luaL_Reg functions[] =
+	{
+		{ "__gc", LS_value_ImGuiColorTextEdit_gc },
+		{ NULL, NULL }
+	};
+
+	if (luaL_newmetatable(state, "ImGui.ColorTextEdit"))
+		luaL_setfuncs(state, functions, 0);
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
 
 
 static bool ls_framescope;

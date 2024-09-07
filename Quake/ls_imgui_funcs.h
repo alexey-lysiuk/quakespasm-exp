@@ -1279,6 +1279,9 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Memory Allocators
 		// * should not be exposed
 
+		// Color Text Editor
+		{ "ColorTextEdit", LS_global_imgui_ColorTextEdit },
+
 		{ nullptr, nullptr }
 	};
 
