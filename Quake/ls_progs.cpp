@@ -951,18 +951,22 @@ public:
 		return &strings[progsoffset];
 	}
 
-	size_t Get(const char* const string)
+	size_t Get(const char* const string, const size_t length)
 	{
 		Update();
 
-		if (offsets.empty())
+		if (offsets.empty() || length == 0)
 			return 0;
 
 		for (size_t i = 0, count = offsets.size() - 1; i < count; ++i)
 		{
 			const int offset = offsets[i];
+			const size_t probelength = offsets[i + 1] - offset - 1;
 
-			if (strcmp(&strings[offset], string) == 0)
+			if (probelength != length)
+				continue;
+
+			if (strncmp(&strings[offset], string, length) == 0)
 				return i + 1;  // on Lua side, indices start with one
 		}
 
@@ -1043,8 +1047,9 @@ static int LS_progs_strings_index(lua_State* state)
 	}
 	else if (indextype == LUA_TSTRING)
 	{
-		const char* string = lua_tostring(state, 2);
-		const size_t index = ls_stringcache.Get(string);
+		size_t length;
+		const char* string = lua_tolstring(state, 2, &length);
+		const size_t index = ls_stringcache.Get(string, length);
 
 		if (index == 0)
 			return 0;

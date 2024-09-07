@@ -56,7 +56,7 @@ static char* LS_tempalloc(lua_State* state, size_t size)
 	void* result = tlsf_malloc(ls_memory, size);
 
 	if (!result)
-		luaL_error(state, "unable to allocation %I bytes", size);
+		luaL_error(state, "unable to allocate %I bytes", size);
 
 	return static_cast<char*>(result);
 }

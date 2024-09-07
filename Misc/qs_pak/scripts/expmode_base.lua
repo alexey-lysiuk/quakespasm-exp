@@ -288,11 +288,11 @@ end
 expmode.common = {}
 
 function expmode.common.scratchpad()
-	window('Scratchpad', scratchpad_update):setconstraints()
+	return window('Scratchpad', scratchpad_update):setconstraints()
 end
 
 function expmode.common.stats()
-	window('Stats', stats_update):setconstraints()
+	return window('Stats', stats_update):setconstraints()
 end
 
 local scratchpad <const> = expmode.common.scratchpad

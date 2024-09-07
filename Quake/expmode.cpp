@@ -304,10 +304,22 @@ qboolean EXP_ProcessEvent(const SDL_Event* event)
 	assert(event);
 	const Uint32 type = event->type;
 
-	if (type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE)
+	if (type == SDL_KEYDOWN)
 	{
-		EXP_ExitMode();
-		return true;  // stop further event processing
+		switch (event->key.keysym.sym)
+		{
+		case SDLK_ESCAPE:
+			EXP_ExitMode();
+			return true;  // stop further event processing
+
+		case SDLK_PRINTSCREEN:
+			void SCR_ScreenShot_f();
+			SCR_ScreenShot_f();
+			break;
+
+		default:
+			break;
+		}
 	}
 
 	const qboolean eventconsumed = ImGui_ImplSDL2_ProcessEvent(event)

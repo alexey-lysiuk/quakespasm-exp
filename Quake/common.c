@@ -35,6 +35,7 @@ int		safemode;
 
 cvar_t	registered = {"registered","1",CVAR_ROM}; /* set to correct value in COM_CheckRegistered() */
 cvar_t	cmdline = {"cmdline","",CVAR_ROM/*|CVAR_SERVERINFO*/}; /* sending cmdline upon CCREQ_RULE_INFO is evil */
+cvar_t	allowloaderrors = {"allowloaderrors","0",0};
 
 static qboolean		com_modified;	// set true if using non-id files
 
@@ -2367,6 +2368,7 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 
 	Cvar_RegisterVariable (&registered);
 	Cvar_RegisterVariable (&cmdline);
+	Cvar_RegisterVariable (&allowloaderrors);
 	Cmd_AddCommand ("path", COM_Path_f);
 	Cmd_AddCommand ("game", COM_Game_f); //johnfitz
 
