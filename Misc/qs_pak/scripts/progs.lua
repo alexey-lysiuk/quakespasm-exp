@@ -62,6 +62,7 @@ progs.mods =
 	QUOTH              = 24,
 	REMOBILIZE         = 25,
 	SPEED_MAPPING      = 26,  -- SMP
+	DRAKE              = 27,
 }
 
 local mods <const> = progs.mods
@@ -92,6 +93,8 @@ local function detectmod()
 		return mods.QUOTH
 	elseif functions['GibSoundsRandom'] then
 		return mods.SPEED_MAPPING
+	elseif functions['SuperGrenade_Launch'] then
+		return mods.DRAKE
 	end
 
 	return isrerelease() and mods.ID1_RE or mods.ID1
@@ -126,6 +129,7 @@ local modnames <const> =
 	[mods.QUOTH]              = 'Quoth',
 	[mods.REMOBILIZE]         = 'Re:Mobilize',
 	[mods.SPEED_MAPPING]      = 'Speed Mapping Progs',
+	[mods.DRAKE]              = 'Drake',
 }
 
 function progs.modname(mod)
