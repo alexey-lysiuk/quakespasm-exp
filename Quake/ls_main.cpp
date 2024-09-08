@@ -837,7 +837,7 @@ lua_State* LS_GetState(void)
 			if (ls_memorysize == 0)
 			{
 				const int heapsize = LS_CheckSizeArgument("-luaheapsize");  // in kB
-				ls_memorysize = CLAMP(8 * 1024, heapsize, 64 * 1024) * 1024;
+				ls_memorysize = CLAMP(1 * 1024, heapsize == 0 ? 16 * 1024 : heapsize, 256 * 1024) * 1024;
 			}
 
 			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
