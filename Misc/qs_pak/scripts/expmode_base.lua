@@ -61,7 +61,6 @@ local actions = {}
 local oneshots = {}
 local windows = {}
 
-local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
 local screensize, shouldexit, wintofocus
 
