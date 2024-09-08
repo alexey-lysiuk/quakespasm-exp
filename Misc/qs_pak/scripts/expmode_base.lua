@@ -46,7 +46,6 @@ local imVec2 <const> = vec2.new
 local imWindowFlags <const> = ImGui.WindowFlags
 local imCondFirstUseEver <const> = ImGui.Cond.FirstUseEver
 local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
---local imInputTextAllowTabInput <const> = ImGui.InputTextFlags.AllowTabInput
 
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse
 	| imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
@@ -237,17 +236,17 @@ local function foreachwindow(func_or_name)
 	end
 end
 
---local scratchpadtext
+local scratchpadeditor
 
 local function scratchpad_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
---		if not scratchpadtext then
---			scratchpadtext = ImGui.TextBuffer(64 * 1024)
---		end
+		if not scratchpadeditor then
+			scratchpadeditor = imColorTextEdit()
+		end
 
-		imColorTextEdit('##text')
+		scratchpadeditor:Render('##text')
 	end
 
 	imEnd()
@@ -288,7 +287,7 @@ end
 expmode.common = {}
 
 function expmode.common.scratchpad()
-	return window('Scratchpad', scratchpad_update):setconstraints()
+	return window('Scratchpad', scratchpad_update):setsize(imVec2(640, 480)):setconstraints()
 end
 
 function expmode.common.stats()
