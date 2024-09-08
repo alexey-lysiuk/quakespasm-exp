@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "hello_imgui/imgui_theme.h"
 #endif // USE_HELLO_IMGUI
 
+#include "ImGuiColorTextEdit/TextEditor.h"
+
 extern "C"
 {
 #include "quakedef.h"
@@ -430,6 +432,72 @@ void LS_ClearImGuiStack()
 		ls_endfuncstack.pop_back();
 	}
 }
+
+
+constexpr LS_UserDataType<TextEditor*> ls_imguicolortextedit_type("ImGuiColorTextEdit");
+
+static int LS_value_ImGuiColorTextEdit_gc(lua_State* state)
+{
+	TextEditor* const texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	delete texteditor;
+	return 0;
+}
+
+static int LS_value_ImGuiColorTextEdit_index(lua_State* state)
+{
+	const int functableindex = lua_upvalueindex(1);
+	luaL_checktype(state, functableindex, LUA_TTABLE);
+
+	const char* const name = luaL_checkstring(state, 2);
+	lua_getfield(state, functableindex, name);
+	return 1;
+}
+
+static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	const char* const title = luaL_checkstring(state, 2);
+	const bool parentIsFocused = luaL_opt(state, lua_toboolean, 3, false);
+	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
+	const bool border = luaL_opt(state, lua_toboolean, 5, false);
+
+	const bool focused = texteditor->Render(title, parentIsFocused, ToImVec2(size), border);
+	lua_pushboolean(state, focused);
+	return 1;
+}
+
+static int LS_global_imgui_ColorTextEdit(lua_State* state)
+{
+	TextEditor*& texteditor = ls_imguicolortextedit_type.New(state);
+	texteditor = new TextEditor;
+
+	if (luaL_newmetatable(state, "ImGui.ColorTextEdit"))
+	{
+		lua_pushcfunction(state, LS_value_ImGuiColorTextEdit_gc);
+		lua_setfield(state, -2, "__gc");
+
+		constexpr luaL_Reg methods[] =
+		{
+			{ "Render", LS_value_ImGuiColorTextEdit_Render },
+			{ nullptr, nullptr }
+		};
+
+		lua_newtable(state);
+		luaL_setfuncs(state, methods, 0);
+
+		// Set table with methods as upvalue for __index metamethod
+		lua_pushcclosure(state, LS_value_ImGuiColorTextEdit_index, 1);
+		lua_setfield(state, -2, "__index");
+	}
+
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
 
 #include "ls_imgui_enums.h"
 #include "ls_imgui_funcs.h"
