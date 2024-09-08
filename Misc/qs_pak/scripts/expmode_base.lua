@@ -17,6 +17,7 @@ local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
 local imBeginMenu <const> = ImGui.BeginMenu
 local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
+local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
 local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
 local imEndMenu <const> = ImGui.EndMenu
@@ -24,7 +25,6 @@ local imGetCursorPosX <const> = ImGui.GetCursorPosX
 local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
 local imGetMainViewport <const> = ImGui.GetMainViewport
 local imInputText <const> = ImGui.InputText
-local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
 local imMenuItem <const> = ImGui.MenuItem
@@ -46,7 +46,6 @@ local imVec2 <const> = vec2.new
 local imWindowFlags <const> = ImGui.WindowFlags
 local imCondFirstUseEver <const> = ImGui.Cond.FirstUseEver
 local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
-local imInputTextAllowTabInput <const> = ImGui.InputTextFlags.AllowTabInput
 
 local messageboxflags <const> = imWindowFlags.AlwaysAutoResize | imWindowFlags.NoCollapse
 	| imWindowFlags.NoResize | imWindowFlags.NoScrollbar | imWindowFlags.NoSavedSettings
@@ -237,17 +236,17 @@ local function foreachwindow(func_or_name)
 	end
 end
 
-local scratchpadtext
+local scratchpadeditor
 
 local function scratchpad_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		if not scratchpadtext then
-			scratchpadtext = ImGui.TextBuffer(64 * 1024)
+		if not scratchpadeditor then
+			scratchpadeditor = imColorTextEdit()
 		end
 
-		imInputTextMultiline('##text', scratchpadtext, autoexpandsize, imInputTextAllowTabInput)
+		scratchpadeditor:Render('##text')
 	end
 
 	imEnd()
