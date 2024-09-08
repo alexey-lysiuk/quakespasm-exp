@@ -288,7 +288,7 @@ end
 expmode.common = {}
 
 function expmode.common.scratchpad()
-	return window('Scratchpad', scratchpad_update):setconstraints()
+	return window('Scratchpad', scratchpad_update):setsize(imVec2(640, 480)):setconstraints()
 end
 
 function expmode.common.stats()
