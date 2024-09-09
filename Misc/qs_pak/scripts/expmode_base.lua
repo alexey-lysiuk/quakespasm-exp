@@ -300,8 +300,9 @@ local stats <const> = expmode.common.stats
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
 		if imMenuItem('About\u{85}') then
-			-- TODO: Add version information
-			expmode.messagebox('About Quakespasm-EXP', format('\nQuakespasm-EXP\n\n%s\nImGui %s\n\n', _VERSION, imGetVersion()))
+			expmode.messagebox('About QuakeSpasm-EXP',
+				format('\n\u{95} %s\n\u{95} %s\n\u{95} ImGui %s\n\n',
+				expversion(), _VERSION, imGetVersion()))
 		end
 
 		imSeparator()
