@@ -24,6 +24,7 @@ local imEndMenu <const> = ImGui.EndMenu
 local imGetCursorPosX <const> = ImGui.GetCursorPosX
 local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
 local imGetMainViewport <const> = ImGui.GetMainViewport
+local imGetVersion <const> = ImGui.GetVersion
 local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
@@ -61,7 +62,6 @@ local actions = {}
 local oneshots = {}
 local windows = {}
 
-local autoexpandsize <const> = imVec2(-1, -1)
 local centerpivot <const> = imVec2(0.5, 0.5)
 local screensize, shouldexit, wintofocus
 
@@ -300,8 +300,9 @@ local stats <const> = expmode.common.stats
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
 		if imMenuItem('About\u{85}') then
-			-- TODO: Add version information
-			expmode.messagebox('About Quakespasm-EXP', format('\nQuakespasm-EXP\n\n%s\n', _VERSION))
+			expmode.messagebox('About QuakeSpasm-EXP',
+				format('\n\u{95} %s\n\u{95} %s\n\u{95} ImGui %s\n\n',
+				expversion(), _VERSION, imGetVersion()))
 		end
 
 		imSeparator()

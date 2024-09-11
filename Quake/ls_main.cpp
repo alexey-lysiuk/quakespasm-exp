@@ -33,6 +33,12 @@ extern "C"
 #include "tlsf/tlsf.h"
 #endif // USE_TLSF
 
+#if __has_include("expversion.h")
+#include "expversion.h"
+#else
+static const char* const expversion = "developement version";
+#endif // has expversion header
+
 
 static lua_State* ls_state;
 static size_t ls_quota;
@@ -589,6 +595,12 @@ static int LS_global_dprint(lua_State* state)
 	return 0;
 }
 
+static int LS_global_expversion(lua_State* state)
+{
+	lua_pushstring(state, expversion);
+	return 1;
+}
+
 static int LS_global_text_localize(lua_State* state)
 {
 	const char* key = luaL_checkstring(state, 1);
@@ -695,6 +707,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 
 		// Helper functions
 		{ "dprint", LS_global_dprint },
+		{ "expversion", LS_global_expversion },
 		{ "memstats", LS_global_memstats },
 		{ "stacktrace", LS_global_stacktrace },
 
@@ -837,7 +850,7 @@ lua_State* LS_GetState(void)
 			if (ls_memorysize == 0)
 			{
 				const int heapsize = LS_CheckSizeArgument("-luaheapsize");  // in kB
-				ls_memorysize = CLAMP(8 * 1024, heapsize, 64 * 1024) * 1024;
+				ls_memorysize = CLAMP(1 * 1024, heapsize == 0 ? 16 * 1024 : heapsize, 256 * 1024) * 1024;
 			}
 
 			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);

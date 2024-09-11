@@ -439,7 +439,7 @@ constexpr LS_UserDataType<TextEditor*> ls_imguicolortextedit_type("ImGuiColorTex
 static int LS_value_ImGuiColorTextEdit_gc(lua_State* state)
 {
 	TextEditor* const texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	delete texteditor;
+	IM_DELETE(texteditor);
 	return 0;
 }
 
@@ -473,7 +473,8 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 static int LS_global_imgui_ColorTextEdit(lua_State* state)
 {
 	TextEditor*& texteditor = ls_imguicolortextedit_type.New(state);
-	texteditor = new TextEditor;
+	texteditor = IM_NEW(TextEditor);
+	assert(texteditor);
 
 	if (luaL_newmetatable(state, "ImGui.ColorTextEdit"))
 	{

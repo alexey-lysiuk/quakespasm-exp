@@ -68,6 +68,13 @@ static int LS_global_imgui_ShowDemoWindow(lua_State* state)
 }
 #endif // !NDEBUG
 
+static int LS_global_imgui_GetVersion(lua_State* state)
+{
+	const char* const version = ImGui::GetVersion();
+	lua_pushstring(state, version);
+	return 1;
+}
+
 static int LS_global_imgui_Begin(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -842,7 +849,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "ShowDemoWindow", LS_global_imgui_ShowDemoWindow },
 		// * should not be exposed
 #endif // !NDEBUG
-		// * GetVersion
+		{ "GetVersion", LS_global_imgui_GetVersion },
 
 		// Styles
 		// * StyleColorsDark
