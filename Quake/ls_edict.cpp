@@ -344,21 +344,74 @@ static int LS_global_edicts_isfree(lua_State* state)
 	return 1;
 }
 
-// Frees edict passed index or by value
-static int LS_global_edicts_free(lua_State* state)
+static int LS_GetDamageFunction()
+{
+	if (!progs)
+		return -1;
+
+	static const char* const damagename = "T_Damage";
+	static int damagefunc = -1;
+
+	if (damagefunc > 1)
+	{
+		const char* name = PR_GetString(pr_functions[damagefunc].s_name);
+
+		if (strcmp(name, damagename) == 0)
+			return damagefunc;
+	}
+
+	for (int i = 0, e = progs->numfunctions; i < e; ++i)
+	{
+		const char* name = PR_GetString(pr_functions[i].s_name);
+
+		if (strcmp(name, damagename) == 0)
+		{
+			damagefunc = i;
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static bool LS_DoDamage(int function, edict_t* target)
+{
+	const float health = target->v.health;
+
+	if (health <= 0.0f && target->v.takedamage <= 0.0f)
+		return false;
+
+	// void T_Damage(entity target, entity inflictor, entity attacker, float damage)
+	int* globals_iptr = (int*)pr_globals;
+	edict_t* inflictor = svs.clients[0].edict;
+	globals_iptr[OFS_PARM0] = EDICT_TO_PROG(target);     // target
+	globals_iptr[OFS_PARM1] = EDICT_TO_PROG(inflictor);  // inflictor
+	globals_iptr[OFS_PARM2] = globals_iptr[OFS_PARM1];   // attacker
+	pr_globals[OFS_PARM3] = health + 1.0f;               // damage
+
+	// Fill remaining four vec3 parameters with zeroes to handle
+	// T_Damage() function with extra arguments, e.g. Copper 1.30
+	memset(&pr_globals[OFS_PARM4], 0, sizeof(float) * 3 * 4);
+
+	PR_ExecuteProgram(function);
+	return true;
+}
+
+// Removes edict passed index or by value
+static int LS_global_edicts_destroy(lua_State* state)
 {
 	edict_t* edict = LS_GetEdictFromParameter(state);
 
-	// Free edict if it's not freed nor worldspawn nor player
-	if (edict && !edict->free && edict != sv.edicts && edict != svs.clients[0].edict)
-	{
-		ED_Free(edict);
-		lua_pushboolean(state, true);
+	// Skip free edict, worldspawn, player
+	if (!edict || edict->free || edict == sv.edicts || edict == svs.clients[0].edict)
+		return 0;
 
-		return 1;
-	}
+	const int damagefunction = LS_GetDamageFunction();
+	if (damagefunction == -1)
+		return 0;
 
-	return 0;
+	LS_DoDamage(damagefunction, edict);
+	return 1;
 }
 
 // Pushes user-frendly name of edict passed index or by value
@@ -372,6 +425,23 @@ static int LS_global_edicts_getname(lua_State* state)
 		lua_pushnil(state);
 
 	return 1;
+}
+
+// Removes edict passed index or by value
+static int LS_global_edicts_remove(lua_State* state)
+{
+	edict_t* edict = LS_GetEdictFromParameter(state);
+
+	// Skip free edict, worldspawn, player
+	if (edict && !edict->free && edict != sv.edicts && edict != svs.clients[0].edict)
+	{
+		ED_Free(edict);
+
+		lua_pushboolean(state, true);
+		return 1;
+	}
+
+	return 0;
 }
 
 
@@ -569,10 +639,11 @@ void LS_InitEdictType(lua_State* state)
 
 	constexpr luaL_Reg functions[] =
 	{
-		{ "free", LS_global_edicts_free },
+		{ "destroy", LS_global_edicts_destroy },
 		{ "getname", LS_global_edicts_getname },
 		{ "isfree", LS_global_edicts_isfree },
 		{ "references", LS_global_edicts_references },
+		{ "remove", LS_global_edicts_remove },
 		{ NULL, NULL }
 	};
 
