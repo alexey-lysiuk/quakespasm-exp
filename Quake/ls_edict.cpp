@@ -357,6 +357,23 @@ static int LS_global_edicts_getname(lua_State* state)
 	return 1;
 }
 
+// Removes edict passed index or by value
+static int LS_global_edicts_remove(lua_State* state)
+{
+	edict_t* edict = LS_GetEdictFromParameter(state);
+
+	// Skip free edict, worldspawn, player
+	if (edict && !edict->free && edict != sv.edicts && edict != svs.clients[0].edict)
+	{
+		ED_Free(edict);
+
+		lua_pushboolean(state, true);
+		return 1;
+	}
+
+	return 0;
+}
+
 
 // Edict reference collection
 
@@ -552,9 +569,10 @@ void LS_InitEdictType(lua_State* state)
 
 	constexpr luaL_Reg functions[] =
 	{
-		{ "references", LS_global_edicts_references },
 		{ "getname", LS_global_edicts_getname },
 		{ "isfree", LS_global_edicts_isfree },
+		{ "references", LS_global_edicts_references },
+		{ "remove", LS_global_edicts_remove },
 		{ NULL, NULL }
 	};
 
