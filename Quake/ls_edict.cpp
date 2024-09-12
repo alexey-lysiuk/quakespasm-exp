@@ -350,10 +350,11 @@ static int LS_FindProgsFunction(const char* const functionname, int& functionind
 	if (!progs)
 		return -1;
 
+	if (functionindex >= progs->numfunctions)
+		functionindex = -1;
+
 	const auto MatchFunction = [functionname](const int index)
 	{
-		assert(index < progs->numfunctions);
-
 		const char* name = LS_GetProgsString(pr_functions[index].s_name);
 		return strcmp(name, functionname) == 0;
 	};
