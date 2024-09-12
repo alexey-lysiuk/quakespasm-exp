@@ -93,6 +93,16 @@ local function moveplayer(edict, location, angles)
 	end
 end
 
+local function edict_contextmenuentry_remove(edict)
+	imSeparator()
+
+	if imSelectable('Remove') then
+		if edicts.remove(edict) then
+			expmode.exit()
+		end
+	end
+end
+
 local function edictinfo_searchcompare(entry, string)
 	local function contains(value)
 		return value:lower():find(string, 1, true)
@@ -165,6 +175,7 @@ local function edictinfo_onupdate(self)
 
 					imSetClipboardText(concat(fields, '\n') .. '\n')
 				end
+				edict_contextmenuentry_remove(self.edict)
 				imEndPopup()
 			end
 
@@ -259,6 +270,7 @@ local function edictstable_contextmenu(entries, entry, cellvalue)
 
 			imSetClipboardText(concat(lines, '\n') .. '\n')
 		end
+		edict_contextmenuentry_remove(entry.edict)
 		imEndPopup()
 	end
 end
