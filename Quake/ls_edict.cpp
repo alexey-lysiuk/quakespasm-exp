@@ -344,29 +344,27 @@ static int LS_global_edicts_isfree(lua_State* state)
 	return 1;
 }
 
-static int LS_GetDamageFunction()
+static int LS_FindProgsFunction(const char* const functionname, int& functionindex)
 {
 	if (!progs)
 		return -1;
 
-	static const char* const damagename = "T_Damage";
-	static int damagefunc = -1;
-
-	if (damagefunc > 1)
+	const auto MatchFunction = [functionname](const int index)
 	{
-		const char* name = PR_GetString(pr_functions[damagefunc].s_name);
+		assert(index < progs->numfunctions);
 
-		if (strcmp(name, damagename) == 0)
-			return damagefunc;
-	}
+		const char* name = PR_GetString(pr_functions[index].s_name);
+		return strcmp(name, functionname) == 0;
+	};
+
+	if (functionindex > 0 && MatchFunction(functionindex))
+		return functionindex;
 
 	for (int i = 0, e = progs->numfunctions; i < e; ++i)
 	{
-		const char* name = PR_GetString(pr_functions[i].s_name);
-
-		if (strcmp(name, damagename) == 0)
+		if (MatchFunction(i))
 		{
-			damagefunc = i;
+			functionindex = i;
 			return i;
 		}
 	}
@@ -406,11 +404,13 @@ static int LS_global_edicts_destroy(lua_State* state)
 	if (!edict || edict->free || edict == sv.edicts || edict == svs.clients[0].edict)
 		return 0;
 
-	const int damagefunction = LS_GetDamageFunction();
-	if (damagefunction == -1)
+	static int cachedfunction = -1;
+	const int function = LS_FindProgsFunction("T_Damage", cachedfunction);
+
+	if (function == -1)
 		return 0;
 
-	LS_DoDamage(damagefunction, edict);
+	LS_DoDamage(function, edict);
 	return 1;
 }
 
