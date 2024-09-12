@@ -93,8 +93,14 @@ local function moveplayer(edict, location, angles)
 	end
 end
 
-local function edict_contextmenuentry_remove(edict)
+local function edict_contextmenuentry_destructive(edict)
 	imSeparator()
+
+	if imSelectable('Destroy') then
+		if edicts.destroy(edict) then
+			expmode.exit()
+		end
+	end
 
 	if imSelectable('Remove') then
 		if edicts.remove(edict) then
@@ -175,7 +181,7 @@ local function edictinfo_onupdate(self)
 
 					imSetClipboardText(concat(fields, '\n') .. '\n')
 				end
-				edict_contextmenuentry_remove(self.edict)
+				edict_contextmenuentry_destructive(self.edict)
 				imEndPopup()
 			end
 
@@ -270,7 +276,7 @@ local function edictstable_contextmenu(entries, entry, cellvalue)
 
 			imSetClipboardText(concat(lines, '\n') .. '\n')
 		end
-		edict_contextmenuentry_remove(entry.edict)
+		edict_contextmenuentry_destructive(entry.edict)
 		imEndPopup()
 	end
 end
