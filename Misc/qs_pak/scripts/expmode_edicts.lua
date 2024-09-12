@@ -61,6 +61,7 @@ local isany <const> = edicts.isany
 local isfree <const> = edicts.isfree
 
 local addaction <const> = expmode.addaction
+local exit <const> = expmode.exit
 local messagebox <const> = expmode.messagebox
 local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
@@ -89,7 +90,7 @@ local function moveplayer(edict, location, angles)
 		ghost(true)
 		setpos(location, angles or edict.angles)
 
-		expmode.exit()
+		exit()
 	end
 end
 
@@ -98,13 +99,13 @@ local function edict_contextmenuentry_destructive(edict)
 
 	if imSelectable('Destroy') then
 		if edicts.destroy(edict) then
-			expmode.exit()
+			exit()
 		end
 	end
 
 	if imSelectable('Remove') then
 		if edicts.remove(edict) then
-			expmode.exit()
+			exit()
 		end
 	end
 end
@@ -146,7 +147,7 @@ local function edictinfo_onupdate(self)
 					if imSelectable(field.selectableid) then
 						ghost(true)
 						setpos(field.vector)
-						expmode.exit()
+						exit()
 					end
 				else
 					imText(field.value)
