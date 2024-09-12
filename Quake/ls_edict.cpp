@@ -349,12 +349,26 @@ static int LS_GetDamageFunction()
 	if (!progs)
 		return -1;
 
+	static const char* const damagename = "T_Damage";
+	static int damagefunc = -1;
+
+	if (damagefunc > 1)
+	{
+		const char* name = PR_GetString(pr_functions[damagefunc].s_name);
+
+		if (strcmp(name, damagename) == 0)
+			return damagefunc;
+	}
+
 	for (int i = 0, e = progs->numfunctions; i < e; ++i)
 	{
 		const char* name = PR_GetString(pr_functions[i].s_name);
 
-		if (strcmp(name, "T_Damage") == 0)
+		if (strcmp(name, damagename) == 0)
+		{
+			damagefunc = i;
 			return i;
+		}
 	}
 
 	return -1;
