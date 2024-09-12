@@ -410,11 +410,7 @@ static int LS_global_edicts_destroy(lua_State* state)
 	if (damagefunction == -1)
 		return 0;
 
-	edict_t* entity = SV_TraceEntity(SV_TRACE_ENTITY_SOLID);
-	if (!entity)
-		return 0;
-
-	LS_DoDamage(damagefunction, entity);
+	LS_DoDamage(damagefunction, edict);
 	return 1;
 }
 
