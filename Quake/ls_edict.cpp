@@ -34,6 +34,7 @@ qboolean LS_GetEdictFieldByIndex(const edict_t* ed, size_t fieldindex, const cha
 qboolean LS_GetEdictFieldByName(const edict_t* ed, const char* name, etype_t* type, const eval_t** value);
 const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(const edict_t* entity);
+const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsString(int offset);
 } // extern "C"
 
@@ -428,6 +429,73 @@ static int LS_global_edicts_getname(lua_State* state)
 	return 1;
 }
 
+static const ddef_t* LS_FindProgsGlobalDefinition(const char* const definitionname, int& definitionindex)
+{
+	if (!progs)
+		return nullptr;
+
+	if (definitionindex >= progs->numglobaldefs)
+		definitionindex = -1;
+
+	const auto MatchDefinition = [definitionname](const int index) -> const ddef_t*
+	{
+		const ddef_t* const definition = LS_GetProgsGlobalDefinitionByIndex(index);
+		if (!definition)
+			return nullptr;
+
+		const char* name = LS_GetProgsString(definition->s_name);
+		return strcmp(name, definitionname) == 0 ? definition : nullptr;
+	};
+
+	if (definitionindex > 0)
+		if (const ddef_t* const definition = MatchDefinition(definitionindex))
+			return definition;
+
+	for (int i = 1, e = progs->numglobaldefs; i < e; ++i)
+	{
+		if (const ddef_t* const definition = MatchDefinition(i))
+		{
+			definitionindex = i;
+			return definition;
+		}
+	}
+
+	return nullptr;
+}
+
+static void LS_UseTargets(edict_t* edict)
+{
+	static int cachedfunction = -1, cachedselfindex = -1, cachedactivatorindex = -1;
+
+	const int function = LS_FindProgsFunction("SUB_UseTargets", cachedfunction);
+	if (function <= 0)
+		return;
+
+	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", cachedselfindex);
+	if (!self)
+		return;
+
+	const ddef_t* const activator = LS_FindProgsGlobalDefinition("activator", cachedactivatorindex);
+	if (!activator)
+		return;
+
+	// Set target as self
+	int* const selfptr = reinterpret_cast<int*>(pr_globals + self->ofs);
+	const int prevself = *selfptr;
+	*selfptr = EDICT_TO_PROG(edict);
+
+	// Set player as activator
+	int* const activatorptr = reinterpret_cast<int*>(pr_globals + activator->ofs);
+	const int prevactivator = *activatorptr;
+	*activatorptr = EDICT_TO_PROG(svs.clients[0].edict);
+
+	PR_ExecuteProgram(function);
+
+	// Restore self and activator
+	*selfptr = prevself;
+	*activatorptr = prevactivator;
+}
+
 // Removes edict passed index or by value
 static int LS_global_edicts_remove(lua_State* state)
 {
@@ -436,6 +504,7 @@ static int LS_global_edicts_remove(lua_State* state)
 	// Skip free edict, worldspawn, player
 	if (edict && !edict->free && edict != sv.edicts && edict != svs.clients[0].edict)
 	{
+		LS_UseTargets(edict);
 		ED_Free(edict);
 
 		lua_pushboolean(state, true);
