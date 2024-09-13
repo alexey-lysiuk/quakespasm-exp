@@ -381,6 +381,8 @@ static bool LS_DoDamage(int function, edict_t* target)
 	if (health <= 0.0f && target->v.takedamage <= 0.0f)
 		return false;
 
+	target->v.armorvalue = 0.f;
+
 	// void T_Damage(entity target, entity inflictor, entity attacker, float damage)
 	int* globals_iptr = (int*)pr_globals;
 	edict_t* inflictor = svs.clients[0].edict;
