@@ -787,6 +787,11 @@ static void LS_InitGlobalTables(lua_State* state)
 #ifndef NDEBUG
 	LS_LoadScript(state, "scripts/debug.lua");
 #endif // !NDEBUG
+
+#ifdef USE_IMGUI
+	void LS_InitExpMode(lua_State* state);
+	LS_InitExpMode(state);
+#endif // USE_IMGUI
 }
 
 void LS_LoadScript(lua_State* state, const char* filename)

@@ -83,17 +83,8 @@ static int LS_EnterMode(lua_State* state)
 	return 0;
 }
 
-static void LS_InitExpMode()
+void LS_InitExpMode(lua_State* state)
 {
-	lua_State* state = LS_GetState();
-	assert(state);
-
-	const bool initialized = lua_getglobal(state, ls_expmode_name) == LUA_TTABLE;
-	lua_pop(state, 1);  // remove 'expmode' table or nil
-
-	if (initialized)
-		return;
-
 	lua_gc(state, LUA_GCSTOP);
 
 	LS_InitImGuiBindings(state);
@@ -187,7 +178,6 @@ static void EXP_EnterMode()
 	ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 
 #ifdef USE_LUA_SCRIPTING
-	LS_InitExpMode();
 	LS_CallExpModeFunction("onopen");
 #endif // USE_LUA_SCRIPTING
 }
@@ -225,10 +215,6 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 	exp_glcontext = context;
 
 	Cmd_AddCommand("expmode", EXP_EnterMode);
-
-#ifdef USE_LUA_SCRIPTING
-	LS_InitExpMode();
-#endif // USE_LUA_SCRIPTING
 }
 
 void EXP_Shutdown()
