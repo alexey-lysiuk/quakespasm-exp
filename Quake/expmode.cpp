@@ -214,7 +214,9 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 	exp_window = window;
 	exp_glcontext = context;
 
-	Cmd_AddCommand("expmode", EXP_EnterMode);
+	Cbuf_AddText(R"-(
+		alias expmode "lua expmode.enter()"
+	)-");
 }
 
 void EXP_Shutdown()
