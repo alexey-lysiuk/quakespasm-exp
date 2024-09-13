@@ -149,14 +149,17 @@ static int LS_global_player_setpos(lua_State* state)
 
 static int LS_global_player_traceentity(lua_State* state)
 {
-	edict_t* ed = SV_TraceEntity(SV_TRACE_ENTITY_ANY);
+	// Order of string literals must match SV_TRACE_ENTITY_... definitions
+	static const char* const kinds[] = { "solid", "trigger", "any" };
+	const int kind = luaL_checkoption(state, 1, "any", kinds) + 1;
 
-	if (ed == NULL)
-		lua_pushnil(state);
-	else
-		LS_PushEdictValue(state, ed);
+	if (const edict_t* const edict = SV_TraceEntity(kind))
+	{
+		LS_PushEdictValue(state, edict);
+		return 1;
+	}
 
-	return 1;
+	return 0;
 }
 
 static int LS_PlayerCheatCommand(lua_State* state, const char* command)
