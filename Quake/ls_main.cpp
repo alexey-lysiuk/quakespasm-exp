@@ -1018,6 +1018,11 @@ void LS_Init(void)
 {
 	Cmd_AddCommand("lua", LS_Exec_f);
 	Cmd_AddCommand("resetlua", LS_ResetState);
+
+	Cbuf_AddText(R"-(
+		alias mdk "lua local e = player.traceentity('solid') if e then edicts.destroy(e) end"
+		alias massacre "lua edicts.massacre()"
+	)-");
 }
 
 void LS_Shutdown(void)

@@ -546,10 +546,6 @@ nextmsg:
 					ret = 1;
 				else if (q_strncasecmp(s, "setpos", 6) == 0)
 					ret = 1;
-				else if (q_strncasecmp(s, "mdk", 3) == 0)
-					ret = 1;
-				else if (q_strncasecmp(s, "massacre", 8) == 0)
-					ret = 1;
 				else if (q_strncasecmp(s, "ghost", 5) == 0)
 					ret = 1;
 				else if (q_strncasecmp(s, "say", 3) == 0)
