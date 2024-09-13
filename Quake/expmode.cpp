@@ -216,6 +216,7 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 
 	Cbuf_AddText(R"-(
 		alias expmode "lua expmode.enter()"
+		alias expmode_traceentity "lua local e = expmode e.enter() e.addoneshot(e.edicts.traceentity)"
 	)-");
 }
 
