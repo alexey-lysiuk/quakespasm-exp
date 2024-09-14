@@ -519,12 +519,6 @@ static int LS_global_edicts_remove(lua_State* state)
 
 // Edict reference collection
 
-static const char* LS_references_GetString(int num)
-{
-	const char* result = LS_GetProgsString(num);
-	return result[0] == '\0' ? NULL : result;
-}
-
 static qboolean LS_references_StringsEqual(const char* string, int num)
 {
 	const char* other = LS_GetProgsString(num);
@@ -583,6 +577,14 @@ static int LS_global_edicts_references(lua_State* state)
 		return strncmp(name, "killtarget", 10) == 0;
 	};
 
+	const auto AddName = [](const string_t name, TargetList& list)
+	{
+		const char* const namestring = LS_GetProgsString(name);
+
+		if (namestring[0] != '\0')
+			list.push_back(namestring);
+	};
+
 	for (int f = 1; f < progs->numfielddefs; ++f)
 	{
 		const char* name;
@@ -604,11 +606,11 @@ static int LS_global_edicts_references(lua_State* state)
 			else if (type == ev_string)
 			{
 				if (IsTargetName(name))
-					targetnames.push_back(LS_references_GetString(value->string));
+					AddName(value->string, targetnames);
 				else if (IsTarget(name))
-					targets.push_back(LS_references_GetString(value->string));
+					AddName(value->string, targets);
 				else if (IsKillTarget(name))
-					killtargets.push_back(LS_references_GetString(value->string));
+					AddName(value->string, killtargets);
 			}
 		}
 	}
