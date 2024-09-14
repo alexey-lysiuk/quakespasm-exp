@@ -223,6 +223,17 @@ static int LS_global_sound_stopall(lua_State* state)
 // Expose 'host' global table with related functions
 //
 
+static int LS_global_host_entities(lua_State* state)
+{
+	if (sv.active && sv.worldmodel)
+	{
+		lua_pushstring(state, sv.worldmodel->entities);
+		return 1;
+	}
+
+	return 0;
+}
+
 static int LS_global_host_framecount(lua_State* state)
 {
 	lua_pushinteger(state, host_framecount);
@@ -771,6 +782,7 @@ static void LS_InitGlobalTables(lua_State* state)
 	{
 		static const luaL_Reg functions[] =
 		{
+			{ "entities", LS_global_host_entities },
 			{ "framecount", LS_global_host_framecount },
 			{ "frametime", LS_global_host_frametime },
 			{ "gamedir", LS_global_host_gamedir },
