@@ -308,6 +308,59 @@ local function strings_onhide(self)
 	return true
 end
 
+local function details_onupdate(self)
+	local title = self.title
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		if imBeginTable(title, 2, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
+			imTableSetupColumn('Name', imTableColumnWidthFixed)
+			imTableSetupColumn('Value')
+			imTableHeadersRow()
+
+			for _, entry in ipairs(self.entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry[1])
+				imTableNextColumn()
+				imText(entry[2])
+			end
+
+			imEndTable()
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function details_onshow(self)
+	local crc <const> = progs.datcrc
+	local stringcount <const> = #strings
+
+	self.entries =
+	{
+		{ 'Game Directory', host.gamedir() },
+		{ 'Detected Mod', progs.modname(progs.detectmod()) },
+		{ 'File CRC', format('%i (0x%X)', crc, crc) },
+		{ 'Functions', tostring(#functions) },
+		{ 'Global Definitions', tostring(#globaldefinitions) },
+		{ 'Field Definitions', tostring(#fielddefinitions) },
+		{ 'Global Variables', tostring(#progs.globalvariables) },
+		{ 'Strings', tostring(stringcount) },
+		{ 'Strings Pool Size', tostring(strings.offset(stringcount) + #strings[stringcount] + 1) },
+	}
+
+	return true
+end
+
+local function details_onhide(self)
+	self.entries = nil
+	return true
+end
+
 expmode.progs = {}
 
 local exprpogs <const> = expmode.progs
@@ -353,11 +406,18 @@ function exprpogs.enginestrings()
 	stringstool('Engine/Known Strings', enginestrings)
 end
 
+function exprpogs.details()
+	return window('Progs Details', details_onupdate,
+		function (self) self:setconstraints() end,
+		details_onshow, details_onhide)
+end
+
 local expfunctions <const> = exprpogs.functions
 local expfielddefinitions <const> = exprpogs.fielddefinitions
 local expglobaldefinitions <const> = exprpogs.globaldefinitions
 local expstrings <const> = exprpogs.strings
 local expenginestrings <const> = exprpogs.enginestrings
+local expdetails <const> = exprpogs.details
 
 addaction(function ()
 	if imBeginMenu('Progs') then
@@ -383,6 +443,12 @@ addaction(function ()
 
 		if imMenuItem('Engine Strings\u{85}') then
 			expenginestrings()
+		end
+
+		imSeparator()
+
+		if imMenuItem('Details\u{85}') then
+			expdetails()
 		end
 
 		imEndMenu()
