@@ -318,7 +318,11 @@ void TextEditor::Redo(int aSteps)
 		mUndoBuffer[mUndoIndex++].Redo(this);
 }
 
+#ifdef IMGUI_EDITOR_QSEXP
+void TextEditor::SetText(const std::string_view& aText)
+#else // !IMGUI_EDITOR_QSEXP
 void TextEditor::SetText(const std::string& aText)
+#endif // IMGUI_EDITOR_QSEXP
 {
 	mLines.clear();
 	mLines.emplace_back(Line());

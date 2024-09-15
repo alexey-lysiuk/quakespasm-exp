@@ -11,6 +11,10 @@
 #include <unordered_map>
 #include <map>
 
+#ifdef IMGUI_EDITOR_QSEXP
+#include <string_view>
+#endif // IMGUI_EDITOR_QSEXP
+
 #ifdef IMGUI_EDITOR_NO_BOOST
 	#include <regex>
 	namespace boost = std;
@@ -149,7 +153,11 @@ public:
 	inline bool CanRedo() const { return !mReadOnly && mUndoIndex < (int)mUndoBuffer.size(); };
 	inline int GetUndoIndex() const { return mUndoIndex; };
 
+#ifdef IMGUI_EDITOR_QSEXP
+	void SetText(const std::string_view& aText);
+#else // !IMGUI_EDITOR_QSEXP
 	void SetText(const std::string& aText);
+#endif // IMGUI_EDITOR_QSEXP
 	std::string GetText() const;
 
 	void SetTextLines(const std::vector<std::string>& aLines);
