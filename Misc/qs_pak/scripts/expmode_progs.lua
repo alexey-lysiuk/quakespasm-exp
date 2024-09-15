@@ -54,7 +54,7 @@ local function functiondisassembly_onupdate(self)
 		local binarypressed, binaryenabled = ImGui.Checkbox('Show statements binaries', self.withbinary)
 
 		if binarypressed then
-			local disassembly = self.func:disassemble(self.withbinary)
+			local disassembly = self.func:disassemble(binaryenabled)
 			self.textview:SetText(disassembly)
 			self.withbinary = binaryenabled
 		end
