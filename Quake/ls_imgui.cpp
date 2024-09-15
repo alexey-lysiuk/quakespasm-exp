@@ -501,6 +501,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 	TextEditor*& texteditor = ls_imguicolortextedit_type.New(state);
 	texteditor = IM_NEW(TextEditor);
 	assert(texteditor);
+	texteditor->SetShowWhitespacesEnabled(false);
 
 	if (luaL_newmetatable(state, "ImGui.ColorTextEdit"))
 	{
