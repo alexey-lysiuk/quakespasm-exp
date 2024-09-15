@@ -2811,7 +2811,13 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine)
 
 				for (const auto& p : mRegexList)
 				{
+#ifdef IMGUI_EDITOR_QSEXP
 					bool regexSearchResult = boost::regex_search(first, last, results, p.first, boost::regex_constants::match_continuous);
+#else // !IMGUI_EDITOR_QSEXP
+					bool regexSearchResult = false;
+					try { regexSearchResult = boost::regex_search(first, last, results, p.first, boost::regex_constants::match_continuous); }
+					catch (...) {}
+#endif // IMGUI_EDITOR_QSEXP
 					if (regexSearchResult)
 					{
 						hasTokenizeResult = true;
