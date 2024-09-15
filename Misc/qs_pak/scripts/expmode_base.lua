@@ -305,6 +305,32 @@ local function stats_update(self)
 	return opened
 end
 
+local function levelentities_update(self)
+	local visible, opened = imBegin(self.title, true)
+
+	if visible and opened then
+		self.textview:Render('##text')
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function levelentities_onshow(self)
+	local textview = imColorTextEdit()
+	textview:SetReadOnly(true)
+	textview:SetText(host.entities())
+
+	self.textview = textview
+	return true
+end
+
+local function levelentities_onhide(self)
+	self.textview = nil
+	return true
+end
+
 expmode.common = {}
 
 function expmode.common.scratchpad()
@@ -315,8 +341,15 @@ function expmode.common.stats()
 	return window('Stats', stats_update):setconstraints()
 end
 
+function expmode.common.levelentities()
+	return window('Level Entities', levelentities_update,
+		function (self) self:setconstraints() end,
+		levelentities_onshow, levelentities_onhide)
+end
+
 local scratchpad <const> = expmode.common.scratchpad
 local stats <const> = expmode.common.stats
+local levelentities <const> = expmode.common.levelentities
 
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
@@ -375,6 +408,12 @@ local function updateenginemenu()
 					break
 				end
 			end
+		end
+
+		imSeparator()
+
+		if imMenuItem('Level Entities\u{85}') then
+			levelentities()
 		end
 
 		imSeparator()
