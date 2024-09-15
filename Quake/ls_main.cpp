@@ -149,14 +149,17 @@ static int LS_global_player_setpos(lua_State* state)
 
 static int LS_global_player_traceentity(lua_State* state)
 {
-	edict_t* ed = SV_TraceEntity(SV_TRACE_ENTITY_ANY);
+	// Order of string literals must match SV_TRACE_ENTITY_... definitions
+	static const char* const kinds[] = { "solid", "trigger", "any" };
+	const int kind = luaL_checkoption(state, 1, "any", kinds) + 1;
 
-	if (ed == NULL)
-		lua_pushnil(state);
-	else
-		LS_PushEdictValue(state, ed);
+	if (const edict_t* const edict = SV_TraceEntity(kind))
+	{
+		LS_PushEdictValue(state, edict);
+		return 1;
+	}
 
-	return 1;
+	return 0;
 }
 
 static int LS_PlayerCheatCommand(lua_State* state, const char* command)
@@ -219,6 +222,17 @@ static int LS_global_sound_stopall(lua_State* state)
 //
 // Expose 'host' global table with related functions
 //
+
+static int LS_global_host_entities(lua_State* state)
+{
+	if (sv.active && sv.worldmodel)
+	{
+		lua_pushstring(state, sv.worldmodel->entities);
+		return 1;
+	}
+
+	return 0;
+}
 
 static int LS_global_host_framecount(lua_State* state)
 {
@@ -768,6 +782,7 @@ static void LS_InitGlobalTables(lua_State* state)
 	{
 		static const luaL_Reg functions[] =
 		{
+			{ "entities", LS_global_host_entities },
 			{ "framecount", LS_global_host_framecount },
 			{ "frametime", LS_global_host_frametime },
 			{ "gamedir", LS_global_host_gamedir },
@@ -787,6 +802,11 @@ static void LS_InitGlobalTables(lua_State* state)
 #ifndef NDEBUG
 	LS_LoadScript(state, "scripts/debug.lua");
 #endif // !NDEBUG
+
+#ifdef USE_IMGUI
+	void LS_InitExpMode(lua_State* state);
+	LS_InitExpMode(state);
+#endif // USE_IMGUI
 }
 
 void LS_LoadScript(lua_State* state, const char* filename)
@@ -1010,6 +1030,8 @@ void LS_Init(void)
 {
 	Cmd_AddCommand("lua", LS_Exec_f);
 	Cmd_AddCommand("resetlua", LS_ResetState);
+
+	Cbuf_InsertText("exec scripts/aliases/common.cfg");
 }
 
 void LS_Shutdown(void)

@@ -539,6 +539,22 @@ end
 
 
 ---
+--- Massacre (kill all monsters) cheat
+---
+
+function edicts.massacre()
+	local ismonster <const> = edicts.ismonster
+	local destroy <const> = edicts.destroy
+
+	for _, edict in ipairs(edicts) do
+		if ismonster(edict) then
+			destroy(edict)
+		end
+	end
+end
+
+
+---
 --- Host helpers
 ---
 

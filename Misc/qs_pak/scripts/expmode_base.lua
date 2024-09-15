@@ -15,6 +15,7 @@ local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
 local imBeginMenu <const> = ImGui.BeginMenu
+local imBulletText <const> = ImGui.BulletText
 local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imColorTextEdit <const> = ImGui.ColorTextEdit
@@ -236,6 +237,26 @@ local function foreachwindow(func_or_name)
 	end
 end
 
+local function about_update(self)
+	local visible, opened = imBegin(self.title, true, messageboxflags)
+
+	if visible and opened then
+		imText('')
+		imBulletText(expversion())
+		imBulletText(_VERSION)
+		imBulletText('ImGui' .. imGetVersion())
+		imText('')
+
+		if imButton('Close') then
+			opened = false
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
 local scratchpadeditor
 
 local function scratchpad_update(self)
@@ -300,9 +321,7 @@ local stats <const> = expmode.common.stats
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
 		if imMenuItem('About\u{85}') then
-			expmode.messagebox('About QuakeSpasm-EXP',
-				format('\n\u{95} %s\n\u{95} %s\n\u{95} ImGui %s\n\n',
-				expversion(), _VERSION, imGetVersion()))
+			window('About QuakeSpasm-EXP', about_update)
 		end
 
 		imSeparator()

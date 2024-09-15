@@ -319,6 +319,15 @@ static int LS_global_imgui_Text(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_BulletText(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const text = luaL_checkstring(state, 1);
+	ImGui::BulletText("%s", text);
+	return 0;
+}
+
 static int LS_global_imgui_SeparatorText(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -978,6 +987,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * TextWrapped
 		// * LabelText
 		// * BulletText
+		{ "BulletText", LS_global_imgui_BulletText },
 		{ "SeparatorText", LS_global_imgui_SeparatorText },
 
 		// Widgets: Main

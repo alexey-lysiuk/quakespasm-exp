@@ -318,7 +318,11 @@ void TextEditor::Redo(int aSteps)
 		mUndoBuffer[mUndoIndex++].Redo(this);
 }
 
+#ifdef IMGUI_EDITOR_QSEXP
+void TextEditor::SetText(const std::string_view& aText)
+#else // !IMGUI_EDITOR_QSEXP
 void TextEditor::SetText(const std::string& aText)
+#endif // IMGUI_EDITOR_QSEXP
 {
 	mLines.clear();
 	mLines.emplace_back(Line());
@@ -2811,7 +2815,13 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine)
 
 				for (const auto& p : mRegexList)
 				{
+#ifdef IMGUI_EDITOR_QSEXP
 					bool regexSearchResult = boost::regex_search(first, last, results, p.first, boost::regex_constants::match_continuous);
+#else // !IMGUI_EDITOR_QSEXP
+					bool regexSearchResult = false;
+					try { regexSearchResult = boost::regex_search(first, last, results, p.first, boost::regex_constants::match_continuous); }
+					catch (...) {}
+#endif // IMGUI_EDITOR_QSEXP
 					if (regexSearchResult)
 					{
 						hasTokenizeResult = true;

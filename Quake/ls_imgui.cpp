@@ -470,11 +470,38 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 	return 1;
 }
 
+static int LS_value_ImGuiColorTextEdit_SetReadOnly(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	const bool readonly = lua_toboolean(state, 2);
+	texteditor->SetReadOnlyEnabled(readonly);
+	return 0;
+}
+
+static int LS_value_ImGuiColorTextEdit_SetText(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	size_t length;
+	const char* const text = luaL_checklstring(state, 2, &length);
+
+	texteditor->SetText({ text, length });
+	return 0;
+}
+
 static int LS_global_imgui_ColorTextEdit(lua_State* state)
 {
 	TextEditor*& texteditor = ls_imguicolortextedit_type.New(state);
 	texteditor = IM_NEW(TextEditor);
 	assert(texteditor);
+	texteditor->SetShowWhitespacesEnabled(false);
 
 	if (luaL_newmetatable(state, "ImGui.ColorTextEdit"))
 	{
@@ -484,6 +511,8 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 		constexpr luaL_Reg methods[] =
 		{
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
+			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },
+			{ "SetText", LS_value_ImGuiColorTextEdit_SetText },
 			{ nullptr, nullptr }
 		};
 
