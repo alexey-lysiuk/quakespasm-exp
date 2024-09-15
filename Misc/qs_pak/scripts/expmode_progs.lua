@@ -130,7 +130,7 @@ local function functions_onupdate(self)
 						self.name = funcname
 					end
 
-					return window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
+					window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
 						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 				end
 				imTableNextColumn()
