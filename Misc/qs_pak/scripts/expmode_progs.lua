@@ -8,10 +8,10 @@ local insert <const> = table.insert
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginTable <const> = ImGui.BeginTable
+local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
-local imInputTextMultiline <const> = ImGui.InputTextMultiline
 local imMenuItem <const> = ImGui.MenuItem
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
@@ -21,12 +21,10 @@ local imTableNextRow <const> = ImGui.TableNextRow
 local imTableSetupColumn <const> = ImGui.TableSetupColumn
 local imTableSetupScrollFreeze <const> = ImGui.TableSetupScrollFreeze
 local imText <const> = ImGui.Text
-local imTextBuffer <const> = ImGui.TextBuffer
 local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
 
-local imInputTextReadOnly <const> = ImGui.InputTextFlags.ReadOnly
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
@@ -46,7 +44,6 @@ local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
 
-local autoexpandsize <const> = imVec2(-1, -1)
 local defaultDisassemblySize <const> = imVec2(640, 480)
 
 local function functiondisassembly_onupdate(self)
@@ -57,11 +54,12 @@ local function functiondisassembly_onupdate(self)
 		local binarypressed, binaryenabled = ImGui.Checkbox('Show statements binaries', self.withbinary)
 
 		if binarypressed then
-			self.disassembly = imTextBuffer(16 * 1024, self.func:disassemble(binaryenabled))
+			local disassembly = self.func:disassemble(self.withbinary)
+			self.textview:SetText(disassembly)
 			self.withbinary = binaryenabled
 		end
 
-		imInputTextMultiline('##text', self.disassembly, autoexpandsize, imInputTextReadOnly)
+		self.textview:Render('##text')
 	end
 
 	imEnd()
@@ -80,12 +78,17 @@ local function functiondisassembly_onshow(self)
 		self.withbinary = false
 	end
 
-	self.disassembly = imTextBuffer(16 * 1024, func:disassemble(self.withbinary))
+	local disassembly = func:disassemble(self.withbinary)
+	local textview = imColorTextEdit()
+	textview:SetReadOnly(true)
+	textview:SetText(disassembly)
+
+	self.textview = textview
 	return true
 end
 
 local function functiondisassembly_onhide(self)
-	self.disassembly = nil
+	self.textview = nil
 	return true
 end
 
