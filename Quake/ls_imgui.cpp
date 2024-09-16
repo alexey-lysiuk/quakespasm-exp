@@ -470,6 +470,40 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 	return 1;
 }
 
+static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	static const char* const languages[] = { "none", "cpp", "lua" };
+	const int languageId = luaL_checkoption(state, 2, nullptr, languages);
+	const TextEditor::LanguageDefinition* language;
+
+	switch (languageId)
+	{
+	case 0:
+		language = nullptr;
+		break;
+
+	case 1:
+		language = &TextEditor::LanguageDefinition::Cpp();
+		break;
+
+	case 2:
+		language = &TextEditor::LanguageDefinition::Lua();
+		break;
+
+	default:
+		assert(false);
+		return 0;
+	}
+
+	texteditor->SetLanguageDefinition(language);
+	return 0;
+}
+
 static int LS_value_ImGuiColorTextEdit_SetReadOnly(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -511,6 +545,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 		constexpr luaL_Reg methods[] =
 		{
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
+			{ "SetLanguageDefinition", LS_value_ImGuiColorTextEdit_SetLanguageDefinition },
 			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },
 			{ "SetText", LS_value_ImGuiColorTextEdit_SetText },
 			{ nullptr, nullptr }

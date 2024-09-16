@@ -36,7 +36,23 @@ const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(const edict_t* entity);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsString(int offset);
+qboolean SV_SendClientDatagram(client_t* client);
 } // extern "C"
+
+static void LS_ExecuteProgram(const func_t funcnum)
+{
+	int& cursize = sv.datagram.cursize;
+	const int datagramsize = cursize;
+
+	PR_ExecuteProgram(funcnum);
+
+	if (datagramsize != cursize)
+	{
+		assert(svs.clients);
+		SV_SendClientDatagram(svs.clients);
+	}
+}
+
 
 constexpr LS_UserDataType<int> ls_edict_type("edict");
 
@@ -395,7 +411,7 @@ static bool LS_DoDamage(int function, edict_t* target)
 	// T_Damage() function with extra arguments, e.g. Copper 1.30
 	memset(&pr_globals[OFS_PARM4], 0, sizeof(float) * 3 * 4);
 
-	PR_ExecuteProgram(function);
+	LS_ExecuteProgram(function);
 	return true;
 }
 
@@ -414,7 +430,8 @@ static int LS_global_edicts_destroy(lua_State* state)
 	if (function <= 0)
 		return 0;
 
-	LS_DoDamage(function, edict);
+	const bool destoyed = LS_DoDamage(function, edict);
+	lua_pushboolean(state, destoyed);
 	return 1;
 }
 
@@ -491,7 +508,7 @@ static void LS_UseTargets(edict_t* edict)
 	const int prevactivator = *activatorptr;
 	*activatorptr = EDICT_TO_PROG(svs.clients[0].edict);
 
-	PR_ExecuteProgram(function);
+	LS_ExecuteProgram(function);
 
 	// Restore self and activator
 	*selfptr = prevself;

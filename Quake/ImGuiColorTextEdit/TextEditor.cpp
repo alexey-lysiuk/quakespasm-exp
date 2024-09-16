@@ -29,9 +29,15 @@ void TextEditor::SetPalette(const Palette& aValue)
 	mPaletteAlpha = -1.0f;
 }
 
+#ifdef IMGUI_EDITOR_QSEXP
+void TextEditor::SetLanguageDefinition(const LanguageDefinition* aLanguageDef)
+{
+	mLanguageDefinition = aLanguageDef;
+#else // IMGUI_EDITOR_QSEXP
 void TextEditor::SetLanguageDefinition(const LanguageDefinition& aLanguageDef)
 {
 	mLanguageDefinition = &aLanguageDef;
+#endif // IMGUI_EDITOR_QSEXP
 	mRegexList.clear();
 	for (const auto& r : mLanguageDefinition->mTokenRegexStrings)
 		mRegexList.push_back(std::make_pair(boost::regex(r.first, boost::regex_constants::optimize), r.second));
