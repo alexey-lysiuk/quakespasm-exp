@@ -111,8 +111,13 @@ public:
 		static const LanguageDefinition& Json();
 	};
 
+#ifdef IMGUI_EDITOR_QSEXP
+	void SetLanguageDefinition(const LanguageDefinition* aLanguageDef);
+	inline const LanguageDefinition* GetLanguageDefinition() const { return mLanguageDefinition; };
+#else // IMGUI_EDITOR_QSEXP
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);
 	inline const LanguageDefinition& GetLanguageDefinition() const { return *mLanguageDefinition; };
+#endif // IMGUI_EDITOR_QSEXP
 	const char* GetLanguageDefinitionName() const;
 	void SetTabSize(int aValue);
 	inline int GetTabSize() const { return mTabSize; }
