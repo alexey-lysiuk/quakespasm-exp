@@ -309,6 +309,22 @@ local function levelentities_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
+		if ImGui.BeginCombo('##classnames', 'worldspawn') then
+			for i, classname in ipairs(self.classnames) do
+				local selected = self.currentclassnameindex == i
+
+				if ImGui.Selectable(classname, selected) then
+					self.currentclassnameindex = i
+				end
+
+				if selected then
+					ImGui.SetItemDefaultFocus()
+				end
+			end
+
+			ImGui.EndCombo()
+		end
+
 		self.textview:Render('##text')
 	end
 
@@ -323,6 +339,8 @@ local function levelentities_onshow(self)
 	textview:SetText(host.entities())
 
 	self.textview = textview
+	self.classnames = { 'worldspawn', 'player', '...' }
+	self.currentclassnameindex = 1
 	return true
 end
 

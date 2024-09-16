@@ -404,6 +404,16 @@ static void LS_EndMenuScope()
 	ImGui::EndMenu();
 }
 
+static bool ls_comboscope;
+
+static void LS_EndComboScope()
+{
+	assert(ls_comboscope);
+	ls_comboscope = false;
+
+	ImGui::EndCombo();
+}
+
 using LS_ImGuiEndFunction = void(*)();
 
 static ImVector<LS_ImGuiEndFunction> ls_endfuncstack;
