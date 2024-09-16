@@ -414,7 +414,8 @@ static int LS_global_edicts_destroy(lua_State* state)
 	if (function <= 0)
 		return 0;
 
-	LS_DoDamage(function, edict);
+	const bool destoyed = LS_DoDamage(function, edict);
+	lua_pushboolean(state, destoyed);
 	return 1;
 }
 
