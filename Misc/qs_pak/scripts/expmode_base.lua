@@ -309,7 +309,7 @@ local function levelentities_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		if ImGui.BeginCombo('##classnames', 'worldspawn') then
+		if ImGui.BeginCombo('##classnames', self.classnames[self.currentclassnameindex]) then
 			for i, classname in ipairs(self.classnames) do
 				local selected = self.currentclassnameindex == i
 
@@ -334,13 +334,19 @@ local function levelentities_update(self)
 end
 
 local function levelentities_onshow(self)
+	local entities = host.entities()
+
 	local textview = imColorTextEdit()
 	textview:SetReadOnly(true)
-	textview:SetText(host.entities())
+	textview:SetText(entities)
+
+	if not self.currentclassnameindex then
+		self.currentclassnameindex = 1
+	end
 
 	self.textview = textview
 	self.classnames = { 'worldspawn', 'player', '...' }
-	self.currentclassnameindex = 1
+--	self.currentclassnameindex = 1
 	return true
 end
 
