@@ -363,6 +363,38 @@ static int LS_global_imgui_Checkbox(lua_State* state)
 	return 2;
 }
 
+static int LS_global_imgui_BeginCombo(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	if (ls_comboscope)
+		luaL_error(state, "calling BeginCombo() twice");
+
+	const char* const label = luaL_checkstring(state, 1);
+	const char* const preview_value = luaL_checkstring(state, 2);
+	const ImGuiComboFlags flags = luaL_optinteger(state, 3, 0);
+
+	const bool opened = ImGui::BeginCombo(label, preview_value, flags);
+
+	if (opened)
+	{
+		LS_AddToImGuiStack(LS_EndComboScope);
+		ls_comboscope = true;
+	}
+
+	lua_pushboolean(state, opened);
+	return 1;
+}
+
+static int LS_global_imgui_EndCombo(lua_State* state)
+{
+	if (!ls_comboscope)
+		luaL_error(state, "calling EndCombo() without BeginCombo()");
+
+	LS_RemoveFromImGuiStack(state, LS_EndComboScope);
+	return 1;
+}
+
 static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1009,8 +1041,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * ImageButton
 
 		// Widgets: Combo Box
-		// * BeginCombo
-		// * EndCombo
+		{ "BeginCombo", LS_global_imgui_BeginCombo },
+		{ "EndCombo", LS_global_imgui_EndCombo },
 		// * Combo
 
 		// Widgets: Drag Sliders
