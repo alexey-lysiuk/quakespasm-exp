@@ -344,8 +344,26 @@ local function levelentities_onshow(self)
 		self.currentclassnameindex = 1
 	end
 
+	self.classnames = {}
+	self.positions = {}
+
+	local searchpos = 1
+
+	while true do
+		local first, last, classname = entities:find('{[^}]+"classname" "([%w_]+)"[^}]+}', searchpos)
+
+		if not first then
+			break
+		end
+
+		insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
+		insert(self.positions, first)
+
+		searchpos = last
+	end
+
 	self.textview = textview
-	self.classnames = { 'worldspawn', 'player', '...' }
+--	self.classnames = { 'worldspawn', 'player', '...' }
 --	self.currentclassnameindex = 1
 	return true
 end
