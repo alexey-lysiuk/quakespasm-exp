@@ -417,11 +417,16 @@ end
 expmode.common = {}
 
 function expmode.common.scratchpad()
-	return window('Scratchpad', scratchpad_update):setsize(imVec2(640, 480)):setconstraints()
+	return window('Scratchpad', scratchpad_update,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(640, 480))
+		end)
 end
 
 function expmode.common.stats()
-	return window('Stats', stats_update):setconstraints()
+	return window('Stats', stats_update,
+		function (self) self:setconstraints() end)
 end
 
 function expmode.common.levelentities()
