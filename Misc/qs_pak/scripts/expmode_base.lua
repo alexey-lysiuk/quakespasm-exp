@@ -357,7 +357,7 @@ local function levelentities_onshow(self)
 	local entities = host.entities()
 
 	local textview = imColorTextEdit()
-	textview:SetLanguageDefinition('json')
+	textview:SetLanguageDefinition('entities')
 	textview:SetReadOnly(true)
 	textview:SetText(entities)
 	self.textview = textview
