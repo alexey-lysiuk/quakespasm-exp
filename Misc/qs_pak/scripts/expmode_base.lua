@@ -13,6 +13,7 @@ local remove <const> = table.remove
 
 local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
+local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMainMenuBar <const> = ImGui.BeginMainMenuBar
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBulletText <const> = ImGui.BulletText
@@ -20,6 +21,7 @@ local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
+local imEndCombo <const> = ImGui.EndCombo
 local imEndMainMenuBar <const> = ImGui.EndMainMenuBar
 local imEndMenu <const> = ImGui.EndMenu
 local imGetCursorPosX <const> = ImGui.GetCursorPosX
@@ -34,6 +36,7 @@ local imSameLine <const> = ImGui.SameLine
 local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
+local imSetItemDefaultFocus <const> = ImGui.SetItemDefaultFocus
 local imSetKeyboardFocusHere <const> = ImGui.SetKeyboardFocusHere
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
@@ -309,38 +312,40 @@ local function levelentities_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		local classnames = self.classnames
---		local currententity = self.currententity
+		local textview = self.textview
+		local starts = self.starts
 
 		local currententity = 0
-		local currentline = self.textview:GetCursorPosition()
+		local currentline = textview:GetCursorPosition()
 
-		-- TODO: binary search
-		for i, start in ipairs(self.starts) do
+		-- Find the current entity index
+		-- TODO: Use binary search
+		for i, start in ipairs(starts) do
 			if start > currentline then
 				currententity = i - 1
 				break
 			end
 		end
 
-		if ImGui.BeginCombo('##classnames', classnames[currententity]) then
-			for i, classname in ipairs(classnames) do
+		local names = self.names
+
+		if imBeginCombo('##classnames', names[currententity]) then
+			for i, name in ipairs(names) do
 				local selected = currententity == i
 
-				if ImGui.Selectable(classname, selected) then
---					self.currententity = i
-					self.textview:SelectRegion(self.starts[i], 1, self.starts[i + 1] - 1, math.maxinteger)
+				if ImGui.Selectable(name, selected) then
+					textview:SelectRegion(starts[i], 1, starts[i + 1] - 1, math.maxinteger)
 				end
 
 				if selected then
-					ImGui.SetItemDefaultFocus()
+					imSetItemDefaultFocus()
 				end
 			end
 
-			ImGui.EndCombo()
+			imEndCombo()
 		end
 
-		self.textview:Render('##text')
+		textview:Render('##text')
 	end
 
 	imEnd()
@@ -355,10 +360,7 @@ local function levelentities_onshow(self)
 	textview:SetLanguageDefinition('json')
 	textview:SetReadOnly(true)
 	textview:SetText(entities)
-
 	self.textview = textview
-	self.classnames = {}
-	self.starts = {}
 
 	local lines = {}
 	local searchpos = 1
@@ -374,24 +376,32 @@ local function levelentities_onshow(self)
 		searchpos = last + 1
 	end
 
+	local names = {}   -- entity names for combobox
+	local starts = {}  -- first line of each entity
+
 	for i, line in ipairs(lines) do
+		-- Check if this line starts a new entity
 		if line:find('%s*{') then
-			insert(self.starts, i)
+			insert(starts, i)
 		end
 
+		-- Check if this lines contains entity class name
 		local first, last, classname = line:find('%s*"classname"%s+"([%w_]+)"')
 
 		if first then
-			insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
+			local name = format('[%i] %s', #names + 1, classname)
+			insert(names, name)
 		end
 	end
 
-	self.classnames[0] = ''
-	insert(self.starts, #lines + 1)
+	-- Add name for cursor position outside of any entity
+	names[0] = ''
 
---	if not self.currententity or self.currententity > #self.classnames then
---		self.currententity = 1
---	end
+	-- Add line index after the last entity
+	insert(starts, #lines + 1)
+
+	self.names = names
+	self.starts = starts
 
 	return true
 end
