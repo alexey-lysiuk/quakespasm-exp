@@ -310,15 +310,24 @@ local function levelentities_update(self)
 
 	if visible and opened then
 		local classnames = self.classnames
-		local currententity = self.currententity
+--		local currententity = self.currententity
+
+		local currententity = 1
+		local currentline = self.textview:GetCursorPosition()
+
+		for i, start in ipairs(self.starts) do
+			if start > currentline then
+				currententity = i - 1
+				break
+			end
+		end
 
 		if ImGui.BeginCombo('##classnames', classnames[currententity]) then
 			for i, classname in ipairs(classnames) do
 				local selected = currententity == i
 
 				if ImGui.Selectable(classname, selected) then
-					self.currententity = i
---					self.textview:SelectLine(self.starts[i])
+--					self.currententity = i
 					self.textview:SelectRegion(self.starts[i], 1, self.starts[i + 1], 1)
 				end
 
@@ -373,15 +382,14 @@ local function levelentities_onshow(self)
 
 		if first then
 			insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
---			insert(self.starts, i)
 		end
 	end
 
 	insert(self.starts, #lines)
 
-	if not self.currententity or self.currententity > #self.classnames then
-		self.currententity = 1
-	end
+--	if not self.currententity or self.currententity > #self.classnames then
+--		self.currententity = 1
+--	end
 
 	return true
 end

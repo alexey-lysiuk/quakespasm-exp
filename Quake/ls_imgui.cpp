@@ -463,6 +463,22 @@ static int LS_value_ImGuiColorTextEdit_index(lua_State* state)
 	return 1;
 }
 
+static int LS_value_ImGuiColorTextEdit_GetCursorPosition(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	int line, column;
+	texteditor->GetCursorPosition(line, column);
+
+	// Line and character indices begin with zero
+	lua_pushinteger(state, line + 1);
+	lua_pushinteger(state, column + 1);
+	return 2;
+}
+
 static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -602,6 +618,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 
 		constexpr luaL_Reg methods[] =
 		{
+			{ "GetCursorPosition", LS_value_ImGuiColorTextEdit_GetCursorPosition },
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
 			{ "SelectRegion", LS_value_ImGuiColorTextEdit_SelectRegion },
