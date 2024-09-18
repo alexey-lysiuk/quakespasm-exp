@@ -487,7 +487,7 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
 	assert(texteditor);
 
-	static const char* const languages[] = { "none", "cpp", "lua" };
+	static const char* const languages[] = { "none", "cpp", "lua", "entities" };
 	const int languageId = luaL_checkoption(state, 2, nullptr, languages);
 	const TextEditor::LanguageDefinition* language;
 
@@ -503,6 +503,10 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 
 	case 2:
 		language = &TextEditor::LanguageDefinition::Lua();
+		break;
+
+	case 3:
+		language = &TextEditor::LanguageDefinition::QuakeEntities();
 		break;
 
 	default:
