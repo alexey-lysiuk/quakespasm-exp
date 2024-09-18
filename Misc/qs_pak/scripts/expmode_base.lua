@@ -312,9 +312,10 @@ local function levelentities_update(self)
 		local classnames = self.classnames
 --		local currententity = self.currententity
 
-		local currententity = 1
+		local currententity = 0
 		local currentline = self.textview:GetCursorPosition()
 
+		-- TODO: binary search
 		for i, start in ipairs(self.starts) do
 			if start > currentline then
 				currententity = i - 1
@@ -328,7 +329,7 @@ local function levelentities_update(self)
 
 				if ImGui.Selectable(classname, selected) then
 --					self.currententity = i
-					self.textview:SelectRegion(self.starts[i], 1, self.starts[i + 1], 1)
+					self.textview:SelectRegion(self.starts[i], 1, self.starts[i + 1] - 1, math.maxinteger)
 				end
 
 				if selected then
@@ -385,7 +386,8 @@ local function levelentities_onshow(self)
 		end
 	end
 
-	insert(self.starts, #lines)
+	self.classnames[0] = ''
+	insert(self.starts, #lines + 1)
 
 --	if not self.currententity or self.currententity > #self.classnames then
 --		self.currententity = 1
