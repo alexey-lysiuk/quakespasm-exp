@@ -492,6 +492,23 @@ static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
 	return 0;
 }
 
+static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	const int startline = luaL_checkinteger(state, 2);
+	const int startchar = luaL_checkinteger(state, 3);
+	const int endline = luaL_checkinteger(state, 4);
+	const int endchar = luaL_checkinteger(state, 5);
+
+	// Line and character indices begin with zero
+	texteditor->SelectRegion(startline - 1, startchar - 1, endline - 1, endchar - 1);
+	return 0;
+}
+
 static int LS_value_ImGuiColorTextEdit_SetCursorPosition(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -514,7 +531,7 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
 	assert(texteditor);
 
-	static const char* const languages[] = { "none", "cpp", "lua" };
+	static const char* const languages[] = { "none", "cpp", "lua", "json" };
 	const int languageId = luaL_checkoption(state, 2, nullptr, languages);
 	const TextEditor::LanguageDefinition* language;
 
@@ -530,6 +547,10 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 
 	case 2:
 		language = &TextEditor::LanguageDefinition::Lua();
+		break;
+
+	case 3:
+			language = &TextEditor::LanguageDefinition::Json();
 		break;
 
 	default:
@@ -583,6 +604,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 		{
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
+			{ "SelectRegion", LS_value_ImGuiColorTextEdit_SelectRegion },
 			{ "SetCursorPosition", LS_value_ImGuiColorTextEdit_SetCursorPosition },
 			{ "SetLanguageDefinition", LS_value_ImGuiColorTextEdit_SetLanguageDefinition },
 			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },

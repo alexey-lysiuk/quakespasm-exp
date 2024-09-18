@@ -318,7 +318,8 @@ local function levelentities_update(self)
 
 				if ImGui.Selectable(classname, selected) then
 					self.currententity = i
-					self.textview:SelectLine(self.starts[i])
+--					self.textview:SelectLine(self.starts[i])
+					self.textview:SelectRegion(self.starts[i], 1, self.starts[i + 1], 1)
 				end
 
 				if selected then
@@ -341,12 +342,12 @@ local function levelentities_onshow(self)
 	local entities = host.entities()
 
 	local textview = imColorTextEdit()
+	textview:SetLanguageDefinition('json')
 	textview:SetReadOnly(true)
 	textview:SetText(entities)
 
 	self.textview = textview
 	self.classnames = {}
---	self.positions = {}
 	self.starts = {}
 
 	local lines = {}
@@ -359,39 +360,24 @@ local function levelentities_onshow(self)
 			break
 		end
 
---		print(entities:sub(searchpos, last - 1))
 		insert(lines, entities:sub(searchpos, first - 1))
-
---		insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
---		insert(self.positions, first)
-
 		searchpos = last + 1
 	end
 
---	local entitystartline = 1
---	local entityendline = 1
-
 	for i, line in ipairs(lines) do
---		if line:find('%s*{') then
---			entitystartline = i
-----			entityendline = i
---		elseif line:find('%s*}') then
---			entityendline = i
---		end
+		if line:find('%s*{') then
+			insert(self.starts, i)
+		end
 
---		if line:find('%s*{') then
+		local first, last, classname = line:find('%s*"classname"%s+"([%w_]+)"')
+
+		if first then
+			insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
 --			insert(self.starts, i)
---			print(i)
---		else
-			local first, last, classname = line:find('%s*"classname"%s+"([%w_]+)"')
-
-			if first then
-				insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
-				insert(self.starts, i)
-				print(i, classname)
-			end
---		end
+		end
 	end
+
+	insert(self.starts, #lines)
 
 	if not self.currententity or self.currententity > #self.classnames then
 		self.currententity = 1
