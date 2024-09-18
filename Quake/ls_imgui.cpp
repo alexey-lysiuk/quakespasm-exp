@@ -480,6 +480,33 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 	return 1;
 }
 
+static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	const int line = luaL_checkinteger(state, 2);
+	texteditor->SelectLine(line - 1);  // first line index is zero
+	return 0;
+}
+
+static int LS_value_ImGuiColorTextEdit_SetCursorPosition(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+
+	const int line = luaL_checkinteger(state, 2);
+	const int character = luaL_optinteger(state, 3, 1);
+
+	// Line and character indices begin with zero
+	texteditor->SetCursorPosition(line - 1, character - 1);
+	return 0;
+}
+
 static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -555,6 +582,8 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 		constexpr luaL_Reg methods[] =
 		{
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
+			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
+			{ "SetCursorPosition", LS_value_ImGuiColorTextEdit_SetCursorPosition },
 			{ "SetLanguageDefinition", LS_value_ImGuiColorTextEdit_SetLanguageDefinition },
 			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },
 			{ "SetText", LS_value_ImGuiColorTextEdit_SetText },

@@ -309,12 +309,16 @@ local function levelentities_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		if ImGui.BeginCombo('##classnames', self.classnames[self.currentclassnameindex]) then
-			for i, classname in ipairs(self.classnames) do
-				local selected = self.currentclassnameindex == i
+		local classnames = self.classnames
+		local currententity = self.currententity
+
+		if ImGui.BeginCombo('##classnames', classnames[currententity]) then
+			for i, classname in ipairs(classnames) do
+				local selected = currententity == i
 
 				if ImGui.Selectable(classname, selected) then
-					self.currentclassnameindex = i
+					self.currententity = i
+					self.textview:SelectLine(self.starts[i])
 				end
 
 				if selected then
@@ -340,31 +344,59 @@ local function levelentities_onshow(self)
 	textview:SetReadOnly(true)
 	textview:SetText(entities)
 
-	if not self.currentclassnameindex then
-		self.currentclassnameindex = 1
-	end
-
+	self.textview = textview
 	self.classnames = {}
-	self.positions = {}
+--	self.positions = {}
+	self.starts = {}
 
+	local lines = {}
 	local searchpos = 1
 
 	while true do
-		local first, last, classname = entities:find('{[^}]+"classname" "([%w_]+)"[^}]+}', searchpos)
+		local first, last = entities:find('\r?\n', searchpos)
 
 		if not first then
 			break
 		end
 
-		insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
-		insert(self.positions, first)
+--		print(entities:sub(searchpos, last - 1))
+		insert(lines, entities:sub(searchpos, first - 1))
 
-		searchpos = last
+--		insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
+--		insert(self.positions, first)
+
+		searchpos = last + 1
 	end
 
-	self.textview = textview
---	self.classnames = { 'worldspawn', 'player', '...' }
---	self.currentclassnameindex = 1
+--	local entitystartline = 1
+--	local entityendline = 1
+
+	for i, line in ipairs(lines) do
+--		if line:find('%s*{') then
+--			entitystartline = i
+----			entityendline = i
+--		elseif line:find('%s*}') then
+--			entityendline = i
+--		end
+
+--		if line:find('%s*{') then
+--			insert(self.starts, i)
+--			print(i)
+--		else
+			local first, last, classname = line:find('%s*"classname"%s+"([%w_]+)"')
+
+			if first then
+				insert(self.classnames, format('[%i] %s', #self.classnames + 1, classname))
+				insert(self.starts, i)
+				print(i, classname)
+			end
+--		end
+	end
+
+	if not self.currententity or self.currententity > #self.classnames then
+		self.currententity = 1
+	end
+
 	return true
 end
 
@@ -376,16 +408,24 @@ end
 expmode.common = {}
 
 function expmode.common.scratchpad()
-	return window('Scratchpad', scratchpad_update):setsize(imVec2(640, 480)):setconstraints()
+	return window('Scratchpad', scratchpad_update,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(640, 480))
+		end)
 end
 
 function expmode.common.stats()
-	return window('Stats', stats_update):setconstraints()
+	return window('Stats', stats_update,
+		function (self) self:setconstraints() end)
 end
 
 function expmode.common.levelentities()
 	return window('Level Entities', levelentities_update,
-		function (self) self:setconstraints() end,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(640, 480))
+		end,
 		levelentities_onshow, levelentities_onhide)
 end
 
