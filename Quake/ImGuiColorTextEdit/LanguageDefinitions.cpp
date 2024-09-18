@@ -900,3 +900,39 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Json()
 	}
 	return langDef;
 }
+
+#ifdef IMGUI_EDITOR_QSEXP
+const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::QuakeEntities()
+{
+	static LanguageDefinition def;
+
+	if (def.mName.empty())
+	{
+		def.mName = "Quake Entities";
+		def.mSingleLineComment = "//";
+
+		def.mTokenize = [](const char* in_begin, const char* in_end, const char*& out_begin, const char*& out_end, PaletteIndex& paletteIndex) -> bool
+		{
+			paletteIndex = PaletteIndex::Max;
+
+			while (in_begin < in_end && isascii(*in_begin) && isblank(*in_begin))
+				in_begin++;
+
+			if (in_begin == in_end)
+			{
+				out_begin = in_end;
+				out_end = in_end;
+				paletteIndex = PaletteIndex::Default;
+			}
+			else if (TokenizeCStyleString(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::String;
+			else if (TokenizeCStylePunctuation(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::Punctuation;
+
+			return paletteIndex != PaletteIndex::Max;
+		};
+	}
+
+	return def;
+}
+#endif // IMGUI_EDITOR_QSEXP
