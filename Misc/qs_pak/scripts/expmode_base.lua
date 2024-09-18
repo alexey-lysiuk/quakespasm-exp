@@ -408,6 +408,9 @@ end
 
 local function levelentities_onhide(self)
 	self.textview = nil
+	self.names = nil
+	self.starts = nil
+
 	return true
 end
 
