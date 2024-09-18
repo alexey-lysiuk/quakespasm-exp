@@ -343,7 +343,10 @@ end
 
 function expmode.common.levelentities()
 	return window('Level Entities', levelentities_update,
-		function (self) self:setconstraints() end,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(640, 480))
+		end,
 		levelentities_onshow, levelentities_onhide)
 end
 
