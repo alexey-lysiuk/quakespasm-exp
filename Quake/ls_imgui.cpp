@@ -446,6 +446,16 @@ void LS_ClearImGuiStack()
 
 constexpr LS_UserDataType<TextEditor*> ls_imguicolortextedit_type("ImGuiColorTextEdit");
 
+static TextEditor* LS_GetColorTextEdit(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
+	assert(texteditor);
+	
+	return texteditor;
+}
+
 static int LS_value_ImGuiColorTextEdit_gc(lua_State* state)
 {
 	TextEditor* const texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
@@ -465,10 +475,7 @@ static int LS_value_ImGuiColorTextEdit_index(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_GetCursorPosition(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	int line, column;
 	texteditor->GetCursorPosition(line, column);
@@ -481,10 +488,7 @@ static int LS_value_ImGuiColorTextEdit_GetCursorPosition(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const char* const title = luaL_checkstring(state, 2);
 	const bool parentIsFocused = luaL_opt(state, lua_toboolean, 3, false);
@@ -498,10 +502,7 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const int line = luaL_checkinteger(state, 2);
 	texteditor->SelectLine(line - 1);  // first line index is zero
@@ -510,10 +511,7 @@ static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const int startline = luaL_checkinteger(state, 2);
 	const int startchar = luaL_checkinteger(state, 3);
@@ -527,10 +525,7 @@ static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_SetCursorPosition(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const int line = luaL_checkinteger(state, 2);
 	const int character = luaL_optinteger(state, 3, 1);
@@ -542,10 +537,7 @@ static int LS_value_ImGuiColorTextEdit_SetCursorPosition(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	static const char* const languages[] = { "none", "cpp", "lua", "entities" };
 	const int languageId = luaL_checkoption(state, 2, nullptr, languages);
@@ -580,10 +572,7 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_SetReadOnly(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const bool readonly = lua_toboolean(state, 2);
 	texteditor->SetReadOnlyEnabled(readonly);
@@ -592,10 +581,7 @@ static int LS_value_ImGuiColorTextEdit_SetReadOnly(lua_State* state)
 
 static int LS_value_ImGuiColorTextEdit_SetText(lua_State* state)
 {
-	LS_EnsureFrameScope(state);
-
-	TextEditor* texteditor = ls_imguicolortextedit_type.GetValue(state, 1);
-	assert(texteditor);
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	size_t length;
 	const char* const text = luaL_checklstring(state, 2, &length);
