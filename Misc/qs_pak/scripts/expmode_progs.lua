@@ -150,7 +150,13 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in ipairs(functions) do
-		local entry = { func = func, index = tostring(i), declaration = tostring(func), filename = func.filename }
+		local entry =
+		{
+			func = func,
+			index = tostring(i),
+			declaration = format('%s##%i', func, i),
+			filename = func.filename
+		}
 		insert(entries, entry)
 	end
 
