@@ -485,6 +485,26 @@ private:
 	const LanguageDefinition* mLanguageDefinition = nullptr;
 	RegexList mRegexList;
 
+#ifdef IMGUI_EDITOR_QSEXP
+	// https://github.com/goossens/ObjectTalk/blob/c1ff796239e48cbda729d509c3558addf4d7eceb/ide/script/OtObjectTalkEditor.h
+	
+	bool focusOnEditor = true;
+
+	// find and replace support
+	bool findReplaceVisible = false;
+	bool focusOnFind = false;
+	std::string findText;
+	std::string replaceText;
+	bool caseSensitiveFind = false;
+	bool wholeWordFind = false;
+
+	void openFindReplace();
+	void find();
+	void findAll();
+	void replace();
+	void replaceAll();
+#endif // IMGUI_EDITOR_QSEXP
+	
 	inline bool IsHorizontalScrollbarVisible() const { return mCurrentSpaceWidth > mContentWidth; }
 	inline bool IsVerticalScrollbarVisible() const { return mCurrentSpaceHeight > mContentHeight; }
 	inline int TabSizeAtColumn(int aColumn) const { return mTabSize - (aColumn % mTabSize); }
