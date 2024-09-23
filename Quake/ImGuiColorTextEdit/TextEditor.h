@@ -485,6 +485,31 @@ private:
 	const LanguageDefinition* mLanguageDefinition = nullptr;
 	RegexList mRegexList;
 
+#ifdef IMGUI_EDITOR_QSEXP
+	void RenderFindReplace(const ImVec2& cursorPos, const ImVec2& contentRegionAvail);
+
+	// https://github.com/goossens/ObjectTalk -> ide/script/OtObjectTalkEditor.h
+	std::string mFindText;
+	std::string mReplaceText;
+	
+	bool mFindReplaceVisible = false;
+	bool mFocusOnFind = false;
+	bool mCaseSensitiveFind = false;
+	bool mWholeWordFind = false;
+
+	bool mFocusOnEditor = true;
+	
+	void OpenFindReplace();
+	void Find();
+	void FindAll();
+	void Replace();
+	void ReplaceAll();
+	
+	// https://github.com/goossens/ObjectTalk -> gfx/framework/OtUi.h
+	static bool InputStdString(const char* label, std::string* value, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
+	static bool LatchButton(const char* label, bool* value, const ImVec2& size);
+#endif // IMGUI_EDITOR_QSEXP
+
 	inline bool IsHorizontalScrollbarVisible() const { return mCurrentSpaceWidth > mContentWidth; }
 	inline bool IsVerticalScrollbarVisible() const { return mCurrentSpaceHeight > mContentHeight; }
 	inline int TabSizeAtColumn(int aColumn) const { return mTabSize - (aColumn % mTabSize); }
