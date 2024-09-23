@@ -3208,8 +3208,8 @@ void TextEditor::RenderFindReplace(const ImVec2& cursorPos, const ImVec2& conten
 	ImGuiStyle& style = ImGui::GetStyle();
 	constexpr float fieldWidth = 250.0f;
 
-	const float replaceWidth = ImGui::CalcTextSize(" Replace ").x + style.FramePadding.x * 2.0f;
-	const float replaceAllWidth = ImGui::CalcTextSize(" Replace All ").x + style.FramePadding.x * 2.0f;
+	const float replaceWidth = ImGui::CalcTextSize("Replace").x + style.FramePadding.x * 2.0f;
+	const float replaceAllWidth = ImGui::CalcTextSize("Replace All").x + style.FramePadding.x * 2.0f;
 	const float optionWidth = ImGui::CalcTextSize("Aa").x + style.FramePadding.x * 2.0f;
 
 	const float windowHeight =
@@ -3231,7 +3231,12 @@ void TextEditor::RenderFindReplace(const ImVec2& cursorPos, const ImVec2& conten
 		cursorPos.x + contentRegionAvail.x - windowWidth - style.ScrollbarSize - style.ItemSpacing.x,
 		cursorPos.y + style.ItemSpacing.y * 2.0f));
 
+	ImVec4 childBgColor = style.Colors[ImGuiCol_WindowBg];
+	childBgColor.w = 0.7f;
+
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, childBgColor);
 	ImGui::BeginChild("find-replace", ImVec2(windowWidth, windowHeight), ImGuiChildFlags_Borders);
+	ImGui::PopStyleColor();
 
 	ImGui::SetNextItemWidth(fieldWidth);
 
