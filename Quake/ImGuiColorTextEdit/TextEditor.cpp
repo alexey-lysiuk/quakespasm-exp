@@ -33,17 +33,27 @@ void TextEditor::SetPalette(const Palette& aValue)
 void TextEditor::SetLanguageDefinition(const LanguageDefinition* aLanguageDef)
 {
 	mLanguageDefinition = aLanguageDef;
-#else // IMGUI_EDITOR_QSEXP
+	mRegexList.clear();
+	
+	if (mLanguageDefinition)
+	{
+		for (const auto& r : mLanguageDefinition->mTokenRegexStrings)
+			mRegexList.push_back(std::make_pair(boost::regex(r.first, boost::regex_constants::optimize), r.second));
+	}
+
+	Colorize();
+}
+#else // !IMGUI_EDITOR_QSEXP
 void TextEditor::SetLanguageDefinition(const LanguageDefinition& aLanguageDef)
 {
 	mLanguageDefinition = &aLanguageDef;
-#endif // IMGUI_EDITOR_QSEXP
 	mRegexList.clear();
 	for (const auto& r : mLanguageDefinition->mTokenRegexStrings)
 		mRegexList.push_back(std::make_pair(boost::regex(r.first, boost::regex_constants::optimize), r.second));
 
 	Colorize();
 }
+#endif // IMGUI_EDITOR_QSEXP
 
 const char* TextEditor::GetLanguageDefinitionName() const
 {
