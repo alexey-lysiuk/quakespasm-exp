@@ -5,17 +5,22 @@ local format <const> = string.format
 
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
+local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginTable <const> = ImGui.BeginTable
 local imCheckbox <const> = ImGui.Checkbox
 local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
+local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
 local imMenuItem <const> = ImGui.MenuItem
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
+local imSetItemDefaultFocus <const> = ImGui.SetItemDefaultFocus
 local imTableHeadersRow <const> = ImGui.TableHeadersRow
 local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
@@ -38,6 +43,8 @@ local globaldefinitions <const> = progs.globaldefinitions
 local typename <const> = progs.typename
 local strings <const> = progs.strings
 local stringoffset <const> = strings.offset
+
+local isfree <const> = edicts.isfree
 
 local addaction <const> = expmode.addaction
 local resetsearch <const> = expmode.resetsearch
@@ -179,6 +186,17 @@ local function definitions_searchcompare(entry, string)
 		or entry.offset:find(string, 1, true)
 end
 
+local function definitions_edictchanged(self, index)
+	local currentedict = edicts[index]
+
+	for _, entry in ipairs(self.entries) do
+		local value = currentedict[entry.name]
+		entry.value = tostring(value)
+	end
+
+	self.edictindex = index
+end
+
 local function definitions_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true)
@@ -186,15 +204,39 @@ local function definitions_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, definitions_searchcompare, searchmodified)
-		local hasvalue = self.hasvalue
 
-		if imBeginTable(title, hasvalue and 5 or 4, defaultTableFlags) then
+		if self.definitions == fielddefinitions then
+			imAlignTextToFramePadding()
+			imText('Values:')
+			imSameLine()
+
+			local edictindex = self.edictindex
+			local currentedict = edicts[edictindex]
+
+			if imBeginCombo('##edicts', tostring(currentedict)) then
+				for i, edict in ipairs(edicts) do
+					if not isfree(edict) then
+						local selected = edictindex == i
+
+						if imSelectable(tostring(edict), selected) then
+							definitions_edictchanged(self, i)
+						end
+
+						if selected then
+							imSetItemDefaultFocus()
+						end
+					end
+				end
+
+				imEndCombo()
+			end
+		end
+
+		if imBeginTable(title, 5, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Name')
-			if hasvalue then
-				imTableSetupColumn('Value')
-			end
+			imTableSetupColumn('Value')
 			imTableSetupColumn('Type', imTableColumnWidthFixed)
 			imTableSetupColumn('Offset', imTableColumnWidthFixed)
 			imTableHeadersRow()
@@ -205,10 +247,8 @@ local function definitions_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.name)
-				if hasvalue then
-					imTableNextColumn()
-					imText(entry.value)
-				end
+				imTableNextColumn()
+				imText(entry.value)
 				imTableNextColumn()
 				imText(entry.type)
 				imTableNextColumn()
@@ -224,16 +264,47 @@ local function definitions_onupdate(self)
 	return opened
 end
 
+local function definitions_currentedict(self)
+	local index = self.edictindex
+	local invalid = not index
+		or index <= 0
+		or index > #edicts
+		or isfree(edicts[index])
+
+	if invalid then
+		index = 2  -- player
+		self.edictindex = index
+	end
+
+	return edicts[index]
+end
+
 local function definitions_onshow(self)
-	local hasvalue = self.hasvalue
+	local definitions = self.definitions
+	local valuefunc, currentedict
 	local entries = {}
 
-	for i, definition in ipairs(self.definitions) do
+	local function fieldvalue(definition)
+		return currentedict[definition.name]
+	end
+
+	local function globalvalue(definition)
+		return definition.value
+	end
+
+	if definitions == fielddefinitions then
+		valuefunc = fieldvalue
+		currentedict = definitions_currentedict(self)
+	else
+		valuefunc = globalvalue
+	end
+
+	for i, definition in ipairs(definitions) do
 		local entry =
 		{
 			index = tostring(i),
 			name = definition.name,
-			value = hasvalue and tostring(definition.value),
+			value = tostring(valuefunc(definition)),
 			type = typename(definition.type),
 			offset = tostring(definition.offset)
 		}
@@ -391,11 +462,10 @@ function exprpogs.functions()
 		functions_onshow, functions_onhide)
 end
 
-local function definitionstool(name, table, hasvalue)
+local function definitionstool(name, table)
 	local function oncreate(self)
 		self:setconstraints()
 		self.definitions = table
-		self.hasvalue = hasvalue
 	end
 
 	return window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
@@ -406,7 +476,7 @@ function exprpogs.fielddefinitions()
 end
 
 function exprpogs.globaldefinitions()
-	definitionstool('Global Definitions', globaldefinitions, true)  -- hasvalue
+	definitionstool('Global Definitions', globaldefinitions)
 end
 
 local function stringstool(name, table, offsetfunc)
