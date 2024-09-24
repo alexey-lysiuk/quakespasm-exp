@@ -34,9 +34,15 @@ local enginestrings <const> = progs.enginestrings
 local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
+local globalvariables <const> = progs.globalvariables
 local typename <const> = progs.typename
 local strings <const> = progs.strings
 local stringoffset <const> = strings.offset
+
+local type_entity <const> = progs.types.entity
+--local type_float  <const> = progs.types.float
+local type_string <const> = progs.types.string
+local type_vector <const> = progs.types.vector
 
 local addaction <const> = expmode.addaction
 local resetsearch <const> = expmode.resetsearch
@@ -174,7 +180,7 @@ end
 
 local function definitions_searchcompare(entry, string)
 	return entry.name:lower():find(string, 1, true)
-		or entry.type:find(string, 1, true)
+		or entry.typename:find(string, 1, true)
 		or entry.offset:find(string, 1, true)
 end
 
@@ -185,11 +191,15 @@ local function definitions_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, definitions_searchcompare, searchmodified)
+		local hasvalue = self.valuefunc
 
-		if imBeginTable(title, 4, defaultTableFlags) then
+		if imBeginTable(title, hasvalue and 5 or 4, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Name')
+			if hasvalue then
+				imTableSetupColumn('Value')
+			end
 			imTableSetupColumn('Type', imTableColumnWidthFixed)
 			imTableSetupColumn('Offset', imTableColumnWidthFixed)
 			imTableHeadersRow()
@@ -200,8 +210,12 @@ local function definitions_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.name)
+				if hasvalue then
+					imTableNextColumn()
+					imText(entry.value)
+				end
 				imTableNextColumn()
-				imText(entry.type)
+				imText(entry.typename)
 				imTableNextColumn()
 				imText(entry.offset)
 			end
@@ -216,16 +230,26 @@ local function definitions_onupdate(self)
 end
 
 local function definitions_onshow(self)
+	local valuefunc = self.valuefunc
 	local entries = {}
 
 	for i, definition in ipairs(self.definitions) do
+		local type = definition.type
+		local offset = definition.offset
+
 		local entry =
 		{
 			index = tostring(i),
 			name = definition.name,
-			type = typename(definition.type),
-			offset = tostring(definition.offset)
+			typename = typename(type),
+			offset = tostring(offset)
 		}
+
+		if valuefunc then
+			entry.value = valuefunc(offset, type)
+--			entry.type = type
+		end
+
 		insert(entries, entry)
 	end
 
@@ -380,10 +404,11 @@ function exprpogs.functions()
 		functions_onshow, functions_onhide)
 end
 
-local function definitionstool(name, table)
+local function definitionstool(name, table, valuefunc)
 	local function oncreate(self)
 		self:setconstraints()
 		self.definitions = table
+		self.valuefunc = valuefunc
 	end
 
 	return window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
@@ -394,7 +419,19 @@ function exprpogs.fielddefinitions()
 end
 
 function exprpogs.globaldefinitions()
-	definitionstool('Global Definitions', globaldefinitions)
+	local function valuefunc(offset, type)
+		if type == type_string then
+			local stringoffset = globalvariables.integer(offset)
+			local string = stringoffset > 0 and strings[stringoffset] or enginestrings[-stringoffset - 1]
+			return string or ''
+		elseif type == type_entity then
+			return globalvariables.integer(offset)
+		end
+
+		return globalvariables[offset]
+	end
+
+	definitionstool('Global Definitions', globaldefinitions, valuefunc)
 end
 
 local function stringstool(name, table, offsetfunc)
