@@ -1031,7 +1031,7 @@ void LS_Init(void)
 	Cmd_AddCommand("lua", LS_Exec_f);
 	Cmd_AddCommand("resetlua", LS_ResetState);
 
-	Cbuf_InsertText("exec scripts/aliases/common.cfg");
+	Cbuf_AddText("exec scripts/aliases/common.cfg\n");
 }
 
 void LS_Shutdown(void)
