@@ -112,7 +112,7 @@ local function functions_onupdate(self)
 			imTableSetupColumn('File', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
-			for _, entry in ipairs(entries) do
+			for i, entry in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(entry.index)
@@ -130,7 +130,7 @@ local function functions_onupdate(self)
 						self.name = funcname
 					end
 
-					window(format('Disassembly of %s()', funcname), functiondisassembly_onupdate,
+					window(format('Disassembly of #%i %s()', i, funcname), functiondisassembly_onupdate,
 						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 				end
 				imTableNextColumn()
