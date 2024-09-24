@@ -185,11 +185,15 @@ local function definitions_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, definitions_searchcompare, searchmodified)
+		local hasvalue = self.hasvalue
 
-		if imBeginTable(title, 4, defaultTableFlags) then
+		if imBeginTable(title, hasvalue and 5 or 4, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Name')
+			if hasvalue then
+				imTableSetupColumn('Value')
+			end
 			imTableSetupColumn('Type', imTableColumnWidthFixed)
 			imTableSetupColumn('Offset', imTableColumnWidthFixed)
 			imTableHeadersRow()
@@ -200,6 +204,10 @@ local function definitions_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.name)
+				if hasvalue then
+					imTableNextColumn()
+					imText(entry.value)
+				end
 				imTableNextColumn()
 				imText(entry.type)
 				imTableNextColumn()
@@ -216,6 +224,7 @@ local function definitions_onupdate(self)
 end
 
 local function definitions_onshow(self)
+	local hasvalue = self.hasvalue
 	local entries = {}
 
 	for i, definition in ipairs(self.definitions) do
@@ -223,6 +232,7 @@ local function definitions_onshow(self)
 		{
 			index = tostring(i),
 			name = definition.name,
+			value = hasvalue and tostring(definition.value),
 			type = typename(definition.type),
 			offset = tostring(definition.offset)
 		}
@@ -380,10 +390,11 @@ function exprpogs.functions()
 		functions_onshow, functions_onhide)
 end
 
-local function definitionstool(name, table)
+local function definitionstool(name, table, hasvalue)
 	local function oncreate(self)
 		self:setconstraints()
 		self.definitions = table
+		self.hasvalue = hasvalue
 	end
 
 	return window(name, definitions_onupdate, oncreate, definitions_onshow, definitions_onhide)
@@ -394,7 +405,7 @@ function exprpogs.fielddefinitions()
 end
 
 function exprpogs.globaldefinitions()
-	definitionstool('Global Definitions', globaldefinitions)
+	definitionstool('Global Definitions', globaldefinitions, true)  -- hasvalue
 end
 
 local function stringstool(name, table, offsetfunc)
