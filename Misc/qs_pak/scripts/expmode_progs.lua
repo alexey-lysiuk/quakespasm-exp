@@ -8,6 +8,7 @@ local insert <const> = table.insert
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginTable <const> = ImGui.BeginTable
+local imCheckbox <const> = ImGui.Checkbox
 local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
@@ -51,7 +52,7 @@ local function functiondisassembly_onupdate(self)
 
 	if visible and opened then
 		-- TODO: Do not show binary checkbox for built-in functions
-		local binarypressed, binaryenabled = ImGui.Checkbox('Show statements binaries', self.withbinary)
+		local binarypressed, binaryenabled = imCheckbox('Show statements binaries', self.withbinary)
 
 		if binarypressed then
 			local disassembly = self.func:disassemble(binaryenabled)
