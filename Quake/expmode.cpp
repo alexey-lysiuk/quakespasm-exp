@@ -214,7 +214,7 @@ void EXP_Init(SDL_Window* window, SDL_GLContext context)
 	exp_window = window;
 	exp_glcontext = context;
 
-	Cbuf_InsertText("exec scripts/aliases/expmode.cfg");
+	Cbuf_AddText("exec scripts/aliases/expmode.cfg\n");
 }
 
 void EXP_Shutdown()
