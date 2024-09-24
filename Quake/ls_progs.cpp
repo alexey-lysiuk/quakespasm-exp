@@ -819,6 +819,19 @@ static int LS_PushGlobalDefinitionToString(lua_State* state, const ddef_t* defin
 	return 1;
 }
 
+static int LS_PushGlobalDefinitionValue(lua_State* state, const ddef_t* definition)
+{
+	const int offset = definition->ofs;
+
+	if (offset < 0 || offset >= progs->numglobals)
+		luaL_error(state, "invalid global definition offset %d", offset);
+
+	const eval_t* const value = reinterpret_cast<const eval_t*>(&pr_globals[offset]);
+	const int type = definition->type & ~DEF_SAVEGLOBAL;
+	LS_PushEdictFieldValue(state, etype_t(type), value);
+	return 1;
+}
+
 // Sets metatable for 'global definition' userdata
 static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 {
@@ -832,6 +845,7 @@ static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
 			{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
 			{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
 			{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
+			{ "value", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionValue> },
 			{ nullptr, nullptr }
 		};
 
