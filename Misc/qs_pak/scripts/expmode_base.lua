@@ -33,6 +33,7 @@ local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
 local imMenuItem <const> = ImGui.MenuItem
 local imSameLine <const> = ImGui.SameLine
+local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -333,7 +334,7 @@ local function levelentities_update(self)
 			for i, name in ipairs(names) do
 				local selected = currententity == i
 
-				if ImGui.Selectable(name, selected) then
+				if imSelectable(name, selected) then
 					textview:SelectRegion(starts[i], 1, starts[i + 1] - 1, math.maxinteger)
 				end
 

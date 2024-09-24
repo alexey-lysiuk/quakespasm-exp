@@ -823,7 +823,7 @@ static int LS_PushGlobalDefinitionValue(lua_State* state, const ddef_t* definiti
 {
 	const int offset = definition->ofs;
 
-	if (offset >= progs->numglobals)
+	if (offset < 0 || offset >= progs->numglobals)
 		luaL_error(state, "invalid global definition offset %d", offset);
 
 	const eval_t* const value = reinterpret_cast<const eval_t*>(&pr_globals[offset]);
