@@ -482,19 +482,22 @@ static const ddef_t* LS_FindProgsGlobalDefinition(const char* const definitionna
 	return nullptr;
 }
 
+static int ls_cachedselfindex = -1;
+static int ls_cachedactivatorindex = -1;
+
 static void LS_UseTargets(edict_t* edict)
 {
-	static int cachedfunction = -1, cachedselfindex = -1, cachedactivatorindex = -1;
+	static int cachedfunction = -1;
 
 	const int function = LS_FindProgsFunction("SUB_UseTargets", cachedfunction);
 	if (function <= 0)
 		return;
 
-	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", cachedselfindex);
+	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
 	if (!self)
 		return;
 
-	const ddef_t* const activator = LS_FindProgsGlobalDefinition("activator", cachedactivatorindex);
+	const ddef_t* const activator = LS_FindProgsGlobalDefinition("activator", ls_cachedactivatorindex);
 	if (!activator)
 		return;
 
@@ -531,6 +534,36 @@ static int LS_global_edicts_remove(lua_State* state)
 	}
 
 	return 0;
+}
+
+// Spawns a new entity by its function and optional table with field values
+static int LS_global_edicts_spawn(lua_State* state)
+{
+	const char* funcname = luaL_checkstring(state, 1);
+	int dummy = -1;
+
+	const int function = LS_FindProgsFunction(funcname, dummy);
+	if (function <= 0)
+		return 0;
+
+	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
+	if (!self)
+		return 0;
+
+	edict_t* edict = ED_Alloc();
+
+	// Assign spawned edict to self global variable
+	int* const selfptr = reinterpret_cast<int*>(pr_globals + self->ofs);
+	const int prevself = *selfptr;
+	*selfptr = EDICT_TO_PROG(edict);
+
+	LS_ExecuteProgram(function);
+
+	// Restore self global variable
+	*selfptr = prevself;
+
+	LS_PushEdictValue(state, edict);
+	return 1;
 }
 
 
@@ -735,6 +768,7 @@ void LS_InitEdictType(lua_State* state)
 		{ "isfree", LS_global_edicts_isfree },
 		{ "references", LS_global_edicts_references },
 		{ "remove", LS_global_edicts_remove },
+		{ "spawn", LS_global_edicts_spawn },
 		{ NULL, NULL }
 	};
 
