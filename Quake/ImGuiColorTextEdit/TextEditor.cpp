@@ -3376,13 +3376,13 @@ bool TextEditor::InputStdString(const char* label, std::string* value, ImGuiInpu
 {
 	flags |= ImGuiInputTextFlags_NoUndoRedo | ImGuiInputTextFlags_CallbackResize;
 
-	return ImGui::InputText(label, &(*value)[0], value->capacity() + 1, flags, [](ImGuiInputTextCallbackData* data)
+	return ImGui::InputText(label, value->data(), value->capacity() + 1, flags, [](ImGuiInputTextCallbackData* data)
 	{
 		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
 		{
-			std::string* value = (std::string*) data->UserData;
+			std::string* value = static_cast<std::string*>(data->UserData);
 			value->resize(data->BufTextLen);
-			data->Buf = &(*value)[0];
+			data->Buf = value->data();
 		}
 
 		return 0;

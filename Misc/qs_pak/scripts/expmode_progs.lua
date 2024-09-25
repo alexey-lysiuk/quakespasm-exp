@@ -58,16 +58,27 @@ local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		local textview = self.textview
+
+		if not textview then
+			local disassembly = self.func:disassemble(self.withbinary)
+			textview = imColorTextEdit()
+			textview:SetReadOnly(true)
+			textview:SetText(disassembly)
+
+			self.textview = textview
+		end
+
 		-- TODO: Do not show binary checkbox for built-in functions
 		local binarypressed, binaryenabled = imCheckbox('Show statements binaries', self.withbinary)
 
 		if binarypressed then
 			local disassembly = self.func:disassemble(binaryenabled)
-			self.textview:SetText(disassembly)
+			textview:SetText(disassembly)
 			self.withbinary = binaryenabled
 		end
 
-		self.textview:Render('##text')
+		textview:Render('##text')
 	end
 
 	imEnd()
@@ -76,9 +87,7 @@ local function functiondisassembly_onupdate(self)
 end
 
 local function functiondisassembly_onshow(self)
-	local func = self.func
-
-	if self.name ~= func.name then
+	if self.name ~= self.func.name then
 		return false
 	end
 
@@ -86,12 +95,6 @@ local function functiondisassembly_onshow(self)
 		self.withbinary = false
 	end
 
-	local disassembly = func:disassemble(self.withbinary)
-	local textview = imColorTextEdit()
-	textview:SetReadOnly(true)
-	textview:SetText(disassembly)
-
-	self.textview = textview
 	return true
 end
 
