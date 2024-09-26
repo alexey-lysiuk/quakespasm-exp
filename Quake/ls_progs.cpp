@@ -997,19 +997,8 @@ public:
 		return offsets.size() - 1;  // without offset to end of the last string
 	}
 
-	void Reset()
-	{
-		OffsetList empty;
-		offsets.swap(empty);
-
-		strings = nullptr;
-		endoffset = 0;
-		crc = 0;
-	}
-
 private:
-	using OffsetList = std::vector<int, LS_TempAllocator<int>>;
-	OffsetList offsets;
+	std::vector<int> offsets;
 
 	const char* strings = nullptr;
 	int endoffset = 0;
@@ -1018,10 +1007,7 @@ private:
 	void Update()
 	{
 		if (progs == nullptr)
-		{
-			Reset();
 			return;
-		}
 
 		if (endoffset == progs->numstrings && crc == pr_crc)
 			return;
@@ -1305,11 +1291,6 @@ void LS_InitProgsType(lua_State* state)
 	lua_setglobal(state, "progs");
 
 	LS_LoadScript(state, "scripts/progs.lua");
-}
-
-void LS_ResetProgsType()
-{
-	ls_stringcache.Reset();
 }
 
 #endif // USE_LUA_SCRIPTING

@@ -826,8 +826,6 @@ static void LS_ResetState(void)
 	if (ls_state == NULL)
 		return;
 
-	LS_ResetProgsType();
-
 	lua_close(ls_state);
 	ls_state = NULL;
 
