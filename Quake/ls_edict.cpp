@@ -482,19 +482,22 @@ static const ddef_t* LS_FindProgsGlobalDefinition(const char* const definitionna
 	return nullptr;
 }
 
+static int ls_cachedselfindex = -1;
+static int ls_cachedactivatorindex = -1;
+
 static void LS_UseTargets(edict_t* edict)
 {
-	static int cachedfunction = -1, cachedselfindex = -1, cachedactivatorindex = -1;
+	static int cachedfunction = -1;
 
 	const int function = LS_FindProgsFunction("SUB_UseTargets", cachedfunction);
 	if (function <= 0)
 		return;
 
-	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", cachedselfindex);
+	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
 	if (!self)
 		return;
 
-	const ddef_t* const activator = LS_FindProgsGlobalDefinition("activator", cachedactivatorindex);
+	const ddef_t* const activator = LS_FindProgsGlobalDefinition("activator", ls_cachedactivatorindex);
 	if (!activator)
 		return;
 
