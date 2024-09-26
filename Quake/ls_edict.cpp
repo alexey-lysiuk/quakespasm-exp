@@ -36,6 +36,7 @@ const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(const edict_t* entity);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsString(int offset);
+void SV_GetPlayerForwardVector(vec3_t forward);
 qboolean SV_SendClientDatagram(client_t* client);
 } // extern "C"
 
@@ -536,6 +537,43 @@ static int LS_global_edicts_remove(lua_State* state)
 	return 0;
 }
 
+// Spawns a new entity by its function and optional table with field values
+static int LS_global_edicts_spawn(lua_State* state)
+{
+	const char* funcname = luaL_checkstring(state, 1);
+	int dummy = -1;
+
+	const int function = LS_FindProgsFunction(funcname, dummy);
+	if (function <= 0)
+		return 0;
+
+	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
+	if (!self)
+		return 0;
+
+	edict_t* edict = ED_Alloc();
+	edict->v.classname = pr_functions[function].s_name;
+
+	vec3_t forward;
+	SV_GetPlayerForwardVector(forward);
+
+	edict_t* player = svs.clients[0].edict;
+	VectorMA(player->v.origin, 128, forward, edict->v.origin);
+
+	// Assign spawned edict to self global variable
+	int* const selfptr = reinterpret_cast<int*>(pr_globals + self->ofs);
+	const int prevself = *selfptr;
+	*selfptr = EDICT_TO_PROG(edict);
+
+	LS_ExecuteProgram(function);
+
+	// Restore self global variable
+	*selfptr = prevself;
+
+	LS_PushEdictValue(state, edict);
+	return 1;
+}
+
 
 // Edict reference collection
 
@@ -738,6 +776,7 @@ void LS_InitEdictType(lua_State* state)
 		{ "isfree", LS_global_edicts_isfree },
 		{ "references", LS_global_edicts_references },
 		{ "remove", LS_global_edicts_remove },
+		{ "spawn", LS_global_edicts_spawn },
 		{ NULL, NULL }
 	};
 
