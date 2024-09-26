@@ -592,6 +592,8 @@ static int LS_value_ImGuiColorTextEdit_SetText(lua_State* state)
 
 static int LS_global_imgui_ColorTextEdit(lua_State* state)
 {
+	LS_EnsureFrameScope(state);
+
 	TextEditor*& texteditor = ls_imguicolortextedit_type.New(state);
 	texteditor = IM_NEW(TextEditor);
 	assert(texteditor);
