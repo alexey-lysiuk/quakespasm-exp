@@ -36,6 +36,7 @@ const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(const edict_t* entity);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsString(int offset);
+void SV_GetPlayerForwardVector(vec3_t forward);
 qboolean SV_SendClientDatagram(client_t* client);
 } // extern "C"
 
@@ -551,41 +552,13 @@ static int LS_global_edicts_spawn(lua_State* state)
 		return 0;
 
 	edict_t* edict = ED_Alloc();
-
-	edict_t* player = svs.clients[0].edict;
-	const vec_t* angles = player->v.v_angle;
-
-	vec_t angle = angles[YAW] * (M_PI * 2 / 360);
-	vec_t sy = sin(angle);
-	vec_t cy = cos(angle);
-
-	angle = angles[PITCH] * (M_PI*2 / 360);
-	vec_t sp = sin(angle);
-	vec_t cp = cos(angle);
+	edict->v.classname = pr_functions[function].s_name;
 
 	vec3_t forward;
-	forward[0] = cp * cy;
-	forward[1] = cp * sy;
-	forward[2] = -sp;
+	SV_GetPlayerForwardVector(forward);
 
-	vec3_t origin;
-	VectorCopy(player->v.origin, origin);
-	VectorMA(origin, 128, forward, edict->v.origin);
-
-	// TODO: use ls_stringcache
-	const char* strings = LS_GetProgsString(0);
-	const int endoffset = progs->numstrings;
-
-	for (int offset = 1; offset < endoffset; ++offset)
-	{
-		if (strcmp(&strings[offset], funcname) == 0)
-		{
-			edict->v.classname = offset;
-			break;
-		}
-	}
-
-	// TODO: assign field values (2nd arg)
+	edict_t* player = svs.clients[0].edict;
+	VectorMA(player->v.origin, 128, forward, edict->v.origin);
 
 	// Assign spawned edict to self global variable
 	int* const selfptr = reinterpret_cast<int*>(pr_globals + self->ofs);
