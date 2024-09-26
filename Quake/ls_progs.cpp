@@ -940,12 +940,6 @@ static int LS_progs_globalvariables_integer(lua_State* state)
 class LS_StringCache
 {
 public:
-	LS_StringCache()
-	{
-		// id1 1.06 has 7304 offset
-		offsets.reserve(8192);
-	}
-
 	const char* Get(size_t index, int* length, int* offset)
 	{
 		Update();
