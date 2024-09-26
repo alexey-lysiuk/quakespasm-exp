@@ -938,6 +938,31 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 }
 
 
+void SV_GetPlayerForwardVector(vec3_t forward)
+{
+	if (!svs.clients)
+	{
+		VectorCopy(vec3_origin, forward);
+		return;
+	}
+
+	edict_t* player = svs.clients[0].edict;
+	const vec_t* angles = player->v.v_angle;
+
+	vec_t angle = angles[YAW] * (M_PI * 2 / 360);
+	vec_t sy = sin(angle);
+	vec_t cy = cos(angle);
+
+	angle = angles[PITCH] * (M_PI*2 / 360);
+	vec_t sp = sin(angle);
+	vec_t cp = cos(angle);
+
+	forward[0] = cp * cy;
+	forward[1] = cp * sy;
+	forward[2] = -sp;
+}
+
+
 //
 // Entity tracing
 //
@@ -954,26 +979,15 @@ typedef struct
 
 static void ET_InitEntityTrace(et_state_t* state)
 {
-	edict_t* player = state->clip.passedict;
-	const vec_t* angles = player->v.v_angle;
-
-	vec_t angle = angles[YAW] * (M_PI * 2 / 360);
-	vec_t sy = sin(angle);
-	vec_t cy = cos(angle);
-
-	angle = angles[PITCH] * (M_PI*2 / 360);
-	vec_t sp = sin(angle);
-	vec_t cp = cos(angle);
-
-	vec3_t forward;
-	forward[0] = cp * cy;
-	forward[1] = cp * sy;
-	forward[2] = -sp;
-
 	VectorCopy(vec3_origin, state->mins);
 	VectorCopy(vec3_origin, state->maxs);
 
+	edict_t* player = state->clip.passedict;
 	VectorCopy(player->v.origin, state->start);
+
+	vec3_t forward;
+	SV_GetPlayerForwardVector(forward);
+
 	state->start[2] += 20;
 	VectorMA(state->start, 16 * 1024, forward, state->end);
 
