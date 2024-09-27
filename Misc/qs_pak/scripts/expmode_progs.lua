@@ -185,6 +185,7 @@ end
 
 local function definitions_searchcompare(entry, string)
 	return entry.name:lower():find(string, 1, true)
+		or entry.value:lower():find(string, 1, true)
 		or entry.type:find(string, 1, true)
 		or entry.offset:find(string, 1, true)
 end
