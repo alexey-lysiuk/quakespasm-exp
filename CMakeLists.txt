@@ -517,7 +517,6 @@ set(OTHER_FILES ${OTHER_FILES} ${HELLO_IMGUI_SOURCES})
 
 set_source_files_properties(Quake/progdefs.q1 PROPERTIES LANGUAGE C HEADER_FILE_ONLY TRUE)
 set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(${ENTFIXES_HEADER} PROPERTIES GENERATED TRUE)
 
 option(QUAKE_LTO "Enable link-time optimization if supported by compiler" OFF)
 
@@ -716,6 +715,7 @@ endif()
 
 add_custom_target(genentfixes
 	COMMAND entfixesgenerator "${CMAKE_SOURCE_DIR}/Misc/entfixes/entities" ${ENTFIXES_HEADER}
+	BYPRODUCTS ${ENTFIXES_HEADER}
 	DEPENDS entfixesgenerator
 )
 add_dependencies(${PROJECT_NAME} genentfixes)
