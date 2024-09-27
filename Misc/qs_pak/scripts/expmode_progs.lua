@@ -199,6 +199,8 @@ local function definitions_edictchanged(self, index)
 	end
 
 	self.edictindex = index
+
+	updatesearch(self, definitions_searchcompare, true)
 end
 
 local function definitions_onupdate(self)
