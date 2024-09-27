@@ -97,7 +97,7 @@ static std::string EscapeCString(const char* data, size_t size)
 			if (c < 32 || c >= 127)
 			{
 				char code[8] = "";
-				snprintf(code, sizeof code, "\\x%02x", c);
+				snprintf(code, sizeof code, "\\%03o", c);
 				result.append(code);
 			}
 			else
