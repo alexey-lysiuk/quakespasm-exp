@@ -121,11 +121,17 @@ void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 		break;
 
 	case ev_field:
-		lua_pushfstring(state, ".%s", LS_GetEdictFieldName(value->_int));
+		if (value->_int == 0)
+			lua_pushnil(state);
+		else
+			lua_pushfstring(state, ".%s", LS_GetEdictFieldName(value->_int));
 		break;
 
 	case ev_function:
-		lua_pushfstring(state, "%s()", LS_GetProgsString((pr_functions + value->function)->s_name));
+		if (value->function == 0)
+			lua_pushnil(state);
+		else
+			lua_pushfstring(state, "%s()", LS_GetProgsString((pr_functions + value->function)->s_name));
 		break;
 
 	case ev_pointer:
