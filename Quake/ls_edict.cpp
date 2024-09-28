@@ -40,6 +40,8 @@ void SV_GetPlayerForwardVector(vec3_t forward);
 qboolean SV_SendClientDatagram(client_t* client);
 } // extern "C"
 
+int LS_GetFunctionReturnType(const dfunction_t* function);
+
 static void LS_ExecuteProgram(const func_t funcnum)
 {
 	int& cursize = sv.datagram.cursize;
@@ -543,8 +545,13 @@ static int LS_global_edicts_spawn(lua_State* state)
 	const char* funcname = luaL_checkstring(state, 1);
 	int dummy = -1;
 
-	const int function = LS_FindProgsFunction(funcname, dummy);
-	if (function <= 0)
+	const int funcindex = LS_FindProgsFunction(funcname, dummy);
+	if (funcindex <= 0)
+		return 0;
+
+	// Spawn function should not have parameters nor return value
+	const dfunction_t& func = pr_functions[funcindex];
+	if (func.numparms != 0 || LS_GetFunctionReturnType(&func) != ev_void)
 		return 0;
 
 	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
@@ -552,7 +559,7 @@ static int LS_global_edicts_spawn(lua_State* state)
 		return 0;
 
 	edict_t* edict = ED_Alloc();
-	edict->v.classname = pr_functions[function].s_name;
+	edict->v.classname = func.s_name;
 
 	vec3_t forward;
 	SV_GetPlayerForwardVector(forward);
@@ -565,7 +572,7 @@ static int LS_global_edicts_spawn(lua_State* state)
 	const int prevself = *selfptr;
 	*selfptr = EDICT_TO_PROG(edict);
 
-	LS_ExecuteProgram(function);
+	LS_ExecuteProgram(funcindex);
 
 	// Restore self global variable
 	*selfptr = prevself;
