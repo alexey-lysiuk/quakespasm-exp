@@ -195,7 +195,7 @@ local function definitions_edictchanged(self, index)
 
 	for _, entry in ipairs(self.entries) do
 		local value = currentedict[entry.name]
-		entry.value = tostring(value)
+		entry.value = value and tostring(value) or ''
 	end
 
 	self.edictindex = index
@@ -291,11 +291,11 @@ local function definitions_onshow(self)
 	local entries = {}
 
 	local function fieldvalue(definition)
-		return currentedict[definition.name]
+		return currentedict[definition.name] or ''
 	end
 
 	local function globalvalue(definition)
-		return definition.value
+		return definition.value or ''
 	end
 
 	if definitions == fielddefinitions then
