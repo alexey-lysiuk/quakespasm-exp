@@ -114,25 +114,41 @@ void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 		break;
 
 	case ev_entity:
-		if (value->edict == 0)
-			lua_pushnil(state);
+	{
+		const edict_t* const firstedict = sv.edicts;
+		const edict_t* const edict = PROG_TO_EDICT(value->edict);
+
+		if (edict > firstedict && edict - firstedict < sv.num_edicts)
+			LS_PushEdictValue(state, edict);
 		else
-			LS_PushEdictValue(state, PROG_TO_EDICT(value->edict));
+			lua_pushnil(state);
 		break;
+	}
 
 	case ev_field:
-		if (value->_int == 0)
+	{
+		const char* const name = LS_GetEdictFieldName(value->_int);
+
+		if (name[0] == '\0')
 			lua_pushnil(state);
 		else
-			lua_pushfstring(state, ".%s", LS_GetEdictFieldName(value->_int));
+			lua_pushfstring(state, ".%s", name);
 		break;
+	}
 
 	case ev_function:
-		if (value->function == 0)
-			lua_pushnil(state);
+	{
+		const int funcindex = value->function;
+
+		if (funcindex > 0 && funcindex < progs->numfunctions)
+		{
+			const char* const name = LS_GetProgsString(pr_functions[funcindex].s_name);
+			lua_pushfstring(state, "%s()", name);
+		}
 		else
-			lua_pushfstring(state, "%s()", LS_GetProgsString((pr_functions + value->function)->s_name));
+			lua_pushnil(state);
 		break;
+	}
 
 	case ev_pointer:
 		lua_pushstring(state, "pointer");
