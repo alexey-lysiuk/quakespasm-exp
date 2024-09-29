@@ -1116,6 +1116,11 @@ static void PF_precache_sound (void)
 		if (!sv.sound_precache[i])
 		{
 			sv.sound_precache[i] = s;
+
+			// HACK: Doing this properly requires protocol changes
+			if (sv.state != ss_loading)
+				cl.sound_precache[i] = S_PrecacheSound (s);
+
 			return;
 		}
 		if (!strcmp(sv.sound_precache[i], s))
@@ -1140,6 +1145,14 @@ static void PF_precache_model (void)
 		{
 			sv.model_precache[i] = s;
 			sv.models[i] = Mod_ForName (s, true);
+
+			// HACK: Doing this properly requires protocol changes
+			if (sv.state != ss_loading)
+			{
+				Mod_TouchModel (s);
+				cl.model_precache[i] = sv.models[i];
+			}
+
 			return;
 		}
 		if (!strcmp(sv.model_precache[i], s))
