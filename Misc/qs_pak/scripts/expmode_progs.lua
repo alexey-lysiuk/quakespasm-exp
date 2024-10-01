@@ -185,6 +185,7 @@ end
 
 local function definitions_searchcompare(entry, string)
 	return entry.name:lower():find(string, 1, true)
+		or entry.value:lower():find(string, 1, true)
 		or entry.type:find(string, 1, true)
 		or entry.offset:find(string, 1, true)
 end
@@ -194,10 +195,12 @@ local function definitions_edictchanged(self, index)
 
 	for _, entry in ipairs(self.entries) do
 		local value = currentedict[entry.name]
-		entry.value = tostring(value)
+		entry.value = value and tostring(value) or ''
 	end
 
 	self.edictindex = index
+
+	updatesearch(self, definitions_searchcompare, true)
 end
 
 local function definitions_onupdate(self)
@@ -288,11 +291,11 @@ local function definitions_onshow(self)
 	local entries = {}
 
 	local function fieldvalue(definition)
-		return currentedict[definition.name]
+		return currentedict[definition.name] or ''
 	end
 
 	local function globalvalue(definition)
-		return definition.value
+		return definition.value or ''
 	end
 
 	if definitions == fielddefinitions then

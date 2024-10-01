@@ -97,7 +97,7 @@ static std::string EscapeCString(const char* data, size_t size)
 			if (c < 32 || c >= 127)
 			{
 				char code[8] = "";
-				snprintf(code, sizeof code, "\\x%02x", c);
+				snprintf(code, sizeof code, "\\%03o", c);
 				result.append(code);
 			}
 			else
@@ -179,6 +179,7 @@ static std::pair<std::string, size_t> ReadFile(const std::filesystem::path& path
 	return { buffer, size };
 }
 
+static std::filesystem::path generatorpath;
 static std::filesystem::path entitiespath;
 static std::filesystem::path oldentitiespath;
 static std::filesystem::path newentitiespath;
@@ -206,6 +207,10 @@ static bool IsOutdated()
 		EFG_VERIFY(std::filesystem::exists(path));
 		return std::filesystem::last_write_time(path) > headerwritetime;
 	};
+
+	if (isoutdated(generatorpath))
+		return true;
+
 	const auto isentryoutdated = [&isoutdated](const std::filesystem::path& filename)
 	{
 		return isoutdated(oldentitiespath / filename) || isoutdated(newentitiespath / filename);
@@ -395,6 +400,8 @@ int main(int argc, const char* argv[])
 		std::cout << "Usage: " << argv[0] << " entities-path generated-header-path" << std::endl;
 		return EXIT_FAILURE;
 	}
+
+	generatorpath = std::filesystem::absolute(argv[0]);
 
 	Generate(argv[1], argv[2]);
 	return EXIT_SUCCESS;

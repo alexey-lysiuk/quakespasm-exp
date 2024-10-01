@@ -477,10 +477,10 @@ static int LS_PushFunctionParameters(lua_State* state, const dfunction_t* functi
 }
 
 // Returns function return type
-static lua_Integer LS_GetFunctionReturnType(const dfunction_t* function)
+int LS_GetFunctionReturnType(const dfunction_t* function)
 {
 	const int first_statement = function->first_statement;
-	lua_Integer returntype;
+	int returntype;
 
 	if (first_statement > 0)
 	{

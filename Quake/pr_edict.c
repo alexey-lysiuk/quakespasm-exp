@@ -196,7 +196,7 @@ static ddef_t *ED_FieldAtOfs (int ofs)
 	ddef_t		*def;
 	int			i;
 
-	for (i = 0; i < progs->numfielddefs; i++)
+	for (i = 1; i < progs->numfielddefs; i++)
 	{
 		def = &pr_fielddefs[i];
 		if (def->ofs == ofs)
@@ -1531,13 +1531,15 @@ int PR_AllocString (int size, char **ptr)
 
 #ifdef USE_LUA_SCRIPTING
 
+const char* LS_GetProgsString(int offset);
+
 qboolean LS_GetEdictFieldByIndex(const edict_t* ed, size_t fieldindex, const char** name, etype_t* type, const eval_t** value)
 {
 	if (fieldindex >= (size_t)progs->numfielddefs)
 		return false;
 
 	const ddef_t* fielddef = &pr_fielddefs[fieldindex];
-	const char* fieldname = PR_GetString(fielddef->s_name);
+	const char* fieldname = LS_GetProgsString(fielddef->s_name);
 
 	size_t namelen = strlen(fieldname);
 	if (namelen > 1 && fieldname[namelen - 2] == '_')
@@ -1588,7 +1590,7 @@ qboolean LS_GetEdictFieldByName(const edict_t* ed, const char* name, etype_t* ty
 const char* LS_GetEdictFieldName(int offset)
 {
 	const ddef_t* def = ED_FieldAtOfs(offset);
-	return def ? PR_GetString(def->s_name) : "";
+	return def ? LS_GetProgsString(def->s_name) : "";
 }
 
 const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index)
