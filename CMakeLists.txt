@@ -382,10 +382,12 @@ else()
 	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
 		PROPERTIES COMPILE_FLAGS "-Wno-unused-variable -Wno-sign-compare")
 
-	# Disable G++ format string truncation warning
-	#   warning: ‘%s’ directive output may be truncated writing up to 31 bytes into a region of size 28
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		# Disable warning: '%s' directive output may be truncated writing up to 31 bytes into a region of size 28
 		set_source_files_properties(${IMGUI_DIR}/imgui_demo.cpp PROPERTIES COMPILE_FLAGS "-Wno-format-truncation")
+
+		# Disable warning: specified size between ??? and ??? exceeds maximum object size ???
+		set_source_files_properties(${IMGUI_DIR}/imgui_draw.cpp PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
 	endif()
 
 	# Disable C++ exceptions and RTTI
