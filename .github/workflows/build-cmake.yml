@@ -11,11 +11,11 @@ jobs:
       matrix:
         config:
           - name: Linux Clang
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             extra_options: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
           - name: Linux GCC
-            os: ubuntu-22.04
+            os: ubuntu-24.04
 
           - name: macOS Intel
             os: macos-13
