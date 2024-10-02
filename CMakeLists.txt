@@ -386,7 +386,7 @@ else()
 		# Disable warning: '%s' directive output may be truncated writing up to 31 bytes into a region of size 28
 		set_source_files_properties(${IMGUI_DIR}/imgui_demo.cpp PROPERTIES COMPILE_FLAGS "-Wno-format-truncation")
 
-		# Disable warning: specified size between ... and ... exceeds maximum object size
+		# Disable warning: specified size between ??? and ??? exceeds maximum object size ???
 		set_source_files_properties(${IMGUI_DIR}/imgui_draw.cpp PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
 	endif()
 
