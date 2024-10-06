@@ -330,6 +330,8 @@ else()
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
+	$<$<CONFIG:Release>:IMGUI_DISABLE_DEBUG_TOOLS>
+	$<$<CONFIG:Release>:IMGUI_DISABLE_DEMO_WINDOWS>
 	IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 	IMGUI_EDITOR_NO_BOOST
 	IMGUI_EDITOR_QSEXP
@@ -385,6 +387,9 @@ else()
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		# Disable warning: specified size between ??? and ??? exceeds maximum object size ???
 		set_source_files_properties(${IMGUI_DIR}/imgui_draw.cpp PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		# Disable warning: unused function '???', needed when IMGUI_DISABLE_DEBUG_TOOLS is defined
+		set_source_files_properties(${IMGUI_DIR}/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-function")
 	endif()
 
 	# Disable C++ exceptions and RTTI
