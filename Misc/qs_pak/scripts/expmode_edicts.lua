@@ -255,6 +255,11 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
+local function edictstable_contextmenu_location(entry)
+	local location = entry.location
+	return location and '\t' .. location or ''
+end
+
 local function edictstable_contextmenu(entries, entry, cellvalue)
 	if imBeginPopupContextItem() then
 		if imSelectable('References') then
@@ -265,13 +270,15 @@ local function edictstable_contextmenu(entries, entry, cellvalue)
 			imSetClipboardText(tostring(cellvalue))
 		end
 		if imSelectable('Copy Row') then
-			imSetClipboardText(format('%d\t%s\t%s\n', entry.index, entry.description, entry.location))
+			local location = edictstable_contextmenu_location(entry)
+			imSetClipboardText(format('%d\t%s%s\n', entry.index, entry.description, location))
 		end
 		if imSelectable('Copy Table') then
 			local lines = {}
 
 			for _, entry in ipairs(entries) do
-				local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
+				local location = edictstable_contextmenu_location(entry)
+				local line = format('%d\t%s%s', entry.index, entry.description, location)
 				insert(lines, line)
 			end
 
