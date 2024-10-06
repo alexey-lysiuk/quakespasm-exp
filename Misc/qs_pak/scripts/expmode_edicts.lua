@@ -299,7 +299,7 @@ local function edictstable(title, entries, tableflags)
 			imTableNextColumn()
 
 			if entry.isfree then
-				imSelectable(description, false, imSelectableDisabled)
+				imSelectable(entry.descriptionid, false, imSelectableDisabled)
 			else
 				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict):movetocursor()
@@ -368,15 +368,13 @@ local function edicts_addentry(filter, edict, index, entries)
 		isfree = freed,
 		index = index,
 		description = description,
+		descriptionid = format('%s##%d', description, index),
 	}
 
 	if not freed then
 		entry.location = location
-		entry.angles = angles
-
-		-- Description and location cells need unique IDs to generate click events
-		entry.descriptionid = format('%s##%d', description, index)
 		entry.locationid = format('%s##%d', location, index)
+		entry.angles = angles
 	end
 
 	insert(entries, entry)
