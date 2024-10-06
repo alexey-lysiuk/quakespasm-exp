@@ -341,6 +341,13 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	USE_TLSF
 )
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+	target_compile_definitions(${PROJECT_NAME} PRIVATE
+		IMGUI_DISABLE_DEBUG_TOOLS
+		IMGUI_DISABLE_DEMO_WINDOWS
+	)
+endif()
+
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	target_compile_options(${PROJECT_NAME} PRIVATE /MP /wd4996)
