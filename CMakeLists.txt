@@ -387,9 +387,9 @@ else()
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		# Disable warning: specified size between ??? and ??? exceeds maximum object size ???
 		set_source_files_properties(${IMGUI_DIR}/imgui_draw.cpp PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
-#	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#		# Disable warning: unused function '???', needed when IMGUI_DISABLE_DEBUG_TOOLS is defined
-#		set_source_files_properties(${IMGUI_DIR}/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-function")
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		# Disable warning: unused function '???', needed when IMGUI_DISABLE_DEBUG_TOOLS is defined
+		set_source_files_properties(${IMGUI_DIR}/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-function")
 	endif()
 
 	# Disable C++ exceptions and RTTI
