@@ -508,10 +508,9 @@ void SV_PushMove (edict_t *pusher, float movetime)
 		num_moved++;
 
 		// try moving the contacted entity
-		float oldsolid = pusher->v.solid;
 		pusher->v.solid = SOLID_NOT;
 		SV_PushEntity (check, move);
-		pusher->v.solid = oldsolid;
+		pusher->v.solid = SOLID_BSP;
 
 	// if it is still inside the pusher, block
 		block = SV_TestEntityPosition (check);
