@@ -248,7 +248,7 @@ local function about_update(self)
 		imText('')
 		imBulletText(expversion())
 		imBulletText(_VERSION)
-		imBulletText('ImGui' .. imGetVersion())
+		imBulletText('ImGui ' .. imGetVersion())
 		imText('')
 
 		if imButton('Close') then
