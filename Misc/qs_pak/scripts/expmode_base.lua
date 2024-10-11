@@ -247,7 +247,7 @@ local function about_update(self)
 	if visible and opened then
 		imText('')
 		imBulletText(expversion())
-		imBulletText(_VERSION)
+		imBulletText(luaversion())
 		imBulletText('ImGui ' .. imGetVersion())
 		imText('')
 
