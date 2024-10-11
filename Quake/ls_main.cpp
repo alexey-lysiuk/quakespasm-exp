@@ -615,6 +615,12 @@ static int LS_global_expversion(lua_State* state)
 	return 1;
 }
 
+static int LS_global_luaversion(lua_State* state)
+{
+	lua_pushstring(state, LUA_RELEASE);
+	return 1;
+}
+
 static int LS_global_text_localize(lua_State* state)
 {
 	const char* key = luaL_checkstring(state, 1);
@@ -722,6 +728,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		// Helper functions
 		{ "dprint", LS_global_dprint },
 		{ "expversion", LS_global_expversion },
+		{ "luaversion", LS_global_luaversion },
 		{ "memstats", LS_global_memstats },
 		{ "stacktrace", LS_global_stacktrace },
 
