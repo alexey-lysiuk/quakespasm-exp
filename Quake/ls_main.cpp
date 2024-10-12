@@ -595,6 +595,16 @@ static int LS_global_memstats(lua_State* state)
 
 #endif // USE_TLSF
 
+static int LS_global_crc16(lua_State* state)
+{
+	size_t length;
+	const char* const data = luaL_checklstring(state, 1, &length);
+
+	const unsigned int short crc = CRC_Block(reinterpret_cast<const byte*>(data), length);
+	lua_pushinteger(state, crc);
+	return 1;
+}
+
 static int LS_global_dprint(lua_State* state)
 {
 	if (developer.value)
@@ -726,6 +736,7 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "print", LS_global_print },
 
 		// Helper functions
+		{ "crc16", LS_global_crc16 },
 		{ "dprint", LS_global_dprint },
 		{ "expversion", LS_global_expversion },
 		{ "luaversion", LS_global_luaversion },
