@@ -76,6 +76,7 @@ local localize <const> = text.localize
 local toascii <const> = text.toascii
 
 local vec3mid <const> = vec3.mid
+local vec3origin <const> = vec3.new()
 
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
@@ -325,10 +326,16 @@ local function edictstable(title, entries, tableflags)
 					local edict = entry.edict
 					local absmin = edict.absmin
 					local absmax = edict.absmax
+					local angles = entry.angles
 
 					if absmin and absmax then
-						local bounds = format('min: %s\nmax: %s', absmin, absmax)
-						imSetTooltip(bounds)
+						local text = format('min: %s\nmax: %s', absmin, absmax)
+
+						if angles and angles ~= vec3origin then
+							text = format('%s\nangles: %s', text, angles)
+						end
+
+						imSetTooltip(text)
 					end
 				end
 				edictstable_contextmenu(entries, entry, entry.location)
