@@ -186,6 +186,10 @@ function edicts.isany(edict)
 		end
 
 		angles = edict.angles
+
+		if angles == vec3origin then
+			angles = edict.mangle
+		end
 	end
 
 	return description, location, angles
