@@ -263,6 +263,9 @@ void EXP_Update()
 	ImGui::Render();
 
 	// Fade screen a bit
+	GL_SetCanvas(CANVAS_DEFAULT);
+	GL_ClearBufferBindings();
+
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
@@ -278,8 +281,6 @@ void EXP_Update()
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
-
-	GL_ClearBufferBindings();
 
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
