@@ -741,6 +741,27 @@ void _Host_Frame (float time)
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
 
+	// HACK: Doing this properly requires protocol changes
+	extern qboolean hack_cache[MAX_MODELS];
+
+	for (size_t i = 0; i < MAX_MODELS; ++i)
+	{
+		if (hack_cache[i])
+		{
+			const char* modelname = sv.model_precache[i];
+			qmodel_t* model = Mod_ForName(modelname, true);
+			sv.models[i] = model;
+
+			extern qboolean lightmaps_latecached;
+			lightmaps_latecached = true;
+
+			Mod_TouchModel(modelname);
+			cl.model_precache[i] = model;
+
+			hack_cache[i] = false;
+		}
+	}
+
 	SCR_UpdateScreen ();
 
 	CL_RunParticles (); //johnfitz -- seperated from rendering
