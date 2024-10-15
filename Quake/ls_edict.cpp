@@ -507,7 +507,6 @@ static const ddef_t* LS_FindProgsGlobalDefinition(const char* const definitionna
 	return nullptr;
 }
 
-static int ls_cachedselfindex = -1;
 static int ls_cachedactivatorindex = -1;
 
 static void LS_UseTargets(edict_t* edict)
@@ -518,18 +517,14 @@ static void LS_UseTargets(edict_t* edict)
 	if (function <= 0)
 		return;
 
-	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
-	if (!self)
-		return;
-
 	const ddef_t* const activator = LS_FindProgsGlobalDefinition("activator", ls_cachedactivatorindex);
 	if (!activator)
 		return;
 
 	// Set target as self
-	int* const selfptr = reinterpret_cast<int*>(pr_globals + self->ofs);
-	const int prevself = *selfptr;
-	*selfptr = EDICT_TO_PROG(edict);
+	int& self = pr_global_struct->self;
+	const int prevself = self;
+	self = EDICT_TO_PROG(edict);
 
 	// Set player as activator
 	int* const activatorptr = reinterpret_cast<int*>(pr_globals + activator->ofs);
@@ -539,7 +534,7 @@ static void LS_UseTargets(edict_t* edict)
 	LS_ExecuteProgram(function);
 
 	// Restore self and activator
-	*selfptr = prevself;
+	self = prevself;
 	*activatorptr = prevactivator;
 }
 
@@ -576,10 +571,6 @@ static int LS_global_edicts_spawn(lua_State* state)
 	if (func.numparms != 0 || LS_GetFunctionReturnType(&func) != ev_void)
 		return 0;
 
-	const ddef_t* const self = LS_FindProgsGlobalDefinition("self", ls_cachedselfindex);
-	if (!self)
-		return 0;
-
 	edict_t* edict = ED_Alloc();
 	edict->v.classname = func.s_name;
 
@@ -590,14 +581,14 @@ static int LS_global_edicts_spawn(lua_State* state)
 	VectorMA(player->v.origin, 128, forward, edict->v.origin);
 
 	// Assign spawned edict to self global variable
-	int* const selfptr = reinterpret_cast<int*>(pr_globals + self->ofs);
-	const int prevself = *selfptr;
-	*selfptr = EDICT_TO_PROG(edict);
+	int& self = pr_global_struct->self;
+	const int prevself = self;
+	self = EDICT_TO_PROG(edict);
 
 	LS_ExecuteProgram(funcindex);
 
 	// Restore self global variable
-	*selfptr = prevself;
+	self = prevself;
 
 	LS_PushEdictValue(state, edict);
 	return 1;

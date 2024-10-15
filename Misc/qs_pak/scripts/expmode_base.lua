@@ -247,8 +247,8 @@ local function about_update(self)
 	if visible and opened then
 		imText('')
 		imBulletText(expversion())
-		imBulletText(_VERSION)
-		imBulletText('ImGui' .. imGetVersion())
+		imBulletText(luaversion())
+		imBulletText('ImGui ' .. imGetVersion())
 		imText('')
 
 		if imButton('Close') then

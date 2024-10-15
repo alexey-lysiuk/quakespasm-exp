@@ -76,6 +76,7 @@ local localize <const> = text.localize
 local toascii <const> = text.toascii
 
 local vec3mid <const> = vec3.mid
+local vec3origin <const> = vec3.new()
 
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
@@ -255,6 +256,11 @@ end
 
 local edictinfo <const> = expmode.edictinfo
 
+local function edictstable_contextmenu_location(entry)
+	local location = entry.location
+	return location and '\t' .. location or ''
+end
+
 local function edictstable_contextmenu(entries, entry, cellvalue)
 	if imBeginPopupContextItem() then
 		if imSelectable('References') then
@@ -265,13 +271,15 @@ local function edictstable_contextmenu(entries, entry, cellvalue)
 			imSetClipboardText(tostring(cellvalue))
 		end
 		if imSelectable('Copy Row') then
-			imSetClipboardText(format('%d\t%s\t%s\n', entry.index, entry.description, entry.location))
+			local location = edictstable_contextmenu_location(entry)
+			imSetClipboardText(format('%d\t%s%s\n', entry.index, entry.description, location))
 		end
 		if imSelectable('Copy Table') then
 			local lines = {}
 
 			for _, entry in ipairs(entries) do
-				local line = format('%d\t%s\t%s', entry.index, entry.description, entry.location)
+				local location = edictstable_contextmenu_location(entry)
+				local line = format('%d\t%s%s', entry.index, entry.description, location)
 				insert(lines, line)
 			end
 
@@ -299,7 +307,7 @@ local function edictstable(title, entries, tableflags)
 			imTableNextColumn()
 
 			if entry.isfree then
-				imSelectable(description, false, imSelectableDisabled)
+				imSelectable(entry.descriptionid, false, imSelectableDisabled)
 			else
 				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict):movetocursor()
@@ -318,10 +326,16 @@ local function edictstable(title, entries, tableflags)
 					local edict = entry.edict
 					local absmin = edict.absmin
 					local absmax = edict.absmax
+					local angles = entry.angles
 
 					if absmin and absmax then
-						local bounds = format('min: %s\nmax: %s', absmin, absmax)
-						imSetTooltip(bounds)
+						local text = format('min: %s\nmax: %s', absmin, absmax)
+
+						if angles and angles ~= vec3origin then
+							text = format('%s\nangles: %s', text, angles)
+						end
+
+						imSetTooltip(text)
 					end
 				end
 				edictstable_contextmenu(entries, entry, entry.location)
@@ -368,15 +382,13 @@ local function edicts_addentry(filter, edict, index, entries)
 		isfree = freed,
 		index = index,
 		description = description,
+		descriptionid = format('%s##%d', description, index),
 	}
 
 	if not freed then
 		entry.location = location
-		entry.angles = angles
-
-		-- Description and location cells need unique IDs to generate click events
-		entry.descriptionid = format('%s##%d', description, index)
 		entry.locationid = format('%s##%d', location, index)
+		entry.angles = angles
 	end
 
 	insert(entries, entry)

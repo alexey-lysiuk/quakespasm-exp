@@ -143,13 +143,15 @@ static void EXP_Create()
 
 static void EXP_EnterMode()
 {
-	if (exp_active || cls.state != ca_connected || cl.intermission)
+	if (exp_active || cls.state != ca_connected)
 		return;
 
 	if (!exp_created)
 		EXP_Create();
 
 	exp_active = true;
+
+	S_BlockSound();
 
 	// Close menu or console if opened
 	if (key_dest == key_console)
@@ -206,6 +208,8 @@ static void EXP_ExitMode()
 	if (cls.state == ca_connected)
 		key_dest = key_game;
 
+	S_UnblockSound();
+
 	exp_active = false;
 }
 
@@ -233,7 +237,7 @@ void EXP_Update()
 	if (!exp_active)
 		return;
 
-	if (cls.state != ca_connected || cl.intermission)
+	if (cls.state != ca_connected)
 	{
 		EXP_ExitMode();
 		return;
@@ -259,6 +263,9 @@ void EXP_Update()
 	ImGui::Render();
 
 	// Fade screen a bit
+	GL_SetCanvas(CANVAS_DEFAULT);
+	GL_ClearBufferBindings();
+
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
@@ -274,8 +281,6 @@ void EXP_Update()
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
-
-	GL_ClearBufferBindings();
 
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
