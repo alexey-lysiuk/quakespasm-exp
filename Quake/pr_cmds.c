@@ -1151,6 +1151,9 @@ static void PF_precache_model (void)
 			{
 				Mod_TouchModel (s);
 				cl.model_precache[i] = sv.models[i];
+
+				extern qboolean lightmaps_latecached;
+				lightmaps_latecached = true;
 			}
 
 			return;
