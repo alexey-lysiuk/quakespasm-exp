@@ -1077,6 +1077,15 @@ void R_RenderView (void)
 	else if (gl_finish.value)
 		glFinish ();
 
+	extern qboolean hack_rebuildLightmaps;
+
+	if (hack_rebuildLightmaps)
+	{
+		GL_BuildLightmaps();
+		GL_BuildBModelVertexBuffer();
+		hack_rebuildLightmaps = false;
+	}
+
 	R_SetupView (); //johnfitz -- this does everything that should be done once per frame
 
 	//johnfitz -- stereo rendering -- full of hacky goodness

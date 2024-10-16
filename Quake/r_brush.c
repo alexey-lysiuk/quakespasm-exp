@@ -974,6 +974,15 @@ void R_UploadLightmaps (void)
 {
 	int lmap;
 
+	extern qboolean hack_rebuildLightmaps;
+
+	if (hack_rebuildLightmaps)
+	{
+		GL_BuildLightmaps();
+		GL_BuildBModelVertexBuffer();
+		hack_rebuildLightmaps = false;
+	}
+
 	for (lmap = 0; lmap < lightmap_count; lmap++)
 	{
 		if (!lightmaps[lmap].modified)

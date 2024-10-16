@@ -1143,15 +1143,15 @@ static void PF_precache_model (void)
 		if (!sv.model_precache[i])
 		{
 			sv.model_precache[i] = s;
-			sv.models[i] = Mod_ForName (s, true);
 
-			// HACK: Doing this properly requires protocol changes
 			if (sv.state != ss_loading)
 			{
-				Mod_TouchModel (s);
-				cl.model_precache[i] = sv.models[i];
+				extern void Hack_MarkModelToCacheInGame(int index);
+				Hack_MarkModelToCacheInGame(i);
+				return;
 			}
 
+			sv.models[i] = Mod_ForName (s, true);
 			return;
 		}
 		if (!strcmp(sv.model_precache[i], s))

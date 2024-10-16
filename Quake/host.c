@@ -90,6 +90,41 @@ cvar_t	sv_cheats = {"sv_cheats","0",CVAR_NONE}; // for the 2021 rerelease
 devstats_t dev_stats, dev_peakstats;
 overflowtimes_t dev_overflows; //this stores the last time overflow messages were displayed, not the last time overflows occured
 
+// HACK: Doing this properly requires protocol changes
+static uint8_t hack_modelsToCacheInGame[Q_BITNSLOTS(MAX_MODELS)];
+qboolean hack_rebuildLightmaps;
+
+void Hack_MarkModelToCacheInGame(int index)
+{
+	if (index <= 0 || index >= MAX_MODELS)
+		Host_Error("Invalid model index to cache %i", index);
+
+	Q_BITSET(hack_modelsToCacheInGame, index);
+	Q_BITSET(hack_modelsToCacheInGame, 0);  // mark necessity of caching
+}
+
+static void Hack_CacheModelsInGame()
+{
+	for (int i = 1; i < MAX_MODELS; ++i)
+	{
+		if (!Q_BITTEST(hack_modelsToCacheInGame, i))
+			continue;
+
+		const char* modelname = sv.model_precache[i];
+		qmodel_t* model = Mod_ForName(modelname, true);
+		sv.models[i] = model;
+
+		Mod_TouchModel(modelname);
+		cl.model_precache[i] = model;
+
+		hack_rebuildLightmaps = true;
+
+		Q_BITCLEAR(hack_modelsToCacheInGame, i);
+	}
+
+	Q_BITCLEAR(hack_modelsToCacheInGame, 0);  // reset necessity of caching
+}
+
 /*
 ================
 Max_Edicts_f -- johnfitz
@@ -740,6 +775,9 @@ void _Host_Frame (float time)
 // update video
 	if (host_speeds.value)
 		time1 = Sys_DoubleTime ();
+
+	if (Q_BITTEST(hack_modelsToCacheInGame, 0))
+		Hack_CacheModelsInGame();
 
 	SCR_UpdateScreen ();
 
