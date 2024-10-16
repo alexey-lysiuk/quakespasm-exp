@@ -1117,9 +1117,12 @@ static void PF_precache_sound (void)
 		{
 			sv.sound_precache[i] = s;
 
-			// HACK: Doing this properly requires protocol changes
 			if (sv.state != ss_loading)
-				cl.sound_precache[i] = S_PrecacheSound (s);
+			{
+				extern void Hack_MarkSoundToCacheInGame(int index);
+				Hack_MarkSoundToCacheInGame(i);
+				return;
+			}
 
 			return;
 		}
