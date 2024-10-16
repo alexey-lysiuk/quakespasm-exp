@@ -1130,8 +1130,6 @@ static void PF_precache_sound (void)
 	PR_RunError ("PF_precache_sound: overflow");
 }
 
-qboolean hack_cache[MAX_MODELS];
-
 static void PF_precache_model (void)
 {
 	const char	*s;
@@ -1149,21 +1147,12 @@ static void PF_precache_model (void)
 
 			if (sv.state != ss_loading)
 			{
-				hack_cache[i] = true;
+				extern void Hack_MarkModelToCacheInGame(int index);
+				Hack_MarkModelToCacheInGame(i);
 				return;
 			}
 
 			sv.models[i] = Mod_ForName (s, true);
-
-//			// HACK: Doing this properly requires protocol changes
-//			if (sv.state != ss_loading)
-//			{
-//				Mod_TouchModel (s);
-//				cl.model_precache[i] = sv.models[i];
-//
-//				extern qboolean lightmaps_latecached;
-//				lightmaps_latecached = true;
-//			}
 
 			return;
 		}

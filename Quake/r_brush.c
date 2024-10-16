@@ -30,9 +30,6 @@ extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
 int		gl_lightmap_format;
 int		lightmap_bytes;
 
-//we need to rebuild lightmaps and model vbos before rendering.
-qboolean lightmaps_latecached;
-
 #define MAX_SANITY_LIGHTMAPS (1u<<20)
 struct lightmap_s	*lightmaps;
 int		lightmap_count;
@@ -977,11 +974,13 @@ void R_UploadLightmaps (void)
 {
 	int lmap;
 
-	if (lightmaps_latecached)
+	extern qboolean hack_rebuildLightmaps;
+
+	if (hack_rebuildLightmaps)
 	{
-		GL_BuildLightmaps ();
-		GL_BuildBModelVertexBuffer ();
-		lightmaps_latecached=false;
+		GL_BuildLightmaps();
+		GL_BuildBModelVertexBuffer();
+		hack_rebuildLightmaps = false;
 	}
 
 	for (lmap = 0; lmap < lightmap_count; lmap++)

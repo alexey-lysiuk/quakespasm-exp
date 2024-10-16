@@ -410,5 +410,14 @@ extern qboolean		standard_quake, rogue, hipnotic;
 extern qboolean		fitzmode;
 	/* if true, run in fitzquake mode disabling custom quakespasm hacks */
 
+
+// https://c-faq.com/misc/bitsets.html
+#define Q_BITMASK(b) (1 << ((b) % CHAR_BIT))
+#define Q_BITSLOT(b) ((b) / CHAR_BIT)
+#define Q_BITSET(a, b) ((a)[Q_BITSLOT(b)] |= Q_BITMASK(b))
+#define Q_BITCLEAR(a, b) ((a)[Q_BITSLOT(b)] &= ~Q_BITMASK(b))
+#define Q_BITTEST(a, b) ((a)[Q_BITSLOT(b)] & Q_BITMASK(b))
+#define Q_BITNSLOTS(nb) ((nb + CHAR_BIT - 1) / CHAR_BIT)
+
 #endif	/* _Q_COMMON_H */
 
