@@ -1126,7 +1126,6 @@ static void PF_precache_sound (void)
 		if (!strcmp(sv.sound_precache[i], s))
 			return;
 	}
-
 	PR_RunError ("PF_precache_sound: overflow");
 }
 
@@ -1158,7 +1157,6 @@ static void PF_precache_model (void)
 		if (!strcmp(sv.model_precache[i], s))
 			return;
 	}
-
 	PR_RunError ("PF_precache_model: overflow");
 }
 
