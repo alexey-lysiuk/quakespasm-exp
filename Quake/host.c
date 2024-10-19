@@ -120,7 +120,8 @@ static void Hack_CacheModelsInGame()
 			Mod_TouchModel(modelname);
 			cl.model_precache[i] = model;
 
-			hack_rebuildLightmaps = true;
+			if (model->type == mod_brush)
+				hack_rebuildLightmaps = true;
 		}
 
 		Q_BITCLEAR(hack_modelsToCacheInGame, i);
