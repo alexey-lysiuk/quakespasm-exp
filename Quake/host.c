@@ -125,6 +125,33 @@ static void Hack_CacheModelsInGame()
 	Q_BITCLEAR(hack_modelsToCacheInGame, 0);  // reset necessity of caching
 }
 
+static uint8_t hack_soundsToCacheInGame[Q_BITNSLOTS(MAX_SOUNDS)];
+
+void Hack_MarkSoundToCacheInGame(int index)
+{
+	if (index <= 0 || index >= MAX_SOUNDS)
+		Host_Error("Invalid sound index to cache %i", index);
+
+	Q_BITSET(hack_soundsToCacheInGame, index);
+	Q_BITSET(hack_soundsToCacheInGame, 0);  // mark necessity of caching
+}
+
+static void Hack_CacheSoundsInGame()
+{
+	for (int i = 1; i < MAX_SOUNDS; ++i)
+	{
+		if (!Q_BITTEST(hack_soundsToCacheInGame, i))
+			continue;
+
+		const char* soundname = sv.sound_precache[i];
+		cl.sound_precache[i] = S_PrecacheSound(soundname);
+
+		Q_BITCLEAR(hack_soundsToCacheInGame, i);
+	}
+
+	Q_BITCLEAR(hack_soundsToCacheInGame, 0);  // reset necessity of caching
+}
+
 /*
 ================
 Max_Edicts_f -- johnfitz
@@ -778,6 +805,9 @@ void _Host_Frame (float time)
 
 	if (Q_BITTEST(hack_modelsToCacheInGame, 0))
 		Hack_CacheModelsInGame();
+
+	if (Q_BITTEST(hack_soundsToCacheInGame, 0))
+		Hack_CacheSoundsInGame();
 
 	SCR_UpdateScreen ();
 
