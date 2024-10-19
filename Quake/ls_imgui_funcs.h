@@ -1233,6 +1233,9 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "SetItemDefaultFocus", LS_global_imgui_SetItemDefaultFocus },
 		{ "SetKeyboardFocusHere", LS_global_imgui_SetKeyboardFocusHere },
 
+		// Keyboard/Gamepad Navigation
+		// * SetNavCursorVisible
+
 		// Overlapping mode
 		// * SetNextItemAllowOverlap
 
