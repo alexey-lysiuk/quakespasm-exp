@@ -96,6 +96,7 @@ void LS_InitExpMode(lua_State* state)
 	lua_setglobal(state, ls_expmode_name);
 
 	LS_LoadScript(state, "scripts/expmode_base.lua");
+	LS_LoadScript(state, "scripts/expmode_engine.lua");
 	LS_LoadScript(state, "scripts/expmode_edicts.lua");
 	LS_LoadScript(state, "scripts/expmode_progs.lua");
 #ifndef NDEBUG
