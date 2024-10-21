@@ -166,7 +166,20 @@ local function textures_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				imText(entry.name)
+				if imSelectable(entry.name) then
+					expmode.window(entry.name,
+						function (self)
+							local visible, opened = imBegin(self.title, true)
+
+							if visible and opened then
+								local texture = entry.texture
+								ImGui.Image(texture.texnum, imVec2(texture.width, texture.height))
+							end
+
+							imEnd()
+							return opened
+						end)
+				end
 				imTableNextColumn()
 				imText(entry.width)
 				imTableNextColumn()
@@ -188,6 +201,7 @@ local function textures_onshow(self)
 	for i, tex in ipairs(textures.list()) do
 		local entry =
 		{
+			texture = tex,
 			index = tostring(i),
 			name = tex.name,
 			width = tostring(tex.width),
