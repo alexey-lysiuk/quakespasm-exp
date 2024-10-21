@@ -48,6 +48,11 @@ static ImVec2 ToImVec2(const LS_Vector2& value)
 	return ImVec2(value[0], value[1]);
 }
 
+static ImVec4 ToImVec4(const LS_Vector4& value)
+{
+	return ImVec4(value[0], value[1], value[2], value[3]);
+}
+
 
 struct LS_TextBuffer
 {
