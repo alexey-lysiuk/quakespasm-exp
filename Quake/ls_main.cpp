@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "quakedef.h"
+
+const gltexture_t* TexMgr_GetTextures();
 }
 
 #ifdef USE_TLSF
@@ -687,6 +689,37 @@ static int LS_global_text_toascii(lua_State* state)
 	return 1;
 }
 
+// Pushes sequence of tables with information about loaded textures
+static int LS_global_textures_list(lua_State* state)
+{
+	const gltexture_t* texture = TexMgr_GetTextures();
+	if (!texture)
+		return 0;
+
+	lua_newtable(state);
+
+	for (int i = 1; texture; ++i)
+	{
+		lua_newtable(state);
+		lua_pushstring(state, "name");
+		lua_pushstring(state, texture->name);
+		lua_rawset(state, -3);
+		lua_pushstring(state, "width");
+		lua_pushinteger(state, texture->width);
+		lua_rawset(state, -3);
+		lua_pushstring(state, "height");
+		lua_pushinteger(state, texture->height);
+		lua_rawset(state, -3);
+
+		// Set texture table as sequence value
+		lua_rawseti(state, -2, i);
+
+		texture = texture->next;
+	}
+
+	return 1;
+}
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -794,6 +827,18 @@ static void LS_InitGlobalTables(lua_State* state)
 
 		luaL_newlib(state, functions);
 		lua_setglobal(state, "text");
+	}
+
+	// Create and register 'textures' table
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "list", LS_global_textures_list },
+			{ nullptr, nullptr }
+		};
+
+		luaL_newlib(state, functions);
+		lua_setglobal(state, "textures");
 	}
 
 	// Create and register 'host' table
