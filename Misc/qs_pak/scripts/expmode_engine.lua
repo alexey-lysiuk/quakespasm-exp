@@ -29,6 +29,7 @@ local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 
