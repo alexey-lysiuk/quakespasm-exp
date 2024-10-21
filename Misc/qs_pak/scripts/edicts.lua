@@ -468,7 +468,8 @@ function edicts.isbutton(edict)
 		return
 	end
 
-	local description = (edict.health > 0 and 'Shoot' or 'Touch') .. ' button'
+	local description = (edict.health > 0 and 'Shoot' or 'Touch')
+		.. (edict.wait > 0 and ' repeat' or '') .. ' button'
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location

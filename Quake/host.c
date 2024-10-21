@@ -111,13 +111,18 @@ static void Hack_CacheModelsInGame()
 			continue;
 
 		const char* modelname = sv.model_precache[i];
-		qmodel_t* model = Mod_ForName(modelname, true);
-		sv.models[i] = model;
+		qmodel_t* model = Mod_ForName(modelname, false);
 
-		Mod_TouchModel(modelname);
-		cl.model_precache[i] = model;
+		if (model)
+		{
+			sv.models[i] = model;
 
-		hack_rebuildLightmaps = true;
+			Mod_TouchModel(modelname);
+			cl.model_precache[i] = model;
+
+			if (model->type == mod_brush)
+				hack_rebuildLightmaps = true;
+		}
 
 		Q_BITCLEAR(hack_modelsToCacheInGame, i);
 	}

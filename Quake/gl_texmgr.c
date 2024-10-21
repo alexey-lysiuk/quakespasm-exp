@@ -1549,3 +1549,13 @@ void GL_ClearBindings(void)
 		currenttexture[i] = GL_UNUSED_TEXTURE;
 	}
 }
+
+
+#ifdef USE_LUA_SCRIPTING
+
+const gltexture_t* TexMgr_GetTextures(void)
+{
+	return active_gltextures;
+}
+
+#endif // USE_LUA_SCRIPTING

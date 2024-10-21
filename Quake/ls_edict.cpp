@@ -78,10 +78,15 @@ static void LS_SetEdictMetaTable(lua_State* state);
 // Creates and pushes 'edict' userdata by edict index, [0..sv.num_edicts)
 void LS_PushEdictValue(lua_State* state, int edictindex)
 {
-	int& newvalue = ls_edict_type.New(state);
-	newvalue = edictindex;
+	if (edictindex < 0 || edictindex >= sv.num_edicts)
+		lua_pushnil(state);
+	else
+	{
+		int& newvalue = ls_edict_type.New(state);
+		newvalue = edictindex;
 
-	LS_SetEdictMetaTable(state);
+		LS_SetEdictMetaTable(state);
+	}
 }
 
 void LS_PushEdictValue(lua_State* state, const edict_t* edict)
@@ -114,16 +119,8 @@ void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 		break;
 
 	case ev_entity:
-	{
-		const edict_t* const firstedict = sv.edicts;
-		const edict_t* const edict = PROG_TO_EDICT(value->edict);
-
-		if (edict > firstedict && edict - firstedict < sv.num_edicts)
-			LS_PushEdictValue(state, edict);
-		else
-			lua_pushnil(state);
+		LS_PushEdictValue(state, PROG_TO_EDICT(value->edict));
 		break;
-	}
 
 	case ev_field:
 	{

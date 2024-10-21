@@ -66,6 +66,16 @@ public:
 		return result;
 	}
 
+	static LS_Vector One()
+	{
+		LS_Vector result;
+
+		for (size_t i = 0; i < N; ++i)
+			result[i] = 1.f;
+
+		return result;
+	}
+
 private:
 	float value[N];
 };
