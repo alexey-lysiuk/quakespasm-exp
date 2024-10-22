@@ -696,9 +696,11 @@ static int LS_global_textures_list(lua_State* state)
 	if (!texture)
 		return 0;
 
+	int count = 1;
+
 	lua_newtable(state);
 
-	for (int i = 1; texture; ++i)
+	for (; texture; ++count)
 	{
 		lua_newtable(state);
 		lua_pushstring(state, "name");
@@ -715,9 +717,20 @@ static int LS_global_textures_list(lua_State* state)
 		lua_rawset(state, -3);
 
 		// Set texture table as sequence value
-		lua_rawseti(state, -2, i);
+		lua_rawseti(state, -2, count);
 
 		texture = texture->next;
+	}
+
+	// Texture created last appears at the first position in sequence of texture tables
+	// Reverse its order so every addition/deletion of texture doesn't shift the sequence
+	for (int i = 1, m = count / 2; i < m; ++i)
+	{
+		lua_rawgeti(state, -1, i);
+		lua_rawgeti(state, -2, count - i);
+
+		lua_rawseti(state, -3, i);
+		lua_rawseti(state, -2, count - i);
 	}
 
 	return 1;
