@@ -12,10 +12,12 @@ local imEnd <const> = ImGui.End
 local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
+local imImage <const> = ImGui.Image
 local imMenuItem <const> = ImGui.MenuItem
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetItemDefaultFocus <const> = ImGui.SetItemDefaultFocus
+local imSliderFloat <const> = ImGui.SliderFloat
 local imTableHeadersRow <const> = ImGui.TableHeadersRow
 local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
@@ -145,7 +147,14 @@ local function textureview_onupdate(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		ImGui.Image(self.texnum, imVec2(self.width, self.height))
+		local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
+
+		if changed then
+			self.scale = scale
+			self.texsize = imVec2(self.width * scale, self.height * scale)
+		end
+
+		imImage(self.texnum, self.texsize)
 	end
 
 	imEnd()
@@ -160,9 +169,18 @@ local function textureview_onshow(self)
 		return  -- Close view because texture not longer exists
 	end
 
+	local width, height = texture.width, texture.height
+	local scale = self.scale
+
+	if not scale then
+		scale = (width > 640 or height > 480) and 1 or 2
+		self.scale = scale
+	end
+
 	self.texnum = texture.texnum
-	self.width = texture.width
-	self.height = texture.height
+	self.texsize = imVec2(width * scale, height * scale)
+	self.width = width
+	self.height = height
 
 	return true
 end
