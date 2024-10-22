@@ -33,6 +33,8 @@ local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 
+expmode.engine = {}
+
 local function levelentities_createtextview(self)
 	local entities = host.entities()
 
@@ -139,6 +141,43 @@ local function levelentities_onhide(self)
 	return true
 end
 
+local function textureview_onupdate(self)
+	local visible, opened = imBegin(self.title, true)
+
+	if visible and opened then
+		ImGui.Image(self.texnum, imVec2(self.width, self.height))
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function textureview_onshow(self)
+	local texture = textures[self.name]
+
+	if not texture then
+		return  -- Close view because texture not longer exists
+	end
+
+	self.texnum = texture.texnum
+	self.width = texture.width
+	self.height = texture.height
+
+	return true
+end
+
+function expmode.engine.viewtexture(name)
+	local function oncreate(self)
+		self:setconstraints()
+		self:movetocursor()
+
+		self.name = name
+	end
+
+	return expmode.window('Texture ' .. name, textureview_onupdate, oncreate, textureview_onshow)
+end
+
 local function textures_searchcompare(entry, string)
 	return entry.name:lower():find(string, 1, true)
 		or entry.width:find(string, 1, true)
@@ -166,7 +205,9 @@ local function textures_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				imText(entry.name)
+				if imSelectable(entry.name) then
+					expmode.engine.viewtexture(entry.name)
+				end
 				imTableNextColumn()
 				imText(entry.width)
 				imTableNextColumn()
@@ -207,8 +248,6 @@ local function textures_onhide(self)
 	self.entries = nil
 	return true
 end
-
-expmode.engine = {}
 
 function expmode.engine.levelentities()
 	return expmode.window('Level Entities', levelentities_update,
