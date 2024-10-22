@@ -3,6 +3,7 @@ local ipairs <const> = ipairs
 local format <const> = string.format
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
@@ -14,6 +15,7 @@ local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
 local imImage <const> = ImGui.Image
 local imMenuItem <const> = ImGui.MenuItem
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetItemDefaultFocus <const> = ImGui.SetItemDefaultFocus
@@ -148,6 +150,10 @@ local function textureview_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		imAlignTextToFramePadding()
+		imText(self.sizetext)
+		imSameLine(0, 16)
+
 		local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
 
 		if changed then
@@ -182,6 +188,7 @@ local function textureview_onshow(self)
 	self.texnum = texture.texnum
 	self.width = width
 	self.height = height
+	self.sizetext = format('Size: %dx%d', width, height)
 
 	return true
 end
