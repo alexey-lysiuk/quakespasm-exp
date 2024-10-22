@@ -28,6 +28,7 @@ local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
+local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
@@ -144,7 +145,7 @@ local function levelentities_onhide(self)
 end
 
 local function textureview_onupdate(self)
-	local visible, opened = imBegin(self.title, true)
+	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
