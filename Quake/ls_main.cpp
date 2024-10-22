@@ -710,6 +710,9 @@ static int LS_global_textures_list(lua_State* state)
 		lua_pushstring(state, "height");
 		lua_pushinteger(state, texture->height);
 		lua_rawset(state, -3);
+		lua_pushstring(state, "texnum");
+		lua_pushinteger(state, texture->texnum);
+		lua_rawset(state, -3);
 
 		// Set texture table as sequence value
 		lua_rawseti(state, -2, i);
