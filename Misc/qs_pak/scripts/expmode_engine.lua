@@ -152,10 +152,10 @@ local function textureview_onupdate(self)
 
 		if changed then
 			self.scale = scale
-			self.texsize = imVec2(self.width * scale, self.height * scale)
+			self.imagesize = imVec2(self.width * scale, self.height * scale)
 		end
 
-		imImage(self.texnum, self.texsize)
+		imImage(self.texnum, self.imagesize)
 	end
 
 	imEnd()
@@ -178,8 +178,8 @@ local function textureview_onshow(self)
 		self.scale = scale
 	end
 
+	self.imagesize = imVec2(width * scale, height * scale)
 	self.texnum = texture.texnum
-	self.texsize = imVec2(width * scale, height * scale)
 	self.width = width
 	self.height = height
 
