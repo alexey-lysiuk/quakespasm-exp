@@ -28,7 +28,7 @@ extern "C"
 {
 #include "quakedef.h"
 
-const gltexture_t* TexMgr_GetTextures();
+const gltexture_t* LS_GetTextures();
 }
 
 #ifdef USE_TLSF
@@ -692,7 +692,7 @@ static int LS_global_text_toascii(lua_State* state)
 // Pushes sequence of tables with information about loaded textures
 static int LS_global_textures_list(lua_State* state)
 {
-	const gltexture_t* texture = TexMgr_GetTextures();
+	const gltexture_t* texture = LS_GetTextures();
 	if (!texture)
 		return 0;
 
