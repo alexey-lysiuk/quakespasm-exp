@@ -410,6 +410,28 @@ static int LS_global_imgui_EndCombo(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_SliderFloat(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const label = luaL_checkstring(state, 1);
+	float value = luaL_checknumber(state, 2);
+	const float minvalue = luaL_checknumber(state, 3);
+	const float maxvalue = luaL_checknumber(state, 4);
+	const char* const format = "%.2f";
+	// TODO: Support for format needs a validation to prohibit things like "%" or "%n"
+	// const char* const format = VALIDATE(luaL_optstring(state, 5, "%.3f"));
+	const int flags = luaL_optinteger(state, 5, 0);
+
+	const bool changed = ImGui::SliderFloat(label, &value, minvalue, maxvalue, format, flags);
+	lua_pushboolean(state, changed);
+
+	if (changed)
+		lua_pushnumber(state, value);
+
+	return changed ? 2 : 1;
+}
+
 static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1075,7 +1097,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * DragScalarN
 
 		// Widgets: Regular Sliders
-		// * SliderFloat
+		{ "SliderFloat", LS_global_imgui_SliderFloat },
 		// * SliderFloat2
 		// * SliderFloat3
 		// * SliderFloat4
