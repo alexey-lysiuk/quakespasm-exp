@@ -116,6 +116,37 @@ static int LS_global_imgui_End(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_BeginChild(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const name = luaL_checkstring(state, 1);
+	assert(name);
+
+	if (name[0] == '\0')
+		luaL_error(state, "child window name is required");
+
+	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
+	const int childflags = luaL_optinteger(state, 3, 0);
+	const int windowflags = luaL_optinteger(state, 4, 0);
+
+	const bool visible = ImGui::BeginChild(name, ToImVec2(size), childflags, windowflags);
+	lua_pushboolean(state, visible);
+
+	LS_AddToImGuiStack(LS_EndChildWindowScope);
+	++ls_childwindowscope;
+
+	return 1;
+}
+
+static int LS_global_imgui_EndChild(lua_State* state)
+{
+	LS_EnsureChildWindowScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndChildWindowScope);
+	return 0;
+}
+
 static int LS_global_imgui_IsWindowAppearing(lua_State* state)
 {
 	LS_EnsureWindowScope(state);
@@ -939,9 +970,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "End", LS_global_imgui_End },
 
 		// Child Windows
-		// * BeginChild
-		// * BeginChild
-		// * EndChild
+		{ "BeginChild", LS_global_imgui_BeginChild },
+		{ "EndChild", LS_global_imgui_EndChild },
 
 		// Windows Utilities
 		{ "IsWindowAppearing", LS_global_imgui_IsWindowAppearing },

@@ -347,6 +347,22 @@ static void LS_EndWindowScope()
 	ImGui::End();
 }
 
+static uint32_t ls_childwindowscope;
+
+static void LS_EnsureChildWindowScope(lua_State* state)
+{
+	if (ls_childwindowscope == 0)
+		luaL_error(state, "calling ImGui function outside of child window scope");
+}
+
+static void LS_EndChildWindowScope()
+{
+	assert(ls_childwindowscope > 0);
+	--ls_childwindowscope;
+
+	ImGui::EndChild();
+}
+
 static uint32_t ls_popupscope;
 
 static void LS_EnsurePopupScope(lua_State* state)
