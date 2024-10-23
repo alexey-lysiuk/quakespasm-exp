@@ -279,6 +279,53 @@ local function textures_onhide(self)
 	return true
 end
 
+local function textureviewer_onupdate(self)
+	local visible, opened = imBegin(self.title, true)
+
+	if visible and opened then
+		local selectedname = self.name
+
+		if imBeginCombo('##textures', selectedname) then
+			for _, texture in ipairs(self.textures) do
+				local name = texture.name
+				local selected = name == selectedname
+
+				if imSelectable(name, selected) then
+					self.name = name
+					ShowTextureView(self)
+				end
+
+				if selected then
+					imSetItemDefaultFocus()
+				end
+			end
+
+			imEndCombo()
+		end
+
+		UpdateTextureView(self)
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function textureviewer_onshow(self)
+	self.textures = textures.list()
+
+	if not self.name or not textures[self.name] then
+		self.name = self.textures[1].name
+	end
+
+	return ShowTextureView(self)
+end
+
+local function textureviewer_onhide(self)
+	self.textures = nil
+	return true
+end
+
 function expmode.engine.levelentities()
 	return expmode.window('Level Entities', levelentities_update,
 		function (self)
@@ -295,6 +342,15 @@ function expmode.engine.textures()
 			self:setsize(imVec2(640, 480))
 		end,
 		textures_onshow, textures_onhide)
+end
+
+function expmode.engine.textureviewer()
+	return expmode.window('Texture Viewer', textureviewer_onupdate,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(640, 480))
+		end,
+		textureviewer_onshow, textureviewer_onhide)
 end
 
 local function GhostAndExit(enable)
@@ -340,6 +396,10 @@ expmode.addaction(function ()
 
 		if imMenuItem('Textures\u{85}') then
 			expmode.engine.textures()
+		end
+
+		if imMenuItem('Texture Viewer\u{85}') then
+			expmode.engine.textureviewer()
 		end
 
 		imSeparator()
