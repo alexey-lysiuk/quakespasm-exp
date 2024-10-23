@@ -311,17 +311,22 @@ local function textureviewer_onupdate(self)
 	return opened
 end
 
+local textureviewer_defaultname <const> = 'scrap0'
+local textureviewer_name = textureviewer_defaultname
+
 local function textureviewer_onshow(self)
 	self.textures = textures.list()
+	self.name = textureviewer_name
 
-	if not self.name or not textures[self.name] then
-		self.name = self.textures[1].name
+	if not textures[self.name] then
+		self.name = textureviewer_defaultname
 	end
 
 	return ShowTextureView(self)
 end
 
 local function textureviewer_onhide(self)
+	textureviewer_name = self.name
 	self.textures = nil
 	return true
 end
