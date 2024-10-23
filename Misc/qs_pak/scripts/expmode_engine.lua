@@ -146,30 +146,7 @@ local function levelentities_onhide(self)
 	return true
 end
 
-local function textureview_onupdate(self)
-	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
-
-	if visible and opened then
-		imAlignTextToFramePadding()
-		imText(self.sizetext)
-		imSameLine(0, 16)
-
-		local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
-
-		if changed then
-			self.scale = scale
-			self.imagesize = imVec2(self.width * scale, self.height * scale)
-		end
-
-		imImage(self.texnum, self.imagesize)
-	end
-
-	imEnd()
-
-	return opened
-end
-
-local function textureview_onshow(self)
+local function ShowTextureView(self)
 	local texture = textures[self.name]
 
 	if not texture then
@@ -193,6 +170,33 @@ local function textureview_onshow(self)
 	return true
 end
 
+local function UpdateTextureView(self)
+	imAlignTextToFramePadding()
+	imText(self.sizetext)
+	imSameLine(0, 16)
+
+	local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
+
+	if changed then
+		self.scale = scale
+		self.imagesize = imVec2(self.width * scale, self.height * scale)
+	end
+
+	imImage(self.texnum, self.imagesize)
+end
+
+local function textureview_onupdate(self)
+	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
+
+	if visible and opened then
+		UpdateTextureView(self)
+	end
+
+	imEnd()
+
+	return opened
+end
+
 function expmode.engine.viewtexture(name)
 	local function oncreate(self)
 		self:setconstraints()
@@ -201,7 +205,7 @@ function expmode.engine.viewtexture(name)
 		self.name = name
 	end
 
-	return expmode.window('Texture ' .. name, textureview_onupdate, oncreate, textureview_onshow)
+	return expmode.window('Texture ' .. name, textureview_onupdate, oncreate, ShowTextureView)
 end
 
 local function textures_searchcompare(entry, string)
