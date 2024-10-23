@@ -261,6 +261,14 @@ static int LS_global_imgui_SetCursorScreenPos(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_GetContentRegionAvail(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const LS_Vector2 pos = FromImVec2(ImGui::GetContentRegionAvail());
+	return LS_PushVectorValue(state, pos);
+}
+
 static int LS_global_imgui_GetCursorPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1049,7 +1057,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Layout cursor positioning
 		{ "GetCursorScreenPos", LS_global_imgui_GetCursorScreenPos },
 		{ "SetCursorScreenPos", LS_global_imgui_SetCursorScreenPos },
-		// * GetContentRegionAvail
+		{ "GetContentRegionAvail", LS_global_imgui_GetContentRegionAvail },
 		{ "GetCursorPos", LS_global_imgui_GetCursorPos },
 		{ "GetCursorPosX", LS_global_imgui_GetCursorPosX },
 		{ "GetCursorPosY", LS_global_imgui_GetCursorPosY },
