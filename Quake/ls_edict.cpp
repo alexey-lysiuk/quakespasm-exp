@@ -440,6 +440,9 @@ static bool LS_DoDamage(int function, edict_t* target)
 // Removes edict passed index or by value
 static int LS_global_edicts_destroy(lua_State* state)
 {
+	if (cls.state != ca_connected || pr_global_struct->deathmatch)
+		return 0;
+
 	edict_t* edict = LS_GetEdictFromParameter(state);
 
 	// Skip free edict, worldspawn, player
@@ -538,6 +541,9 @@ static void LS_UseTargets(edict_t* edict)
 // Removes edict passed index or by value
 static int LS_global_edicts_remove(lua_State* state)
 {
+	if (cls.state != ca_connected || pr_global_struct->deathmatch)
+		return 0;
+
 	edict_t* edict = LS_GetEdictFromParameter(state);
 
 	// Skip free edict, worldspawn, player
@@ -556,6 +562,9 @@ static int LS_global_edicts_remove(lua_State* state)
 // Spawns a new entity by its function and optional table with field values
 static int LS_global_edicts_spawn(lua_State* state)
 {
+	if (cls.state != ca_connected || pr_global_struct->deathmatch)
+		return 0;
+
 	const char* funcname = luaL_checkstring(state, 1);
 	int dummy = -1;
 
