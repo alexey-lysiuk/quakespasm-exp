@@ -910,6 +910,16 @@ static int LS_global_imgui_CalcTextSize(lua_State* state)
 	return LS_PushVectorValue(state, textsize);
 }
 
+static int LS_global_imgui_IsKeyDown(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiKey key { luaL_checkinteger(state, 1) };
+	const bool isdown = ImGui::IsKeyDown(key);
+	lua_pushboolean(state, isdown);
+	return 1;
+}
+
 static int LS_global_imgui_IsMouseReleased(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1346,7 +1356,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * ColorConvertHSVtoRGB
 
 		// Inputs Utilities: Keyboard/Mouse/Gamepad
-		// * IsKeyDown
+		{ "IsKeyDown", LS_global_imgui_IsKeyDown },
 		// * IsKeyPressed
 		// * IsKeyReleased
 		// * IsKeyChordPressed
