@@ -920,6 +920,18 @@ static int LS_global_imgui_IsKeyDown(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_IsKeyPressed(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiKey key { luaL_checkinteger(state, 1) };
+	const bool repeat = luaL_opt(state, lua_toboolean, 2, true);
+
+	const bool ispressed = ImGui::IsKeyPressed(key, repeat);
+	lua_pushboolean(state, ispressed);
+	return 1;
+}
+
 static int LS_global_imgui_IsMouseReleased(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1357,7 +1369,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 
 		// Inputs Utilities: Keyboard/Mouse/Gamepad
 		{ "IsKeyDown", LS_global_imgui_IsKeyDown },
-		// * IsKeyPressed
+		{ "IsKeyPressed", LS_global_imgui_IsKeyPressed },
 		// * IsKeyReleased
 		// * IsKeyChordPressed
 		// * GetKeyPressedAmount
