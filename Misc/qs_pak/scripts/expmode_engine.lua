@@ -284,15 +284,18 @@ local function textureviewer_onupdate(self)
 
 	if visible and opened then
 		local selectedname = self.name
+		local selectedindex = self.index
+		local selectionchanged
 
 		if imBeginCombo('##textures', selectedname) then
-			for _, texture in ipairs(self.textures) do
+			for i, texture in ipairs(self.textures) do
 				local name = texture.name
-				local selected = name == selectedname
+				local selected = i == selectedindex
 
 				if imSelectable(name, selected) then
-					self.name = name
-					ShowTextureView(self)
+					selectedname = name
+					selectedindex = i
+					selectionchanged = true
 				end
 
 				if selected then
@@ -301,6 +304,13 @@ local function textureviewer_onupdate(self)
 			end
 
 			imEndCombo()
+		end
+
+		if selectionchanged then
+			self.name = selectedname
+			self.index = selectedindex
+
+			ShowTextureView(self)
 		end
 
 		UpdateTextureView(self)
@@ -320,6 +330,13 @@ local function textureviewer_onshow(self)
 
 	if not textures[self.name] then
 		self.name = textureviewer_defaultname
+	end
+
+	for i, texture in ipairs(self.textures) do
+		if texture.name == textureviewer_name then
+			self.index = i
+			break
+		end
 	end
 
 	return ShowTextureView(self)
