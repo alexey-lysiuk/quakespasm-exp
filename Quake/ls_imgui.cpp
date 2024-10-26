@@ -54,6 +54,18 @@ static ImVec4 ToImVec4(const LS_Vector4& value)
 }
 
 
+static const char* LS_CheckImGuiName(lua_State* state)
+{
+	const char* const name = luaL_checkstring(state, 1);
+	assert(name);
+
+	if (!name || name[0] == '\0')
+		luaL_error(state, "ImGui name cannot be empty");
+
+	return name;
+}
+
+
 struct LS_TextBuffer
 {
 	char* data;

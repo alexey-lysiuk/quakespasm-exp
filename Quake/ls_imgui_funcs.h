@@ -79,12 +79,7 @@ static int LS_global_imgui_Begin(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const name = luaL_checkstring(state, 1);
-	assert(name);
-
-	if (name[0] == '\0')
-		luaL_error(state, "window name is required");
-
+	const char* const name = LS_CheckImGuiName(state);
 	bool openvalue;
 	bool* openptr = &openvalue;
 
@@ -120,12 +115,7 @@ static int LS_global_imgui_BeginChild(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const name = luaL_checkstring(state, 1);
-	assert(name);
-
-	if (name[0] == '\0')
-		luaL_error(state, "child window name is required");
-
+	const char* const name = LS_CheckImGuiName(state);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
 	const int childflags = luaL_optinteger(state, 3, 0);
 	const int windowflags = luaL_optinteger(state, 4, 0);
@@ -371,7 +361,7 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	ImGui::SeparatorText(label);
 	return 0;
 }
@@ -380,7 +370,7 @@ static int LS_global_imgui_Button(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
 
 	const bool result = ImGui::Button(label, ToImVec2(size));
@@ -392,7 +382,7 @@ static int LS_global_imgui_Checkbox(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	luaL_checktype(state, 2, LUA_TBOOLEAN);
 	bool value = lua_toboolean(state, 2);
 
@@ -424,7 +414,7 @@ static int LS_global_imgui_BeginCombo(lua_State* state)
 	if (ls_comboscope)
 		luaL_error(state, "calling BeginCombo() twice");
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const char* const preview_value = luaL_checkstring(state, 2);
 	const ImGuiComboFlags flags = luaL_optinteger(state, 3, 0);
 
@@ -453,7 +443,7 @@ static int LS_global_imgui_SliderFloat(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	float value = luaL_checknumber(state, 2);
 	const float minvalue = luaL_checknumber(state, 3);
 	const float maxvalue = luaL_checknumber(state, 4);
@@ -475,7 +465,7 @@ static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const bool result = ImGui::SmallButton(label);
 
 	lua_pushboolean(state, result);
@@ -486,9 +476,7 @@ static int LS_global_imgui_InputText(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
-	assert(label);
-
+	const char* const label = LS_CheckImGuiName(state);
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
@@ -502,9 +490,7 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
-	assert(label);
-
+	const char* const label = LS_CheckImGuiName(state);
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
 	const int flags = luaL_optinteger(state, 4, 0);
@@ -519,7 +505,7 @@ static int LS_global_imgui_Selectable(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
 	const int flags = luaL_optinteger(state, 3, 0);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
@@ -598,7 +584,7 @@ static int LS_global_imgui_BeginMenu(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const bool enabled = luaL_opt(state, lua_toboolean, 2, true);
 	const bool opened = ImGui::BeginMenu(label, enabled);
 
@@ -625,7 +611,7 @@ static int LS_global_imgui_MenuItem(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const char* const shortcut = luaL_optstring(state, 2, nullptr);
 	const bool selected = luaL_opt(state, lua_toboolean, 3, false);
 	const bool enabled = luaL_opt(state, lua_toboolean, 4, true);
@@ -639,7 +625,7 @@ static int LS_global_imgui_BeginPopup(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
+	const char* const strid = LS_CheckImGuiName(state);
 	const int flags = luaL_optinteger(state, 2, 0);
 	const bool visible = ImGui::BeginPopup(strid, flags);
 
@@ -667,7 +653,7 @@ static int LS_global_imgui_OpenPopup(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
+	const char* strid = LS_CheckImGuiName(state);
 	const int flags = luaL_optinteger(state, 2, 0);
 
 	ImGui::OpenPopup(strid, flags);
@@ -698,7 +684,7 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
+	const char* strid = LS_CheckImGuiName(state);
 	const int columncount = luaL_checkinteger(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
@@ -760,7 +746,7 @@ static int LS_global_imgui_TableSetupColumn(lua_State* state)
 {
 	LS_EnsureTableScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const int flags = luaL_optinteger(state, 2, 0);
 	const float initwidthorweight = luaL_optnumber(state, 3, 0.f);
 	const ImGuiID userid = luaL_optinteger(state, 4, 0);
@@ -784,7 +770,7 @@ static int LS_global_imgui_TableHeader(lua_State* state)
 {
 	LS_EnsureTableScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	ImGui::TableHeader(label);
 	return 0;
 }
