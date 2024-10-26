@@ -14,6 +14,7 @@ local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
 local imImage <const> = ImGui.Image
+local imIsKeyPressed <const> = ImGui.IsKeyPressed
 local imMenuItem <const> = ImGui.MenuItem
 local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
@@ -28,7 +29,11 @@ local imTableSetupScrollFreeze <const> = ImGui.TableSetupScrollFreeze
 local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
+local imKey <const> = ImGui.Key
 local imTableFlags <const> = ImGui.TableFlags
+
+local imLeftArrow <const> = imKey.LeftArrow
+local imRightArrow <const> = imKey.RightArrow
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
@@ -304,6 +309,24 @@ local function textureviewer_onupdate(self)
 			end
 
 			imEndCombo()
+		elseif imIsKeyPressed(imLeftArrow) then
+			selectedindex = selectedindex - 1
+
+			if selectedindex < 1 then
+				selectedindex = #self.textures
+			end
+
+			selectedname = self.textures[selectedindex].name
+			selectionchanged = true
+		elseif imIsKeyPressed(imRightArrow) then
+			selectedindex = selectedindex + 1
+
+			if selectedindex > #self.textures then
+				selectedindex = 1
+			end
+
+			selectedname = self.textures[selectedindex].name
+			selectionchanged = true
 		end
 
 		if selectionchanged then
