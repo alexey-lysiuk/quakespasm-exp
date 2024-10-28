@@ -134,7 +134,7 @@ local vec3minusone <const> = vec3.new(-1, -1, -1)
 local vec3mid <const> = vec3.mid
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
-local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
+local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 
 local isclass <const> = edicts.isclass
@@ -384,7 +384,7 @@ function edicts.isitem(edict)
 		return
 	end
 
-	if edict.solid == SOLID_NOT then
+	if edict.solid ~= SOLID_TRIGGER then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
 		return
 	end
