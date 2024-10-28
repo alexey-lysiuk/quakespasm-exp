@@ -424,7 +424,7 @@ local function edictrefs_onupdate(self)
 
 		if #references > 0 then
 			imText('References')
-			edictstable('', references)
+			edictstable('#', references)
 			imSpacing()
 		end
 
@@ -432,7 +432,7 @@ local function edictrefs_onupdate(self)
 
 		if #referencedby > 0 then
 			imText('Referenced by')
-			edictstable('', referencedby)
+			edictstable('#', referencedby)
 		end
 	end
 
