@@ -108,6 +108,7 @@ edicts.monsternames =
 	-- ID1
 	army = 'Grunt',
 	boss = 'Chthon',
+	dragon = 'Dragon',
 	demon1 = 'Fiend',
 	dog = 'Rottweiler',
 	enforcer = 'Enforcer',
@@ -119,6 +120,7 @@ edicts.monsternames =
 	shalrath = 'Vore',
 	shambler = 'Shambler',
 	tarbaby = 'Spawn',
+	vomit = 'Vomitus',
 	wizard = 'Scrag',
 	zombie = 'Zombies',
 
