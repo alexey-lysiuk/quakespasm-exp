@@ -304,6 +304,10 @@ function edicts.ismonster(edict)
 		return
 	end
 
+	if classname == 'item_time_machine' then
+		return  -- skip Rogue R2M8 device marked as monster
+	end
+
 	-- Check flag specific to Arcane Dimensions
 	local nomonstercount = edict.nomonstercount
 
