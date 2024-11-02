@@ -128,6 +128,7 @@ edicts.monsternames =
 	armagon = 'Armagon',
 	gremlin = 'Gremlin',
 	scourge = 'Centroid',
+	trap_spike_mine = 'Spike Mine',
 
 	-- Rogue
 	eel = 'Eel',
