@@ -102,6 +102,43 @@ edicts.itemnames =
 
 local itemnames <const> = edicts.itemnames
 
+-- Map monster classname (without monster_ prefix) to its name
+edicts.monsternames =
+{
+	-- ID1
+	army = 'Grunt',
+	boss = 'Chthon',
+	demon1 = 'Fiend',
+	dog = 'Rottweiler',
+	enforcer = 'Enforcer',
+	fish = 'Rotfish',
+	hell_knight = 'Death Knight',
+	knight = 'Knight',
+	ogre = 'Ogre',
+	oldone = 'Shub-Niggurath',
+	shalrath = 'Vore',
+	shambler = 'Shambler',
+	tarbaby = 'Spawn',
+	wizard = 'Scrag',
+	zombie = 'Zombies',
+
+	-- Hipnotic
+	gremlin = 'Gremlin',
+	scourge = 'Centroid',
+	armagon = 'Armagon',
+
+	-- Rogue
+	eel = 'Eel',
+	wrath = 'Wrath',
+	super_wrath = 'Overlord',
+	sword = 'Phantom Swordsman',
+	lava_man = 'Hephaestus',
+	morph = 'Guardian',
+	mummy = 'Mummy',
+}
+
+local monsternames = edicts.monsternames
+
 
 local ipairs <const> = ipairs
 
@@ -279,7 +316,8 @@ function edicts.ismonster(edict)
 		classname = classname:sub(9)
 	end
 
-	return classname, edict.origin, edict.angles
+	local name = monsternames[classname] or classname
+	return name, edict.origin, edict.angles
 end
 
 
