@@ -125,18 +125,18 @@ edicts.monsternames =
 	zombie = 'Zombies',
 
 	-- Hipnotic
+	armagon = 'Armagon',
 	gremlin = 'Gremlin',
 	scourge = 'Centroid',
-	armagon = 'Armagon',
 
 	-- Rogue
 	eel = 'Eel',
-	wrath = 'Wrath',
-	super_wrath = 'Overlord',
-	sword = 'Phantom Swordsman',
 	lava_man = 'Hephaestus',
 	morph = 'Guardian',
 	mummy = 'Mummy',
+	super_wrath = 'Overlord',
+	sword = 'Phantom Swordsman',
+	wrath = 'Wrath',
 }
 
 local monsternames = edicts.monsternames
