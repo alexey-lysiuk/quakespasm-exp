@@ -320,7 +320,7 @@ function edicts.ismonster(edict)
 
 	local name = monsternames[classname]
 		-- Remove classname prefix if present
-		or (classname:find('monster_', 1, true) == 1 and classname:sub(9) or classname)
+		or titlecase(classname:find('monster_', 1, true) == 1 and classname:sub(9) or classname)
 
 	return name, edict.origin, edict.angles
 end
