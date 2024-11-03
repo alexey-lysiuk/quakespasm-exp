@@ -122,7 +122,7 @@ edicts.monsternames =
 	tarbaby = 'Spawn',
 	vomit = 'Vomitus',
 	wizard = 'Scrag',
-	zombie = 'Zombies',
+	zombie = 'Zombie',
 
 	-- Hipnotic
 	armagon = 'Armagon',
