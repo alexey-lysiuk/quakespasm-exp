@@ -102,42 +102,42 @@ edicts.itemnames =
 
 local itemnames <const> = edicts.itemnames
 
--- Map monster classname (without monster_ prefix) to its name
+-- Map monster classname to its name
 edicts.monsternames =
 {
 	-- ID1
-	army = 'Grunt',
-	boss = 'Chthon',
-	dragon = 'Dragon',
-	demon1 = 'Fiend',
-	dog = 'Rottweiler',
-	enforcer = 'Enforcer',
-	fish = 'Rotfish',
-	hell_knight = 'Death Knight',
-	knight = 'Knight',
-	ogre = 'Ogre',
-	oldone = 'Shub-Niggurath',
-	shalrath = 'Vore',
-	shambler = 'Shambler',
-	tarbaby = 'Spawn',
-	vomit = 'Vomitus',
-	wizard = 'Scrag',
-	zombie = 'Zombie',
+	monster_army = 'Grunt',
+	monster_boss = 'Chthon',
+	monster_dragon = 'Dragon',
+	monster_demon1 = 'Fiend',
+	monster_dog = 'Rottweiler',
+	monster_enforcer = 'Enforcer',
+	monster_fish = 'Rotfish',
+	monster_hell_knight = 'Death Knight',
+	monster_knight = 'Knight',
+	monster_ogre = 'Ogre',
+	monster_oldone = 'Shub-Niggurath',
+	monster_shalrath = 'Vore',
+	monster_shambler = 'Shambler',
+	monster_tarbaby = 'Spawn',
+	monster_vomit = 'Vomitus',
+	monster_wizard = 'Scrag',
+	monster_zombie = 'Zombie',
 
 	-- Hipnotic
-	armagon = 'Armagon',
-	gremlin = 'Gremlin',
-	scourge = 'Centroid',
+	monster_armagon = 'Armagon',
+	monster_gremlin = 'Gremlin',
+	monster_scourge = 'Centroid',
 	trap_spike_mine = 'Spike Mine',
 
 	-- Rogue
-	eel = 'Electric Eel',
-	lava_man = 'Hephaestus',
-	morph = 'Guardian',
-	mummy = 'Mummy',
-	super_wrath = 'Overlord',
-	sword = 'Phantom Swordsman',
-	wrath = 'Wrath',
+	monster_eel = 'Electric Eel',
+	monster_lava_man = 'Hephaestus',
+	monster_morph = 'Guardian',
+	monster_mummy = 'Mummy',
+	monster_super_wrath = 'Overlord',
+	monster_sword = 'Phantom Swordsman',
+	monster_wrath = 'Wrath',
 }
 
 local monsternames = edicts.monsternames
@@ -318,12 +318,10 @@ function edicts.ismonster(edict)
 		return
 	end
 
-	-- Remove classname prefix if present
-	if classname:find('monster_', 1, true) == 1 then
-		classname = classname:sub(9)
-	end
+	local name = monsternames[classname]
+		-- Remove classname prefix if present
+		or (classname:find('monster_', 1, true) == 1 and classname:sub(9) or classname)
 
-	local name = monsternames[classname] or classname
 	return name, edict.origin, edict.angles
 end
 
