@@ -131,7 +131,7 @@ edicts.monsternames =
 	trap_spike_mine = 'Spike Mine',
 
 	-- Rogue
-	eel = 'Eel',
+	eel = 'Electric Eel',
 	lava_man = 'Hephaestus',
 	morph = 'Guardian',
 	mummy = 'Mummy',
