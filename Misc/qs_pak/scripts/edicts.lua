@@ -378,8 +378,6 @@ local function getitemname(item)
 			return localizednetname(edict) or '???'
 		end
 	end
-
-	return
 end
 
 function edicts.isdoor(edict)
