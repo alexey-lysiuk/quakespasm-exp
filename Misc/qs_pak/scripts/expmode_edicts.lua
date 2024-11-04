@@ -456,7 +456,7 @@ local function edictrefs_onshow(self)
 		end
 	end
 
-	outgoing, incoming = edicts.references(edict)
+	local outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
 		return
