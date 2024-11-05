@@ -218,6 +218,7 @@ local function edictinfo_onshow(self)
 				field.vector = value
 				field.selectableid = format('%s##%s', value, field.name)
 			elseif valuetype == type_float then
+				---@diagnostic disable-next-line: cast-local-type
 				value = tointeger(value) or value
 			end
 
