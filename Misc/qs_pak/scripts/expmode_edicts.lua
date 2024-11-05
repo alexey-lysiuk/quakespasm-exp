@@ -261,18 +261,18 @@ local function edictstable_contextmenu_location(entry)
 	return location and '\t' .. location or ''
 end
 
-local function edictstable_contextmenu(entries, entry, cellvalue)
+local function edictstable_contextmenu(entries, current, cellvalue)
 	if imBeginPopupContextItem() then
 		if imSelectable('References') then
-			expmode.edictreferences(entry.edict):movetocursor()
+			expmode.edictreferences(current.edict):movetocursor()
 		end
 		imSeparator()
 		if imSelectable('Copy Cell') then
 			imSetClipboardText(tostring(cellvalue))
 		end
 		if imSelectable('Copy Row') then
-			local location = edictstable_contextmenu_location(entry)
-			imSetClipboardText(format('%d\t%s%s\n', entry.index, entry.description, location))
+			local location = edictstable_contextmenu_location(current)
+			imSetClipboardText(format('%d\t%s%s\n', current.index, current.description, location))
 		end
 		if imSelectable('Copy Table') then
 			local lines = {}
@@ -285,7 +285,7 @@ local function edictstable_contextmenu(entries, entry, cellvalue)
 
 			imSetClipboardText(concat(lines, '\n') .. '\n')
 		end
-		edict_contextmenuentry_destructive(entry.edict)
+		edict_contextmenuentry_destructive(current.edict)
 		imEndPopup()
 	end
 end
