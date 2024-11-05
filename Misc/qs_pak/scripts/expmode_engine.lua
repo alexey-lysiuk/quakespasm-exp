@@ -78,7 +78,7 @@ local function levelentities_createtextview(self)
 		end
 
 		-- Check if this lines contains entity class name
-		local first, last, classname = line:find('%s*"classname"%s+"([%w_]+)"')
+		local first, _, classname = line:find('%s*"classname"%s+"([%w_]+)"')
 
 		if first then
 			local name = format('[%i] %s', #names + 1, classname)
@@ -236,7 +236,7 @@ local function textures_onupdate(self)
 			imTableSetupColumn('Height', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
-			for i, entry in ipairs(entries) do
+			for _, entry in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(entry.index)

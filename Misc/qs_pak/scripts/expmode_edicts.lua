@@ -14,7 +14,6 @@ local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
 local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
-local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
