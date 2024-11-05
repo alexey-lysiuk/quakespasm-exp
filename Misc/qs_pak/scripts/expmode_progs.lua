@@ -132,13 +132,13 @@ local function functions_onupdate(self)
 					local func = entry.func
 					local funcname = func.name
 
-					local function oncreate(self)
-						self:setconstraints()
-						self:setsize(defaultDisassemblySize)
-						self:movetocursor()
+					local function oncreate(this)
+						this:setconstraints()
+						this:setsize(defaultDisassemblySize)
+						this:movetocursor()
 
-						self.func = func
-						self.name = funcname
+						this.func = func
+						this.name = funcname
 					end
 
 					window(format('Disassembly of #%i %s()', i, funcname), functiondisassembly_onupdate,
