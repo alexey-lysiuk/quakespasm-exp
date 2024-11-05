@@ -441,19 +441,19 @@ local function edictrefs_onupdate(self)
 	return opened
 end
 
+local function edictrefs_addentries(source, list)
+	local index = 1
+
+	for _, edict in ipairs(source) do
+		index = edicts_addentry(isany, edict, index, list)
+	end
+end
+
 local function edictrefs_onshow(self)
 	local edict = self.edict
 
 	if tostring(edict) ~= self.edictid then
 		return
-	end
-
-	local function addentries(source, list)
-		local index = 1
-
-		for _, edict in ipairs(source) do
-			index = edicts_addentry(isany, edict, index, list)
-		end
 	end
 
 	local outgoing, incoming = edicts.references(edict)
@@ -463,10 +463,10 @@ local function edictrefs_onshow(self)
 	end
 
 	local references = {}
-	addentries(outgoing, references)
+	edictrefs_addentries(outgoing, references)
 
 	local referencedby = {}
-	addentries(incoming, referencedby)
+	edictrefs_addentries(incoming, referencedby)
 
 	self.references = references
 	self.referencedby = referencedby
