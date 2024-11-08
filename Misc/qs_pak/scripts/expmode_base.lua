@@ -214,7 +214,7 @@ function expmode.window(title, onupdate, oncreate, onshow, onhide)
 	return window
 end
 
-local window <const> = expmode.window
+local openwindow <const> = expmode.window
 
 local function foreachwindow(func_or_name)
 	local func = type(func_or_name) == 'function' and func_or_name
@@ -280,13 +280,13 @@ local function stats_update(self)
 		local curtime = realtime()
 
 		if prevtime + 0.1 <= curtime then
-			local frametime = frametime()
+			local frmtime = frametime()
 			local hours = floor(curtime / 3600)
 			local minutes = floor(curtime % 3600 / 60)
 			local seconds = floor(curtime % 60)
 
 			self.hoststats = format('framecount = %i\nframetime = %f (%.1f FPS)\nrealtime = %f (%02i:%02i:%02i)',
-				framecount(), frametime, 1 / frametime, curtime, hours, minutes, seconds)
+				framecount(), frmtime, 1 / frmtime, curtime, hours, minutes, seconds)
 			self.memstats = memstats()
 			self.realtime = curtime
 		end
@@ -305,7 +305,7 @@ end
 expmode.common = {}
 
 function expmode.common.scratchpad()
-	return window('Scratchpad', scratchpad_update,
+	return openwindow('Scratchpad', scratchpad_update,
 		function (self)
 			self:setconstraints()
 			self:setsize(imVec2(640, 480))
@@ -313,7 +313,7 @@ function expmode.common.scratchpad()
 end
 
 function expmode.common.stats()
-	return window('Stats', stats_update,
+	return openwindow('Stats', stats_update,
 		function (self) self:setconstraints() end)
 end
 
@@ -323,7 +323,7 @@ local stats <const> = expmode.common.stats
 local function updateexpmenu()
 	if imBeginMenu('EXP') then
 		if imMenuItem('About\u{85}') then
-			window('About QuakeSpasm-EXP', about_update)
+			openwindow('About QuakeSpasm-EXP', about_update)
 		end
 
 		imSeparator()
@@ -489,7 +489,7 @@ local function messagebox_onupdate(self)
 end
 
 function expmode.messagebox(title, text)
-	local messagebox = window(title, messagebox_onupdate)
+	local messagebox = openwindow(title, messagebox_onupdate)
 	messagebox.text = text
 	return messagebox
 end

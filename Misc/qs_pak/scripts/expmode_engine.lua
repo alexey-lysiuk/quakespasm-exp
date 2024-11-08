@@ -3,6 +3,7 @@ local ipairs <const> = ipairs
 local format <const> = string.format
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
@@ -12,10 +13,15 @@ local imEnd <const> = ImGui.End
 local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
 local imEndTable <const> = ImGui.EndTable
+local imImage <const> = ImGui.Image
+local imIsKeyPressed <const> = ImGui.IsKeyPressed
+local imIsWindowFocused <const> = ImGui.IsWindowFocused
 local imMenuItem <const> = ImGui.MenuItem
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetItemDefaultFocus <const> = ImGui.SetItemDefaultFocus
+local imSliderFloat <const> = ImGui.SliderFloat
 local imTableHeadersRow <const> = ImGui.TableHeadersRow
 local imTableNextColumn <const> = ImGui.TableNextColumn
 local imTableNextRow <const> = ImGui.TableNextRow
@@ -24,14 +30,21 @@ local imTableSetupScrollFreeze <const> = ImGui.TableSetupScrollFreeze
 local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
+local imKey <const> = ImGui.Key
 local imTableFlags <const> = ImGui.TableFlags
+
+local imLeftArrow <const> = imKey.LeftArrow
+local imRightArrow <const> = imKey.RightArrow
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
+local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
 local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
+
+expmode.engine = {}
 
 local function levelentities_createtextview(self)
 	local entities = host.entities()
@@ -65,7 +78,7 @@ local function levelentities_createtextview(self)
 		end
 
 		-- Check if this lines contains entity class name
-		local first, last, classname = line:find('%s*"classname"%s+"([%w_]+)"')
+		local first, _, classname = line:find('%s*"classname"%s+"([%w_]+)"')
 
 		if first then
 			local name = format('[%i] %s', #names + 1, classname)
@@ -139,6 +152,68 @@ local function levelentities_onhide(self)
 	return true
 end
 
+local function ShowTextureView(self)
+	local texture = textures[self.name]
+
+	if not texture then
+		return  -- Close view because texture not longer exists
+	end
+
+	local width, height = texture.width, texture.height
+	local scale = self.scale
+
+	if not scale then
+		scale = (width > 640 or height > 480) and 1 or 2
+		self.scale = scale
+	end
+
+	self.imagesize = imVec2(width * scale, height * scale)
+	self.texnum = texture.texnum
+	self.width = width
+	self.height = height
+	self.sizetext = format('Size: %dx%d', width, height)
+
+	return true
+end
+
+local function UpdateTextureView(self)
+	imAlignTextToFramePadding()
+	imText(self.sizetext)
+	imSameLine(0, 16)
+
+	local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
+
+	if changed then
+		self.scale = scale
+		self.imagesize = imVec2(self.width * scale, self.height * scale)
+	end
+
+	imImage(self.texnum, self.imagesize)
+end
+
+local function textureview_onupdate(self)
+	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
+
+	if visible and opened then
+		UpdateTextureView(self)
+	end
+
+	imEnd()
+
+	return opened
+end
+
+function expmode.engine.viewtexture(name)
+	local function oncreate(self)
+		self:setconstraints()
+		self:movetocursor()
+
+		self.name = name
+	end
+
+	return expmode.window('Texture ' .. name, textureview_onupdate, oncreate, ShowTextureView)
+end
+
 local function textures_searchcompare(entry, string)
 	return entry.name:lower():find(string, 1, true)
 		or entry.width:find(string, 1, true)
@@ -161,24 +236,13 @@ local function textures_onupdate(self)
 			imTableSetupColumn('Height', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
-			for i, entry in ipairs(entries) do
+			for _, entry in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
 				if imSelectable(entry.name) then
-					expmode.window(entry.name,
-						function (self)
-							local visible, opened = imBegin(self.title, true)
-
-							if visible and opened then
-								local texture = entry.texture
-								ImGui.Image(texture.texnum, imVec2(texture.width, texture.height))
-							end
-
-							imEnd()
-							return opened
-						end)
+					expmode.engine.viewtexture(entry.name)
 				end
 				imTableNextColumn()
 				imText(entry.width)
@@ -201,7 +265,6 @@ local function textures_onshow(self)
 	for i, tex in ipairs(textures.list()) do
 		local entry =
 		{
-			texture = tex,
 			index = tostring(i),
 			name = tex.name,
 			width = tostring(tex.width),
@@ -222,7 +285,94 @@ local function textures_onhide(self)
 	return true
 end
 
-expmode.engine = {}
+local function textureviewer_onupdate(self)
+	local visible, opened = imBegin(self.title, true)
+
+	if visible and opened then
+		local selectedname = self.name
+		local selectedindex = self.index
+		local selectionchanged
+
+		if imBeginCombo('##textures', selectedname) then
+			for i, texture in ipairs(self.textures) do
+				local name = texture.name
+				local selected = i == selectedindex
+
+				if imSelectable(name, selected) then
+					selectedname = name
+					selectedindex = i
+					selectionchanged = true
+				end
+
+				if selected then
+					imSetItemDefaultFocus()
+				end
+			end
+
+			imEndCombo()
+		elseif imIsWindowFocused() then
+			if imIsKeyPressed(imLeftArrow) then
+				selectedindex = selectedindex - 1
+
+				if selectedindex < 1 then
+					selectedindex = #self.textures
+				end
+
+				selectedname = self.textures[selectedindex].name
+				selectionchanged = true
+			elseif imIsKeyPressed(imRightArrow) then
+				selectedindex = selectedindex + 1
+
+				if selectedindex > #self.textures then
+					selectedindex = 1
+				end
+
+				selectedname = self.textures[selectedindex].name
+				selectionchanged = true
+			end
+		end
+
+		if selectionchanged then
+			self.name = selectedname
+			self.index = selectedindex
+
+			ShowTextureView(self)
+		end
+
+		UpdateTextureView(self)
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local textureviewer_defaultname <const> = 'scrap0'
+local textureviewer_name = textureviewer_defaultname
+
+local function textureviewer_onshow(self)
+	self.textures = textures.list()
+	self.name = textureviewer_name
+
+	if not textures[self.name] then
+		self.name = textureviewer_defaultname
+	end
+
+	for i, texture in ipairs(self.textures) do
+		if texture.name == textureviewer_name then
+			self.index = i
+			break
+		end
+	end
+
+	return ShowTextureView(self)
+end
+
+local function textureviewer_onhide(self)
+	textureviewer_name = self.name
+	self.textures = nil
+	return true
+end
 
 function expmode.engine.levelentities()
 	return expmode.window('Level Entities', levelentities_update,
@@ -240,6 +390,15 @@ function expmode.engine.textures()
 			self:setsize(imVec2(640, 480))
 		end,
 		textures_onshow, textures_onhide)
+end
+
+function expmode.engine.textureviewer()
+	return expmode.window('Texture Viewer', textureviewer_onupdate,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(640, 480))
+		end,
+		textureviewer_onshow, textureviewer_onhide)
 end
 
 local function GhostAndExit(enable)
@@ -285,6 +444,10 @@ expmode.addaction(function ()
 
 		if imMenuItem('Textures\u{85}') then
 			expmode.engine.textures()
+		end
+
+		if imMenuItem('Texture Viewer\u{85}') then
+			expmode.engine.textureviewer()
 		end
 
 		imSeparator()

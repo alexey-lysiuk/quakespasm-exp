@@ -28,7 +28,7 @@ extern "C"
 {
 #include "quakedef.h"
 
-const gltexture_t* TexMgr_GetTextures();
+const gltexture_t* LS_GetTextures();
 }
 
 #ifdef USE_TLSF
@@ -689,38 +689,76 @@ static int LS_global_text_toascii(lua_State* state)
 	return 1;
 }
 
+// Pushes texture table by the given texture
+static void LS_PushTextureTable(lua_State* state, const gltexture_t* const texture)
+{
+	assert(texture);
+
+	lua_newtable(state);
+	lua_pushstring(state, "name");
+	lua_pushstring(state, texture->name);
+	lua_rawset(state, -3);
+	lua_pushstring(state, "width");
+	lua_pushinteger(state, texture->width);
+	lua_rawset(state, -3);
+	lua_pushstring(state, "height");
+	lua_pushinteger(state, texture->height);
+	lua_rawset(state, -3);
+	lua_pushstring(state, "texnum");
+	lua_pushinteger(state, texture->texnum);
+	lua_rawset(state, -3);
+}
+
 // Pushes sequence of tables with information about loaded textures
 static int LS_global_textures_list(lua_State* state)
 {
-	const gltexture_t* texture = TexMgr_GetTextures();
+	const gltexture_t* texture = LS_GetTextures();
 	if (!texture)
 		return 0;
 
+	int count = 1;
+
 	lua_newtable(state);
 
-	for (int i = 1; texture; ++i)
+	for (; texture; ++count)
 	{
-		lua_newtable(state);
-		lua_pushstring(state, "name");
-		lua_pushstring(state, texture->name);
-		lua_rawset(state, -3);
-		lua_pushstring(state, "width");
-		lua_pushinteger(state, texture->width);
-		lua_rawset(state, -3);
-		lua_pushstring(state, "height");
-		lua_pushinteger(state, texture->height);
-		lua_rawset(state, -3);
-		lua_pushstring(state, "texnum");
-		lua_pushinteger(state, texture->texnum);
-		lua_rawset(state, -3);
+		LS_PushTextureTable(state, texture);
 
 		// Set texture table as sequence value
-		lua_rawseti(state, -2, i);
+		lua_rawseti(state, -2, count);
 
 		texture = texture->next;
 	}
 
+	// Texture created last appears at the first position in sequence of texture tables
+	// Reverse its order so every addition/deletion of texture doesn't shift the sequence
+	for (int i = 1, m = count / 2; i < m; ++i)
+	{
+		lua_rawgeti(state, -1, i);
+		lua_rawgeti(state, -2, count - i);
+
+		lua_rawseti(state, -3, i);
+		lua_rawseti(state, -2, count - i);
+	}
+
 	return 1;
+}
+
+// Pushes texture table by its name
+static int LS_global_textures_index(lua_State* state)
+{
+	const char* const name = luaL_checkstring(state, 2);
+
+	for (const gltexture_t* texture = LS_GetTextures(); texture; texture = texture->next)
+	{
+		if (strcmp(texture->name, name) == 0)
+		{
+			LS_PushTextureTable(state, texture);
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 static lua_CFunction ls_loadfunc;
@@ -841,6 +879,19 @@ static void LS_InitGlobalTables(lua_State* state)
 		};
 
 		luaL_newlib(state, functions);
+
+		if (luaL_newmetatable(state, "textures"))
+		{
+			static const luaL_Reg functions[] =
+			{
+				{ "__index", LS_global_textures_index },
+				{ nullptr, nullptr }
+			};
+
+			luaL_setfuncs(state, functions, 0);
+		}
+
+		lua_setmetatable(state, -2);
 		lua_setglobal(state, "textures");
 	}
 

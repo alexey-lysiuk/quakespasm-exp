@@ -102,6 +102,46 @@ edicts.itemnames =
 
 local itemnames <const> = edicts.itemnames
 
+-- Map monster classname to its name
+edicts.monsternames =
+{
+	-- ID1
+	monster_army = 'Grunt',
+	monster_boss = 'Chthon',
+	monster_dragon = 'Dragon',
+	monster_demon1 = 'Fiend',
+	monster_dog = 'Rottweiler',
+	monster_enforcer = 'Enforcer',
+	monster_fish = 'Rotfish',
+	monster_hell_knight = 'Death Knight',
+	monster_knight = 'Knight',
+	monster_ogre = 'Ogre',
+	monster_oldone = 'Shub-Niggurath',
+	monster_shalrath = 'Vore',
+	monster_shambler = 'Shambler',
+	monster_tarbaby = 'Spawn',
+	monster_vomit = 'Vomitus',
+	monster_wizard = 'Scrag',
+	monster_zombie = 'Zombie',
+
+	-- Hipnotic
+	monster_armagon = 'Armagon',
+	monster_gremlin = 'Gremlin',
+	monster_scourge = 'Centroid',
+	trap_spike_mine = 'Spike Mine',
+
+	-- Rogue
+	monster_eel = 'Electric Eel',
+	monster_lava_man = 'Hephaestus',
+	monster_morph = 'Guardian',
+	monster_mummy = 'Mummy',
+	monster_super_wrath = 'Overlord',
+	monster_sword = 'Phantom Swordsman',
+	monster_wrath = 'Wrath',
+}
+
+local monsternames = edicts.monsternames
+
 
 local ipairs <const> = ipairs
 
@@ -134,7 +174,7 @@ local vec3minusone <const> = vec3.new(-1, -1, -1)
 local vec3mid <const> = vec3.mid
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
-local SOLID_NOT <const> = edicts.solidstates.SOLID_NOT
+local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
 
 local isclass <const> = edicts.isclass
@@ -267,6 +307,10 @@ function edicts.ismonster(edict)
 		return
 	end
 
+	if classname == 'item_time_machine' then
+		return  -- skip Rogue R2M8 device marked as monster
+	end
+
 	-- Check flag specific to Arcane Dimensions
 	local nomonstercount = edict.nomonstercount
 
@@ -274,12 +318,11 @@ function edicts.ismonster(edict)
 		return
 	end
 
-	-- Remove classname prefix if present
-	if classname:find('monster_', 1, true) == 1 then
-		classname = classname:sub(9)
-	end
+	local name = monsternames[classname]
+		-- Remove classname prefix if present
+		or titlecase(classname:find('monster_', 1, true) == 1 and classname:sub(9) or classname)
 
-	return classname, edict.origin, edict.angles
+	return name, edict.origin, edict.angles
 end
 
 
@@ -335,8 +378,6 @@ local function getitemname(item)
 			return localizednetname(edict) or '???'
 		end
 	end
-
-	return
 end
 
 function edicts.isdoor(edict)
@@ -384,7 +425,7 @@ function edicts.isitem(edict)
 		return
 	end
 
-	if edict.solid == SOLID_NOT then
+	if edict.solid ~= SOLID_TRIGGER then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
 		return
 	end

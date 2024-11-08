@@ -233,48 +233,6 @@ void EXP_Shutdown()
 	ImGui::DestroyContext();
 }
 
-static void EXP_TextureViewer()
-{
-#ifndef _NDEBUG
-	extern gltexture_t* TexMgr_GetTextures();
-	gltexture_t* first = TexMgr_GetTextures();
-	static gltexture_t* selected = first;
-
-	if (ImGui::Begin("Texture Viewer"))
-	{
-		if (ImGui::BeginCombo("##texture", selected->name))
-		{
-			gltexture_t* current = first;
-
-			while (current)
-			{
-				const bool is_selected = current == selected;
-
-				if (ImGui::Selectable(current->name, is_selected))
-					selected = current;
-
-				if (is_selected)
-					ImGui::SetItemDefaultFocus();
-
-				current = current->next;
-			}
-
-			ImGui::EndCombo();
-		}
-
-		static float scale = 1.f;
-
-		ImGui::Text("size = %ux%u", selected->width, selected->height);
-		ImGui::Text("id = %u", selected->texnum);
-		ImGui::SliderFloat("Scale", &scale, 0.5f, 3.0f, "%.3f");
-		ImGui::Separator();
-		ImGui::Image(selected->texnum, ImVec2(selected->width * scale, selected->height * scale));
-	}
-
-	ImGui::End();
-#endif // _NDEBUG
-}
-
 void EXP_Update()
 {
 	if (!exp_active)
@@ -301,8 +259,6 @@ void EXP_Update()
 		EXP_ExitMode();
 
 	LS_MarkImGuiFrameEnd();
-
-	EXP_TextureViewer();
 #endif // USE_LUA_SCRIPTING
 
 	ImGui::Render();

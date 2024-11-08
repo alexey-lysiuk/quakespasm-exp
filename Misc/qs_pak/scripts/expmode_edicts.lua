@@ -14,7 +14,6 @@ local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
 local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
-local imButton <const> = ImGui.Button
 local imCalcTextSize <const> = ImGui.CalcTextSize
 local imEnd <const> = ImGui.End
 local imEndMenu <const> = ImGui.EndMenu
@@ -219,6 +218,7 @@ local function edictinfo_onshow(self)
 				field.vector = value
 				field.selectableid = format('%s##%s', value, field.name)
 			elseif valuetype == type_float then
+				---@diagnostic disable-next-line: cast-local-type
 				value = tointeger(value) or value
 			end
 
@@ -261,18 +261,18 @@ local function edictstable_contextmenu_location(entry)
 	return location and '\t' .. location or ''
 end
 
-local function edictstable_contextmenu(entries, entry, cellvalue)
+local function edictstable_contextmenu(entries, current, cellvalue)
 	if imBeginPopupContextItem() then
 		if imSelectable('References') then
-			expmode.edictreferences(entry.edict):movetocursor()
+			expmode.edictreferences(current.edict):movetocursor()
 		end
 		imSeparator()
 		if imSelectable('Copy Cell') then
 			imSetClipboardText(tostring(cellvalue))
 		end
 		if imSelectable('Copy Row') then
-			local location = edictstable_contextmenu_location(entry)
-			imSetClipboardText(format('%d\t%s%s\n', entry.index, entry.description, location))
+			local location = edictstable_contextmenu_location(current)
+			imSetClipboardText(format('%d\t%s%s\n', current.index, current.description, location))
 		end
 		if imSelectable('Copy Table') then
 			local lines = {}
@@ -285,7 +285,7 @@ local function edictstable_contextmenu(entries, entry, cellvalue)
 
 			imSetClipboardText(concat(lines, '\n') .. '\n')
 		end
-		edict_contextmenuentry_destructive(entry.edict)
+		edict_contextmenuentry_destructive(current.edict)
 		imEndPopup()
 	end
 end
@@ -424,7 +424,7 @@ local function edictrefs_onupdate(self)
 
 		if #references > 0 then
 			imText('References')
-			edictstable('', references)
+			edictstable('#', references)
 			imSpacing()
 		end
 
@@ -432,13 +432,21 @@ local function edictrefs_onupdate(self)
 
 		if #referencedby > 0 then
 			imText('Referenced by')
-			edictstable('', referencedby)
+			edictstable('#', referencedby)
 		end
 	end
 
 	imEnd()
 
 	return opened
+end
+
+local function edictrefs_addentries(source, list)
+	local index = 1
+
+	for _, edict in ipairs(source) do
+		index = edicts_addentry(isany, edict, index, list)
+	end
 end
 
 local function edictrefs_onshow(self)
@@ -448,25 +456,17 @@ local function edictrefs_onshow(self)
 		return
 	end
 
-	local function addentries(source, list)
-		local index = 1
-
-		for _, edict in ipairs(source) do
-			index = edicts_addentry(isany, edict, index, list)
-		end
-	end
-
-	outgoing, incoming = edicts.references(edict)
+	local outgoing, incoming = edicts.references(edict)
 
 	if #outgoing == 0 and #incoming == 0 then
 		return
 	end
 
 	local references = {}
-	addentries(outgoing, references)
+	edictrefs_addentries(outgoing, references)
 
 	local referencedby = {}
-	addentries(incoming, referencedby)
+	edictrefs_addentries(incoming, referencedby)
 
 	self.references = references
 	self.referencedby = referencedby

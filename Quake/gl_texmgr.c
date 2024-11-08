@@ -1553,7 +1553,7 @@ void GL_ClearBindings(void)
 
 #ifdef USE_LUA_SCRIPTING
 
-const gltexture_t* TexMgr_GetTextures(void)
+const gltexture_t* LS_GetTextures(void)
 {
 	return active_gltextures;
 }

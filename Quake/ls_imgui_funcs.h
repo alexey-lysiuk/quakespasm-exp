@@ -79,12 +79,7 @@ static int LS_global_imgui_Begin(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const name = luaL_checkstring(state, 1);
-	assert(name);
-
-	if (name[0] == '\0')
-		luaL_error(state, "window name is required");
-
+	const char* const name = LS_CheckImGuiName(state);
 	bool openvalue;
 	bool* openptr = &openvalue;
 
@@ -113,6 +108,32 @@ static int LS_global_imgui_End(lua_State* state)
 	LS_EnsureWindowScope(state);
 
 	LS_RemoveFromImGuiStack(state, LS_EndWindowScope);
+	return 0;
+}
+
+static int LS_global_imgui_BeginChild(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const name = LS_CheckImGuiName(state);
+	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
+	const int childflags = luaL_optinteger(state, 3, 0);
+	const int windowflags = luaL_optinteger(state, 4, 0);
+
+	const bool visible = ImGui::BeginChild(name, ToImVec2(size), childflags, windowflags);
+	lua_pushboolean(state, visible);
+
+	LS_AddToImGuiStack(LS_EndChildWindowScope);
+	++ls_childwindowscope;
+
+	return 1;
+}
+
+static int LS_global_imgui_EndChild(lua_State* state)
+{
+	LS_EnsureChildWindowScope(state);
+
+	LS_RemoveFromImGuiStack(state, LS_EndChildWindowScope);
 	return 0;
 }
 
@@ -230,6 +251,14 @@ static int LS_global_imgui_SetCursorScreenPos(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_GetContentRegionAvail(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const LS_Vector2 pos = FromImVec2(ImGui::GetContentRegionAvail());
+	return LS_PushVectorValue(state, pos);
+}
+
 static int LS_global_imgui_GetCursorPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -332,7 +361,7 @@ static int LS_global_imgui_SeparatorText(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	ImGui::SeparatorText(label);
 	return 0;
 }
@@ -341,7 +370,7 @@ static int LS_global_imgui_Button(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
 
 	const bool result = ImGui::Button(label, ToImVec2(size));
@@ -353,7 +382,7 @@ static int LS_global_imgui_Checkbox(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	luaL_checktype(state, 2, LUA_TBOOLEAN);
 	bool value = lua_toboolean(state, 2);
 
@@ -385,7 +414,7 @@ static int LS_global_imgui_BeginCombo(lua_State* state)
 	if (ls_comboscope)
 		luaL_error(state, "calling BeginCombo() twice");
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const char* const preview_value = luaL_checkstring(state, 2);
 	const ImGuiComboFlags flags = luaL_optinteger(state, 3, 0);
 
@@ -410,11 +439,33 @@ static int LS_global_imgui_EndCombo(lua_State* state)
 	return 1;
 }
 
+static int LS_global_imgui_SliderFloat(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const label = LS_CheckImGuiName(state);
+	float value = luaL_checknumber(state, 2);
+	const float minvalue = luaL_checknumber(state, 3);
+	const float maxvalue = luaL_checknumber(state, 4);
+	const char* const format = "%.2f";
+	// TODO: Support for format needs a validation to prohibit things like "%" or "%n"
+	// const char* const format = VALIDATE(luaL_optstring(state, 5, "%.3f"));
+	const int flags = luaL_optinteger(state, 5, 0);
+
+	const bool changed = ImGui::SliderFloat(label, &value, minvalue, maxvalue, format, flags);
+	lua_pushboolean(state, changed);
+
+	if (changed)
+		lua_pushnumber(state, value);
+
+	return changed ? 2 : 1;
+}
+
 static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const bool result = ImGui::SmallButton(label);
 
 	lua_pushboolean(state, result);
@@ -425,9 +476,7 @@ static int LS_global_imgui_InputText(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
-	assert(label);
-
+	const char* const label = LS_CheckImGuiName(state);
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
@@ -441,9 +490,7 @@ static int LS_global_imgui_InputTextMultiline(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
-	assert(label);
-
+	const char* const label = LS_CheckImGuiName(state);
 	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.GetValue(state, 2);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
 	const int flags = luaL_optinteger(state, 4, 0);
@@ -458,7 +505,7 @@ static int LS_global_imgui_Selectable(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const bool selected = luaL_opt(state, lua_toboolean, 2, false);
 	const int flags = luaL_optinteger(state, 3, 0);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
@@ -537,7 +584,7 @@ static int LS_global_imgui_BeginMenu(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const bool enabled = luaL_opt(state, lua_toboolean, 2, true);
 	const bool opened = ImGui::BeginMenu(label, enabled);
 
@@ -564,7 +611,7 @@ static int LS_global_imgui_MenuItem(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* const label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const char* const shortcut = luaL_optstring(state, 2, nullptr);
 	const bool selected = luaL_opt(state, lua_toboolean, 3, false);
 	const bool enabled = luaL_opt(state, lua_toboolean, 4, true);
@@ -578,7 +625,7 @@ static int LS_global_imgui_BeginPopup(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
+	const char* const strid = LS_CheckImGuiName(state);
 	const int flags = luaL_optinteger(state, 2, 0);
 	const bool visible = ImGui::BeginPopup(strid, flags);
 
@@ -606,7 +653,7 @@ static int LS_global_imgui_OpenPopup(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
+	const char* strid = LS_CheckImGuiName(state);
 	const int flags = luaL_optinteger(state, 2, 0);
 
 	ImGui::OpenPopup(strid, flags);
@@ -637,7 +684,7 @@ static int LS_global_imgui_BeginTable(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
 
-	const char* strid = luaL_checkstring(state, 1);
+	const char* strid = LS_CheckImGuiName(state);
 	const int columncount = luaL_checkinteger(state, 2);
 	const int flags = luaL_optinteger(state, 3, 0);
 
@@ -699,7 +746,7 @@ static int LS_global_imgui_TableSetupColumn(lua_State* state)
 {
 	LS_EnsureTableScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	const int flags = luaL_optinteger(state, 2, 0);
 	const float initwidthorweight = luaL_optnumber(state, 3, 0.f);
 	const ImGuiID userid = luaL_optinteger(state, 4, 0);
@@ -723,7 +770,7 @@ static int LS_global_imgui_TableHeader(lua_State* state)
 {
 	LS_EnsureTableScope(state);
 
-	const char* label = luaL_checkstring(state, 1);
+	const char* const label = LS_CheckImGuiName(state);
 	ImGui::TableHeader(label);
 	return 0;
 }
@@ -863,6 +910,38 @@ static int LS_global_imgui_CalcTextSize(lua_State* state)
 	return LS_PushVectorValue(state, textsize);
 }
 
+static int LS_global_imgui_IsKeyDown(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiKey key { luaL_checkinteger(state, 1) };
+	const bool isdown = ImGui::IsKeyDown(key);
+	lua_pushboolean(state, isdown);
+	return 1;
+}
+
+static int LS_global_imgui_IsKeyPressed(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiKey key { luaL_checkinteger(state, 1) };
+	const bool repeat = luaL_opt(state, lua_toboolean, 2, true);
+
+	const bool ispressed = ImGui::IsKeyPressed(key, repeat);
+	lua_pushboolean(state, ispressed);
+	return 1;
+}
+
+static int LS_global_imgui_IsKeyReleased(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImGuiKey key { luaL_checkinteger(state, 1) };
+	const bool isreleased = ImGui::IsKeyReleased(key);
+	lua_pushboolean(state, isreleased);
+	return 1;
+}
+
 static int LS_global_imgui_IsMouseReleased(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -917,9 +996,8 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "End", LS_global_imgui_End },
 
 		// Child Windows
-		// * BeginChild
-		// * BeginChild
-		// * EndChild
+		{ "BeginChild", LS_global_imgui_BeginChild },
+		{ "EndChild", LS_global_imgui_EndChild },
 
 		// Windows Utilities
 		{ "IsWindowAppearing", LS_global_imgui_IsWindowAppearing },
@@ -997,7 +1075,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Layout cursor positioning
 		{ "GetCursorScreenPos", LS_global_imgui_GetCursorScreenPos },
 		{ "SetCursorScreenPos", LS_global_imgui_SetCursorScreenPos },
-		// * GetContentRegionAvail
+		{ "GetContentRegionAvail", LS_global_imgui_GetContentRegionAvail },
 		{ "GetCursorPos", LS_global_imgui_GetCursorPos },
 		{ "GetCursorPosX", LS_global_imgui_GetCursorPosX },
 		{ "GetCursorPosY", LS_global_imgui_GetCursorPosY },
@@ -1075,7 +1153,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * DragScalarN
 
 		// Widgets: Regular Sliders
-		// * SliderFloat
+		{ "SliderFloat", LS_global_imgui_SliderFloat },
 		// * SliderFloat2
 		// * SliderFloat3
 		// * SliderFloat4
@@ -1300,9 +1378,9 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * ColorConvertHSVtoRGB
 
 		// Inputs Utilities: Keyboard/Mouse/Gamepad
-		// * IsKeyDown
-		// * IsKeyPressed
-		// * IsKeyReleased
+		{ "IsKeyDown", LS_global_imgui_IsKeyDown },
+		{ "IsKeyPressed", LS_global_imgui_IsKeyPressed },
+		{ "IsKeyReleased", LS_global_imgui_IsKeyReleased },
 		// * IsKeyChordPressed
 		// * GetKeyPressedAmount
 		// * GetKeyName

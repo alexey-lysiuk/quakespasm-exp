@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <string>
-#include <cmath>
 #include <set>
 
 #include "TextEditor.h"
@@ -2167,7 +2165,6 @@ void TextEditor::HandleKeyboardInputs(bool aParentIsFocused)
 
 		auto isShortcut = ctrl && !shift && !alt;
 		auto isShiftShortcut = ctrl && shift && !alt;
-		auto isWordmoveKey = ctrl;
 		auto isAltOnly = alt && !ctrl && !shift && !super;
 		auto isCtrlOnly = ctrl && !alt && !shift && !super;
 		auto isShiftOnly = shift && !alt && !ctrl && !super;
