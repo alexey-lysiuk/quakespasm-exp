@@ -547,16 +547,30 @@ static int LS_global_edicts_remove(lua_State* state)
 	edict_t* edict = LS_GetEdictFromParameter(state);
 
 	// Skip free edict, worldspawn, player
-	if (edict && !edict->free && edict != sv.edicts && edict != svs.clients[0].edict)
-	{
-		LS_UseTargets(edict);
-		ED_Free(edict);
+	if (!edict || edict->free || edict == sv.edicts || edict == svs.clients[0].edict)
+		return 0;
 
-		lua_pushboolean(state, true);
-		return 1;
+	// Skip edicts by certain class names
+	const char* const classname = LS_GetProgsString(edict->v.classname);
+	static const char* const excludes[] =
+	{
+		"worldspawn",
+		"player",
+		"bodyque",
+		"bodyqueue",  // for id1 rerelease and copper
+	};
+
+	for (const char* const exclude : excludes)
+	{
+		if (strcmp(classname, exclude) == 0)
+			return 0;
 	}
 
-	return 0;
+	LS_UseTargets(edict);
+	ED_Free(edict);
+
+	lua_pushboolean(state, true);
+	return 1;
 }
 
 // Spawns a new entity by its function and optional table with field values
