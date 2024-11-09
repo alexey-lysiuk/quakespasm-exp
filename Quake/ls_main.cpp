@@ -202,10 +202,10 @@ static int LS_global_player_noclip(lua_State* state)
 
 
 //
-// Expose 'sound' global table with related functions
+// Expose 'sounds' global table with related functions
 //
 
-static int LS_global_sound_playlocal(lua_State* state)
+static int LS_global_sounds_playlocal(lua_State* state)
 {
 	const char* filename = luaL_checkstring(state, 1);
 	assert(filename);
@@ -214,7 +214,7 @@ static int LS_global_sound_playlocal(lua_State* state)
 	return 0;
 }
 
-static int LS_global_sound_stopall(lua_State* state)
+static int LS_global_sounds_stopall(lua_State* state)
 {
 	S_StopAllSounds(true);
 	return 0;
@@ -843,17 +843,17 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_setglobal(state, "player");
 	}
 
-	// Create and register 'sound' table
+	// Create and register 'sounds' table
 	{
 		static const luaL_Reg functions[] =
 		{
-			{ "playlocal", LS_global_sound_playlocal },
-			{ "stopall", LS_global_sound_stopall },
+			{ "playlocal", LS_global_sounds_playlocal },
+			{ "stopall", LS_global_sounds_stopall },
 			{ NULL, NULL }
 		};
 
 		luaL_newlib(state, functions);
-		lua_setglobal(state, "sound");
+		lua_setglobal(state, "sounds");
 	}
 
 	// Create and register 'text' table

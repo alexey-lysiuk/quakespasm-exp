@@ -453,7 +453,7 @@ expmode.addaction(function ()
 		imSeparator()
 
 		if imMenuItem('Stop All Sounds') then
-			sound.stopall()
+			sounds.stopall()
 		end
 
 		imEndMenu()
