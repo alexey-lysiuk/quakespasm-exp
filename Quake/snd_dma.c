@@ -1063,3 +1063,13 @@ void S_BeginPrecaching (void)
 void S_EndPrecaching (void)
 {
 }
+
+#ifdef USE_LUA_SCRIPTING
+
+const sfx_t* LS_GetSounds(int* count)
+{
+	*count = num_sfx;
+	return known_sfx;
+}
+
+#endif // USE_LUA_SCRIPTING
