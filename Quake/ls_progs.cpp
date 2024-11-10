@@ -297,28 +297,6 @@ static int LS_value_functionparameter_tostring(lua_State* state)
 	return 1;
 }
 
-// Sets metatable for 'function parameter' userdata
-static void LS_SetFunctionParameterMetaTable(lua_State* state)
-{
-	if (luaL_newmetatable(state, "funcparam"))
-	{
-		lua_pushcfunction(state, LS_value_functionparameter_tostring);
-		lua_setfield(state, -2, "__tostring");
-
-		// Create table with functions to return member values
-		static const luaL_Reg functions[] =
-		{
-			{ "name", LS_value_functionparameter_name },
-			{ "type", LS_value_functionparameter_type },
-			{ nullptr, nullptr }
-		};
-
-		LS_SetIndexTable(state, functions);
-	}
-
-	lua_setmetatable(state, -2);
-}
-
 
 //
 // Functions
@@ -393,9 +371,21 @@ static int LS_progs_functionparameters_index(lua_State* state)
 		if (index < 0 || index >= function->numparms)
 			return 0;
 
-		LS_FunctionParameter& parameter = ls_functionparameter_type.New(state);
+		static const luaL_Reg members[] =
+		{
+			{ "name", LS_value_functionparameter_name },
+			{ "type", LS_value_functionparameter_type },
+			{ nullptr, nullptr }
+		};
+
+		static const luaL_Reg metafuncs[] =
+		{
+			{ "__tostring", LS_value_functionparameter_tostring },
+			{ nullptr, nullptr }
+		};
+
+		LS_FunctionParameter& parameter = ls_functionparameter_type.New(state, members, metafuncs);
 		LS_GetFunctionParameter(function, index, parameter);
-		LS_SetFunctionParameterMetaTable(state);
 	}
 	else
 		luaL_error(state, "invalid function");
@@ -583,31 +573,6 @@ static int LS_PushFunctionToString(lua_State* state, const dfunction_t* function
 	return 1;
 }
 
-// Sets metatable for 'function' userdata
-static void LS_SetFunctionMetaTable(lua_State* state)
-{
-	if (luaL_newmetatable(state, "func"))
-	{
-		lua_pushcfunction(state, LS_FunctionMember<LS_PushFunctionToString>);
-		lua_setfield(state, -2, "__tostring");
-
-		// Create table with functions to return member values
-		static const luaL_Reg functions[] =
-		{
-			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
-			{ "filename", LS_FunctionMember<LS_PushFunctionFileName> },
-			{ "name", LS_FunctionMember<LS_PushFunctionName> },
-			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
-			{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
-			{ nullptr, nullptr }
-		};
-
-		LS_SetIndexTable(state, functions);
-	}
-
-	lua_setmetatable(state, -2);
-}
-
 static int LS_progs_functions_index(lua_State* state)
 {
 	if (progs == nullptr)
@@ -637,8 +602,23 @@ static int LS_progs_functions_index(lua_State* state)
 	// Check function index, [1..progs->numfunctions], for validity
 	if (index > 0 && index < progs->numfunctions)
 	{
-		ls_function_type.New(state) = index;
-		LS_SetFunctionMetaTable(state);
+		static const luaL_Reg members[] =
+		{
+			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
+			{ "filename", LS_FunctionMember<LS_PushFunctionFileName> },
+			{ "name", LS_FunctionMember<LS_PushFunctionName> },
+			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
+			{ "returntype", LS_FunctionMember<LS_PushFunctionReturnType> },
+			{ nullptr, nullptr }
+		};
+
+		static const luaL_Reg metafuncs[] =
+		{
+			{ "__tostring", LS_FunctionMember<LS_PushFunctionToString> },
+			{ nullptr, nullptr }
+		};
+
+		ls_function_type.New(state, members, metafuncs) = index;
 		return 1;
 	}
 
@@ -708,28 +688,6 @@ static int LS_PushFieldDefinitionToString(lua_State* state, const ddef_t* defini
 	return 1;
 }
 
-// Sets metatable for 'field definition' userdata
-static void LS_SetFieldDefinitionMetaTable(lua_State* state)
-{
-	if (luaL_newmetatable(state, "fielddef"))
-	{
-		lua_pushcfunction(state, LS_FieldDefinitionMember<LS_PushFieldDefinitionToString>);
-		lua_setfield(state, -2, "__tostring");
-
-		static const luaL_Reg functions[] =
-		{
-			{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
-			{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
-			{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
-			{ nullptr, nullptr }
-		};
-
-		LS_SetIndexTable(state, functions);
-	}
-
-	lua_setmetatable(state, -2);
-}
-
 // Pushes 'field definitions' userdata by the given numerical index, [1..progs->numfielddefs]
 static int LS_progs_fielddefinitions_index(lua_State* state)
 {
@@ -741,9 +699,21 @@ static int LS_progs_fielddefinitions_index(lua_State* state)
 	if (index <= 0 || index >= progs->numfielddefs)
 		return 0;
 
-	ls_fielddefinition_type.New(state) = index;
-	LS_SetFieldDefinitionMetaTable(state);
+	static const luaL_Reg members[] =
+	{
+		{ "name", LS_FieldDefinitionMember<LS_PushDefinitionName> },
+		{ "offset", LS_FieldDefinitionMember<LS_PushDefinitionOffset> },
+		{ "type", LS_FieldDefinitionMember<LS_PushDefinitionType> },
+		{ nullptr, nullptr }
+	};
 
+	static const luaL_Reg metafuncs[] =
+	{
+		{ "__tostring", LS_FieldDefinitionMember<LS_PushFieldDefinitionToString> },
+		{ nullptr, nullptr }
+	};
+
+	ls_fielddefinition_type.New(state, members, metafuncs) = index;
 	return 1;
 }
 
@@ -800,29 +770,6 @@ static int LS_PushGlobalDefinitionValue(lua_State* state, const ddef_t* definiti
 	return 1;
 }
 
-// Sets metatable for 'global definition' userdata
-static void LS_SetGlobalDefinitionMetaTable(lua_State* state)
-{
-	if (luaL_newmetatable(state, "globaldef"))
-	{
-		lua_pushcfunction(state, LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString>);
-		lua_setfield(state, -2, "__tostring");
-
-		static const luaL_Reg functions[] =
-		{
-			{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
-			{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
-			{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
-			{ "value", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionValue> },
-			{ nullptr, nullptr }
-		};
-
-		LS_SetIndexTable(state, functions);
-	}
-
-	lua_setmetatable(state, -2);
-}
-
 // Pushes 'global definitions' userdata by the given numerical index, [1..progs->numglobaldefs]
 static int LS_progs_globaldefinitions_index(lua_State* state)
 {
@@ -834,9 +781,22 @@ static int LS_progs_globaldefinitions_index(lua_State* state)
 	if (index <= 0 || index >= progs->numglobaldefs)
 		return 0;
 
-	ls_globaldefinition_type.New(state) = index;
-	LS_SetGlobalDefinitionMetaTable(state);
+	static const luaL_Reg members[] =
+	{
+		{ "name", LS_GlobalDefinitionMember<LS_PushDefinitionName> },
+		{ "offset", LS_GlobalDefinitionMember<LS_PushDefinitionOffset> },
+		{ "type", LS_GlobalDefinitionMember<LS_PushDefinitionType> },
+		{ "value", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionValue> },
+		{ nullptr, nullptr }
+	};
 
+	static const luaL_Reg metafuncs[] =
+	{
+		{ "__tostring", LS_GlobalDefinitionMember<LS_PushGlobalDefinitionToString> },
+		{ nullptr, nullptr }
+	};
+
+	ls_globaldefinition_type.New(state, members, metafuncs) = index;
 	return 1;
 }
 

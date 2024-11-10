@@ -159,6 +159,29 @@ void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions)
 	lua_setfield(state, -2, "__index");
 }
 
+// Creates metatable and index table, and assigns __index metamethod that calls functions from this table to make member values
+void LS_TypelessUserDataType::SetMetaTable(lua_State* state, const luaL_Reg* members, const luaL_Reg* metafuncs) const
+{
+	assert(lua_gettop(state) > 0);
+
+	if (luaL_newmetatable(state, name))
+	{
+		if (members)
+			LS_SetIndexTable(state, members);
+
+		if (metafuncs)
+		{
+			for (const luaL_Reg* metafunc = metafuncs; metafunc->name; ++metafunc)
+			{
+				lua_pushcfunction(state, metafunc->func);
+				lua_setfield(state, -2, metafunc->name);
+			}
+		}
+	}
+
+	lua_setmetatable(state, -2);
+}
+
 
 //
 // Expose 'player' global table with corresponding helper functions
