@@ -127,6 +127,38 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
+// Pushes member value by calling a function with given name from index table
+static int LS_CallIndexTableMember(lua_State* state)
+{
+	const int functableindex = lua_upvalueindex(1);
+	luaL_checktype(state, functableindex, LUA_TTABLE);
+
+	const char* name = luaL_checkstring(state, 2);
+	const int type = lua_getfield(state, functableindex, name);
+
+	if (type == LUA_TNIL)
+		return 0;
+
+	lua_rotate(state, 1, 2);  // move 'self' to argument position
+	lua_call(state, 1, 1);
+
+	return 1;
+}
+
+// Creates index table, and assigns __index metamethod that calls functions from this table to make member values
+void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions)
+{
+	assert(functions);
+	assert(lua_type(state, -1) == LUA_TTABLE);
+
+	lua_newtable(state);
+	luaL_setfuncs(state, functions, 0);
+
+	// Set member values returning functions as upvalue for __index metamethod
+	lua_pushcclosure(state, LS_CallIndexTableMember, 1);
+	lua_setfield(state, -2, "__index");
+}
+
 
 //
 // Expose 'player' global table with corresponding helper functions

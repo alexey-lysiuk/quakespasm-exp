@@ -66,6 +66,8 @@ int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
 
+void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions);
+
 class LS_TypelessUserDataType
 {
 public:
