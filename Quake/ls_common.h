@@ -66,6 +66,8 @@ int LS_ErrorHandler(lua_State* state);
 
 void LS_LoadScript(lua_State* state, const char* filename);
 
+void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions);
+
 class LS_TypelessUserDataType
 {
 public:
@@ -84,6 +86,8 @@ public:
 protected:
 	const char* name;
 	size_t size;
+
+	void SetMetaTable(lua_State* state, const luaL_Reg* members, const luaL_Reg* metafuncs) const;
 };
 
 template <typename T>
@@ -95,9 +99,14 @@ public:
 	{
 	}
 
-	T& New(lua_State* const state) const
+	T& New(lua_State* const state, const luaL_Reg* members = nullptr, const luaL_Reg* metafuncs = nullptr) const
 	{
-		return *static_cast<T*>(NewPtr(state));
+		T& result = *static_cast<T*>(NewPtr(state));
+
+		if (members || metafuncs)
+			SetMetaTable(state, members, metafuncs);
+
+		return result;
 	}
 
 	T& GetValue(lua_State* const state, const int index) const

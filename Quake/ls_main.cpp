@@ -28,6 +28,7 @@ extern "C"
 {
 #include "quakedef.h"
 
+const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
 }
 
@@ -126,6 +127,61 @@ void* LS_TypelessUserDataType::GetValuePtr(lua_State* state, int index) const
 	return result;
 }
 
+// Pushes member value by calling a function with given name from index table
+static int LS_CallIndexTableMember(lua_State* state)
+{
+	const int functableindex = lua_upvalueindex(1);
+	luaL_checktype(state, functableindex, LUA_TTABLE);
+
+	const char* name = luaL_checkstring(state, 2);
+	const int type = lua_getfield(state, functableindex, name);
+
+	if (type == LUA_TNIL)
+		return 0;
+
+	lua_rotate(state, 1, 2);  // move 'self' to argument position
+	lua_call(state, 1, 1);
+
+	return 1;
+}
+
+// Creates index table, and assigns __index metamethod that calls functions from this table to make member values
+void LS_SetIndexTable(lua_State* state, const luaL_Reg* const functions)
+{
+	assert(functions);
+	assert(lua_type(state, -1) == LUA_TTABLE);
+
+	lua_newtable(state);
+	luaL_setfuncs(state, functions, 0);
+
+	// Set member values returning functions as upvalue for __index metamethod
+	lua_pushcclosure(state, LS_CallIndexTableMember, 1);
+	lua_setfield(state, -2, "__index");
+}
+
+// Creates metatable and index table, and assigns __index metamethod that calls functions from this table to make member values
+void LS_TypelessUserDataType::SetMetaTable(lua_State* state, const luaL_Reg* members, const luaL_Reg* metafuncs) const
+{
+	assert(lua_gettop(state) > 0);
+
+	if (luaL_newmetatable(state, name))
+	{
+		if (members)
+			LS_SetIndexTable(state, members);
+
+		if (metafuncs)
+		{
+			for (const luaL_Reg* metafunc = metafuncs; metafunc->name; ++metafunc)
+			{
+				lua_pushcfunction(state, metafunc->func);
+				lua_setfield(state, -2, metafunc->name);
+			}
+		}
+	}
+
+	lua_setmetatable(state, -2);
+}
+
 
 //
 // Expose 'player' global table with corresponding helper functions
@@ -202,10 +258,36 @@ static int LS_global_player_noclip(lua_State* state)
 
 
 //
-// Expose 'sound' global table with related functions
+// Expose 'sounds' global table with related functions
 //
 
-static int LS_global_sound_playlocal(lua_State* state)
+static int LS_global_sounds_index(lua_State* state)
+{
+	int count;
+	const sfx_t* const sounds = LS_GetSounds(&count);
+
+	if (!sounds || count == 0)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2);
+
+	if (index <= 0 || index > count)
+		return 0;
+
+	lua_pushstring(state, sounds[index - 1].name);
+	return 1;
+}
+
+static int LS_global_sounds_len(lua_State* state)
+{
+	int count;
+	LS_GetSounds(&count);
+
+	lua_pushinteger(state, count);
+	return 1;
+}
+
+static int LS_global_sounds_playlocal(lua_State* state)
 {
 	const char* filename = luaL_checkstring(state, 1);
 	assert(filename);
@@ -214,10 +296,35 @@ static int LS_global_sound_playlocal(lua_State* state)
 	return 0;
 }
 
-static int LS_global_sound_stopall(lua_State* state)
+static int LS_global_sounds_stopall(lua_State* state)
 {
 	S_StopAllSounds(true);
 	return 0;
+}
+
+static void LS_InitSoundType(lua_State* state)
+{
+	constexpr luaL_Reg metatable[] =
+	{
+		{ "__index", LS_global_sounds_index },
+		{ "__len", LS_global_sounds_len },
+		{ nullptr, nullptr }
+	};
+
+	lua_newtable(state);
+	luaL_newmetatable(state, "sounds");
+	luaL_setfuncs(state, metatable, 0);
+	lua_setmetatable(state, -2);
+
+	static const luaL_Reg functions[] =
+	{
+		{ "playlocal", LS_global_sounds_playlocal },
+		{ "stopall", LS_global_sounds_stopall },
+		{ NULL, NULL }
+	};
+
+	luaL_setfuncs(state, functions, 0);
+	lua_setglobal(state, "sounds");
 }
 
 
@@ -843,19 +950,6 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_setglobal(state, "player");
 	}
 
-	// Create and register 'sound' table
-	{
-		static const luaL_Reg functions[] =
-		{
-			{ "playlocal", LS_global_sound_playlocal },
-			{ "stopall", LS_global_sound_stopall },
-			{ NULL, NULL }
-		};
-
-		luaL_newlib(state, functions);
-		lua_setglobal(state, "sound");
-	}
-
 	// Create and register 'text' table
 	{
 		static const luaL_Reg functions[] =
@@ -912,6 +1006,7 @@ static void LS_InitGlobalTables(lua_State* state)
 		lua_setglobal(state, "host");
 	}
 
+	LS_InitSoundType(state);
 	LS_InitVectorType(state);
 	LS_InitProgsType(state);
 	LS_InitEdictType(state);

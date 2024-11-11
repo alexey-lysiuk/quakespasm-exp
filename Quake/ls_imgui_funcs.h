@@ -461,6 +461,28 @@ static int LS_global_imgui_SliderFloat(lua_State* state)
 	return changed ? 2 : 1;
 }
 
+static int LS_global_imgui_SliderInt(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const char* const label = LS_CheckImGuiName(state);
+	int value = luaL_checkinteger(state, 2);
+	const float minvalue = luaL_checkinteger(state, 3);
+	const float maxvalue = luaL_checkinteger(state, 4);
+	const char* const format = "%d";
+	// TODO: Support for format needs a validation to prohibit things like "%" or "%n"
+	// const char* const format = VALIDATE(luaL_optstring(state, 5, "%d"));
+	const int flags = luaL_optinteger(state, 5, 0);
+
+	const bool changed = ImGui::SliderInt(label, &value, minvalue, maxvalue, format, flags);
+	lua_pushboolean(state, changed);
+
+	if (changed)
+		lua_pushinteger(state, value);
+
+	return changed ? 2 : 1;
+}
+
 static int LS_global_imgui_SmallButton(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1158,7 +1180,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * SliderFloat3
 		// * SliderFloat4
 		// * SliderAngle
-		// * SliderInt
+		{ "SliderInt", LS_global_imgui_SliderInt },
 		// * SliderInt2
 		// * SliderInt3
 		// * SliderInt4

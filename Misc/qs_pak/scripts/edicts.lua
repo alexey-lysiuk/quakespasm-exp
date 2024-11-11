@@ -168,9 +168,10 @@ local mods <const> = progs.mods
 
 local localize <const> = text.localize
 
-local vec3origin <const> = vec3.new()
-local vec3one <const> = vec3.new(1, 1, 1)
-local vec3minusone <const> = vec3.new(-1, -1, -1)
+local vec3new = vec3.new
+local vec3origin <const> = vec3new()
+local vec3one <const> = vec3new(1, 1, 1)
+local vec3minusone <const> = vec3new(-1, -1, -1)
 local vec3mid <const> = vec3.mid
 
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
@@ -597,6 +598,47 @@ function edicts.massacre()
 			destroy(edict)
 		end
 	end
+end
+
+
+function edicts.boxsearch(halfedge, origin)
+	if not halfedge then
+		halfedge = 256
+	end
+
+	local edictcount = #edicts
+
+	if edictcount == 0 then
+		return {}
+	end
+
+	if not origin then
+		origin = edicts[2].origin
+	end
+
+	local halfedgevec = vec3new(halfedge, halfedge, halfedge)
+	local minpos = origin - halfedgevec
+	local maxpos = origin + halfedgevec
+	local minx, miny, minz = minpos.x, minpos.y, minpos.z
+	local maxx, maxy, maxz = maxpos.x, maxpos.y, maxpos.z
+	local result = {}
+
+	for i = 3, edictcount do  -- skip worldspawn and player
+		local edict = edicts[i]
+		local absmin = edict.absmin
+		local absmax = edict.absmax
+
+		if not isfree(edict) then
+			local hasintersection = minx <= absmax.x and miny <= absmax.y and minz <= absmax.z
+				and maxx >= absmin.x and maxy >= absmin.y and maxz >= absmin.z
+
+			if hasintersection then
+				insert(result, edict)
+			end
+		end
+	end
+
+	return result
 end
 
 
