@@ -609,7 +609,7 @@ function edicts.boxsearch(halfedge, origin)
 	local edictcount = #edicts
 
 	if edictcount == 0 then
-		return
+		return {}
 	end
 
 	if not origin then
