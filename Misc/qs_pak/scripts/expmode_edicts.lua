@@ -27,6 +27,7 @@ local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
 local imSetTooltip <const> = ImGui.SetTooltip
+local imSliderInt <const> = ImGui.SliderInt
 local imSpacing <const> = ImGui.Spacing
 local imTableGetColumnFlags <const> = ImGui.TableGetColumnFlags
 local imTableHeadersRow <const> = ImGui.TableHeadersRow
@@ -501,6 +502,55 @@ function expmode.edicts.references(edict)
 		or messagebox('No references', format("'%s' has no references.", edict))
 end
 
+local nearbyentity_halfedge = 256
+
+local function nearbyentity_search(self)
+	local foundedicts = edicts.boxsearch(nearbyentity_halfedge)
+	local entries = {}
+
+	for i, edict in ipairs(foundedicts) do
+		edicts_addentry(isany, edict, i, entries)
+	end
+
+	self.entries = entries
+end
+
+local function nearbyentity_onupdate(self)
+	local title = self.title
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		local changed, halfedge = imSliderInt('##halfedge', nearbyentity_halfedge, 64, 4096)
+
+		if changed then
+			nearbyentity_halfedge = halfedge
+			nearbyentity_search(self)
+		end
+
+		edictstable(title, self.entries, defaultscrollytableflags)
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function nearbyentity_onshow(self)
+	nearbyentity_search(self)
+	return true
+end
+
+local function nearbyentity_onhide(self)
+	self.entries = nil
+	return true
+end
+
+function expmode.edicts.nearbyentity()
+	return window('Search Entity', nearbyentity_onupdate,
+		function (self) self:setconstraints() end,
+		nearbyentity_onshow, nearbyentity_onhide)
+end
+
 function expmode.edicts.traceentity()
 	local edict = traceentity()
 
@@ -560,6 +610,10 @@ addaction(function ()
 		end
 
 		imSeparator()
+
+		if imMenuItem('Nearby Entities\u{85}') then
+			expmode.edicts.nearbyentity()
+		end
 
 		if imMenuItem('Trace Entity\u{85}') then
 			expmode.edicts.traceentity()
