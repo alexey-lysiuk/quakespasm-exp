@@ -77,6 +77,8 @@ local toascii <const> = text.toascii
 local vec3mid <const> = vec3.mid
 local vec3origin <const> = vec3.new()
 
+expmode.edicts = {}
+
 local function moveplayer(edict, location, angles)
 	location = location or vec3mid(edict.absmin, edict.absmax)
 
@@ -171,7 +173,7 @@ local function edictinfo_onupdate(self)
 					moveplayer(self.edict)
 				end
 				if imSelectable('References') then
-					expmode.edictreferences(self.edict):movetocursor()
+					expmode.edicts.references(self.edict):movetocursor()
 				end
 				if imSelectable('Copy All') then
 					local fields = {}
@@ -264,7 +266,7 @@ end
 local function edictstable_contextmenu(entries, current, cellvalue)
 	if imBeginPopupContextItem() then
 		if imSelectable('References') then
-			expmode.edictreferences(current.edict):movetocursor()
+			expmode.edicts.references(current.edict):movetocursor()
 		end
 		imSeparator()
 		if imSelectable('Copy Cell') then
@@ -481,7 +483,7 @@ local function edictrefs_onhide(self)
 	return true
 end
 
-function expmode.edictreferences(edict)
+function expmode.edicts.references(edict)
 	if isfree(edict) then
 		return
 	end
@@ -498,8 +500,6 @@ function expmode.edictreferences(edict)
 	return window(title, edictrefs_onupdate, oncreate, edictrefs_onshow, edictrefs_onhide)
 		or messagebox('No references', format("'%s' has no references.", edict))
 end
-
-expmode.edicts = {}
 
 function expmode.edicts.traceentity()
 	local edict = traceentity()
