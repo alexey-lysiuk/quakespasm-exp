@@ -172,7 +172,7 @@ local function edictinfo_onupdate(self)
 				if imSelectable('Move to') then
 					moveplayer(self.edict)
 				end
-				if imSelectable('References') then
+				if imSelectable('References\u{85}') then
 					expmode.edicts.references(self.edict):movetocursor()
 				end
 				if imSelectable('Copy All') then
@@ -265,7 +265,7 @@ end
 
 local function edictstable_contextmenu(entries, current, cellvalue)
 	if imBeginPopupContextItem() then
-		if imSelectable('References') then
+		if imSelectable('References\u{85}') then
 			expmode.edicts.references(current.edict):movetocursor()
 		end
 		imSeparator()
