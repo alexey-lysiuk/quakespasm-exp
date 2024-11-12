@@ -258,6 +258,135 @@ static int LS_global_player_noclip(lua_State* state)
 
 
 //
+// Expose 'sound' value
+//
+
+constexpr LS_UserDataType<int> ls_sound_type("sound");
+
+static const sfx_t* LS_GetSoundFromUserData(lua_State* state)
+{
+	int count;
+	const sfx_t* const sounds = LS_GetSounds(&count);
+
+	const int index = ls_sound_type.GetValue(state, 1);
+	return (index >= 0 && index < count) ? &sounds[index] : nullptr;
+}
+
+static const sfxcache_t* LS_GetCachedSound(const sfx_t& sound)
+{
+	cache_user_t cacheid = sound.cache;
+	void* cacheptr = Cache_Check(&cacheid);
+	return static_cast<const sfxcache_t*>(cacheptr);
+}
+
+static const sfxcache_t* LS_GetCachedSoundFromUserData(lua_State* state)
+{
+	const sfx_t* const sound = LS_GetSoundFromUserData(state);
+	return sound ? LS_GetCachedSound(*sound) : nullptr;
+}
+
+static int LS_value_sound_channelcount(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		lua_pushinteger(state, cachedsound->stereo + 1);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_framerate(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		lua_pushinteger(state, cachedsound->speed);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_framecount(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		lua_pushinteger(state, cachedsound->length);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_loopstart(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		lua_pushinteger(state, cachedsound->loopstart);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_name(lua_State* state)
+{
+	if (const sfx_t* const sound = LS_GetSoundFromUserData(state))
+	{
+		lua_pushstring(state, sound->name);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_samplesize(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		lua_pushinteger(state, cachedsound->width);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_GetSoundSize(const sfxcache_t& cachedsound)
+{
+	return cachedsound.length * cachedsound.width * (cachedsound.stereo + 1);
+}
+
+static int LS_value_sound_size(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		const int soundsize = LS_GetSoundSize(*cachedsound);
+		lua_pushinteger(state, soundsize);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_tostring(lua_State* state)
+{
+	const sfx_t* const sound = LS_GetSoundFromUserData(state);
+
+	if (sound)
+	{
+		if (const sfxcache_t* const cachedsound = LS_GetCachedSound(*sound))
+			lua_pushfstring(state, "sound %s (%d bytes)", sound->name, LS_GetSoundSize(*cachedsound));
+		else
+			lua_pushfstring(state, "sound %s (not loaded)", sound->name);
+	}
+	else
+		lua_pushstring(state, "invalid sound");
+
+	return 1;
+}
+
+
+//
 // Expose 'sounds' global table with related functions
 //
 
@@ -274,7 +403,25 @@ static int LS_global_sounds_index(lua_State* state)
 	if (index <= 0 || index > count)
 		return 0;
 
-	lua_pushstring(state, sounds[index - 1].name);
+	static const luaL_Reg members[] =
+	{
+		{ "channelcount", LS_value_sound_channelcount },
+		{ "framerate", LS_value_sound_framerate },
+		{ "framecount", LS_value_sound_framecount },
+		{ "loopstart", LS_value_sound_loopstart },
+		{ "name", LS_value_sound_name },
+		{ "samplesize", LS_value_sound_samplesize },
+		{ "size", LS_value_sound_size },
+		{ nullptr, nullptr }
+	};
+
+	static const luaL_Reg metafuncs[] =
+	{
+		{ "__tostring", LS_value_sound_tostring },
+		{ nullptr, nullptr }
+	};
+
+	ls_sound_type.New(state, members, metafuncs) = index - 1;  // on C side, indices start with 0
 	return 1;
 }
 
