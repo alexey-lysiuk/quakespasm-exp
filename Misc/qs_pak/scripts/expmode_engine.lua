@@ -401,6 +401,87 @@ function expmode.engine.textureviewer()
 		textureviewer_onshow, textureviewer_onhide)
 end
 
+local function sounds_searchcompare(entry, string)
+	return entry.name:lower():find(string, 1, true)
+		or entry.size:find(string, 1, true)
+end
+
+local function sounds_onupdate(self)
+	local title = self.title
+	local visible, opened = imBegin(title, true)
+
+	if visible and opened then
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, sounds_searchcompare, searchmodified)
+
+		if imBeginTable(title, 4, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
+			imTableSetupColumn('Index', imTableColumnWidthFixed)
+			imTableSetupColumn('Name')
+			imTableSetupColumn('Duration', imTableColumnWidthFixed)
+			imTableSetupColumn('Size', imTableColumnWidthFixed)
+			imTableHeadersRow()
+
+			for _, entry in ipairs(entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry.index)
+				imTableNextColumn()
+				imText(entry.name)
+				imTableNextColumn()
+				imText(entry.duration)
+				imTableNextColumn()
+				imText(entry.size)
+			end
+
+			imEndTable()
+		end
+	end
+
+	imEnd()
+
+	return opened
+end
+
+local function sounds_onshow(self)
+	local entries = {}
+
+	for i, sound in ipairs(sounds) do
+		local framecount = sound.framecount
+		local framerate = sound.framerate
+		local duration = (framecount and framerate and framerate ~= 0) and (framecount / framerate)
+		local soundsize = sound.size
+		local entry =
+		{
+			index = tostring(i),
+			name = sound.name,
+			duration = duration and format('%.3f', duration) or '-',
+			size = soundsize and tostring(soundsize) or '-',
+		}
+		insert(entries, entry)
+	end
+
+	self.entries = entries
+
+	updatesearch(self, sounds_searchcompare, true)
+	return true
+end
+
+local function sounds_onhide(self)
+	resetsearch(self)
+	self.entries = nil
+	return true
+end
+
+function expmode.engine.sounds()
+	return expmode.window('Sounds', sounds_onupdate,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(480, 0))
+		end,
+		sounds_onshow, sounds_onhide)
+end
+
 local function GhostAndExit(enable)
 	player.ghost(enable)
 	expmode.exit()
@@ -451,6 +532,10 @@ expmode.addaction(function ()
 		end
 
 		imSeparator()
+
+		if imMenuItem('Sounds\u{85}') then
+			expmode.engine.sounds()
+		end
 
 		if imMenuItem('Stop All Sounds') then
 			sounds.stopall()
