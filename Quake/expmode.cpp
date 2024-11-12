@@ -83,6 +83,19 @@ static int LS_EnterMode(lua_State* state)
 	return 0;
 }
 
+static int LS_PlaySound(lua_State* state)
+{
+	const char* filename = luaL_checkstring(state, 1);
+	assert(filename);
+
+	S_UnblockSound();
+	//S_StopAllSounds(true);
+	S_LocalSound(filename);
+	//S_BlockSound();
+
+	return 0;
+}
+
 void LS_InitExpMode(lua_State* state)
 {
 	lua_gc(state, LUA_GCSTOP);
@@ -93,6 +106,8 @@ void LS_InitExpMode(lua_State* state)
 	lua_createtable(state, 0, 16);
 	lua_pushcfunction(state, LS_EnterMode);
 	lua_setfield(state, -2, "enter");
+	lua_pushcfunction(state, LS_PlaySound);
+	lua_setfield(state, -2, "playsound");
 	lua_setglobal(state, ls_expmode_name);
 
 	LS_LoadScript(state, "scripts/expmode_base.lua");

@@ -427,7 +427,9 @@ local function sounds_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				imText(entry.name)
+				if imSelectable(entry.name) then
+					expmode.playsound(entry.name)
+				end
 				imTableNextColumn()
 				imText(entry.duration)
 				imTableNextColumn()
