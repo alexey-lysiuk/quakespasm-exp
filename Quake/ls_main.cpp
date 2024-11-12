@@ -285,7 +285,7 @@ static const sfxcache_t* LS_GetCachedSoundFromUserData(lua_State* state)
 	return sound ? LS_GetCachedSound(*sound) : nullptr;
 }
 
-static int LS_value_sound_channels(lua_State* state)
+static int LS_value_sound_channelcount(lua_State* state)
 {
 	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
 	{
@@ -307,7 +307,7 @@ static int LS_value_sound_framerate(lua_State* state)
 	return 0;
 }
 
-static int LS_value_sound_frames(lua_State* state)
+static int LS_value_sound_framecount(lua_State* state)
 {
 	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
 	{
@@ -405,9 +405,9 @@ static int LS_global_sounds_index(lua_State* state)
 
 	static const luaL_Reg members[] =
 	{
-		{ "channels", LS_value_sound_channels },
+		{ "channelcount", LS_value_sound_channelcount },
 		{ "framerate", LS_value_sound_framerate },
-		{ "frames", LS_value_sound_frames },
+		{ "framecount", LS_value_sound_framecount },
 		{ "loopstart", LS_value_sound_loopstart },
 		{ "name", LS_value_sound_name },
 		{ "samplesize", LS_value_sound_samplesize },
