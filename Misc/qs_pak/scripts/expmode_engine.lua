@@ -418,6 +418,7 @@ local function sounds_onupdate(self)
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Name')
+			imTableSetupColumn('Duration', imTableColumnWidthFixed)
 			imTableSetupColumn('Size', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
@@ -427,6 +428,8 @@ local function sounds_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				imText(entry.name)
+				imTableNextColumn()
+				imText(entry.duration)
 				imTableNextColumn()
 				imText(entry.size)
 			end
@@ -444,12 +447,16 @@ local function sounds_onshow(self)
 	local entries = {}
 
 	for i, sound in ipairs(sounds) do
+		local framecount = sound.framecount
+		local framerate = sound.framerate
+		local duration = (framecount and framerate and framerate ~= 0) and (framecount / framerate)
 		local soundsize = sound.size
 		local entry =
 		{
 			index = tostring(i),
 			name = sound.name,
-			size = soundsize and tostring(soundsize) or '<not loaded>',
+			duration = duration and format('%.3f', duration) or '-',
+			size = soundsize and tostring(soundsize) or '-',
 		}
 		insert(entries, entry)
 	end
