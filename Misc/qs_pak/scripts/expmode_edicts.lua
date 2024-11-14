@@ -44,7 +44,6 @@ local imTableFlags <const> = ImGui.TableFlags
 local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
 local imMouseButtonRight <const> = ImGui.MouseButton.Right
 local imNoOpenOverExistingPopup <const> = ImGui.PopupFlags.NoOpenOverExistingPopup
-local imSelectableDisabled <const> = ImGui.SelectableFlags.Disabled
 local imTableColumnIsHovered <const> = imTableColumnFlags.IsHovered
 local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
@@ -306,11 +305,11 @@ local function edictstable(title, entries, tableflags)
 
 			imTableNextRow()
 			imTableNextColumn()
-			imSelectable(entry.index, false, imSelectableDisabled)
+			imText(entry.index)
 			imTableNextColumn()
 
 			if entry.isfree then
-				imSelectable(entry.descriptionid, false, imSelectableDisabled)
+				imText(description)
 			else
 				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict):movetocursor()
