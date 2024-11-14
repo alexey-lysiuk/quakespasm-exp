@@ -152,8 +152,6 @@ static void EXP_EnterMode()
 
 	exp_active = true;
 
-	S_BlockSound();
-
 	// Close menu or console if opened
 	if (key_dest == key_console)
 		Con_ToggleConsole_f();
@@ -208,8 +206,6 @@ static void EXP_ExitMode()
 
 	if (cls.state == ca_connected)
 		key_dest = key_game;
-
-	S_UnblockSound();
 
 	exp_active = false;
 }
