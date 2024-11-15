@@ -358,7 +358,8 @@ function edicts.isteleport(edict)
 		end
 	end
 
-	local description = format('Teleport to %s (%s)', target, targetlocation or 'target not found')
+	local prefix = edict.targetname == '' and 'Touch' or 'Trigger'
+	local description = format('%s teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
