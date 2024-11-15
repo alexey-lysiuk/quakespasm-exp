@@ -566,7 +566,7 @@ local edictstools <const> =
 	{ 'All Edicts', nil, 30 },
 	{ 'Secrets', edicts.issecret, 15 },
 	{ 'Monsters', edicts.ismonster, 15 },
-	{ 'Teleports', edicts.isteleport, 30 },
+	{ 'Teleports', edicts.isteleport, 40 },
 	{ 'Doors', edicts.isdoor, 15 },
 	{ 'Items', edicts.isitem, 20 },
 	{ 'Buttons', edicts.isbutton, 15 },
