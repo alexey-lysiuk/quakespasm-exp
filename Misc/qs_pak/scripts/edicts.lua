@@ -40,6 +40,8 @@ edicts.spawnflags =
 	NOT_MEDIUM        = 512,
 	NOT_HARD          = 1024,
 	NOT_DEATHMATCH    = 2048,
+
+	TELEPORT_PLAYER_ONLY = 2,
 }
 
 edicts.itemflags =
@@ -177,6 +179,7 @@ local vec3mid <const> = vec3.mid
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local TELEPORT_PLAYER_ONLY <const> = edicts.spawnflags.TELEPORT_PLAYER_ONLY
 
 local isclass <const> = edicts.isclass
 local isfree <const> = edicts.isfree
@@ -359,6 +362,11 @@ function edicts.isteleport(edict)
 	end
 
 	local prefix = edict.targetname == '' and 'Touch' or 'Trigger'
+
+	if edict.spawnflags & TELEPORT_PLAYER_ONLY == 0 then
+		prefix = prefix .. ' player'
+	end
+
 	local description = format('%s teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
