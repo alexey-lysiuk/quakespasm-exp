@@ -492,7 +492,7 @@ function edicts.ismessage(edict)
 
 	local message = edict.message
 
-	if not message or #message == 0 then
+	if message == '' then
 		return
 	end
 
