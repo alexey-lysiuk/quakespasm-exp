@@ -297,7 +297,7 @@ local function edictstable(title, entries, tableflags)
 		imTableSetupScrollFreeze(0, 1)
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
-		imTableSetupColumn('Location')
+		imTableSetupColumn('Location', imTableColumnWidthFixed)
 		imTableHeadersRow()
 
 		for _, entry in ipairs(entries) do
