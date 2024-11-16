@@ -226,10 +226,6 @@ function edicts.ismonster(edict)
 	local flags = edict.flags
 	local health = edict.health
 
-	if not flags or not health then
-		return
-	end
-
 	local ismonster = flags & FL_MONSTER ~= 0
 	local isalive = health > 0
 	local classname = edict.classname
