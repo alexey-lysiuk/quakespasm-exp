@@ -273,25 +273,22 @@ function edicts.isteleport(edict)
 		return
 	end
 
+	local isad = detectmod() == mods.ARCANE_DIMENSIONS
 	local target = edict.target
 	local targetlocation
 
-	if target then
-		local isad = detectmod() == mods.ARCANE_DIMENSIONS
-
-		for _, testedict in ipairs(edicts) do
-			if target == testedict.targetname then
-				-- Special case for Arcane Dimensions, ad_tears map in particular
-				-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
-				-- Some teleport destinations were missing despite their valid setup
-				-- Actual destination coordinates are stored in oldorigin member
-				if isad and testedict.origin == vec3origin then
-					targetlocation = testedict.oldorigin
-				else
-					targetlocation = testedict.origin
-				end
-				break
+	for _, testedict in ipairs(edicts) do
+		if target == testedict.targetname then
+			-- Special case for Arcane Dimensions, ad_tears map in particular
+			-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
+			-- Some teleport destinations were missing despite their valid setup
+			-- Actual destination coordinates are stored in oldorigin member
+			if isad and testedict.origin == vec3origin then
+				targetlocation = testedict.oldorigin
+			else
+				targetlocation = testedict.origin
 			end
+			break
 		end
 	end
 
