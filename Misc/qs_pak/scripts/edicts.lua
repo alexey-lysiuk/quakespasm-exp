@@ -44,66 +44,6 @@ edicts.spawnflags =
 	TELEPORT_PLAYER_ONLY = 2,
 }
 
-edicts.itemflags =
-{
-	IT_SHOTGUN          = 1,
-	IT_SUPER_SHOTGUN    = 2,
-	IT_NAILGUN          = 4,
-	IT_SUPER_NAILGUN    = 8,
-	IT_GRENADE_LAUNCHER = 16,
-	IT_ROCKET_LAUNCHER  = 32,
-	IT_LIGHTNING        = 64,
-	IT_MJOLNIR          = 128,
-	IT_SHELLS           = 256,
-	IT_NAILS            = 512,
-	IT_ROCKETS          = 1024,
-	IT_CELLS            = 2048,
-	IT_AXE              = 4096,
-	IT_ARMOR1           = 8192,
-	IT_ARMOR2           = 16384,
-	IT_ARMOR3           = 32768,
-	IT_PROXIMITY_GUN    = 65536,
-	IT_KEY1             = 131072,
-	IT_KEY2             = 262144,
-	IT_INVISIBILITY     = 524288,
-	IT_INVULNERABILITY  = 1048576,
-	IT_SUIT             = 2097152,
-	IT_QUAD             = 4194304,
-	IT_LASER_CANNON     = 8388608,
-}
-
-local itemflags <const> = edicts.itemflags
-
-edicts.itemnames =
-{
-	[itemflags.IT_SHOTGUN]          = 'Shotgun',
-	[itemflags.IT_SUPER_SHOTGUN]    = 'Double-Barrelled Shotgun',
-	[itemflags.IT_NAILGUN]          = 'Nailgun',
-	[itemflags.IT_SUPER_NAILGUN]    = 'Super Nailgun',
-	[itemflags.IT_GRENADE_LAUNCHER] = 'Grenade Launcher',
-	[itemflags.IT_ROCKET_LAUNCHER]  = 'Rocket Launcher',
-	[itemflags.IT_LIGHTNING]        = 'Thunderbolt',
-	[itemflags.IT_MJOLNIR]          = 'Mjolnir',
-	[itemflags.IT_SHELLS]           = 'Shells',
-	[itemflags.IT_NAILS]            = 'Nails',
-	[itemflags.IT_ROCKETS]          = 'Rockets',
-	[itemflags.IT_CELLS]            = 'Cells',
-	[itemflags.IT_AXE]              = 'Axe',
-	[itemflags.IT_ARMOR1]           = 'Green Armor',
-	[itemflags.IT_ARMOR2]           = 'Yellow Armor',
-	[itemflags.IT_ARMOR3]           = 'Red Armor',
-	[itemflags.IT_PROXIMITY_GUN]    = 'Proximity Gun',
-	[itemflags.IT_KEY1]             = 'Silver Key',
-	[itemflags.IT_KEY2]             = 'Gold Key',
-	[itemflags.IT_INVISIBILITY]     = 'Ring of Shadows',
-	[itemflags.IT_INVULNERABILITY]  = 'Pentagram of Protection',
-	[itemflags.IT_SUIT]             = 'Biosuit',
-	[itemflags.IT_QUAD]             = 'Quad Damage',
-	[itemflags.IT_LASER_CANNON]     = 'Laser Cannon',
-}
-
-local itemnames <const> = edicts.itemnames
-
 -- Map monster classname to its name
 edicts.monsternames =
 {
@@ -195,19 +135,17 @@ end
 local function localizednetname(edict)
 	local name = edict.netname
 
-	if name and name ~= '' then
-		name = localize(name)
-
-		if name:find('the ', 1, true) == 1 then
-			name = name:sub(5)
-		end
-
-		name = titlecase(name)
-	else
-		name = itemnames[edict.items]
+	if name == '' then
+		return
 	end
 
-	return name
+	name = localize(name)
+
+	if name:find('the ', 1, true) == 1 then
+		name = name:sub(5)
+	end
+
+	return titlecase(name)
 end
 
 
@@ -474,14 +412,14 @@ function edicts.isitem(edict)
 	if not name then
 		-- use classname with prefix removed for entity without netname
 		name = classname:sub(prefixlen)
-	end
 
-	if name == 'armor1' then
-		name = itemnames[itemflags.IT_ARMOR1]
-	elseif name == 'armor2' then
-		name = itemnames[itemflags.IT_ARMOR2]
-	elseif name == 'armorInv' then
-		name = itemnames[itemflags.IT_ARMOR3]
+		if name == 'armor1' then
+			name = 'Green Armor'
+		elseif name == 'armor2' then
+			name = 'Yellow Armor'
+		elseif name == 'armorInv' then
+			name = 'Red Armor'
+		end
 	end
 
 	name = titlecase(name)
