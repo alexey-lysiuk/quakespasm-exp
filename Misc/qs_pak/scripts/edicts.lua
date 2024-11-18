@@ -182,14 +182,10 @@ end
 -- Secrets
 --
 
-function edicts.issecret(edict)
-	if not edict or isfree(edict) or edict.classname ~= 'trigger_secret' then
-		return
-	end
-
+local function truesecret(edict)
 	local min = edict.absmin
 	local max = edict.absmax
-	local location
+	local description, location
 
 	if detectmod() == mods.ARCANE_DIMENSIONS then
 		if min == vec3minusone and max == vec3one and edict.count == 0 then
@@ -208,9 +204,44 @@ function edicts.issecret(edict)
 	end
 
 	local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
-	local description = supersecret and 'Supersecret' or 'Secret'
+	description = supersecret and 'Supersecret' or 'Secret'
 
 	return description, location
+end
+
+local quasisecret_keywords <const> = { 'you', 'found', 'secret' }
+
+local function quasisecret(edict)
+	local message = edict.message
+
+	if message == '' then
+		return
+	end
+
+	local words = {}
+	message:lower():gsub("[^%s']+", function(word) words[word] = 0 end)
+
+	local matches = 0
+
+	for _, keyword in ipairs(quasisecret_keywords) do
+		if words[keyword] then
+			matches = matches + 1
+		end
+	end
+
+	if matches == #quasisecret_keywords then
+		return 'Quasisecret', vec3mid(edict.absmin, edict.absmax)
+	end
+end
+
+function edicts.issecret(edict)
+	if not edict or isfree(edict) then
+		return
+	elseif edict.classname == 'trigger_secret' then
+		return truesecret(edict)
+	else
+		return quasisecret(edict)
+	end
 end
 
 
