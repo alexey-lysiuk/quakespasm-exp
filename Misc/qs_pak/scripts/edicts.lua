@@ -397,7 +397,10 @@ function edicts.isitem(edict)
 		return
 	end
 
-	if edict.solid ~= SOLID_TRIGGER then
+	local isinteractible = edict.solid == SOLID_TRIGGER
+		or (detectmod() == mods.HONEY and edict.use == 'item_spawn()')
+
+	if not isinteractible then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
 		return
 	end
