@@ -63,6 +63,7 @@ progs.mods =
 	REMOBILIZE         = 25,
 	SPEED_MAPPING      = 26,  -- SMP
 	DRAKE              = 27,
+	HONEY              = 28,
 }
 
 local mods <const> = progs.mods
@@ -95,6 +96,8 @@ local function detectmod()
 		return mods.SPEED_MAPPING
 	elseif functions['SuperGrenade_Launch'] then
 		return mods.DRAKE
+	elseif functions['trigger_backtohub'] then
+		return mods.HONEY
 	end
 
 	return isrerelease() and mods.ID1_RE or mods.ID1
@@ -130,6 +133,7 @@ local modnames <const> =
 	[mods.REMOBILIZE]         = 'Re:Mobilize',
 	[mods.SPEED_MAPPING]      = 'Speed Mapping Progs',
 	[mods.DRAKE]              = 'Drake',
+	[mods.HONEY]              = 'Honey',
 }
 
 function progs.modname(mod)
