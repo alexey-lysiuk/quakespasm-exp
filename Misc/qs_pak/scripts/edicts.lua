@@ -36,6 +36,8 @@ edicts.spawnflags =
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
 
+	ITEM_SECRET       = 128,  -- Honey
+
 	NOT_EASY          = 256,
 	NOT_MEDIUM        = 512,
 	NOT_HARD          = 1024,
@@ -119,6 +121,7 @@ local vec3mid <const> = vec3.mid
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local ITEM_SECRET <const> = edicts.spawnflags.ITEM_SECRET
 local TELEPORT_PLAYER_ONLY <const> = edicts.spawnflags.TELEPORT_PLAYER_ONLY
 
 local isclass <const> = edicts.isclass
@@ -234,11 +237,20 @@ local function quasisecret(edict)
 	end
 end
 
+local function ishoneysecret(edict)
+	return (detectmod() == mods.HONEY)
+		and (edict.spawnflags & ITEM_SECRET ~= 0)
+		and (edict.touch == 'itemTouch()')
+end
+
 function edicts.issecret(edict)
 	if not edict or isfree(edict) then
 		return
 	elseif edict.classname == 'trigger_secret' then
 		return truesecret(edict)
+	elseif ishoneysecret(edict) then
+		local description, location = edicts.isitem(edict)
+		return 'Secret ' .. description, location
 	else
 		return quasisecret(edict)
 	end
