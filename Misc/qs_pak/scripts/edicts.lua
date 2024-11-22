@@ -498,17 +498,22 @@ function edicts.isexit(edict)
 		return
 	end
 
-	if edict.classname ~= 'trigger_changelevel'
-		and edict.touch ~= 'changelevel_touch()'
-		and edict.use ~= 'trigger_changelevel()' then
+	local classname = edict.classname
+	local isbacktohub = classname == 'trigger_backtohub'  -- Honey
+	local isexit = isbacktohub
+		or classname == 'trigger_changelevel'
+		or edict.touch == 'changelevel_touch()'
+		or edict.use == 'trigger_changelevel()'
+
+	if not isexit then
 		return
 	end
 
-	local mapname = edict.map or '???'
-	local description = 'Exit to ' .. (mapname == '' and '???' or mapname)
+	local map = edict.map
+	local mapname = (map and map ~= '') and map or (isbacktohub and 'hub' or '???')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
-	return description, location
+	return 'Exit to ' .. mapname, location
 end
 
 
