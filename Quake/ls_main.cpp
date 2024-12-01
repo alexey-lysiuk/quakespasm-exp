@@ -256,6 +256,23 @@ static int LS_global_player_noclip(lua_State* state)
 	return LS_PlayerCheatCommand(state, "noclip");
 }
 
+static void LS_InitPlayerTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "ghost", LS_global_player_ghost },
+		{ "god", LS_global_player_god },
+		{ "noclip", LS_global_player_noclip },
+		{ "notarget", LS_global_player_notarget },
+		{ "setpos", LS_global_player_setpos },
+		{ "traceentity", LS_global_player_traceentity },
+		{ NULL, NULL }
+	};
+
+	luaL_newlib(state, functions);
+	lua_setglobal(state, "player");
+}
+
 
 //
 // Expose 'sound' value
@@ -449,7 +466,7 @@ static int LS_global_sounds_stopall(lua_State* state)
 	return 0;
 }
 
-static void LS_InitSoundType(lua_State* state)
+static void LS_InitSoundsTable(lua_State* state)
 {
 	constexpr luaL_Reg metatable[] =
 	{
@@ -524,6 +541,23 @@ static int LS_global_host_realtimes(lua_State* state)
 	lua_pushnumber(state, fractional);
 
 	return 2;
+}
+
+static void LS_InitHostTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "entities", LS_global_host_entities },
+		{ "framecount", LS_global_host_framecount },
+		{ "frametime", LS_global_host_frametime },
+		{ "gamedir", LS_global_host_gamedir },
+		{ "realtime", LS_global_host_realtime },
+		{ "realtimes", LS_global_host_realtimes },
+		{ NULL, NULL }
+	};
+
+	luaL_newlib(state, functions);
+	lua_setglobal(state, "host");
 }
 
 
@@ -943,6 +977,21 @@ static int LS_global_text_toascii(lua_State* state)
 	return 1;
 }
 
+static void LS_InitTextTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "localize", LS_global_text_localize },
+		{ "tint", LS_global_text_tint },
+		{ "toascii", LS_global_text_toascii },
+		{ NULL, NULL }
+	};
+
+	luaL_newlib(state, functions);
+	lua_setglobal(state, "text");
+}
+
+
 // Pushes texture table by the given texture
 static void LS_PushTextureTable(lua_State* state, const gltexture_t* const texture)
 {
@@ -1015,6 +1064,32 @@ static int LS_global_textures_index(lua_State* state)
 	return 0;
 }
 
+static void LS_InitTexturesTable(lua_State* state)
+{
+	static const luaL_Reg functions[] =
+	{
+		{ "list", LS_global_textures_list },
+		{ nullptr, nullptr }
+	};
+
+	luaL_newlib(state, functions);
+
+	if (luaL_newmetatable(state, "textures"))
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "__index", LS_global_textures_index },
+			{ nullptr, nullptr }
+		};
+
+		luaL_setfuncs(state, functions, 0);
+	}
+
+	lua_setmetatable(state, -2);
+	lua_setglobal(state, "textures");
+}
+
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -1080,80 +1155,12 @@ static void LS_InitGlobalFunctions(lua_State* state)
 
 static void LS_InitGlobalTables(lua_State* state)
 {
-	// Create and register 'player' table
-	{
-		static const luaL_Reg functions[] =
-		{
-			{ "ghost", LS_global_player_ghost },
-			{ "god", LS_global_player_god },
-			{ "noclip", LS_global_player_noclip },
-			{ "notarget", LS_global_player_notarget },
-			{ "setpos", LS_global_player_setpos },
-			{ "traceentity", LS_global_player_traceentity },
-			{ NULL, NULL }
-		};
+	LS_InitHostTable(state);
+	LS_InitPlayerTable(state);
+	LS_InitSoundsTable(state);
+	LS_InitTextTable(state);
+	LS_InitTexturesTable(state);
 
-		luaL_newlib(state, functions);
-		lua_setglobal(state, "player");
-	}
-
-	// Create and register 'text' table
-	{
-		static const luaL_Reg functions[] =
-		{
-			{ "localize", LS_global_text_localize },
-			{ "tint", LS_global_text_tint },
-			{ "toascii", LS_global_text_toascii },
-			{ NULL, NULL }
-		};
-
-		luaL_newlib(state, functions);
-		lua_setglobal(state, "text");
-	}
-
-	// Create and register 'textures' table
-	{
-		static const luaL_Reg functions[] =
-		{
-			{ "list", LS_global_textures_list },
-			{ nullptr, nullptr }
-		};
-
-		luaL_newlib(state, functions);
-
-		if (luaL_newmetatable(state, "textures"))
-		{
-			static const luaL_Reg functions[] =
-			{
-				{ "__index", LS_global_textures_index },
-				{ nullptr, nullptr }
-			};
-
-			luaL_setfuncs(state, functions, 0);
-		}
-
-		lua_setmetatable(state, -2);
-		lua_setglobal(state, "textures");
-	}
-
-	// Create and register 'host' table
-	{
-		static const luaL_Reg functions[] =
-		{
-			{ "entities", LS_global_host_entities },
-			{ "framecount", LS_global_host_framecount },
-			{ "frametime", LS_global_host_frametime },
-			{ "gamedir", LS_global_host_gamedir },
-			{ "realtime", LS_global_host_realtime },
-			{ "realtimes", LS_global_host_realtimes },
-			{ NULL, NULL }
-		};
-
-		luaL_newlib(state, functions);
-		lua_setglobal(state, "host");
-	}
-
-	LS_InitSoundType(state);
 	LS_InitVectorType(state);
 	LS_InitProgsType(state);
 	LS_InitEdictType(state);
