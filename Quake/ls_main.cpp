@@ -30,6 +30,8 @@ extern "C"
 
 const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
+
+extern cvar_t gl_polyoffset_factor, gl_polyoffset_units;
 }
 
 #ifdef USE_TLSF
@@ -1090,6 +1092,38 @@ static void LS_InitTexturesTable(lua_State* state)
 }
 
 
+template <cvar_t& cvar>
+static int LS_NumberCVarFunction(lua_State* state)
+{
+	if (lua_gettop(state) >= 1)
+	{
+		const float value = luaL_checknumber(state, 1);
+		Cvar_SetValueQuick(&cvar, value);
+		return 0;
+	}
+
+	lua_pushnumber(state, cvar.value);
+	return 1;
+}
+
+static void LS_InitRenderTable(lua_State* state)
+{
+	lua_newtable(state);
+	lua_pushstring(state, "polyoffset");
+
+	static const luaL_Reg functions[] =
+	{
+		{ "factor", LS_NumberCVarFunction<gl_polyoffset_factor> },
+		{ "units", LS_NumberCVarFunction<gl_polyoffset_units> },
+		{ nullptr, nullptr }
+	};
+
+	luaL_newlib(state, functions);
+	lua_rawset(state, -3);
+	lua_setglobal(state, "render");
+}
+
+
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -1157,6 +1191,7 @@ static void LS_InitGlobalTables(lua_State* state)
 {
 	LS_InitHostTable(state);
 	LS_InitPlayerTable(state);
+	LS_InitRenderTable(state);
 	LS_InitSoundsTable(state);
 	LS_InitTextTable(state);
 	LS_InitTexturesTable(state);

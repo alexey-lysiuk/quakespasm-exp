@@ -6,6 +6,7 @@ expmode = {}
 host = {}
 player = {}
 progs = {}
+render = {}
 sounds = {}
 text = {}
 textures = {}
