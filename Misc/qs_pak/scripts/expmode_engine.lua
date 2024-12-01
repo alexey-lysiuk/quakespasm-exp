@@ -390,7 +390,7 @@ function expmode.engine.textures()
 	return expmode.window('Textures', textures_onupdate,
 		function (self)
 			self:setconstraints()
-			self:setsize(imVec2(640, 480))
+			self:setsize(imVec2(640, 0))
 		end,
 		textures_onshow, textures_onhide)
 end
@@ -399,7 +399,7 @@ function expmode.engine.textureviewer()
 	return expmode.window('Texture Viewer', textureviewer_onupdate,
 		function (self)
 			self:setconstraints()
-			self:setsize(imVec2(640, 480))
+			self:setsize(imVec2(640, 0))
 		end,
 		textureviewer_onshow, textureviewer_onhide)
 end
