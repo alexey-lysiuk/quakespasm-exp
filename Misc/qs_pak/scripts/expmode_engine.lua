@@ -33,6 +33,7 @@ local imVec2 <const> = vec2.new
 local imKey <const> = ImGui.Key
 local imTableFlags <const> = ImGui.TableFlags
 
+local imAlwaysClamp <const> = ImGui.SliderFlags.AlwaysClamp
 local imLeftArrow <const> = imKey.LeftArrow
 local imRightArrow <const> = imKey.RightArrow
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
@@ -184,7 +185,7 @@ local function UpdateTextureView(self)
 	imText(self.sizetext)
 	imSameLine(0, 16)
 
-	local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
+	local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4, imAlwaysClamp)
 
 	if changed then
 		self.scale = scale
@@ -542,14 +543,14 @@ expmode.addaction(function ()
 			local changed, value
 
 			value = PolyOffsetFactor()
-			changed, value = imSliderFloat('Factor', value, -16, 16)
+			changed, value = imSliderFloat('Factor', value, -16, 16, imAlwaysClamp)
 
 			if changed then
 				PolyOffsetFactor(value)
 			end
 
 			value = PolyOffsetUnits()
-			changed, value = imSliderFloat('Units', value, -16, 16)
+			changed, value = imSliderFloat('Units', value, -16, 16, imAlwaysClamp)
 
 			if changed then
 				PolyOffsetUnits(value)
