@@ -40,6 +40,9 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local PolyOffsetFactor <const> = render.polyoffset.factor
+local PolyOffsetUnits <const> = render.polyoffset.units
+
 local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
@@ -531,6 +534,28 @@ expmode.addaction(function ()
 
 		if imMenuItem('Texture Viewer\u{85}') then
 			expmode.engine.textureviewer()
+		end
+
+		imSeparator()
+
+		if imBeginMenu('Polygon Offset') then
+			local changed, value
+
+			value = PolyOffsetFactor()
+			changed, value = imSliderFloat('Factor', value, -16, 16)
+
+			if changed then
+				PolyOffsetFactor(value)
+			end
+
+			value = PolyOffsetUnits()
+			changed, value = imSliderFloat('Units', value, -16, 16)
+
+			if changed then
+				PolyOffsetUnits(value)
+			end
+
+			imEndMenu()
 		end
 
 		imSeparator()
