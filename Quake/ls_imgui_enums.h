@@ -361,7 +361,19 @@ static void LS_InitImGuiEnums(lua_State* state)
 	// * ImGuiStyleVar
 	// * ImGuiButtonFlags
 	// * ImGuiColorEditFlags
-	// * ImGuiSliderFlags
+
+#define LS_IMGUI_SLIDER_FLAGS(NAME) LS_IMGUI_ENUM_VALUE(SliderFlags, NAME)
+	LS_IMGUI_ENUM_BEGIN()
+	LS_IMGUI_SLIDER_FLAGS(None)
+	LS_IMGUI_SLIDER_FLAGS(Logarithmic)
+	LS_IMGUI_SLIDER_FLAGS(NoRoundToFormat)
+	LS_IMGUI_SLIDER_FLAGS(NoInput)
+	LS_IMGUI_SLIDER_FLAGS(WrapAround)
+	LS_IMGUI_SLIDER_FLAGS(ClampOnInput)
+	LS_IMGUI_SLIDER_FLAGS(ClampZeroRange)
+	LS_IMGUI_SLIDER_FLAGS(AlwaysClamp)
+	LS_IMGUI_ENUM_END(SliderFlags)
+#undef LS_IMGUI_MOUSE_BUTTON
 
 #define LS_IMGUI_MOUSE_BUTTON(NAME) LS_IMGUI_ENUM_VALUE(MouseButton, NAME)
 	LS_IMGUI_ENUM_BEGIN()
