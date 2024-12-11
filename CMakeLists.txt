@@ -379,15 +379,8 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
-	set_source_files_properties(${IMGUI_DIR}/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-variable")
-
 	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
 		PROPERTIES COMPILE_FLAGS "-Wno-unused-variable -Wno-sign-compare")
-
-	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-		# Disable warning: specified size between ??? and ??? exceeds maximum object size ???
-		set_source_files_properties(${IMGUI_DIR}/imgui_draw.cpp PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
-	endif()
 
 	# Disable C++ exceptions and RTTI
 	# target_compile_options() doesn't fit very well as GCC complains on every C file
