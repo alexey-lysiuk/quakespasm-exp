@@ -109,6 +109,7 @@ public:
 		static const LanguageDefinition& Lua();
 		static const LanguageDefinition& Cs();
 		static const LanguageDefinition& Json();
+		static const LanguageDefinition& Markdown();
 #ifdef IMGUI_EDITOR_QSEXP
 		static const LanguageDefinition& QuakeEntities();
 #endif // IMGUI_EDITOR_QSEXP
