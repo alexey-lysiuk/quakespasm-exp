@@ -9,6 +9,7 @@ local format <const> = string.format
 local concat <const> = table.concat
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
@@ -23,6 +24,7 @@ local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -520,6 +522,10 @@ local function nearbyentity_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
+		imAlignTextToFramePadding()
+		imText('Radius:')
+		imSameLine()
+
 		local changed, halfedge = imSliderInt('##halfedge', nearbyentity_halfedge, 64, 4096, imAlwaysClamp)
 
 		if changed then
