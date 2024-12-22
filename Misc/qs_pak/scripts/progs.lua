@@ -88,7 +88,7 @@ local function detectmod()
 		return mods.ARCANE_DIMENSIONS
 	elseif functions['TransferKeys'] then
 		return mods.COPPER
-	elseif functions['PrintInhibitionSummary'] then
+	elseif functions['RefreshHull'] then
 		return functions['CheckGrapple'] and mods.REMOBILIZE or mods.PROGS_DUMP
 	elseif functions['CheckGugAttack'] then
 		return mods.QUOTH
