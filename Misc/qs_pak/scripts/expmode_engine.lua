@@ -31,9 +31,11 @@ local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
 local imKey <const> = ImGui.Key
+local imSliderFlags <const> = ImGui.SliderFlags
 local imTableFlags <const> = ImGui.TableFlags
 
-local imAlwaysClamp <const> = ImGui.SliderFlags.AlwaysClamp
+local imAlwaysClamp <const> = imSliderFlags.AlwaysClamp
+local imLogarithmic <const> = imAlwaysClamp | imSliderFlags.Logarithmic
 local imLeftArrow <const> = imKey.LeftArrow
 local imRightArrow <const> = imKey.RightArrow
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
@@ -543,14 +545,14 @@ expmode.addaction(function ()
 			local changed, value
 
 			value = PolyOffsetFactor()
-			changed, value = imSliderFloat('Factor', value, -16, 16, imAlwaysClamp)
+			changed, value = imSliderFloat('Factor', value, -16, 16, imLogarithmic)
 
 			if changed then
 				PolyOffsetFactor(value)
 			end
 
 			value = PolyOffsetUnits()
-			changed, value = imSliderFloat('Units', value, -16, 16, imAlwaysClamp)
+			changed, value = imSliderFloat('Units', value, -16, 16, imLogarithmic)
 
 			if changed then
 				PolyOffsetUnits(value)
