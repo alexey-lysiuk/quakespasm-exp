@@ -41,6 +41,7 @@ local imVec2 <const> = vec2.new
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
 local imTableFlags <const> = ImGui.TableFlags
 
+local imAlwaysClamp <const> = ImGui.SliderFlags.AlwaysClamp
 local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
 local imMouseButtonRight <const> = ImGui.MouseButton.Right
 local imNoOpenOverExistingPopup <const> = ImGui.PopupFlags.NoOpenOverExistingPopup
@@ -519,7 +520,7 @@ local function nearbyentity_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		local changed, halfedge = imSliderInt('##halfedge', nearbyentity_halfedge, 64, 4096)
+		local changed, halfedge = imSliderInt('##halfedge', nearbyentity_halfedge, 64, 4096, imAlwaysClamp)
 
 		if changed then
 			nearbyentity_halfedge = halfedge
