@@ -504,7 +504,7 @@ end
 
 local nearbyentity_halfedge = 256
 
-local function nearbyentity_search(self)
+local function nearbyentity_gather(self)
 	local foundedicts = edicts.boxsearch(nearbyentity_halfedge)
 	local entries = {}
 
@@ -524,10 +524,12 @@ local function nearbyentity_onupdate(self)
 
 		if changed then
 			nearbyentity_halfedge = halfedge
-			nearbyentity_search(self)
+			nearbyentity_gather(self)
 		end
 
-		edictstable(title, self.entries, defaultscrollytableflags)
+		local searchmodified = searchbar(self) or changed
+		local entries = updatesearch(self, edicts_searchcompare, searchmodified)
+		edictstable(title, entries, defaultscrollytableflags)
 	end
 
 	imEnd()
@@ -536,11 +538,13 @@ local function nearbyentity_onupdate(self)
 end
 
 local function nearbyentity_onshow(self)
-	nearbyentity_search(self)
+	nearbyentity_gather(self)
+	updatesearch(self, edicts_searchcompare, true)
 	return true
 end
 
 local function nearbyentity_onhide(self)
+	resetsearch(self)
 	self.entries = nil
 	return true
 end
