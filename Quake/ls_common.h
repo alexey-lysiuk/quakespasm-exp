@@ -23,6 +23,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "lua.hpp"
 
+extern "C"
+{
+#include "q_stdinc.h"
+#include "cvar.h"
+}
+
 class LS_TempAllocatorBase
 {
 protected:
@@ -114,6 +120,34 @@ public:
 		return *static_cast<T*>(GetValuePtr(state, index));
 	}
 };
+
+template <cvar_t& cvar>
+inline int LS_BoolCVarFunction(lua_State* state)
+{
+	if (lua_gettop(state) >= 1)
+	{
+		const int value = lua_toboolean(state, 1);
+		Cvar_SetValueQuick(&cvar, static_cast<float>(value));
+		return 0;
+	}
+
+	lua_pushboolean(state, static_cast<int>(cvar.value));
+	return 1;
+}
+
+template <cvar_t& cvar>
+inline int LS_NumberCVarFunction(lua_State* state)
+{
+	if (lua_gettop(state) >= 1)
+	{
+		const float value = luaL_checknumber(state, 1);
+		Cvar_SetValueQuick(&cvar, value);
+		return 0;
+	}
+
+	lua_pushnumber(state, cvar.value);
+	return 1;
+}
 
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);

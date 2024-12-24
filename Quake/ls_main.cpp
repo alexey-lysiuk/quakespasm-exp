@@ -1092,34 +1092,6 @@ static void LS_InitTexturesTable(lua_State* state)
 }
 
 
-template <cvar_t& cvar>
-static int LS_NumberCVarFunction(lua_State* state)
-{
-	if (lua_gettop(state) >= 1)
-	{
-		const float value = luaL_checknumber(state, 1);
-		Cvar_SetValueQuick(&cvar, value);
-		return 0;
-	}
-
-	lua_pushnumber(state, cvar.value);
-	return 1;
-}
-
-template <cvar_t& cvar>
-static int LS_BoolCVarFunction(lua_State* state)
-{
-	if (lua_gettop(state) >= 1)
-	{
-		const int value = lua_toboolean(state, 1);
-		Cvar_SetValueQuick(&cvar, static_cast<float>(value));
-		return 0;
-	}
-
-	lua_pushboolean(state, static_cast<int>(cvar.value));
-	return 1;
-}
-
 static void LS_InitRenderTable(lua_State* state)
 {
 	lua_newtable(state);
