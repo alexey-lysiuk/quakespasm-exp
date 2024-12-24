@@ -481,6 +481,22 @@ else()
 	)
 endif()
 
+option(QUAKE_GENERATE_VERSION_HEADER "Generate version header file during configuration step" OFF)
+
+if(QUAKE_GENERATE_VERSION_HEADER)
+	set(VERSION_HEADER "${CMAKE_BINARY_DIR}/expversion.h")
+
+	find_package(Git REQUIRED)
+	execute_process(COMMAND
+		${GIT_EXECUTABLE} describe --tags
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		OUTPUT_VARIABLE QUAKE_VERSION
+	)
+	file(WRITE ${VERSION_HEADER} "static const char* const expversion = \"${QUAKE_VERSION}\";\n")
+
+	set(COMMON_SOURCES ${COMMON_SOURCES} ${VERSION_HEADER})
+endif()
+
 set(ENTFIXES_HEADER "${CMAKE_BINARY_DIR}/entfixes.h")
 
 set(ENGINE_SOURCES
