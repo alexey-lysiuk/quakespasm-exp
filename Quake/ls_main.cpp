@@ -31,7 +31,7 @@ extern "C"
 const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
 
-extern cvar_t gl_polyoffset_factor, gl_polyoffset_units;
+extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes;
 }
 
 #ifdef USE_TLSF
@@ -1106,6 +1106,20 @@ static int LS_NumberCVarFunction(lua_State* state)
 	return 1;
 }
 
+template <cvar_t& cvar>
+static int LS_BoolCVarFunction(lua_State* state)
+{
+	if (lua_gettop(state) >= 1)
+	{
+		const int value = lua_toboolean(state, 1);
+		Cvar_SetValueQuick(&cvar, static_cast<float>(value));
+		return 0;
+	}
+
+	lua_pushboolean(state, static_cast<int>(cvar.value));
+	return 1;
+}
+
 static void LS_InitRenderTable(lua_State* state)
 {
 	lua_newtable(state);
@@ -1119,6 +1133,9 @@ static void LS_InitRenderTable(lua_State* state)
 	};
 
 	luaL_newlib(state, functions);
+	lua_rawset(state, -3);
+	lua_pushstring(state, "boundingboxes");
+	lua_pushcfunction(state, LS_BoolCVarFunction<r_showbboxes>);
 	lua_rawset(state, -3);
 	lua_setglobal(state, "render");
 }
