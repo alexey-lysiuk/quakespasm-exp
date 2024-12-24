@@ -73,6 +73,7 @@ local window <const> = expmode.window
 local ghost <const> = player.ghost
 local setpos <const> = player.setpos
 local traceentity <const> = player.traceentity
+local IngameEntityTrace <const> = player.ingameentitytrace
 
 local localize <const> = text.localize
 local toascii <const> = text.toascii
@@ -625,8 +626,16 @@ addaction(function ()
 			expmode.edicts.nearbyentity()
 		end
 
+		imSeparator()
+
 		if imMenuItem('Trace Entity\u{85}') then
 			expmode.edicts.traceentity()
+		end
+
+		local ingametrace = IngameEntityTrace()
+
+		if imMenuItem('In-game Entity Trace', nil, ingametrace) then
+			IngameEntityTrace(not ingametrace)
 		end
 
 		imEndMenu()
