@@ -43,6 +43,7 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local BoundingBoxes <const> = render.boundingboxes
 local PolyOffsetFactor <const> = render.polyoffset.factor
 local PolyOffsetUnits <const> = render.polyoffset.units
 
@@ -559,6 +560,12 @@ expmode.addaction(function ()
 			end
 
 			imEndMenu()
+		end
+
+		local bboxes = BoundingBoxes()
+
+		if imMenuItem('Bounding Boxes', nil, bboxes) then
+			BoundingBoxes(not bboxes)
 		end
 
 		imSeparator()
