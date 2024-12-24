@@ -31,14 +31,21 @@ local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
 local imKey <const> = ImGui.Key
+local imSliderFlags <const> = ImGui.SliderFlags
 local imTableFlags <const> = ImGui.TableFlags
 
+local imAlwaysClamp <const> = imSliderFlags.AlwaysClamp
+local imLogarithmic <const> = imAlwaysClamp | imSliderFlags.Logarithmic
 local imLeftArrow <const> = imKey.LeftArrow
 local imRightArrow <const> = imKey.RightArrow
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
+
+local BoundingBoxes <const> = render.boundingboxes
+local PolyOffsetFactor <const> = render.polyoffset.factor
+local PolyOffsetUnits <const> = render.polyoffset.units
 
 local resetsearch <const> = expmode.resetsearch
 local searchbar <const> = expmode.searchbar
@@ -181,7 +188,7 @@ local function UpdateTextureView(self)
 	imText(self.sizetext)
 	imSameLine(0, 16)
 
-	local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4)
+	local changed, scale = imSliderFloat('Scale', self.scale, 0.25, 4, imAlwaysClamp)
 
 	if changed then
 		self.scale = scale
@@ -387,7 +394,7 @@ function expmode.engine.textures()
 	return expmode.window('Textures', textures_onupdate,
 		function (self)
 			self:setconstraints()
-			self:setsize(imVec2(640, 480))
+			self:setsize(imVec2(640, 0))
 		end,
 		textures_onshow, textures_onhide)
 end
@@ -396,7 +403,7 @@ function expmode.engine.textureviewer()
 	return expmode.window('Texture Viewer', textureviewer_onupdate,
 		function (self)
 			self:setconstraints()
-			self:setsize(imVec2(640, 480))
+			self:setsize(imVec2(640, 0))
 		end,
 		textureviewer_onshow, textureviewer_onhide)
 end
@@ -531,6 +538,34 @@ expmode.addaction(function ()
 
 		if imMenuItem('Texture Viewer\u{85}') then
 			expmode.engine.textureviewer()
+		end
+
+		imSeparator()
+
+		if imBeginMenu('Polygon Offset') then
+			local changed, value
+
+			value = PolyOffsetFactor()
+			changed, value = imSliderFloat('Factor', value, -16, 16, imLogarithmic)
+
+			if changed then
+				PolyOffsetFactor(value)
+			end
+
+			value = PolyOffsetUnits()
+			changed, value = imSliderFloat('Units', value, -16, 16, imLogarithmic)
+
+			if changed then
+				PolyOffsetUnits(value)
+			end
+
+			imEndMenu()
+		end
+
+		local bboxes = BoundingBoxes()
+
+		if imMenuItem('Bounding Boxes', nil, bboxes) then
+			BoundingBoxes(not bboxes)
 		end
 
 		imSeparator()

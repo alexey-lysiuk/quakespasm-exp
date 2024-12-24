@@ -208,9 +208,6 @@ local function definitions_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		local searchmodified = searchbar(self)
-		local entries = updatesearch(self, definitions_searchcompare, searchmodified)
-
 		if self.definitions == fielddefinitions then
 			imAlignTextToFramePadding()
 			imText('Values:')
@@ -237,6 +234,9 @@ local function definitions_onupdate(self)
 				imEndCombo()
 			end
 		end
+
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, definitions_searchcompare, searchmodified)
 
 		if imBeginTable(title, 5, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)

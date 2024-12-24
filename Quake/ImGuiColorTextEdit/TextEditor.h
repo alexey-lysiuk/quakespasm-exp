@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -109,6 +108,7 @@ public:
 		static const LanguageDefinition& Lua();
 		static const LanguageDefinition& Cs();
 		static const LanguageDefinition& Json();
+		static const LanguageDefinition& Markdown();
 #ifdef IMGUI_EDITOR_QSEXP
 		static const LanguageDefinition& QuakeEntities();
 #endif // IMGUI_EDITOR_QSEXP
@@ -225,8 +225,8 @@ private:
 		Coordinates() : mLine(0), mColumn(0) {}
 		Coordinates(int aLine, int aColumn) : mLine(aLine), mColumn(aColumn)
 		{
-			assert(aLine >= 0);
-			assert(aColumn >= 0);
+			IM_ASSERT(aLine >= 0);
+			IM_ASSERT(aColumn >= 0);
 		}
 		static Coordinates Invalid() { static Coordinates invalid(-1, -1); return invalid; }
 

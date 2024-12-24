@@ -379,15 +379,8 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
-	set_source_files_properties(${IMGUI_DIR}/imgui.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-variable")
-
 	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
 		PROPERTIES COMPILE_FLAGS "-Wno-unused-variable -Wno-sign-compare")
-
-	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-		# Disable warning: specified size between ??? and ??? exceeds maximum object size ???
-		set_source_files_properties(${IMGUI_DIR}/imgui_draw.cpp PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
-	endif()
 
 	# Disable C++ exceptions and RTTI
 	# target_compile_options() doesn't fit very well as GCC complains on every C file
@@ -486,6 +479,22 @@ else()
 		${WINDOWS_SOURCES}
 		${OTHER_FILES}
 	)
+endif()
+
+option(QUAKE_GENERATE_VERSION_HEADER "Generate version header file during configuration step" OFF)
+
+if(QUAKE_GENERATE_VERSION_HEADER)
+	set(VERSION_HEADER "${CMAKE_BINARY_DIR}/expversion.h")
+
+	find_package(Git REQUIRED)
+	execute_process(COMMAND
+		${GIT_EXECUTABLE} describe --tags
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		OUTPUT_VARIABLE QUAKE_VERSION
+	)
+	file(WRITE ${VERSION_HEADER} "static const char* const expversion = \"${QUAKE_VERSION}\";\n")
+
+	set(COMMON_SOURCES ${COMMON_SOURCES} ${VERSION_HEADER})
 endif()
 
 set(ENTFIXES_HEADER "${CMAKE_BINARY_DIR}/entfixes.h")

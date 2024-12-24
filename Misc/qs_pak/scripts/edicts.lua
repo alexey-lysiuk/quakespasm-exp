@@ -36,71 +36,15 @@ edicts.spawnflags =
 	DOOR_GOLD_KEY     = 8,
 	DOOR_SILVER_KEY   = 16,
 
+	ITEM_SECRET       = 128,  -- Honey
+
 	NOT_EASY          = 256,
 	NOT_MEDIUM        = 512,
 	NOT_HARD          = 1024,
 	NOT_DEATHMATCH    = 2048,
+
+	TELEPORT_PLAYER_ONLY = 2,
 }
-
-edicts.itemflags =
-{
-	IT_SHOTGUN          = 1,
-	IT_SUPER_SHOTGUN    = 2,
-	IT_NAILGUN          = 4,
-	IT_SUPER_NAILGUN    = 8,
-	IT_GRENADE_LAUNCHER = 16,
-	IT_ROCKET_LAUNCHER  = 32,
-	IT_LIGHTNING        = 64,
-	IT_MJOLNIR          = 128,
-	IT_SHELLS           = 256,
-	IT_NAILS            = 512,
-	IT_ROCKETS          = 1024,
-	IT_CELLS            = 2048,
-	IT_AXE              = 4096,
-	IT_ARMOR1           = 8192,
-	IT_ARMOR2           = 16384,
-	IT_ARMOR3           = 32768,
-	IT_PROXIMITY_GUN    = 65536,
-	IT_KEY1             = 131072,
-	IT_KEY2             = 262144,
-	IT_INVISIBILITY     = 524288,
-	IT_INVULNERABILITY  = 1048576,
-	IT_SUIT             = 2097152,
-	IT_QUAD             = 4194304,
-	IT_LASER_CANNON     = 8388608,
-}
-
-local itemflags <const> = edicts.itemflags
-
-edicts.itemnames =
-{
-	[itemflags.IT_SHOTGUN]          = 'Shotgun',
-	[itemflags.IT_SUPER_SHOTGUN]    = 'Double-Barrelled Shotgun',
-	[itemflags.IT_NAILGUN]          = 'Nailgun',
-	[itemflags.IT_SUPER_NAILGUN]    = 'Super Nailgun',
-	[itemflags.IT_GRENADE_LAUNCHER] = 'Grenade Launcher',
-	[itemflags.IT_ROCKET_LAUNCHER]  = 'Rocket Launcher',
-	[itemflags.IT_LIGHTNING]        = 'Thunderbolt',
-	[itemflags.IT_MJOLNIR]          = 'Mjolnir',
-	[itemflags.IT_SHELLS]           = 'Shells',
-	[itemflags.IT_NAILS]            = 'Nails',
-	[itemflags.IT_ROCKETS]          = 'Rockets',
-	[itemflags.IT_CELLS]            = 'Cells',
-	[itemflags.IT_AXE]              = 'Axe',
-	[itemflags.IT_ARMOR1]           = 'Green Armor',
-	[itemflags.IT_ARMOR2]           = 'Yellow Armor',
-	[itemflags.IT_ARMOR3]           = 'Red Armor',
-	[itemflags.IT_PROXIMITY_GUN]    = 'Proximity Gun',
-	[itemflags.IT_KEY1]             = 'Silver Key',
-	[itemflags.IT_KEY2]             = 'Gold Key',
-	[itemflags.IT_INVISIBILITY]     = 'Ring of Shadows',
-	[itemflags.IT_INVULNERABILITY]  = 'Pentagram of Protection',
-	[itemflags.IT_SUIT]             = 'Biosuit',
-	[itemflags.IT_QUAD]             = 'Quad Damage',
-	[itemflags.IT_LASER_CANNON]     = 'Laser Cannon',
-}
-
-local itemnames <const> = edicts.itemnames
 
 -- Map monster classname to its name
 edicts.monsternames =
@@ -177,6 +121,8 @@ local vec3mid <const> = vec3.mid
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local ITEM_SECRET <const> = edicts.spawnflags.ITEM_SECRET
+local TELEPORT_PLAYER_ONLY <const> = edicts.spawnflags.TELEPORT_PLAYER_ONLY
 
 local isclass <const> = edicts.isclass
 local isfree <const> = edicts.isfree
@@ -192,19 +138,17 @@ end
 local function localizednetname(edict)
 	local name = edict.netname
 
-	if name and name ~= '' then
-		name = localize(name)
-
-		if name:find('the ', 1, true) == 1 then
-			name = name:sub(5)
-		end
-
-		name = titlecase(name)
-	else
-		name = itemnames[edict.items]
+	if name == '' then
+		return
 	end
 
-	return name
+	name = localize(name)
+
+	if name:find('the ', 1, true) == 1 then
+		name = name:sub(5)
+	end
+
+	return titlecase(name)
 end
 
 
@@ -241,14 +185,10 @@ end
 -- Secrets
 --
 
-function edicts.issecret(edict)
-	if not edict or isfree(edict) or edict.classname ~= 'trigger_secret' then
-		return
-	end
-
+local function truesecret(edict)
 	local min = edict.absmin
 	local max = edict.absmax
-	local location
+	local description, location
 
 	if detectmod() == mods.ARCANE_DIMENSIONS then
 		if min == vec3minusone and max == vec3one and edict.count == 0 then
@@ -267,9 +207,53 @@ function edicts.issecret(edict)
 	end
 
 	local supersecret = edict.spawnflags & SUPER_SECRET ~= 0
-	local description = supersecret and 'Supersecret' or 'Secret'
+	description = supersecret and 'Supersecret' or 'Secret'
 
 	return description, location
+end
+
+local quasisecret_keywords <const> = { 'you', 'found', 'secret' }
+
+local function quasisecret(edict)
+	local message = edict.message
+
+	if message == '' then
+		return
+	end
+
+	local words = {}
+	message:lower():gsub("[^%s']+", function(word) words[word] = 0 end)
+
+	local matches = 0
+
+	for _, keyword in ipairs(quasisecret_keywords) do
+		if words[keyword] then
+			matches = matches + 1
+		end
+	end
+
+	if matches == #quasisecret_keywords then
+		return 'Quasisecret', vec3mid(edict.absmin, edict.absmax)
+	end
+end
+
+local function ishoneysecret(edict)
+	return (detectmod() == mods.HONEY)
+		and (edict.spawnflags & ITEM_SECRET ~= 0)
+		and (edict.touch == 'itemTouch()')
+end
+
+function edicts.issecret(edict)
+	if not edict or isfree(edict) then
+		return
+	elseif edict.classname == 'trigger_secret' then
+		return truesecret(edict)
+	elseif ishoneysecret(edict) then
+		local description, location = edicts.isitem(edict)
+		return 'Secret ' .. description, location
+	else
+		return quasisecret(edict)
+	end
 end
 
 
@@ -284,10 +268,6 @@ function edicts.ismonster(edict)
 
 	local flags = edict.flags
 	local health = edict.health
-
-	if not flags or not health then
-		return
-	end
 
 	local ismonster = flags & FL_MONSTER ~= 0
 	local isalive = health > 0
@@ -336,29 +316,32 @@ function edicts.isteleport(edict)
 		return
 	end
 
+	local isad = detectmod() == mods.ARCANE_DIMENSIONS
 	local target = edict.target
 	local targetlocation
 
-	if target then
-		local isad = detectmod() == mods.ARCANE_DIMENSIONS
-
-		for _, testedict in ipairs(edicts) do
-			if target == testedict.targetname then
-				-- Special case for Arcane Dimensions, ad_tears map in particular
-				-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
-				-- Some teleport destinations were missing despite their valid setup
-				-- Actual destination coordinates are stored in oldorigin member
-				if isad and testedict.origin == vec3origin then
-					targetlocation = testedict.oldorigin
-				else
-					targetlocation = testedict.origin
-				end
-				break
+	for _, testedict in ipairs(edicts) do
+		if target == testedict.targetname then
+			-- Special case for Arcane Dimensions, ad_tears map in particular
+			-- It uses own teleport target class (info_teleportinstant_dest) which is disabled by default
+			-- Some teleport destinations were missing despite their valid setup
+			-- Actual destination coordinates are stored in oldorigin member
+			if isad and testedict.origin == vec3origin then
+				targetlocation = testedict.oldorigin
+			else
+				targetlocation = testedict.origin
 			end
+			break
 		end
 	end
 
-	local description = format('Teleport to %s (%s)', target, targetlocation or 'target not found')
+	local prefix = edict.targetname == '' and 'Touch' or 'Trigger'
+
+	if edict.spawnflags & TELEPORT_PLAYER_ONLY == 0 then
+		prefix = prefix .. ' player'
+	end
+
+	local description = format('%s teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -426,7 +409,10 @@ function edicts.isitem(edict)
 		return
 	end
 
-	if edict.solid ~= SOLID_TRIGGER then
+	local isinteractible = edict.solid == SOLID_TRIGGER
+		or (detectmod() == mods.HONEY and edict.use == 'item_spawn()')
+
+	if not isinteractible then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
 		return
 	end
@@ -465,14 +451,14 @@ function edicts.isitem(edict)
 	if not name then
 		-- use classname with prefix removed for entity without netname
 		name = classname:sub(prefixlen)
-	end
 
-	if name == 'armor1' then
-		name = itemnames[itemflags.IT_ARMOR1]
-	elseif name == 'armor2' then
-		name = itemnames[itemflags.IT_ARMOR2]
-	elseif name == 'armorInv' then
-		name = itemnames[itemflags.IT_ARMOR3]
+		if name == 'armor1' then
+			name = 'Green Armor'
+		elseif name == 'armor2' then
+			name = 'Yellow Armor'
+		elseif name == 'armorInv' then
+			name = 'Red Armor'
+		end
 	end
 
 	name = titlecase(name)
@@ -527,17 +513,22 @@ function edicts.isexit(edict)
 		return
 	end
 
-	if edict.classname ~= 'trigger_changelevel'
-		and edict.touch ~= 'changelevel_touch()'
-		and edict.use ~= 'trigger_changelevel()' then
+	local classname = edict.classname
+	local isbacktohub = classname == 'trigger_backtohub'  -- Honey
+	local isexit = isbacktohub
+		or classname == 'trigger_changelevel'
+		or edict.touch == 'changelevel_touch()'
+		or edict.use == 'trigger_changelevel()'
+
+	if not isexit then
 		return
 	end
 
-	local mapname = edict.map or '???'
-	local description = 'Exit to ' .. (mapname == '' and '???' or mapname)
+	local map = edict.map
+	local mapname = (map and map ~= '') and map or (isbacktohub and 'hub' or '???')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
-	return description, location
+	return 'Exit to ' .. mapname, location
 end
 
 
@@ -552,7 +543,7 @@ function edicts.ismessage(edict)
 
 	local message = edict.message
 
-	if not message or #message == 0 then
+	if message == '' then
 		return
 	end
 

@@ -565,7 +565,7 @@ TextEditor::UndoRecord::UndoRecord(const std::vector<UndoOperation>& aOperations
 	mBefore = aBefore;
 	mAfter = aAfter;
 	for (const UndoOperation& o : mOperations)
-		assert(o.mStart <= o.mEnd);
+		IM_ASSERT(o.mStart <= o.mEnd);
 }
 
 void TextEditor::UndoRecord::Undo(TextEditor* aEditor)
@@ -632,7 +632,7 @@ void TextEditor::UndoRecord::Redo(TextEditor* aEditor)
 
 std::string TextEditor::GetText(const Coordinates& aStart, const Coordinates& aEnd) const
 {
-	assert(aStart < aEnd);
+	IM_ASSERT(aStart < aEnd);
 
 	std::string result;
 	auto lstart = aStart.mLine;
@@ -708,13 +708,13 @@ void TextEditor::SetCursorPosition(const Coordinates& aPosition, int aCursor, bo
 
 int TextEditor::InsertTextAt(Coordinates& /* inout */ aWhere, const char* aValue)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	int cindex = GetCharacterIndexR(aWhere);
 	int totalLines = 0;
 	while (*aValue != '\0')
 	{
-		assert(!mLines.empty());
+		IM_ASSERT(!mLines.empty());
 
 		if (*aValue == '\r')
 		{
@@ -815,8 +815,8 @@ bool TextEditor::Move(int& aLine, int& aCharIndex, bool aLeft, bool aLockLine) c
 
 void TextEditor::MoveCharIndexAndColumn(int aLine, int& aCharIndex, int& aColumn) const
 {
-	assert(aLine < mLines.size());
-	assert(aCharIndex < mLines[aLine].size());
+	IM_ASSERT(aLine < mLines.size());
+	IM_ASSERT(aCharIndex < mLines[aLine].size());
 	char c = mLines[aLine][aCharIndex].mChar;
 	aCharIndex += UTF8CharLength(c);
 	if (c == '\t')
@@ -894,7 +894,7 @@ void TextEditor::MoveDown(int aAmount, bool aSelect)
 {
 	for (int c = 0; c <= mState.mCurrentCursor; c++)
 	{
-		assert(mState.mCursors[c].mInteractiveEnd.mColumn >= 0);
+		IM_ASSERT(mState.mCursors[c].mInteractiveEnd.mColumn >= 0);
 		Coordinates newCoords = mState.mCursors[c].mInteractiveEnd;
 		MoveCoords(newCoords, MoveDirection::Down, false, aAmount);
 		SetCursorPosition(newCoords, c, !aSelect);
@@ -975,7 +975,7 @@ void TextEditor::MoveEnd(bool aSelect)
 
 void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	bool hasSelection = AnyCursorHasSelection();
 	bool anyCursorHasMultilineSelection = false;
@@ -1049,7 +1049,9 @@ void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 		}
 	}
 
+	IM_ASSERT(!mLines.empty());
 	std::vector<Coordinates> coords;
+
 	for (int c = mState.mCurrentCursor; c > -1; c--) // order important here for typing \n in the same line at the same time
 	{
 		auto coord = GetActualCursorCoordinates(c);
@@ -1058,36 +1060,48 @@ void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 		added.mType = UndoOperationType::Add;
 		added.mStart = coord;
 
-		assert(!mLines.empty());
-
+		// special handling for newline
 		if (aChar == '\n')
 		{
-			InsertLine(coord.mLine + 1);
-			auto& line = mLines[coord.mLine];
-			auto& newLine = mLines[coord.mLine + 1];
-
-			added.mText = "";
-			added.mText += (char)aChar;
+			std::string insert = "\n";
+			std::string whitespace;
+			int column = 0;
 
 			if (mAutoIndent)
 			{
+				auto& line = mLines[coord.mLine];
 				auto cindex = GetCharacterIndexR(coord);
+				char previousChar = cindex > 0 ? line[cindex - 1].mChar : 0;
+				char nextChar = cindex <= (int) line.size() - 1 ? line[cindex].mChar : 0;
 
-				for (int i = 0; i < line.size() && isascii(line[i].mChar) && isblank(line[i].mChar); ++i, ++cindex)
-				{
-					if (line[i].mChar != line[cindex].mChar) {
-						newLine.push_back(line[i]);
-						added.mText += line[i].mChar;
+				// determine whitespace at start of line and add it to the new line
+				for (int i = 0; i < line.size() && isblank(line[i].mChar); ++i)
+					whitespace += line[i].mChar;
+
+				insert += whitespace;
+				column = (int)whitespace.size();
+
+				// handle special cases
+				if (previousChar == '[' || previousChar == '{') {
+					// add to an existing block
+					insert += "\t";
+					column++;
+
+					if ((previousChar == '[' && nextChar == ']') || (previousChar == '{' && nextChar == '}')) {
+						// open a new block
+						insert += "\n" + whitespace;
 					}
 				}
 			}
 
-			const size_t whitespaceSize = newLine.size();
-			auto cindex = GetCharacterIndexR(coord);
-			AddGlyphsToLine(coord.mLine + 1, int(newLine.size()), line.begin() + cindex, line.end());
-			RemoveGlyphsFromLine(coord.mLine, cindex);
-			SetCursorPosition(Coordinates(coord.mLine + 1, GetCharacterColumn(coord.mLine + 1, (int)whitespaceSize)), c);
-			added.mEnd = GetActualCursorCoordinates(c);
+			// insert new text
+			Coordinates insertEnd = coord;
+			InsertTextAt(insertEnd, insert.c_str());
+			added.mText = insert;
+			added.mEnd = insertEnd;
+
+			// set new cursor position
+			SetCursorPosition(Coordinates(coord.mLine + 1, GetCharacterColumn(coord.mLine + 1, column)), c);
 		}
 		else
 		{
@@ -1193,7 +1207,7 @@ void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 
 void TextEditor::Backspace(bool aWordMode)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	if (mLines.empty())
 		return;
@@ -1218,7 +1232,7 @@ void TextEditor::Backspace(bool aWordMode)
 
 void TextEditor::Delete(bool aWordMode, const EditorState* aEditorState)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	if (mLines.empty())
 		return;
@@ -1311,7 +1325,7 @@ void TextEditor::AddCursorForNextOccurrence(bool aCaseSensitive, bool aWholeWord
 
 bool TextEditor::FindNextOccurrence(const char* aText, int aTextSize, const Coordinates& aFrom, Coordinates& outStart, Coordinates& outEnd, bool aCaseSensitive, bool aWholeWord)
 {
-	assert(aTextSize > 0);
+	IM_ASSERT(aTextSize > 0);
 	bool fmatches = false;
 	int fline, ifline;
 	int findex, ifindex;
@@ -1453,7 +1467,7 @@ bool TextEditor::FindMatchingBracket(int aLine, int aCharIndex, Coordinates& out
 
 void TextEditor::ChangeCurrentLinesIndentation(bool aIncrease)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	UndoRecord u;
 	u.mBefore = mState;
@@ -1499,7 +1513,7 @@ void TextEditor::ChangeCurrentLinesIndentation(bool aIncrease)
 
 void TextEditor::MoveUpCurrentLines()
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	UndoRecord u;
 	u.mBefore = mState;
@@ -1542,7 +1556,7 @@ void TextEditor::MoveUpCurrentLines()
 
 void TextEditor::MoveDownCurrentLines()
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 
 	UndoRecord u;
 	u.mBefore = mState;
@@ -1586,7 +1600,7 @@ void TextEditor::MoveDownCurrentLines()
 
 void TextEditor::ToggleLineComment()
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 	if (mLanguageDefinition == nullptr)
 		return;
 	const std::string& commentString = mLanguageDefinition->mSingleLineComment;
@@ -1636,7 +1650,7 @@ void TextEditor::ToggleLineComment()
 			int i = 0;
 			while (i < commentString.length() && currentIndex + i < mLines[currentLine].size() && mLines[currentLine][currentIndex + i].mChar == commentString[i]) i++;
 			bool matched = i == commentString.length();
-			assert(matched);
+			IM_ASSERT(matched);
 			if (currentIndex + i < mLines[currentLine].size() && mLines[currentLine][currentIndex + i].mChar == ' ')
 				i++;
 
@@ -1957,7 +1971,7 @@ int TextEditor::GetLineMaxColumn(int aLine, int aLimit) const
 
 TextEditor::Line& TextEditor::InsertLine(int aIndex)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 	auto& result = *mLines.insert(mLines.begin() + aIndex, Line());
 
 	for (int c = 0; c <= mState.mCurrentCursor; c++) // handle multiple cursors
@@ -1977,11 +1991,11 @@ TextEditor::Line& TextEditor::InsertLine(int aIndex)
 
 void TextEditor::RemoveLine(int aIndex, const std::unordered_set<int>* aHandledCursors)
 {
-	assert(!mReadOnly);
-	assert(mLines.size() > 1);
+	IM_ASSERT(!mReadOnly);
+	IM_ASSERT(mLines.size() > 1);
 
 	mLines.erase(mLines.begin() + aIndex);
-	assert(!mLines.empty());
+	IM_ASSERT(!mLines.empty());
 
 	// handle multiple cursors
 	for (int c = 0; c <= mState.mCurrentCursor; c++)
@@ -2003,12 +2017,12 @@ void TextEditor::RemoveLine(int aIndex, const std::unordered_set<int>* aHandledC
 
 void TextEditor::RemoveLines(int aStart, int aEnd)
 {
-	assert(!mReadOnly);
-	assert(aEnd >= aStart);
-	assert(mLines.size() > (size_t)(aEnd - aStart));
+	IM_ASSERT(!mReadOnly);
+	IM_ASSERT(aEnd >= aStart);
+	IM_ASSERT(mLines.size() > (size_t)(aEnd - aStart));
 
 	mLines.erase(mLines.begin() + aStart, mLines.begin() + aEnd);
-	assert(!mLines.empty());
+	IM_ASSERT(!mLines.empty());
 
 	// handle multiple cursors
 	for (int c = 0; c <= mState.mCurrentCursor; c++)
@@ -2037,8 +2051,8 @@ void TextEditor::RemoveLines(int aStart, int aEnd)
 
 void TextEditor::DeleteRange(const Coordinates& aStart, const Coordinates& aEnd)
 {
-	assert(aEnd >= aStart);
-	assert(!mReadOnly);
+	IM_ASSERT(aEnd >= aStart);
+	IM_ASSERT(!mReadOnly);
 
 	if (aEnd == aStart)
 		return;
@@ -2261,9 +2275,9 @@ void TextEditor::HandleKeyboardInputs(bool aParentIsFocused)
 void TextEditor::HandleMouseInputs()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	auto shift = io.KeyShift;
-	auto ctrl = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
-	auto alt = io.ConfigMacOSXBehaviors ? io.KeyCtrl : io.KeyAlt;
+	auto shift = ImGui::IsKeyDown(ImGuiMod_Shift);
+	auto ctrl = ImGui::IsKeyDown(ImGuiMod_Ctrl);
+	auto alt = ImGui::IsKeyDown(ImGuiMod_Alt);
 
 	/*
 	Pan with middle mouse button
@@ -2456,7 +2470,7 @@ void TextEditor::Render(bool aParentIsFocused)
 				float rectEnd = -1.0f;
 				Coordinates cursorSelectionStart = mState.mCursors[c].GetSelectionStart();
 				Coordinates cursorSelectionEnd = mState.mCursors[c].GetSelectionEnd();
-				assert(cursorSelectionStart <= cursorSelectionEnd);
+				IM_ASSERT(cursorSelectionStart <= cursorSelectionEnd);
 
 				if (cursorSelectionStart <= lineEndCoord)
 					rectStart = cursorSelectionStart > lineStartCoord ? TextDistanceToLineStart(cursorSelectionStart) : 0.0f;
@@ -2473,6 +2487,8 @@ void TextEditor::Render(bool aParentIsFocused)
 						mPalette[(int)PaletteIndex::Selection]);
 			}
 
+			auto errorIt = mErrorMarkers.find(lineNo + 1);
+
 			// Draw line number (right aligned)
 			if (mShowLineNumbers)
 			{
@@ -2480,11 +2496,10 @@ void TextEditor::Render(bool aParentIsFocused)
 				float lineNoWidth = (digits + 2) * mCharAdvance.x;
 
 				// Draw error marker (if required)
-				auto errorIt = mErrorMarkers.find(lineNo + 1);
 				if (errorIt != mErrorMarkers.end())
 				{
-					auto start = ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth, lineStartScreenPos.y);
-					auto end = ImVec2(start.x + digits * mCharAdvance.x, lineStartScreenPos.y + mCharAdvance.y);
+					auto start = ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth - 2, lineStartScreenPos.y);
+					auto end = ImVec2(start.x + digits * mCharAdvance.x + 4, lineStartScreenPos.y + mCharAdvance.y);
 					drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::ErrorMarker]);
 
 					// Draw tooltip (if mouse is hovering over line number)
@@ -2619,6 +2634,14 @@ void TextEditor::Render(bool aParentIsFocused)
 				}
 
 				MoveCharIndexAndColumn(lineNo, charIndex, column);
+			}
+
+			if (errorIt != mErrorMarkers.end())
+			{
+				// underline error line
+				auto start = ImVec2(lineStartScreenPos.x, lineStartScreenPos.y + mCharAdvance.y - 4);
+				auto end = ImVec2(lineStartScreenPos.x + mContentWidth, lineStartScreenPos.y + mCharAdvance.y - 1);
+				drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::ErrorMarker]);
 			}
 		}
 	}
@@ -2774,7 +2797,7 @@ void TextEditor::MergeCursorsIfPossible()
 
 void TextEditor::AddUndo(UndoRecord& aValue)
 {
-	assert(!mReadOnly);
+	IM_ASSERT(!mReadOnly);
 	mUndoBuffer.resize((size_t)(mUndoIndex + 1));
 	mUndoBuffer.back() = aValue;
 	++mUndoIndex;

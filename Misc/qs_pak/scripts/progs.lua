@@ -63,6 +63,7 @@ progs.mods =
 	REMOBILIZE         = 25,
 	SPEED_MAPPING      = 26,  -- SMP
 	DRAKE              = 27,
+	HONEY              = 28,
 }
 
 local mods <const> = progs.mods
@@ -75,19 +76,13 @@ local function isrerelease()
 end
 
 local function detectmod()
-	if functions['UpdateCharmerGoal'] then
-		return isrerelease() and mods.HIPNOTIC_RE or mods.HIPNOTIC
-	elseif functions['EnableComboWeapons'] then
-		return isrerelease() and mods.ROGUE_RE or mods.ROGUE
-	elseif functions['HordeFindTarget'] then
-		return mods.MG1
-	elseif functions['Mutant_Melee'] then
+	if functions['Mutant_Melee'] then
 		return mods.ALKALINE
 	elseif functions['BlastBeltCheat'] then
 		return mods.ARCANE_DIMENSIONS
 	elseif functions['TransferKeys'] then
 		return mods.COPPER
-	elseif functions['PrintInhibitionSummary'] then
+	elseif functions['RefreshHull'] then
 		return functions['CheckGrapple'] and mods.REMOBILIZE or mods.PROGS_DUMP
 	elseif functions['CheckGugAttack'] then
 		return mods.QUOTH
@@ -95,6 +90,14 @@ local function detectmod()
 		return mods.SPEED_MAPPING
 	elseif functions['SuperGrenade_Launch'] then
 		return mods.DRAKE
+	elseif functions['trigger_backtohub'] then
+		return mods.HONEY
+	elseif functions['HordeFindTarget'] then
+		return mods.MG1
+	elseif functions['EnableComboWeapons'] then
+		return isrerelease() and mods.ROGUE_RE or mods.ROGUE
+	elseif functions['UpdateCharmerGoal'] then
+		return isrerelease() and mods.HIPNOTIC_RE or mods.HIPNOTIC
 	end
 
 	return isrerelease() and mods.ID1_RE or mods.ID1
@@ -130,6 +133,7 @@ local modnames <const> =
 	[mods.REMOBILIZE]         = 'Re:Mobilize',
 	[mods.SPEED_MAPPING]      = 'Speed Mapping Progs',
 	[mods.DRAKE]              = 'Drake',
+	[mods.HONEY]              = 'Honey',
 }
 
 function progs.modname(mod)

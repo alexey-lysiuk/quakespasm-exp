@@ -9,6 +9,7 @@ local format <const> = string.format
 local concat <const> = table.concat
 local insert <const> = table.insert
 
+local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginPopup <const> = ImGui.BeginPopup
@@ -23,6 +24,7 @@ local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsMouseReleased <const> = ImGui.IsMouseReleased
 local imMenuItem <const> = ImGui.MenuItem
 local imOpenPopup <const> = ImGui.OpenPopup
+local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
 local imSetClipboardText <const> = ImGui.SetClipboardText
@@ -41,10 +43,10 @@ local imVec2 <const> = vec2.new
 local imTableColumnFlags <const> = ImGui.TableColumnFlags
 local imTableFlags <const> = ImGui.TableFlags
 
+local imAlwaysClamp <const> = ImGui.SliderFlags.AlwaysClamp
 local imHoveredFlagsDelayNormal <const> = ImGui.HoveredFlags.DelayNormal
 local imMouseButtonRight <const> = ImGui.MouseButton.Right
 local imNoOpenOverExistingPopup <const> = ImGui.PopupFlags.NoOpenOverExistingPopup
-local imSelectableDisabled <const> = ImGui.SelectableFlags.Disabled
 local imTableColumnIsHovered <const> = imTableColumnFlags.IsHovered
 local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
@@ -71,6 +73,7 @@ local window <const> = expmode.window
 local ghost <const> = player.ghost
 local setpos <const> = player.setpos
 local traceentity <const> = player.traceentity
+local IngameEntityTrace <const> = player.ingameentitytrace
 
 local localize <const> = text.localize
 local toascii <const> = text.toascii
@@ -298,7 +301,7 @@ local function edictstable(title, entries, tableflags)
 		imTableSetupScrollFreeze(0, 1)
 		imTableSetupColumn('Index', imTableColumnWidthFixed)
 		imTableSetupColumn('Description')
-		imTableSetupColumn('Location')
+		imTableSetupColumn('Location', imTableColumnWidthFixed)
 		imTableHeadersRow()
 
 		for _, entry in ipairs(entries) do
@@ -306,11 +309,11 @@ local function edictstable(title, entries, tableflags)
 
 			imTableNextRow()
 			imTableNextColumn()
-			imSelectable(entry.index, false, imSelectableDisabled)
+			imText(entry.index)
 			imTableNextColumn()
 
 			if entry.isfree then
-				imSelectable(entry.descriptionid, false, imSelectableDisabled)
+				imText(description)
 			else
 				if imSelectable(entry.descriptionid) then
 					edictinfo(entry.edict):movetocursor()
@@ -504,7 +507,7 @@ end
 
 local nearbyentity_halfedge = 256
 
-local function nearbyentity_search(self)
+local function nearbyentity_gather(self)
 	local foundedicts = edicts.boxsearch(nearbyentity_halfedge)
 	local entries = {}
 
@@ -520,14 +523,20 @@ local function nearbyentity_onupdate(self)
 	local visible, opened = imBegin(title, true)
 
 	if visible and opened then
-		local changed, halfedge = imSliderInt('##halfedge', nearbyentity_halfedge, 64, 4096)
+		imAlignTextToFramePadding()
+		imText('Radius:')
+		imSameLine()
+
+		local changed, halfedge = imSliderInt('##halfedge', nearbyentity_halfedge, 64, 4096, imAlwaysClamp)
 
 		if changed then
 			nearbyentity_halfedge = halfedge
-			nearbyentity_search(self)
+			nearbyentity_gather(self)
 		end
 
-		edictstable(title, self.entries, defaultscrollytableflags)
+		local searchmodified = searchbar(self) or changed
+		local entries = updatesearch(self, edicts_searchcompare, searchmodified)
+		edictstable(title, entries, defaultscrollytableflags)
 	end
 
 	imEnd()
@@ -536,11 +545,13 @@ local function nearbyentity_onupdate(self)
 end
 
 local function nearbyentity_onshow(self)
-	nearbyentity_search(self)
+	nearbyentity_gather(self)
+	updatesearch(self, edicts_searchcompare, true)
 	return true
 end
 
 local function nearbyentity_onhide(self)
+	resetsearch(self)
 	self.entries = nil
 	return true
 end
@@ -567,7 +578,7 @@ local edictstools <const> =
 	{ 'All Edicts', nil, 30 },
 	{ 'Secrets', edicts.issecret, 15 },
 	{ 'Monsters', edicts.ismonster, 15 },
-	{ 'Teleports', edicts.isteleport, 30 },
+	{ 'Teleports', edicts.isteleport, 40 },
 	{ 'Doors', edicts.isdoor, 15 },
 	{ 'Items', edicts.isitem, 20 },
 	{ 'Buttons', edicts.isbutton, 15 },
@@ -615,8 +626,16 @@ addaction(function ()
 			expmode.edicts.nearbyentity()
 		end
 
+		imSeparator()
+
 		if imMenuItem('Trace Entity\u{85}') then
 			expmode.edicts.traceentity()
+		end
+
+		local ingametrace = IngameEntityTrace()
+
+		if imMenuItem('In-game Entity Trace', nil, ingametrace) then
+			IngameEntityTrace(not ingametrace)
 		end
 
 		imEndMenu()
