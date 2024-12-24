@@ -31,7 +31,7 @@ extern "C"
 const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
 
-extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes;
+extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, sv_traceentity;
 }
 
 #ifdef USE_TLSF
@@ -264,6 +264,7 @@ static void LS_InitPlayerTable(lua_State* state)
 	{
 		{ "ghost", LS_global_player_ghost },
 		{ "god", LS_global_player_god },
+		{ "ingameentitytrace", LS_BoolCVarFunction<sv_traceentity> },
 		{ "noclip", LS_global_player_noclip },
 		{ "notarget", LS_global_player_notarget },
 		{ "setpos", LS_global_player_setpos },
