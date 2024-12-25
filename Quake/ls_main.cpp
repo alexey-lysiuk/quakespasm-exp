@@ -185,6 +185,33 @@ void LS_TypelessUserDataType::SetMetaTable(lua_State* state, const luaL_Reg* mem
 }
 
 
+int LS_BoolCVarFunction(lua_State* state, cvar_t& cvar)
+{
+	if (lua_gettop(state) >= 1)
+	{
+		const int value = lua_toboolean(state, 1);
+		Cvar_SetValueQuick(&cvar, static_cast<float>(value));
+		return 0;
+	}
+
+	lua_pushboolean(state, static_cast<int>(cvar.value));
+	return 1;
+}
+
+int LS_NumberCVarFunction(lua_State* state, cvar_t& cvar)
+{
+	if (lua_gettop(state) >= 1)
+	{
+		const float value = luaL_checknumber(state, 1);
+		Cvar_SetValueQuick(&cvar, value);
+		return 0;
+	}
+
+	lua_pushnumber(state, cvar.value);
+	return 1;
+}
+
+
 //
 // Expose 'player' global table with corresponding helper functions
 //
