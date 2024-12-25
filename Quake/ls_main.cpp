@@ -349,26 +349,6 @@ static int LS_value_sound_loopstart(lua_State* state)
 	return 0;
 }
 
-static int LS_MakeSoundSilent(lua_State* state)
-{
-	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
-	{
-		byte* const sounddata = const_cast<sfxcache_t*>(cachedsound)->data;
-		memset(sounddata, 0, cachedsound->length);
-
-		lua_pushboolean(state, true);
-		return 1;
-	}
-
-	return 0;
-}
-
-static int LS_value_sound_makesilent(lua_State* state)
-{
-	lua_pushcfunction(state, LS_MakeSoundSilent);
-	return 1;
-}
-
 static int LS_value_sound_name(lua_State* state)
 {
 	if (const sfx_t* const sound = LS_GetSoundFromUserData(state))
@@ -422,6 +402,27 @@ static int LS_value_sound_tostring(lua_State* state)
 	else
 		lua_pushstring(state, "invalid sound");
 
+	return 1;
+}
+
+static int LS_MakeSoundSilent(lua_State* state)
+{
+	if (const sfxcache_t* const cachedsound = LS_GetCachedSoundFromUserData(state))
+	{
+		byte* const sounddata = const_cast<sfxcache_t*>(cachedsound)->data;
+		const size_t size = LS_GetSoundSize(*cachedsound);
+		memset(sounddata, 0, size);
+
+		lua_pushboolean(state, true);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int LS_value_sound_makesilent(lua_State* state)
+{
+	lua_pushcfunction(state, LS_MakeSoundSilent);
 	return 1;
 }
 
