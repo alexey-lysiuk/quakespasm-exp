@@ -38,6 +38,7 @@ local imAlwaysClamp <const> = imSliderFlags.AlwaysClamp
 local imLogarithmic <const> = imAlwaysClamp | imSliderFlags.Logarithmic
 local imLeftArrow <const> = imKey.LeftArrow
 local imRightArrow <const> = imKey.RightArrow
+local imSpanAllColumns <const> = ImGui.SelectableFlags.SpanAllColumns
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
@@ -248,7 +249,7 @@ local function textures_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				if imSelectable(entry.name) then
+				if imSelectable(entry.name, false, imSpanAllColumns) then
 					expmode.engine.viewtexture(entry.name)
 				end
 				imTableNextColumn()
@@ -434,7 +435,7 @@ local function sounds_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				if imSelectable(entry.name) then
+				if imSelectable(entry.name, false, imSpanAllColumns) then
 					sounds.playlocal(entry.name)
 				end
 				imTableNextColumn()
