@@ -1,17 +1,20 @@
 
 local ipairs <const> = ipairs
 local format <const> = string.format
+local concat <const> = table.concat
 local insert <const> = table.insert
 
 local imAlignTextToFramePadding <const> = ImGui.AlignTextToFramePadding
 local imBegin <const> = ImGui.Begin
 local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
+local imBeginPopupContextItem <const> = ImGui.BeginPopupContextItem
 local imBeginTable <const> = ImGui.BeginTable
 local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
 local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
+local imEndPopup <const> = ImGui.EndPopup
 local imEndTable <const> = ImGui.EndTable
 local imImage <const> = ImGui.Image
 local imIsKeyPressed <const> = ImGui.IsKeyPressed
@@ -20,6 +23,7 @@ local imMenuItem <const> = ImGui.MenuItem
 local imSameLine <const> = ImGui.SameLine
 local imSelectable <const> = ImGui.Selectable
 local imSeparator <const> = ImGui.Separator
+local imSetClipboardText <const> = ImGui.SetClipboardText
 local imSetItemDefaultFocus <const> = ImGui.SetItemDefaultFocus
 local imSliderFloat <const> = ImGui.SliderFloat
 local imTableHeadersRow <const> = ImGui.TableHeadersRow
@@ -414,6 +418,10 @@ local function sounds_searchcompare(entry, string)
 		or entry.size:find(string, 1, true)
 end
 
+local function sounds_entry2string(entry)
+	return format('%s\t%s\t%ss\t%s\n', entry.indexstr, entry.name, entry.duration, entry.size)
+end
+
 local function sounds_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true)
@@ -433,10 +441,25 @@ local function sounds_onupdate(self)
 			for _, entry in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
-				imText(entry.index)
+				imText(entry.indexstr)
 				imTableNextColumn()
 				if imSelectable(entry.name, false, imSpanAllColumns) then
 					sounds.playlocal(entry.name)
+				end
+				if imBeginPopupContextItem() then
+					if imSelectable('Copy Row') then
+						imSetClipboardText(sounds_entry2string(entry))
+					end
+					if imSelectable('Copy Table') then
+						local lines = {}
+
+						for _, e in ipairs(entries) do
+							insert(lines, sounds_entry2string(e))
+						end
+
+						imSetClipboardText(concat(lines))
+					end
+					imEndPopup()
 				end
 				imTableNextColumn()
 				imText(entry.duration)
@@ -463,7 +486,8 @@ local function sounds_onshow(self)
 		local soundsize = sound.size
 		local entry =
 		{
-			index = tostring(i),
+			index = i,
+			indexstr = tostring(i),
 			name = sound.name,
 			duration = duration and format('%.3f', duration) or '-',
 			size = soundsize and tostring(soundsize) or '-',
