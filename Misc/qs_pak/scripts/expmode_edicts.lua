@@ -497,6 +497,7 @@ function expmode.edicts.references(edict)
 
 	local function oncreate(self)
 		self:setconstraints()
+		self:setsize(imVec2(400, 0))
 		self.edict = edict
 		self.edictid = edictid
 	end
