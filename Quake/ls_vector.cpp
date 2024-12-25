@@ -253,12 +253,6 @@ static int LS_value_vector_tostring(lua_State* state)
 template <size_t N>
 int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 {
-	const auto& userdatatype = LS_GetVectorUserDataType<N>();
-
-	LS_Vector<N>& newvalue = userdatatype.New(state);
-	newvalue = value;
-
-	// Create and set 'vecN' metatable
 	static const luaL_Reg functions[] =
 	{
 		// Math functions
@@ -274,13 +268,12 @@ int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 		{ "__index", LS_value_vector_index<N> },
 		{ "__newindex", LS_value_vector_newindex<N> },
 		{ "__tostring", LS_value_vector_tostring<N> },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 
-	if (luaL_newmetatable(state, userdatatype.GetName()))
-		luaL_setfuncs(state, functions, 0);
+	const auto& userdatatype = LS_GetVectorUserDataType<N>();
+	userdatatype.New(state, nullptr, functions) = value;
 
-	lua_setmetatable(state, -2);
 	return 1;
 }
 
