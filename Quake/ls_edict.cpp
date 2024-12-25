@@ -73,27 +73,6 @@ static int LS_GetEdictIndex(lua_State* state, const edict_t* edict)
 // Expose edict_t as 'edict' userdata
 //
 
-static void LS_SetEdictMetaTable(lua_State* state);
-
-// Creates and pushes 'edict' userdata by edict index, [0..sv.num_edicts)
-void LS_PushEdictValue(lua_State* state, int edictindex)
-{
-	if (edictindex < 0 || edictindex >= sv.num_edicts)
-		lua_pushnil(state);
-	else
-	{
-		int& newvalue = ls_edict_type.New(state);
-		newvalue = edictindex;
-
-		LS_SetEdictMetaTable(state);
-	}
-}
-
-void LS_PushEdictValue(lua_State* state, const edict_t* edict)
-{
-	LS_PushEdictValue(state, LS_GetEdictIndex(state, edict));
-}
-
 // Pushes field value by its type and name
 void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 {
@@ -296,23 +275,31 @@ static int LS_value_edict_tostring(lua_State* state)
 	return 1;
 }
 
-// Sets metatable for edict table
-static void LS_SetEdictMetaTable(lua_State* state)
+// Creates and pushes 'edict' userdata by edict index, [0..sv.num_edicts)
+void LS_PushEdictValue(lua_State* state, int edictindex)
 {
-	static const luaL_Reg functions[] =
+	if (edictindex < 0 || edictindex >= sv.num_edicts)
+		lua_pushnil(state);
+	else
 	{
-		{ "__eq", LS_value_edict_eq },
-		{ "__lt", LS_value_edict_lt },
-		{ "__index", LS_value_edict_index },
-		{ "__pairs", LS_value_edict_pairs },
-		{ "__tostring", LS_value_edict_tostring },
-		{ NULL, NULL }
-	};
+		static const luaL_Reg functions[] =
+		{
+			{ "__eq", LS_value_edict_eq },
+			{ "__lt", LS_value_edict_lt },
+			{ "__index", LS_value_edict_index },
+			{ "__pairs", LS_value_edict_pairs },
+			{ "__tostring", LS_value_edict_tostring },
+			{ nullptr, nullptr }
+		};
 
-	if (luaL_newmetatable(state, "edict"))
-		luaL_setfuncs(state, functions, 0);
+		ls_edict_type.New(state, nullptr, functions) = edictindex;
+	}
+}
 
-	lua_setmetatable(state, -2);
+// Creates and pushes 'edict' userdata by pointer to edict_t
+void LS_PushEdictValue(lua_State* state, const edict_t* edict)
+{
+	LS_PushEdictValue(state, LS_GetEdictIndex(state, edict));
 }
 
 
