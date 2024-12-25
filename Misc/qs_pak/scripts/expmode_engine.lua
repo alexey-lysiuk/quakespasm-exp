@@ -459,6 +459,10 @@ local function sounds_onupdate(self)
 
 						imSetClipboardText(concat(lines))
 					end
+					imSeparator()
+					if imSelectable('Make Silent') then
+						sounds[entry.index]:makesilent()
+					end
 					imEndPopup()
 				end
 				imTableNextColumn()
