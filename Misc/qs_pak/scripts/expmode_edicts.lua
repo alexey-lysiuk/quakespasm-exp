@@ -558,7 +558,7 @@ local function nearbyentity_onhide(self)
 end
 
 function expmode.edicts.nearbyentity()
-	return window('Search Entity', nearbyentity_onupdate,
+	return window('Nearby Entities', nearbyentity_onupdate,
 		function (self)
 			self:setconstraints()
 			self:setsize(imVec2(400, 0))
