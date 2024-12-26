@@ -72,7 +72,7 @@ struct LS_TextBuffer
 	size_t size;
 };
 
-constexpr LS_UserDataType<LS_TextBuffer> ls_imguitextbuffer_type("ImGuiTextBuffer");
+constexpr LS_UserDataType<LS_TextBuffer> ls_imguitextbuffer_type("ImGui.TextBuffer");
 
 static int LS_value_TextBuffer_gc(lua_State* state)
 {
@@ -119,23 +119,18 @@ static int LS_global_imgui_TextBuffer(lua_State* state)
 
 	bufferdata[textlength] = '\0';
 
-	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.New(state);
-	textbuffer.data = bufferdata;
-	textbuffer.size = buffersize;
-
-	// Create and set 'ImGui.TextBuffer' metatable
 	static const luaL_Reg functions[] =
 	{
 		{ "__gc", LS_value_TextBuffer_gc },
 		{ "__len", LS_value_TextBuffer_len },
 		{ "__tostring", LS_value_TextBuffer_tostring },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 
-	if (luaL_newmetatable(state, "ImGui.TextBuffer"))
-		luaL_setfuncs(state, functions, 0);
+	LS_TextBuffer& textbuffer = ls_imguitextbuffer_type.New(state, nullptr, functions);
+	textbuffer.data = bufferdata;
+	textbuffer.size = buffersize;
 
-	lua_setmetatable(state, -2);
 	return 1;
 }
 
