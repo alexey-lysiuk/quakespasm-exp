@@ -295,6 +295,10 @@ local function stats_update(self)
 		imText(self.hoststats)
 		imSeparatorText('Lua memory stats')
 		imText(self.memstats)
+
+		if imButton('Collect Garbage') then
+			collectgarbage()
+		end
 	end
 
 	imEnd()
