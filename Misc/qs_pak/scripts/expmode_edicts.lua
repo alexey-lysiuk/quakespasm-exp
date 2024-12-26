@@ -559,7 +559,10 @@ end
 
 function expmode.edicts.nearbyentity()
 	return window('Search Entity', nearbyentity_onupdate,
-		function (self) self:setconstraints() end,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(400, 0))
+		end,
 		nearbyentity_onshow, nearbyentity_onhide)
 end
 
