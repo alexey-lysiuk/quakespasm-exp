@@ -64,6 +64,7 @@ set(COMMON_SOURCES
 	Quake/lodepng.h
 	Quake/ls_common.h
 	Quake/ls_edict.cpp
+	Quake/ls_engine.cpp
 	Quake/ls_imgui.cpp
 	Quake/ls_imgui.h
 	Quake/ls_imgui_enums.h
@@ -747,6 +748,7 @@ if(QUAKE_BUILD_ENGINE_PAK)
 		scripts/aliases/common.cfg
 		scripts/aliases/expmode.cfg
 		scripts/edicts.lua
+		scripts/engine.lua
 		scripts/expmode_base.lua
 		scripts/expmode_edicts.lua
 		scripts/expmode_engine.lua
