@@ -576,7 +576,7 @@ end
 local edictstools <const> =
 {
 	-- Name, filter function, default width of 'Description' cell in characters
-	{ 'All Edicts', nil, 30 },
+	{ 'All Entities', nil, 30 },
 	{ 'Secrets', edicts.issecret, 15 },
 	{ 'Monsters', edicts.ismonster, 15 },
 	{ 'Teleports', edicts.isteleport, 40 },
@@ -614,7 +614,7 @@ for _, tool in ipairs(edictstools) do
 end
 
 addaction(function ()
-	if imBeginMenu('Edicts') then
+	if imBeginMenu('Entity') then
 		for _, tool in ipairs(edictstools) do
 			if imMenuItem(tool[1] .. '\u{85}') then
 				tool[2]()

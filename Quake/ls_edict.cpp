@@ -268,9 +268,9 @@ static int LS_value_edict_tostring(lua_State* state)
 	edict_t* ed = LS_GetEdictFromUserData(state);
 
 	if (ed == NULL)
-		lua_pushstring(state, "invalid edict");
+		lua_pushstring(state, "invalid entity");
 	else
-		lua_pushfstring(state, "edict %d: %s", LS_GetEdictIndex(state, ed), SV_GetEntityName(ed));
+		lua_pushfstring(state, "entity %d: %s", LS_GetEdictIndex(state, ed), SV_GetEntityName(ed));
 
 	return 1;
 }
