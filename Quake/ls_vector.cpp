@@ -236,13 +236,24 @@ static int LS_value_vector_tostring(lua_State* state)
 
 	for (size_t i = 0; i < N; ++i)
 	{
-		char numbuf[32];
-		const int numlen = lua_number2str(numbuf, sizeof numbuf, value[i]);
-
 		if (i > 0)
 			luaL_addlstring(&buffer, " ", 1);
 
-		luaL_addlstring(&buffer, numbuf, numlen);
+		char numbuf[16];
+		size_t numlen = l_sprintf(numbuf, sizeof numbuf, "%.1f", value[i]);
+
+		if (numlen > sizeof numbuf)
+		{
+			lua_pushnumber(state, value[i]);
+			luaL_addvalue(&buffer);
+		}
+		else
+		{
+			if (numlen >= 3 && numbuf[numlen - 1] == '0' && numbuf[numlen - 2] == '.')
+				numlen -= 2;  // skip .0
+
+			luaL_addlstring(&buffer, numbuf, numlen);
+		}
 	}
 
 	luaL_pushresult(&buffer);
