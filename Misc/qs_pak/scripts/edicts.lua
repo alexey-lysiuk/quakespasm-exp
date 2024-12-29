@@ -338,10 +338,10 @@ function edicts.isteleport(edict)
 	local prefix = edict.targetname == '' and 'Touch' or 'Trigger'
 
 	if edict.spawnflags & TELEPORT_PLAYER_ONLY == 0 then
-		prefix = prefix .. ' player'
+		prefix = prefix .. ' Player'
 	end
 
-	local description = format('%s teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
+	local description = format('%s Teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -497,7 +497,7 @@ function edicts.isbutton(edict)
 	end
 
 	local description = (edict.health > 0 and 'Shoot' or 'Touch')
-		.. (edict.wait > 0 and ' repeat' or '') .. ' button'
+		.. (edict.wait > 0 and ' Repeat' or '') .. ' Button'
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -569,7 +569,7 @@ function edicts.ismodel(edict)
 		return
 	end
 
-	local description = sub(model, 1, 1) == '*' and 'Level model ' .. sub(model, 2) or model
+	local description = sub(model, 1, 1) == '*' and 'Level Model ' .. sub(model, 2) or model
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
