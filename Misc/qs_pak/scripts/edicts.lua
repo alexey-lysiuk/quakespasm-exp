@@ -89,6 +89,8 @@ local monsternames = edicts.monsternames
 
 local ipairs <const> = ipairs
 
+local floor <const> = math.floor
+
 local format <const> = string.format
 local gsub <const> = string.gsub
 local sub <const> = string.sub
@@ -409,8 +411,9 @@ function edicts.isitem(edict)
 		return
 	end
 
+	local mod = detectmod()
 	local isinteractible = edict.solid == SOLID_TRIGGER
-		or (detectmod() == mods.HONEY and edict.use == 'item_spawn()')
+		or (mod == mods.HONEY and edict.use == 'item_spawn()')
 
 	if not isinteractible then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
@@ -463,6 +466,7 @@ function edicts.isitem(edict)
 
 	name = titlecase(name)
 
+	local isad = mod == mods.ARCANE_DIMENSIONS
 	local extras = {}
 
 	for _, def in ipairs(itemExtraDefitions) do
@@ -470,9 +474,15 @@ function edicts.isitem(edict)
 
 		if value and value ~= 0 then
 			local defname = def[2]
-			local extra = (defname and defname ~= name)
-				and format('%i %s', value, defname)
-				or math.floor(value)
+			local extra
+
+			if isad and value == -1 then
+				extra = defname
+			elseif defname and defname ~= name then
+				extra = format('%i %s', value, defname)
+			else
+				extra = floor(value)
+			end
 
 			insert(extras, extra)
 		end
