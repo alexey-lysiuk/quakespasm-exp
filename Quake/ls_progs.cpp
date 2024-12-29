@@ -1026,6 +1026,106 @@ static int LS_progs_strings_offset(lua_State* state)
 
 
 //
+// Progs statements
+// On C++ side, indices begin with zero
+// On Lua side, indices begin with one
+//
+
+constexpr LS_UserDataType<int> ls_statement_type("statement");
+
+static int LS_GetStatementMemberValue(lua_State* state, int (*getter)(lua_State* state, const dstatement_t& statement))
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = ls_statement_type.GetValue(state, 1);
+
+	if (index < 0 || index >= progs->numstatements)
+		luaL_error(state, "invalid statement");
+
+	return getter(state, pr_statements[index]);
+}
+
+template <int (*Func)(lua_State* state, const dstatement_t& statement)>
+static int LS_StatementMember(lua_State* state)
+{
+	return LS_GetStatementMemberValue(state, Func);
+}
+
+static int LS_PushStatementA(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.a);
+	return 1;
+}
+
+static int LS_PushStatementB(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.b);
+	return 1;
+}
+
+static int LS_PushStatementC(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.c);
+	return 1;
+}
+
+static int LS_PushStatementOp(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.op);
+	return 1;
+}
+
+static int LS_PushStatementToString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+	LS_StatementToBuffer(statement, buffer, false);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+// Pushes progs statement by its index, [1..progs->numstatements)
+static int LS_progs_statements_index(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2);
+
+	if (index <= 0 || index > progs->numstatements)
+		return 0;
+
+	static const luaL_Reg members[] =
+	{
+		{ "a", LS_StatementMember<LS_PushStatementA> },
+		{ "b", LS_StatementMember<LS_PushStatementB> },
+		{ "c", LS_StatementMember<LS_PushStatementC> },
+		{ "op", LS_StatementMember<LS_PushStatementOp> },
+		{ nullptr, nullptr }
+	};
+
+	static const luaL_Reg metafuncs[] =
+	{
+		{ "__tostring", LS_StatementMember<LS_PushStatementToString> },
+		{ nullptr, nullptr }
+	};
+
+	ls_statement_type.New(state, members, metafuncs) = index - 1;
+	return 1;
+}
+
+// Pushes number of progs statements
+static int LS_progs_statements_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 : progs->numstatements;
+	lua_pushinteger(state, count);
+	return 1;
+}
+
+
+//
 // Global 'progs' table
 //
 
@@ -1170,6 +1270,23 @@ static int LS_global_progs_strings(lua_State* state)
 	return 1;
 }
 
+// Pushes table of progs statements
+static int LS_global_progs_statements(lua_State* state)
+{
+	constexpr luaL_Reg functions[] =
+	{
+		{ "__index", LS_progs_statements_index },
+		{ "__len", LS_progs_statements_len },
+		{ nullptr, nullptr }
+	};
+
+	lua_newtable(state);
+	luaL_newmetatable(state, "statements");
+	luaL_setfuncs(state, functions, 0);
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
 // Returns progs version number (PROG_VERSION)
 static int LS_global_progs_version(lua_State* state)
 {
@@ -1210,6 +1327,7 @@ void LS_InitProgsType(lua_State* state)
 			{ "globaldefinitions", LS_global_progs_globaldefinitions },
 			{ "globalvariables", LS_global_progs_globalvariables },
 			{ "strings", LS_global_progs_strings },
+			{ "statements", LS_global_progs_statements },
 		};
 
 		for (const luaL_Reg& field : fields)
