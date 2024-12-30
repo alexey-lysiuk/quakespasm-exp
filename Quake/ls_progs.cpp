@@ -1085,6 +1085,94 @@ static int LS_PushStatementOp(lua_State* state, const dstatement_t& statement)
 	return 1;
 }
 
+static int LS_PushStatementAString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+
+	case OP_GOTO:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.a);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+
+	default:
+		if (statement.a)
+			LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+	}
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementBString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.b);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.b, buffer, false);
+		break;
+
+	default:
+		if (statement.b)
+			LS_GlobalStringToBuffer(statement.b, buffer);
+		break;
+	}
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementCString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	if (statement.c)
+		LS_GlobalStringToBuffer(statement.c, buffer, false);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementOpString(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushstring(state, LS_GetProgsOpName(statement.op));
+	return 1;
+}
+
 static int LS_PushStatementToString(lua_State* state, const dstatement_t& statement)
 {
 	luaL_Buffer buffer;
@@ -1112,6 +1200,10 @@ static int LS_progs_statements_index(lua_State* state)
 		{ "b", LS_StatementMember<LS_PushStatementB> },
 		{ "c", LS_StatementMember<LS_PushStatementC> },
 		{ "op", LS_StatementMember<LS_PushStatementOp> },
+		{ "astring", LS_StatementMember<LS_PushStatementAString> },
+		{ "bstring", LS_StatementMember<LS_PushStatementBString> },
+		{ "cstring", LS_StatementMember<LS_PushStatementCString> },
+		{ "opstring", LS_StatementMember<LS_PushStatementOpString> },
 		{ nullptr, nullptr }
 	};
 
