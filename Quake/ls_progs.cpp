@@ -45,10 +45,8 @@ void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
 {
 	lua_State* state = buffer.L;
-	size_t length;
 
 	lua_pushinteger(state, offset);
-	lua_tolstring(state, -1, &length);
 	luaL_addvalue(&buffer);
 
 	const ddef_t* definition = LS_GetProgsGlobalDefinitionByOffset(offset);
@@ -56,13 +54,9 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 	if (definition)
 	{
 		const char* const name = LS_GetProgsString(definition->s_name);
-		const size_t namelength = strlen(name);
-
 		luaL_addchar(&buffer, '(');
-		luaL_addlstring(&buffer, name, namelength);
+		luaL_addstring(&buffer, name);
 		luaL_addchar(&buffer, ')');
-
-		length += namelength + 2;  // with two round brackets
 
 		if (withcontent)
 		{
@@ -71,27 +65,21 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 
 			const eval_t* value = reinterpret_cast<const eval_t*>(&pr_globals[offset]);
 			const int type = definition->type & ~DEF_SAVEGLOBAL;
-			size_t valuelength;
 
 			LS_PushEdictFieldValue(state, etype_t(type), value);
-			lua_tolstring(state, -1, &valuelength);
 			luaL_addvalue(&buffer);
-
-			length += valuelength;
 		}
 	}
 	else
-	{
 		luaL_addlstring(&buffer, "(?)", 3);
-		length += 3;
-	}
 
-	do
+	const size_t length = buffer.n;
+
+	if (length < 20)
 	{
-		luaL_addchar(&buffer, ' ');
-		++length;
+		memset(buffer.b + length, ' ', 20 - length);
+		buffer.n = 20;
 	}
-	while (length < 20);
 }
 
 
@@ -334,6 +322,14 @@ template <int (*Func)(lua_State* state, const dfunction_t* function)>
 static int LS_FunctionMethod(lua_State* state)
 {
 	lua_pushcfunction(state, LS_FunctionMember<Func>);
+	return 1;
+}
+
+// Pushes index of function's first statement
+static int LS_PushFunctionEntryPoint(lua_State* state, const dfunction_t* function)
+{
+	const int entrypoint = function->first_statement;
+	lua_pushinteger(state, entrypoint + (entrypoint >= 0));  // do not adjust index for built-in function
 	return 1;
 }
 
@@ -605,6 +601,7 @@ static int LS_progs_functions_index(lua_State* state)
 		static const luaL_Reg members[] =
 		{
 			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
+			{ "entrypoint", LS_FunctionMember<LS_PushFunctionEntryPoint> },
 			{ "filename", LS_FunctionMember<LS_PushFunctionFileName> },
 			{ "name", LS_FunctionMember<LS_PushFunctionName> },
 			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
@@ -1026,6 +1023,198 @@ static int LS_progs_strings_offset(lua_State* state)
 
 
 //
+// Progs statements
+// On C++ side, indices begin with zero
+// On Lua side, indices begin with one
+//
+
+constexpr LS_UserDataType<int> ls_statement_type("statement");
+
+static int LS_GetStatementMemberValue(lua_State* state, int (*getter)(lua_State* state, const dstatement_t& statement))
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = ls_statement_type.GetValue(state, 1);
+
+	if (index < 0 || index >= progs->numstatements)
+		luaL_error(state, "invalid statement");
+
+	return getter(state, pr_statements[index]);
+}
+
+template <int (*Func)(lua_State* state, const dstatement_t& statement)>
+static int LS_StatementMember(lua_State* state)
+{
+	return LS_GetStatementMemberValue(state, Func);
+}
+
+static int LS_PushStatementA(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.a);
+	return 1;
+}
+
+static int LS_PushStatementB(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.b);
+	return 1;
+}
+
+static int LS_PushStatementC(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.c);
+	return 1;
+}
+
+static int LS_PushStatementOp(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.op);
+	return 1;
+}
+
+static int LS_PushStatementAString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+
+	case OP_GOTO:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.a);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+
+	default:
+		if (statement.a)
+			LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+	}
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementBString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.b);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.b, buffer, false);
+		break;
+
+	default:
+		if (statement.b)
+			LS_GlobalStringToBuffer(statement.b, buffer);
+		break;
+	}
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementCString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+
+	if (statement.c)
+		LS_GlobalStringToBuffer(statement.c, buffer, false);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementOpString(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushstring(state, LS_GetProgsOpName(statement.op));
+	return 1;
+}
+
+static int LS_PushStatementToString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+	LS_StatementToBuffer(statement, buffer, false);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+// Pushes progs statement by its index, [1..progs->numstatements)
+static int LS_progs_statements_index(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2);
+
+	if (index <= 0 || index > progs->numstatements)
+		return 0;
+
+	static const luaL_Reg members[] =
+	{
+		{ "a", LS_StatementMember<LS_PushStatementA> },
+		{ "b", LS_StatementMember<LS_PushStatementB> },
+		{ "c", LS_StatementMember<LS_PushStatementC> },
+		{ "op", LS_StatementMember<LS_PushStatementOp> },
+		{ "astring", LS_StatementMember<LS_PushStatementAString> },
+		{ "bstring", LS_StatementMember<LS_PushStatementBString> },
+		{ "cstring", LS_StatementMember<LS_PushStatementCString> },
+		{ "opstring", LS_StatementMember<LS_PushStatementOpString> },
+		{ nullptr, nullptr }
+	};
+
+	static const luaL_Reg metafuncs[] =
+	{
+		{ "__tostring", LS_StatementMember<LS_PushStatementToString> },
+		{ nullptr, nullptr }
+	};
+
+	ls_statement_type.New(state, members, metafuncs) = index - 1;
+	return 1;
+}
+
+// Pushes number of progs statements
+static int LS_progs_statements_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr ? 0 : progs->numstatements;
+	lua_pushinteger(state, count);
+	return 1;
+}
+
+
+//
 // Global 'progs' table
 //
 
@@ -1170,6 +1359,23 @@ static int LS_global_progs_strings(lua_State* state)
 	return 1;
 }
 
+// Pushes table of progs statements
+static int LS_global_progs_statements(lua_State* state)
+{
+	constexpr luaL_Reg functions[] =
+	{
+		{ "__index", LS_progs_statements_index },
+		{ "__len", LS_progs_statements_len },
+		{ nullptr, nullptr }
+	};
+
+	lua_newtable(state);
+	luaL_newmetatable(state, "statements");
+	luaL_setfuncs(state, functions, 0);
+	lua_setmetatable(state, -2);
+	return 1;
+}
+
 // Returns progs version number (PROG_VERSION)
 static int LS_global_progs_version(lua_State* state)
 {
@@ -1210,6 +1416,7 @@ void LS_InitProgsType(lua_State* state)
 			{ "globaldefinitions", LS_global_progs_globaldefinitions },
 			{ "globalvariables", LS_global_progs_globalvariables },
 			{ "strings", LS_global_progs_strings },
+			{ "statements", LS_global_progs_statements },
 		};
 
 		for (const luaL_Reg& field : fields)

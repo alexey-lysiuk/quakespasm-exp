@@ -236,13 +236,24 @@ static int LS_value_vector_tostring(lua_State* state)
 
 	for (size_t i = 0; i < N; ++i)
 	{
-		char numbuf[32];
-		const int numlen = lua_number2str(numbuf, sizeof numbuf, value[i]);
-
 		if (i > 0)
 			luaL_addlstring(&buffer, " ", 1);
 
-		luaL_addlstring(&buffer, numbuf, numlen);
+		char numbuf[16];
+		size_t numlen = l_sprintf(numbuf, sizeof numbuf, "%.1f", value[i]);
+
+		if (numlen > sizeof numbuf)
+		{
+			lua_pushnumber(state, value[i]);
+			luaL_addvalue(&buffer);
+		}
+		else
+		{
+			if (numlen >= 3 && numbuf[numlen - 1] == '0' && numbuf[numlen - 2] == '.')
+				numlen -= 2;  // skip .0
+
+			luaL_addlstring(&buffer, numbuf, numlen);
+		}
 	}
 
 	luaL_pushresult(&buffer);
@@ -253,12 +264,6 @@ static int LS_value_vector_tostring(lua_State* state)
 template <size_t N>
 int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 {
-	const auto& userdatatype = LS_GetVectorUserDataType<N>();
-
-	LS_Vector<N>& newvalue = userdatatype.New(state);
-	newvalue = value;
-
-	// Create and set 'vecN' metatable
 	static const luaL_Reg functions[] =
 	{
 		// Math functions
@@ -274,13 +279,12 @@ int LS_PushVectorValue(lua_State* state, const LS_Vector<N>& value)
 		{ "__index", LS_value_vector_index<N> },
 		{ "__newindex", LS_value_vector_newindex<N> },
 		{ "__tostring", LS_value_vector_tostring<N> },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 
-	if (luaL_newmetatable(state, userdatatype.GetName()))
-		luaL_setfuncs(state, functions, 0);
+	const auto& userdatatype = LS_GetVectorUserDataType<N>();
+	userdatatype.New(state, nullptr, functions) = value;
 
-	lua_setmetatable(state, -2);
 	return 1;
 }
 

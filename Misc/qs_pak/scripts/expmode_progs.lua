@@ -31,6 +31,7 @@ local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
 
+local imSpanAllColumns <const> = ImGui.SelectableFlags.SpanAllColumns
 local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
@@ -128,7 +129,7 @@ local function functions_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				if imSelectable(entry.declaration) then
+				if imSelectable(entry.declaration, false, imSpanAllColumns) then
 					local func = entry.func
 					local funcname = func.name
 

@@ -497,6 +497,7 @@ function expmode.edicts.references(edict)
 
 	local function oncreate(self)
 		self:setconstraints()
+		self:setsize(imVec2(400, 0))
 		self.edict = edict
 		self.edictid = edictid
 	end
@@ -557,8 +558,11 @@ local function nearbyentity_onhide(self)
 end
 
 function expmode.edicts.nearbyentity()
-	return window('Search Entity', nearbyentity_onupdate,
-		function (self) self:setconstraints() end,
+	return window('Nearby Entities', nearbyentity_onupdate,
+		function (self)
+			self:setconstraints()
+			self:setsize(imVec2(400, 0))
+		end,
 		nearbyentity_onshow, nearbyentity_onhide)
 end
 
@@ -575,7 +579,7 @@ end
 local edictstools <const> =
 {
 	-- Name, filter function, default width of 'Description' cell in characters
-	{ 'All Edicts', nil, 30 },
+	{ 'All Entities', nil, 30 },
 	{ 'Secrets', edicts.issecret, 15 },
 	{ 'Monsters', edicts.ismonster, 15 },
 	{ 'Teleports', edicts.isteleport, 40 },
@@ -613,7 +617,7 @@ for _, tool in ipairs(edictstools) do
 end
 
 addaction(function ()
-	if imBeginMenu('Edicts') then
+	if imBeginMenu('Entity') then
 		for _, tool in ipairs(edictstools) do
 			if imMenuItem(tool[1] .. '\u{85}') then
 				tool[2]()

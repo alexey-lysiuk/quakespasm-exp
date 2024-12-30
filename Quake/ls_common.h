@@ -23,27 +23,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "lua.hpp"
 
-class LS_TempAllocatorBase
-{
-protected:
-	static void* Alloc(size_t size);
-	static void Free(void* pointer);
-};
+char* LS_tempalloc(lua_State* state, size_t size);
+void LS_tempfree(void* ptr);
 
 template <typename T>
-class LS_TempAllocator : LS_TempAllocatorBase
+class LS_TempAllocator
 {
 public:
 	using value_type = T;
 
 	static T* allocate(const size_t count)
 	{
-		return static_cast<T*>(Alloc(sizeof(T) * count));
+		return reinterpret_cast<T*>(LS_tempalloc(nullptr, sizeof(T) * count));
 	}
 
 	static void deallocate(T* pointer, size_t) noexcept
 	{
-		Free(pointer);
+		LS_tempfree(pointer);
 	}
 };
 
@@ -134,6 +130,8 @@ inline int LS_NumberCVarFunction(lua_State* state)
 void LS_InitEdictType(lua_State* state);
 void LS_PushEdictValue(lua_State* state, int edictindex);
 void LS_PushEdictValue(lua_State* state, const struct edict_s* edict);
+
+void LS_InitEngineTables(lua_State* state);
 
 void LS_InitProgsType(lua_State* state);
 void LS_ResetProgsType();

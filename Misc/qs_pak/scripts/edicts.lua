@@ -89,6 +89,8 @@ local monsternames = edicts.monsternames
 
 local ipairs <const> = ipairs
 
+local floor <const> = math.floor
+
 local format <const> = string.format
 local gsub <const> = string.gsub
 local sub <const> = string.sub
@@ -338,10 +340,10 @@ function edicts.isteleport(edict)
 	local prefix = edict.targetname == '' and 'Touch' or 'Trigger'
 
 	if edict.spawnflags & TELEPORT_PLAYER_ONLY == 0 then
-		prefix = prefix .. ' player'
+		prefix = prefix .. ' Player'
 	end
 
-	local description = format('%s teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
+	local description = format('%s Teleport to %s (%s)', prefix, target, targetlocation or 'target not found')
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -409,8 +411,9 @@ function edicts.isitem(edict)
 		return
 	end
 
+	local mod = detectmod()
 	local isinteractible = edict.solid == SOLID_TRIGGER
-		or (detectmod() == mods.HONEY and edict.use == 'item_spawn()')
+		or (mod == mods.HONEY and edict.use == 'item_spawn()')
 
 	if not isinteractible then
 		-- Skip object if it's not interactible, e.g. if it's a picked up item
@@ -463,6 +466,7 @@ function edicts.isitem(edict)
 
 	name = titlecase(name)
 
+	local isad = mod == mods.ARCANE_DIMENSIONS
 	local extras = {}
 
 	for _, def in ipairs(itemExtraDefitions) do
@@ -470,9 +474,15 @@ function edicts.isitem(edict)
 
 		if value and value ~= 0 then
 			local defname = def[2]
-			local extra = (defname and defname ~= name)
-				and format('%i %s', value, defname)
-				or math.floor(value)
+			local extra
+
+			if isad and value == -1 then
+				extra = defname
+			elseif defname and defname ~= name then
+				extra = format('%i %s', value, defname)
+			else
+				extra = floor(value)
+			end
 
 			insert(extras, extra)
 		end
@@ -497,7 +507,7 @@ function edicts.isbutton(edict)
 	end
 
 	local description = (edict.health > 0 and 'Shoot' or 'Touch')
-		.. (edict.wait > 0 and ' repeat' or '') .. ' button'
+		.. (edict.wait > 0 and ' Repeat' or '') .. ' Button'
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -569,7 +579,7 @@ function edicts.ismodel(edict)
 		return
 	end
 
-	local description = sub(model, 1, 1) == '*' and 'Level model ' .. sub(model, 2) or model
+	local description = sub(model, 1, 1) == '*' and 'Level Model ' .. sub(model, 2) or model
 	local location = vec3mid(edict.absmin, edict.absmax)
 
 	return description, location
@@ -630,21 +640,4 @@ function edicts.boxsearch(halfedge, origin)
 	end
 
 	return result
-end
-
-
----
---- Host helpers
----
-
-function host.levelname()
-	local world = edicts[1]
-	return world and world.message
-end
-
-function host.mapname()
-	local world = edicts[1]
-
-	-- Remove leading 'maps/' and trailing '.bsp'
-	return world and world.model:sub(6):sub(1, -5)
 end
