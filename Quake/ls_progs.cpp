@@ -337,6 +337,14 @@ static int LS_FunctionMethod(lua_State* state)
 	return 1;
 }
 
+// Pushes index of function's first statement
+static int LS_PushFunctionEntryPoint(lua_State* state, const dfunction_t* function)
+{
+	const int entrypoint = function->first_statement;
+	lua_pushinteger(state, entrypoint + (entrypoint >= 0));  // do not adjust index for built-in function
+	return 1;
+}
+
 // Pushes source file name of 'function' userdata
 static int LS_PushFunctionFileName(lua_State* state, const dfunction_t* function)
 {
@@ -605,6 +613,7 @@ static int LS_progs_functions_index(lua_State* state)
 		static const luaL_Reg members[] =
 		{
 			{ "disassemble", LS_FunctionMethod<LS_PushFunctionDisassemble> },
+			{ "entrypoint", LS_FunctionMember<LS_PushFunctionEntryPoint> },
 			{ "filename", LS_FunctionMember<LS_PushFunctionFileName> },
 			{ "name", LS_FunctionMember<LS_PushFunctionName> },
 			{ "parameters", LS_FunctionMember<LS_PushFunctionParameters> },
