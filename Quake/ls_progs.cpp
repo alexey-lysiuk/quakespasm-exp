@@ -42,9 +42,18 @@ const char* LS_GetProgsTypeName(unsigned short type);
 void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value);
 
 
-static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
+enum FormatFlags
+{
+	FORMAT_NONE = 0,
+	FORMAT_CONTENT = 1,
+	FORMAT_PADDING = 2,
+	FORMAT_BINARY = 4,
+};
+
+static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const unsigned flags)
 {
 	lua_State* state = buffer.L;
+	const size_t initialsize = buffer.n;
 
 	lua_pushinteger(state, offset);
 	luaL_addvalue(&buffer);
@@ -58,7 +67,7 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 		luaL_addstring(&buffer, name);
 		luaL_addchar(&buffer, ')');
 
-		if (withcontent)
+		if (flags & FORMAT_CONTENT)
 		{
 			if (offset >= progs->numglobals)
 				luaL_error(state, "invalid global offset %d", offset);
@@ -73,12 +82,18 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 	else
 		luaL_addlstring(&buffer, "(?)", 3);
 
-	const size_t length = buffer.n;
-
-	if (length < 20)
+	if (flags & FORMAT_PADDING)
 	{
-		memset(buffer.b + length, ' ', 20 - length);
-		buffer.n = 20;
+		const size_t addedsize = buffer.n - initialsize;
+
+		if (addedsize < 20)
+		{
+			char* padding = luaL_prepbuffsize(&buffer, initialsize + 20);
+			const size_t paddingsize = 20 - addedsize;
+
+			memset(padding, ' ', paddingsize);
+			luaL_addsize(&buffer, paddingsize);
+		}
 	}
 }
 
@@ -120,9 +135,9 @@ static int LS_progs_enginestrings_len(lua_State* state)
 // Statements
 //
 
-static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const bool withbinary)
+static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const unsigned flags)
 {
-	if (withbinary)
+	if (flags & FORMAT_BINARY)
 	{
 		char binbuf[32];
 		const size_t binlen = q_snprintf(binbuf, sizeof binbuf, "%3u %5i %5i %5i  ",
@@ -143,7 +158,7 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	{
 	case OP_IF:
 	case OP_IFNOT:
-		LS_GlobalStringToBuffer(statement.a, buffer);
+		LS_GlobalStringToBuffer(statement.a, buffer, flags | FORMAT_CONTENT);
 		luaL_addstring(&buffer, "branch ");
 
 		lua_pushinteger(buffer.L, statement.b);
@@ -163,17 +178,17 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	case OP_STORE_ENT:
 	case OP_STORE_FLD:
 	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		LS_GlobalStringToBuffer(statement.b, buffer, false);
+		LS_GlobalStringToBuffer(statement.a, buffer, flags | FORMAT_CONTENT);
+		LS_GlobalStringToBuffer(statement.b, buffer, flags);
 		break;
 
 	default:
 		if (statement.a)
-			LS_GlobalStringToBuffer(statement.a, buffer);
+			LS_GlobalStringToBuffer(statement.a, buffer, flags | FORMAT_CONTENT);
 		if (statement.b)
-			LS_GlobalStringToBuffer(statement.b, buffer);
+			LS_GlobalStringToBuffer(statement.b, buffer, flags | FORMAT_CONTENT);
 		if (statement.c)
-			LS_GlobalStringToBuffer(statement.c, buffer, false);
+			LS_GlobalStringToBuffer(statement.c, buffer, flags);
 		break;
 	}
 }
@@ -534,7 +549,7 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 			luaL_addlstring(&buffer, addrbuf, addrlen);
 
 			const dstatement_t& statement = pr_statements[i];
-			LS_StatementToBuffer(statement, buffer, withbinary);
+			LS_StatementToBuffer(statement, buffer, (withbinary ? FORMAT_BINARY : 0) | FORMAT_PADDING);
 
 			if (statement.op == OP_DONE)
 				break;
@@ -1082,7 +1097,7 @@ static int LS_PushStatementAString(lua_State* state, const dstatement_t& stateme
 	{
 	case OP_IF:
 	case OP_IFNOT:
-		LS_GlobalStringToBuffer(statement.a, buffer);
+		LS_GlobalStringToBuffer(statement.a, buffer, FORMAT_CONTENT);
 		break;
 
 	case OP_GOTO:
@@ -1097,12 +1112,12 @@ static int LS_PushStatementAString(lua_State* state, const dstatement_t& stateme
 	case OP_STORE_ENT:
 	case OP_STORE_FLD:
 	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.a, buffer);
+		LS_GlobalStringToBuffer(statement.a, buffer, FORMAT_CONTENT);
 		break;
 
 	default:
 		if (statement.a)
-			LS_GlobalStringToBuffer(statement.a, buffer);
+			LS_GlobalStringToBuffer(statement.a, buffer, FORMAT_CONTENT);
 		break;
 	}
 
@@ -1130,12 +1145,12 @@ static int LS_PushStatementBString(lua_State* state, const dstatement_t& stateme
 	case OP_STORE_ENT:
 	case OP_STORE_FLD:
 	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.b, buffer, false);
+		LS_GlobalStringToBuffer(statement.b, buffer, FORMAT_NONE);
 		break;
 
 	default:
 		if (statement.b)
-			LS_GlobalStringToBuffer(statement.b, buffer);
+			LS_GlobalStringToBuffer(statement.b, buffer, FORMAT_CONTENT);
 		break;
 	}
 
@@ -1165,7 +1180,7 @@ static int LS_PushStatementToString(lua_State* state, const dstatement_t& statem
 {
 	luaL_Buffer buffer;
 	luaL_buffinit(state, &buffer);
-	LS_StatementToBuffer(statement, buffer, false);
+	LS_StatementToBuffer(statement, buffer, FORMAT_NONE);
 
 	luaL_pushresult(&buffer);
 	return 1;
