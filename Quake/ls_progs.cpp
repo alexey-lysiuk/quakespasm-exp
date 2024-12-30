@@ -45,10 +45,8 @@ void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
 {
 	lua_State* state = buffer.L;
-	size_t length;
 
 	lua_pushinteger(state, offset);
-	lua_tolstring(state, -1, &length);
 	luaL_addvalue(&buffer);
 
 	const ddef_t* definition = LS_GetProgsGlobalDefinitionByOffset(offset);
@@ -56,13 +54,9 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 	if (definition)
 	{
 		const char* const name = LS_GetProgsString(definition->s_name);
-		const size_t namelength = strlen(name);
-
 		luaL_addchar(&buffer, '(');
-		luaL_addlstring(&buffer, name, namelength);
+		luaL_addstring(&buffer, name);
 		luaL_addchar(&buffer, ')');
-
-		length += namelength + 2;  // with two round brackets
 
 		if (withcontent)
 		{
@@ -71,27 +65,21 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 
 			const eval_t* value = reinterpret_cast<const eval_t*>(&pr_globals[offset]);
 			const int type = definition->type & ~DEF_SAVEGLOBAL;
-			size_t valuelength;
 
 			LS_PushEdictFieldValue(state, etype_t(type), value);
-			lua_tolstring(state, -1, &valuelength);
 			luaL_addvalue(&buffer);
-
-			length += valuelength;
 		}
 	}
 	else
-	{
 		luaL_addlstring(&buffer, "(?)", 3);
-		length += 3;
-	}
 
-	do
+	const size_t length = buffer.n;
+
+	if (length < 20)
 	{
-		luaL_addchar(&buffer, ' ');
-		++length;
+		memset(buffer.b + length, ' ', 20 - length);
+		buffer.n = 20;
 	}
-	while (length < 20);
 }
 
 
