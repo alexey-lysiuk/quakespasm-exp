@@ -307,7 +307,7 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	if (flags & WithBinary)
 	{
 		char binbuf[32];
-		const size_t binlen = q_snprintf(binbuf, sizeof binbuf, "%3u %5i %5i %5i  ",
+		const size_t binlen = q_snprintf(binbuf, sizeof binbuf, "%02x %04x %04x %04x  ",
 			statement.op, statement.a, statement.b, statement.c);
 		luaL_addlstring(&buffer, binbuf, binlen);
 	}
