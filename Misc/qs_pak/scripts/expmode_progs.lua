@@ -109,6 +109,31 @@ local function function_searchcompare(entry, string)
 		or entry.filename:lower():find(string, 1, true)
 end
 
+local function function_declarationcell(index, entry)
+	local func = entry.func
+
+	if func.entrypoint > 0 then
+		if imSelectable(entry.declaration, false, imSpanAllColumns) then
+			local funcname = func.name
+
+			local function oncreate(this)
+				this:setconstraints()
+				this:setsize(defaultDisassemblySize)
+				this:movetocursor()
+
+				this.func = func
+				this.name = funcname
+			end
+
+			window(format('Disassembly of #%i %s()', index, funcname), functiondisassembly_onupdate,
+				oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
+		end
+	else
+		-- Built-in function, nothing to disassemble
+		imText(entry.declaration)
+	end
+end
+
 local function functions_onupdate(self)
 	local title = self.title
 	local visible, opened = imBegin(title, true)
@@ -129,22 +154,7 @@ local function functions_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				if imSelectable(entry.declaration, false, imSpanAllColumns) then
-					local func = entry.func
-					local funcname = func.name
-
-					local function oncreate(this)
-						this:setconstraints()
-						this:setsize(defaultDisassemblySize)
-						this:movetocursor()
-
-						this.func = func
-						this.name = funcname
-					end
-
-					window(format('Disassembly of #%i %s()', i, funcname), functiondisassembly_onupdate,
-						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
-				end
+				function_declarationcell(i, entry)
 				imTableNextColumn()
 				imText(entry.filename)
 			end
@@ -166,7 +176,7 @@ local function functions_onshow(self)
 		{
 			func = func,
 			index = tostring(i),
-			declaration = format('%s##%i', func, i),
+			declaration = func.entrypoint > 0 and format('%s##%i', func, i) or tostring(func),
 			filename = func.filename
 		}
 		insert(entries, entry)
