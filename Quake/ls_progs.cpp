@@ -126,6 +126,91 @@ static int LS_progs_enginestrings_len(lua_State* state)
 // Statements
 //
 
+static void LS_StatementAToBuffer(const dstatement_t& statement, luaL_Buffer& buffer)
+{
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+
+	case OP_GOTO:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.a);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+
+	default:
+		if (statement.a)
+			LS_GlobalStringToBuffer(statement.a, buffer);
+		break;
+	}
+}
+
+static void LS_StatementBToBuffer(const dstatement_t& statement, luaL_Buffer& buffer)
+{
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.b);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_GOTO:
+		// Do nothing
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.b, buffer, false);
+		break;
+
+	default:
+		if (statement.b)
+			LS_GlobalStringToBuffer(statement.b, buffer);
+		break;
+	}
+}
+
+static void LS_StatementCToBuffer(const dstatement_t& statement, luaL_Buffer& buffer)
+{
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+	case OP_GOTO:
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		// Do nothing
+		break;
+
+	default:
+		if (statement.c)
+			LS_GlobalStringToBuffer(statement.c, buffer);
+		break;
+	}
+}
+
 constexpr LS_UserDataType<int> ls_statement_type("statement");
 
 static int LS_GetStatementMemberValue(lua_State* state, int (*getter)(lua_State* state, const dstatement_t& statement))
@@ -175,34 +260,7 @@ static int LS_PushStatementAString(lua_State* state, const dstatement_t& stateme
 {
 	luaL_Buffer buffer;
 	luaL_buffinit(state, &buffer);
-
-	switch (statement.op)
-	{
-	case OP_IF:
-	case OP_IFNOT:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		break;
-
-	case OP_GOTO:
-		luaL_addstring(&buffer, "branch ");
-		lua_pushinteger(buffer.L, statement.a);
-		luaL_addvalue(&buffer);
-		break;
-
-	case OP_STORE_F:
-	case OP_STORE_V:
-	case OP_STORE_S:
-	case OP_STORE_ENT:
-	case OP_STORE_FLD:
-	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		break;
-
-	default:
-		if (statement.a)
-			LS_GlobalStringToBuffer(statement.a, buffer);
-		break;
-	}
+	LS_StatementAToBuffer(statement, buffer);
 
 	luaL_pushresult(&buffer);
 	return 1;
@@ -212,30 +270,7 @@ static int LS_PushStatementBString(lua_State* state, const dstatement_t& stateme
 {
 	luaL_Buffer buffer;
 	luaL_buffinit(state, &buffer);
-
-	switch (statement.op)
-	{
-	case OP_IF:
-	case OP_IFNOT:
-		luaL_addstring(&buffer, "branch ");
-		lua_pushinteger(buffer.L, statement.b);
-		luaL_addvalue(&buffer);
-		break;
-
-	case OP_STORE_F:
-	case OP_STORE_V:
-	case OP_STORE_S:
-	case OP_STORE_ENT:
-	case OP_STORE_FLD:
-	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.b, buffer, false);
-		break;
-
-	default:
-		if (statement.b)
-			LS_GlobalStringToBuffer(statement.b, buffer);
-		break;
-	}
+	LS_StatementBToBuffer(statement, buffer);
 
 	luaL_pushresult(&buffer);
 	return 1;
@@ -245,9 +280,7 @@ static int LS_PushStatementCString(lua_State* state, const dstatement_t& stateme
 {
 	luaL_Buffer buffer;
 	luaL_buffinit(state, &buffer);
-
-	if (statement.c)
-		LS_GlobalStringToBuffer(statement.c, buffer, false);
+	LS_StatementCToBuffer(statement, buffer);
 
 	luaL_pushresult(&buffer);
 	return 1;
@@ -278,43 +311,9 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	for (size_t i = oplength; i < 10; ++i)
 		luaL_addchar(&buffer, ' ');
 
-	switch (statement.op)
-	{
-	case OP_IF:
-	case OP_IFNOT:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		luaL_addstring(&buffer, "branch ");
-
-		lua_pushinteger(buffer.L, statement.b);
-		luaL_addvalue(&buffer);
-		break;
-
-	case OP_GOTO:
-		luaL_addstring(&buffer, "branch ");
-
-		lua_pushinteger(buffer.L, statement.a);
-		luaL_addvalue(&buffer);
-		break;
-
-	case OP_STORE_F:
-	case OP_STORE_V:
-	case OP_STORE_S:
-	case OP_STORE_ENT:
-	case OP_STORE_FLD:
-	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		LS_GlobalStringToBuffer(statement.b, buffer, false);
-		break;
-
-	default:
-		if (statement.a)
-			LS_GlobalStringToBuffer(statement.a, buffer);
-		if (statement.b)
-			LS_GlobalStringToBuffer(statement.b, buffer);
-		if (statement.c)
-			LS_GlobalStringToBuffer(statement.c, buffer, false);
-		break;
-	}
+	LS_StatementAToBuffer(statement, buffer);
+	LS_StatementBToBuffer(statement, buffer);
+	LS_StatementCToBuffer(statement, buffer);
 }
 
 static int LS_PushStatementToString(lua_State* state, const dstatement_t& statement)
