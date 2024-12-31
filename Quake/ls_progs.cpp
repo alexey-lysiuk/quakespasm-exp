@@ -135,7 +135,7 @@ static int LS_GetStatementMemberValue(lua_State* state, int (*getter)(lua_State*
 
 	const int index = ls_statement_type.GetValue(state, 1);
 
-	if (index < 0 || index >= progs->numstatements)
+	if (index < 1 || index >= progs->numstatements)
 		luaL_error(state, "invalid statement");
 
 	return getter(state, pr_statements[index]);
@@ -335,7 +335,7 @@ static int LS_progs_statements_index(lua_State* state)
 
 	const int index = luaL_checkinteger(state, 2);
 
-	if (index <= 0 || index > progs->numstatements)
+	if (index < 1 || index >= progs->numstatements)
 		return 0;
 
 	static const luaL_Reg members[] =
@@ -357,14 +357,16 @@ static int LS_progs_statements_index(lua_State* state)
 		{ nullptr, nullptr }
 	};
 
-	ls_statement_type.New(state, members, metafuncs) = index - 1;
+	ls_statement_type.New(state, members, metafuncs) = index;
 	return 1;
 }
 
 // Pushes number of progs statements
 static int LS_progs_statements_len(lua_State* state)
 {
-	const lua_Integer count = progs == nullptr ? 0 : progs->numstatements;
+	const lua_Integer count = progs == nullptr
+		? 0
+		: progs->numstatements - 1;  // without DONE op at index zero
 	lua_pushinteger(state, count);
 	return 1;
 }
