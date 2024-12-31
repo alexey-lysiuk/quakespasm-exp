@@ -45,6 +45,7 @@ void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value)
 static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
 {
 	lua_State* state = buffer.L;
+	const size_t initialsize = buffer.n;
 
 	lua_pushinteger(state, offset);
 	luaL_addvalue(&buffer);
@@ -73,13 +74,18 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 	else
 		luaL_addlstring(&buffer, "(?)", 3);
 
-	const size_t length = buffer.n;
+	const size_t addedsize = buffer.n - initialsize;
 
-	if (length < 20)
+	if (addedsize < 20)
 	{
-		memset(buffer.b + length, ' ', 20 - length);
-		buffer.n = 20;
+		char* padding = luaL_prepbuffsize(&buffer, initialsize + 20);
+		const size_t paddingsize = 20 - addedsize;
+
+		memset(padding, ' ', paddingsize);
+		luaL_addsize(&buffer, paddingsize);
 	}
+	else
+		luaL_addchar(&buffer, ' ');
 }
 
 
