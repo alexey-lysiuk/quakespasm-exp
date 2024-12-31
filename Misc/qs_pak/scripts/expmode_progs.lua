@@ -70,7 +70,6 @@ local function functiondisassembly_onupdate(self)
 			self.textview = textview
 		end
 
-		-- TODO: Do not show binary checkbox for built-in functions
 		local binarypressed, binaryenabled = imCheckbox('Show statements binaries', self.withbinary)
 
 		if binarypressed then
