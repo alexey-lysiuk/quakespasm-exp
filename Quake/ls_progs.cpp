@@ -561,8 +561,7 @@ static int LS_FunctionMethod(lua_State* state)
 // Pushes index of function's first statement
 static int LS_PushFunctionEntryPoint(lua_State* state, const dfunction_t* function)
 {
-	const int entrypoint = function->first_statement;
-	lua_pushinteger(state, entrypoint + (entrypoint >= 0));  // do not adjust index for built-in function
+	lua_pushinteger(state, function->first_statement);
 	return 1;
 }
 
