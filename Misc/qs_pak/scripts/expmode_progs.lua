@@ -55,10 +55,21 @@ local window <const> = expmode.window
 
 local defaultDisassemblySize <const> = imVec2(640, 0)
 
+local function functiondisassembly_searchcompare(entry, string)
+	return entry.address:find(string, 1, true)
+		or entry.op:lower():find(string, 1, true)
+		or entry.a:lower():find(string, 1, true)
+		or entry.b:lower():find(string, 1, true)
+		or entry.c:lower():find(string, 1, true)
+end
+
 local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, functiondisassembly_searchcompare, searchmodified)
+
 		if imBeginTable(self.name, 6, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Address', imTableColumnWidthFixed)
@@ -69,7 +80,7 @@ local function functiondisassembly_onupdate(self)
 			imTableSetupColumn('Operand C')
 			imTableHeadersRow()
 
-			for _, entry in ipairs(self.entries) do
+			for _, entry in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
 				imText(entry.address)
@@ -130,10 +141,12 @@ local function functiondisassembly_onshow(self)
 
 	self.entries = entries
 
+	updatesearch(self, functiondisassembly_searchcompare, true)
 	return true
 end
 
 local function functiondisassembly_onhide(self)
+	resetsearch(self)
 	self.entries = nil
 	return true
 end
