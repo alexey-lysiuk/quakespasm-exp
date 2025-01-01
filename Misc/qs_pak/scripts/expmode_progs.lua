@@ -10,6 +10,7 @@ local imBegin <const> = ImGui.Begin
 local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginTable <const> = ImGui.BeginTable
+local imCheckbox <const> = ImGui.Checkbox
 local imEnd <const> = ImGui.End
 local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
@@ -28,9 +29,11 @@ local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
+local imTableColumnFlags <const> = ImGui.TableColumnFlags
 
 local imSpanAllColumns <const> = ImGui.SelectableFlags.SpanAllColumns
-local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
+local imTableColumnDisabled <const> = imTableColumnFlags.Disabled
+local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
@@ -63,17 +66,50 @@ local function functiondisassembly_searchcompare(entry, string)
 		or entry.c:lower():find(string, 1, true)
 end
 
+local function functiondisassembly_gather(self)
+	local statementcount = #statements
+	local entries = {}
+
+	for i = self.func.entrypoint, statementcount do
+		local st = statements[i]
+		local entry =
+		{
+			address = format('%06i', i),
+			bytecode = format('%02x %04x %04x %04x', st.op, st.a, st.b, st.c),
+			op = st.opstring,
+			a = st.astring,
+			b = st.bstring,
+			c = st.cstring,
+		}
+		insert(entries, entry)
+
+		if st.op == op_done then
+			break
+		end
+	end
+
+	self.entries = entries
+end
+
 local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, functiondisassembly_searchcompare, searchmodified)
+		imSameLine();
+
+		local bytecodepressed, bytecodeenabled = imCheckbox('Bytecode', self.withbytecode)
+
+		if bytecodepressed then
+			functiondisassembly_gather(self)
+			self.withbytecode = bytecodeenabled
+		end
 
 		if imBeginTable(self.name, 6, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Address', imTableColumnWidthFixed)
-			imTableSetupColumn('Bytecode', imTableColumnWidthFixed)
+			imTableSetupColumn('Bytecode', imTableColumnWidthFixed | (self.withbytecode and 0 or imTableColumnDisabled))
 			imTableSetupColumn('Operation')
 			imTableSetupColumn('Operand A')
 			imTableSetupColumn('Operand B')
@@ -112,34 +148,15 @@ local function functiondisassembly_onshow(self)
 		return false
 	end
 
-	local entrypoint = func.entrypoint
-
-	if entrypoint < 0 then
+	if func.entrypoint < 0 then
 		return false  -- built-in function, nothing to disassemble
 	end
 
-	local entries = {}
-	local statementcount = #statements
-
-	for i = entrypoint, statementcount do
-		local st = statements[i]
-		local entry =
-		{
-			address = format('%06i', i),
-			bytecode = format('%02x %04x %04x %04x', st.op, st.a, st.b, st.c),
-			op = st.opstring,
-			a = st.astring,
-			b = st.bstring,
-			c = st.cstring,
-		}
-		insert(entries, entry)
-
-		if st.op == op_done then
-			break
-		end
+	if self.withbytecode == nil then
+		self.withbytecode = false
 	end
 
-	self.entries = entries
+	functiondisassembly_gather(self)
 
 	updatesearch(self, functiondisassembly_searchcompare, true)
 	return true
