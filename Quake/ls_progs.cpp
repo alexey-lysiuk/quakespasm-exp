@@ -34,6 +34,7 @@ const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index);
 const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
+unsigned short LS_GetProgsOpCount();
 const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
 const char* LS_GetProgsTypeName(unsigned short type);
@@ -1362,6 +1363,21 @@ static int LS_global_progs_globalvariables(lua_State* state)
 	return 1;
 }
 
+static int LS_global_progs_ops(lua_State* state)
+{
+	const unsigned short opcount = LS_GetProgsOpCount();
+	lua_createtable(state, 0, opcount);
+
+	for (unsigned short i = 0; i < opcount; ++i)
+	{
+		const char* const opname = LS_GetProgsOpName(i);
+		lua_pushinteger(state, i);
+		lua_setfield(state, -2, opname);
+	}
+
+	return 1;
+}
+
 // Pushes name of type by its index
 static int LS_global_progs_typename(lua_State* state)
 {
@@ -1447,6 +1463,7 @@ void LS_InitProgsType(lua_State* state)
 			{ "functions", LS_global_progs_functions },
 			{ "globaldefinitions", LS_global_progs_globaldefinitions },
 			{ "globalvariables", LS_global_progs_globalvariables },
+			{ "ops", LS_global_progs_ops },
 			{ "strings", LS_global_progs_strings },
 			{ "statements", LS_global_progs_statements },
 		};
