@@ -11,7 +11,6 @@ local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginTable <const> = ImGui.BeginTable
 local imCheckbox <const> = ImGui.Checkbox
-local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
 local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
@@ -30,9 +29,11 @@ local imText <const> = ImGui.Text
 local imVec2 <const> = vec2.new
 
 local imTableFlags <const> = ImGui.TableFlags
+local imTableColumnFlags <const> = ImGui.TableColumnFlags
 
 local imSpanAllColumns <const> = ImGui.SelectableFlags.SpanAllColumns
-local imTableColumnWidthFixed <const> = ImGui.TableColumnFlags.WidthFixed
+local imTableColumnDisabled <const> = imTableColumnFlags.Disabled
+local imTableColumnWidthFixed <const> = imTableColumnFlags.WidthFixed
 local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
@@ -41,9 +42,11 @@ local enginestrings <const> = progs.enginestrings
 local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
-local typename <const> = progs.typename
+local op_done <const> = progs.ops.DONE
+local statements <const> = progs.statements
 local strings <const> = progs.strings
 local stringoffset <const> = strings.offset
+local typename <const> = progs.typename
 
 local isfree <const> = edicts.isfree
 
@@ -53,33 +56,84 @@ local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
 
-local defaultDisassemblySize <const> = imVec2(640, 480)
+local defaultDisassemblySize <const> = imVec2(640, 0)
+
+local function functiondisassembly_searchcompare(entry, string)
+	return entry.address:find(string, 1, true)
+		or entry.op:lower():find(string, 1, true)
+		or entry.a:lower():find(string, 1, true)
+		or entry.b:lower():find(string, 1, true)
+		or entry.c:lower():find(string, 1, true)
+end
+
+local function functiondisassembly_gather(self)
+	local statementcount = #statements
+	local entries = {}
+
+	for i = self.func.entrypoint, statementcount do
+		local st = statements[i]
+		local entry =
+		{
+			address = format('%06i', i),
+			bytecode = format('%02x %04x %04x %04x', st.op, st.a, st.b, st.c),
+			op = st.opstring,
+			a = st.astring,
+			b = st.bstring,
+			c = st.cstring,
+		}
+		insert(entries, entry)
+
+		if st.op == op_done then
+			break
+		end
+	end
+
+	self.entries = entries
+end
 
 local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
-		local textview = self.textview
+		local searchmodified = searchbar(self)
+		local entries = updatesearch(self, functiondisassembly_searchcompare, searchmodified)
+		imSameLine();
 
-		if not textview then
-			local disassembly = self.func:disassemble(self.withbinary)
-			textview = imColorTextEdit()
-			textview:SetReadOnly(true)
-			textview:SetText(disassembly)
+		local bytecodepressed, bytecodeenabled = imCheckbox('Bytecode', self.withbytecode)
 
-			self.textview = textview
+		if bytecodepressed then
+			functiondisassembly_gather(self)
+			self.withbytecode = bytecodeenabled
 		end
 
-		-- TODO: Do not show binary checkbox for built-in functions
-		local binarypressed, binaryenabled = imCheckbox('Show statements binaries', self.withbinary)
+		if imBeginTable(self.name, 6, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
+			imTableSetupColumn('Address', imTableColumnWidthFixed)
+			imTableSetupColumn('Bytecode', imTableColumnWidthFixed | (self.withbytecode and 0 or imTableColumnDisabled))
+			imTableSetupColumn('Operation', imTableColumnWidthFixed)
+			imTableSetupColumn('Operand A')
+			imTableSetupColumn('Operand B')
+			imTableSetupColumn('Operand C')
+			imTableHeadersRow()
 
-		if binarypressed then
-			local disassembly = self.func:disassemble(binaryenabled)
-			textview:SetText(disassembly)
-			self.withbinary = binaryenabled
+			for _, entry in ipairs(entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry.address)
+				imTableNextColumn()
+				imText(entry.bytecode)
+				imTableNextColumn()
+				imText(entry.op)
+				imTableNextColumn()
+				imText(entry.a)
+				imTableNextColumn()
+				imText(entry.b)
+				imTableNextColumn()
+				imText(entry.c)
+			end
+
+			imEndTable()
 		end
-
-		textview:Render('##text')
 	end
 
 	imEnd()
@@ -88,25 +142,60 @@ local function functiondisassembly_onupdate(self)
 end
 
 local function functiondisassembly_onshow(self)
-	if self.name ~= self.func.name then
+	local func = self.func
+
+	if self.name ~= func.name then
 		return false
 	end
 
-	if not self.withbinary then
-		self.withbinary = false
+	if func.entrypoint < 0 then
+		return false  -- built-in function, nothing to disassemble
 	end
 
+	if self.withbytecode == nil then
+		self.withbytecode = false
+	end
+
+	functiondisassembly_gather(self)
+
+	updatesearch(self, functiondisassembly_searchcompare, true)
 	return true
 end
 
 local function functiondisassembly_onhide(self)
-	self.textview = nil
+	resetsearch(self)
+	self.entries = nil
 	return true
 end
 
 local function function_searchcompare(entry, string)
 	return entry.declaration:lower():find(string, 1, true)
 		or entry.filename:lower():find(string, 1, true)
+end
+
+local function function_declarationcell(index, entry)
+	local func = entry.func
+
+	if func.entrypoint > 0 then
+		if imSelectable(entry.declaration, false, imSpanAllColumns) then
+			local funcname = func.name
+
+			local function oncreate(this)
+				this:setconstraints()
+				this:setsize(defaultDisassemblySize)
+				this:movetocursor()
+
+				this.func = func
+				this.name = funcname
+			end
+
+			window(format('Disassembly of #%i %s()', index, funcname), functiondisassembly_onupdate,
+				oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
+		end
+	else
+		-- Built-in function, nothing to disassemble
+		imText(entry.declaration)
+	end
 end
 
 local function functions_onupdate(self)
@@ -129,22 +218,7 @@ local function functions_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				if imSelectable(entry.declaration, false, imSpanAllColumns) then
-					local func = entry.func
-					local funcname = func.name
-
-					local function oncreate(this)
-						this:setconstraints()
-						this:setsize(defaultDisassemblySize)
-						this:movetocursor()
-
-						this.func = func
-						this.name = funcname
-					end
-
-					window(format('Disassembly of #%i %s()', i, funcname), functiondisassembly_onupdate,
-						oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
-				end
+				function_declarationcell(i, entry)
 				imTableNextColumn()
 				imText(entry.filename)
 			end
@@ -166,7 +240,7 @@ local function functions_onshow(self)
 		{
 			func = func,
 			index = tostring(i),
-			declaration = format('%s##%i', func, i),
+			declaration = func.entrypoint > 0 and format('%s##%i', func, i) or tostring(func),
 			filename = func.filename
 		}
 		insert(entries, entry)

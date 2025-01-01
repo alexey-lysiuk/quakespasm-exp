@@ -655,6 +655,11 @@ void PR_ExecuteProgram (func_t fnum)
 
 #ifdef USE_LUA_SCRIPTING
 
+unsigned short LS_GetProgsOpCount(void)
+{
+	return (unsigned short)(Q_COUNTOF(pr_opnames));
+}
+
 const char* LS_GetProgsOpName(unsigned short op)
 {
 	return op < Q_COUNTOF(pr_opnames) ? pr_opnames[op] : "???";

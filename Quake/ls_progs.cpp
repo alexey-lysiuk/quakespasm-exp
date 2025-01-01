@@ -34,6 +34,7 @@ const ddef_t* LS_GetProgsFieldDefinitionByIndex(int index);
 const ddef_t* LS_GetProgsFieldDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByOffset(int offset);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
+unsigned short LS_GetProgsOpCount();
 const char* LS_GetProgsOpName(unsigned short op);
 const char* LS_GetProgsString(int offset);
 const char* LS_GetProgsTypeName(unsigned short type);
@@ -42,7 +43,14 @@ const char* LS_GetProgsTypeName(unsigned short type);
 void LS_PushEdictFieldValue(lua_State* state, etype_t type, const eval_t* value);
 
 
-static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const bool withcontent = true)
+enum FormatFlags
+{
+	WithPadding = 1,
+	WithContent = 2,
+	WithBinary = 4,
+};
+
+static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const unsigned flags = 0)
 {
 	lua_State* state = buffer.L;
 	const size_t initialsize = buffer.n;
@@ -59,7 +67,7 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 		luaL_addstring(&buffer, name);
 		luaL_addchar(&buffer, ')');
 
-		if (withcontent)
+		if (flags & WithContent)
 		{
 			if (offset >= progs->numglobals)
 				luaL_error(state, "invalid global offset %d", offset);
@@ -76,16 +84,19 @@ static void LS_GlobalStringToBuffer(const int offset, luaL_Buffer& buffer, const
 
 	const size_t addedsize = buffer.n - initialsize;
 
-	if (addedsize < 20)
+	if (flags & WithPadding)
 	{
-		char* padding = luaL_prepbuffsize(&buffer, initialsize + 20);
-		const size_t paddingsize = 20 - addedsize;
+		if (addedsize < 20)
+		{
+			char* padding = luaL_prepbuffsize(&buffer, initialsize + 20);
+			const size_t paddingsize = 20 - addedsize;
 
-		memset(padding, ' ', paddingsize);
-		luaL_addsize(&buffer, paddingsize);
+			memset(padding, ' ', paddingsize);
+			luaL_addsize(&buffer, paddingsize);
+		}
+		else
+			luaL_addchar(&buffer, ' ');
 	}
-	else
-		luaL_addchar(&buffer, ' ');
 }
 
 
@@ -126,39 +137,17 @@ static int LS_progs_enginestrings_len(lua_State* state)
 // Statements
 //
 
-static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const bool withbinary)
+static void LS_StatementAToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const unsigned flags = 0)
 {
-	if (withbinary)
-	{
-		char binbuf[32];
-		const size_t binlen = q_snprintf(binbuf, sizeof binbuf, "%3u %5i %5i %5i  ",
-			statement.op, statement.a, statement.b, statement.c);
-		luaL_addlstring(&buffer, binbuf, binlen);
-	}
-
-	const char* const op = LS_GetProgsOpName(statement.op);
-	const size_t oplength = strlen(op);
-
-	luaL_addlstring(&buffer, op, oplength);
-	luaL_addchar(&buffer, ' ');
-
-	for (size_t i = oplength; i < 10; ++i)
-		luaL_addchar(&buffer, ' ');
-
 	switch (statement.op)
 	{
 	case OP_IF:
 	case OP_IFNOT:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		luaL_addstring(&buffer, "branch ");
-
-		lua_pushinteger(buffer.L, statement.b);
-		luaL_addvalue(&buffer);
+		LS_GlobalStringToBuffer(statement.a, buffer, flags | WithContent);
 		break;
 
 	case OP_GOTO:
 		luaL_addstring(&buffer, "branch ");
-
 		lua_pushinteger(buffer.L, statement.a);
 		luaL_addvalue(&buffer);
 		break;
@@ -169,19 +158,249 @@ static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buf
 	case OP_STORE_ENT:
 	case OP_STORE_FLD:
 	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		LS_GlobalStringToBuffer(statement.b, buffer, false);
+		LS_GlobalStringToBuffer(statement.a, buffer, flags | WithContent);
 		break;
 
 	default:
 		if (statement.a)
-			LS_GlobalStringToBuffer(statement.a, buffer);
-		if (statement.b)
-			LS_GlobalStringToBuffer(statement.b, buffer);
-		if (statement.c)
-			LS_GlobalStringToBuffer(statement.c, buffer, false);
+			LS_GlobalStringToBuffer(statement.a, buffer, flags | WithContent);
 		break;
 	}
+}
+
+static void LS_StatementBToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const unsigned flags = 0)
+{
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+		luaL_addstring(&buffer, "branch ");
+		lua_pushinteger(buffer.L, statement.b);
+		luaL_addvalue(&buffer);
+		break;
+
+	case OP_GOTO:
+		// Do nothing
+		break;
+
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		LS_GlobalStringToBuffer(statement.b, buffer, flags);
+		break;
+
+	default:
+		if (statement.b)
+			LS_GlobalStringToBuffer(statement.b, buffer, flags | WithContent);
+		break;
+	}
+}
+
+static void LS_StatementCToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const unsigned flags = 0)
+{
+	switch (statement.op)
+	{
+	case OP_IF:
+	case OP_IFNOT:
+	case OP_GOTO:
+	case OP_STORE_F:
+	case OP_STORE_V:
+	case OP_STORE_S:
+	case OP_STORE_ENT:
+	case OP_STORE_FLD:
+	case OP_STORE_FNC:
+		// Do nothing
+		break;
+
+	default:
+		if (statement.c)
+			LS_GlobalStringToBuffer(statement.c, buffer, flags | WithContent);
+		break;
+	}
+}
+
+constexpr LS_UserDataType<int> ls_statement_type("statement");
+
+static int LS_GetStatementMemberValue(lua_State* state, int (*getter)(lua_State* state, const dstatement_t& statement))
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = ls_statement_type.GetValue(state, 1);
+
+	if (index < 1 || index >= progs->numstatements)
+		luaL_error(state, "invalid statement");
+
+	return getter(state, pr_statements[index]);
+}
+
+template <int (*Func)(lua_State* state, const dstatement_t& statement)>
+static int LS_StatementMember(lua_State* state)
+{
+	return LS_GetStatementMemberValue(state, Func);
+}
+
+static int LS_PushStatementA(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.a);
+	return 1;
+}
+
+static int LS_PushStatementB(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.b);
+	return 1;
+}
+
+static int LS_PushStatementC(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.c);
+	return 1;
+}
+
+static int LS_PushStatementOp(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushinteger(state, statement.op);
+	return 1;
+}
+
+static int LS_PushStatementAString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+	LS_StatementAToBuffer(statement, buffer);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementBString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+	LS_StatementBToBuffer(statement, buffer);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementCString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+	LS_StatementCToBuffer(statement, buffer);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+static int LS_PushStatementOpString(lua_State* state, const dstatement_t& statement)
+{
+	lua_pushstring(state, LS_GetProgsOpName(statement.op));
+	return 1;
+}
+
+static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const unsigned flags = 0)
+{
+	if (flags & WithBinary)
+	{
+		char binbuf[32];
+		const size_t binlen = q_snprintf(binbuf, sizeof binbuf, "%02x %04x %04x %04x  ",
+			statement.op, statement.a, statement.b, statement.c);
+		luaL_addlstring(&buffer, binbuf, binlen);
+	}
+
+	const char* const op = LS_GetProgsOpName(statement.op);
+	const size_t oplength = strlen(op);
+
+	luaL_addlstring(&buffer, op, oplength);
+	luaL_addchar(&buffer, ' ');
+
+	const bool withpadding = flags & WithPadding;
+	if (withpadding)
+	{
+		const size_t paddingsize = 10 - oplength;
+		char* padding = luaL_prepbuffsize(&buffer, paddingsize);
+		memset(padding, ' ', paddingsize);
+		luaL_addsize(&buffer, paddingsize);
+	}
+
+	size_t currentsize = buffer.n;
+
+	const auto AddSeparator = [&buffer, &currentsize, withpadding]()
+	{
+		if (withpadding)
+			return;  // sepator was added already
+
+		if (currentsize < buffer.n)
+		{
+			luaL_addchar(&buffer, ' ');
+			currentsize = buffer.n;
+		}
+	};
+
+	LS_StatementAToBuffer(statement, buffer, flags);
+	AddSeparator();
+	LS_StatementBToBuffer(statement, buffer, flags);
+	AddSeparator();
+	LS_StatementCToBuffer(statement, buffer, flags);
+}
+
+static int LS_PushStatementToString(lua_State* state, const dstatement_t& statement)
+{
+	luaL_Buffer buffer;
+	luaL_buffinit(state, &buffer);
+	LS_StatementToBuffer(statement, buffer);
+
+	luaL_pushresult(&buffer);
+	return 1;
+}
+
+// Pushes progs statement by its index, [1..progs->numstatements)
+static int LS_progs_statements_index(lua_State* state)
+{
+	if (progs == nullptr)
+		return 0;
+
+	const int index = luaL_checkinteger(state, 2);
+
+	if (index < 1 || index >= progs->numstatements)
+		return 0;
+
+	static const luaL_Reg members[] =
+	{
+		{ "a", LS_StatementMember<LS_PushStatementA> },
+		{ "b", LS_StatementMember<LS_PushStatementB> },
+		{ "c", LS_StatementMember<LS_PushStatementC> },
+		{ "op", LS_StatementMember<LS_PushStatementOp> },
+		{ "astring", LS_StatementMember<LS_PushStatementAString> },
+		{ "bstring", LS_StatementMember<LS_PushStatementBString> },
+		{ "cstring", LS_StatementMember<LS_PushStatementCString> },
+		{ "opstring", LS_StatementMember<LS_PushStatementOpString> },
+		{ nullptr, nullptr }
+	};
+
+	static const luaL_Reg metafuncs[] =
+	{
+		{ "__tostring", LS_StatementMember<LS_PushStatementToString> },
+		{ nullptr, nullptr }
+	};
+
+	ls_statement_type.New(state, members, metafuncs) = index;
+	return 1;
+}
+
+// Pushes number of progs statements
+static int LS_progs_statements_len(lua_State* state)
+{
+	const lua_Integer count = progs == nullptr
+		? 0
+		: progs->numstatements - 1;  // without DONE op at index zero
+	lua_pushinteger(state, count);
+	return 1;
 }
 
 
@@ -540,7 +759,7 @@ static int LS_PushFunctionDisassemble(lua_State* state, const dfunction_t* funct
 			luaL_addlstring(&buffer, addrbuf, addrlen);
 
 			const dstatement_t& statement = pr_statements[i];
-			LS_StatementToBuffer(statement, buffer, withbinary);
+			LS_StatementToBuffer(statement, buffer, (withbinary ? WithBinary : 0) | WithPadding);
 
 			if (statement.op == OP_DONE)
 				break;
@@ -1029,198 +1248,6 @@ static int LS_progs_strings_offset(lua_State* state)
 
 
 //
-// Progs statements
-// On C++ side, indices begin with zero
-// On Lua side, indices begin with one
-//
-
-constexpr LS_UserDataType<int> ls_statement_type("statement");
-
-static int LS_GetStatementMemberValue(lua_State* state, int (*getter)(lua_State* state, const dstatement_t& statement))
-{
-	if (progs == nullptr)
-		return 0;
-
-	const int index = ls_statement_type.GetValue(state, 1);
-
-	if (index < 0 || index >= progs->numstatements)
-		luaL_error(state, "invalid statement");
-
-	return getter(state, pr_statements[index]);
-}
-
-template <int (*Func)(lua_State* state, const dstatement_t& statement)>
-static int LS_StatementMember(lua_State* state)
-{
-	return LS_GetStatementMemberValue(state, Func);
-}
-
-static int LS_PushStatementA(lua_State* state, const dstatement_t& statement)
-{
-	lua_pushinteger(state, statement.a);
-	return 1;
-}
-
-static int LS_PushStatementB(lua_State* state, const dstatement_t& statement)
-{
-	lua_pushinteger(state, statement.b);
-	return 1;
-}
-
-static int LS_PushStatementC(lua_State* state, const dstatement_t& statement)
-{
-	lua_pushinteger(state, statement.c);
-	return 1;
-}
-
-static int LS_PushStatementOp(lua_State* state, const dstatement_t& statement)
-{
-	lua_pushinteger(state, statement.op);
-	return 1;
-}
-
-static int LS_PushStatementAString(lua_State* state, const dstatement_t& statement)
-{
-	luaL_Buffer buffer;
-	luaL_buffinit(state, &buffer);
-
-	switch (statement.op)
-	{
-	case OP_IF:
-	case OP_IFNOT:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		break;
-
-	case OP_GOTO:
-		luaL_addstring(&buffer, "branch ");
-		lua_pushinteger(buffer.L, statement.a);
-		luaL_addvalue(&buffer);
-		break;
-
-	case OP_STORE_F:
-	case OP_STORE_V:
-	case OP_STORE_S:
-	case OP_STORE_ENT:
-	case OP_STORE_FLD:
-	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.a, buffer);
-		break;
-
-	default:
-		if (statement.a)
-			LS_GlobalStringToBuffer(statement.a, buffer);
-		break;
-	}
-
-	luaL_pushresult(&buffer);
-	return 1;
-}
-
-static int LS_PushStatementBString(lua_State* state, const dstatement_t& statement)
-{
-	luaL_Buffer buffer;
-	luaL_buffinit(state, &buffer);
-
-	switch (statement.op)
-	{
-	case OP_IF:
-	case OP_IFNOT:
-		luaL_addstring(&buffer, "branch ");
-		lua_pushinteger(buffer.L, statement.b);
-		luaL_addvalue(&buffer);
-		break;
-
-	case OP_STORE_F:
-	case OP_STORE_V:
-	case OP_STORE_S:
-	case OP_STORE_ENT:
-	case OP_STORE_FLD:
-	case OP_STORE_FNC:
-		LS_GlobalStringToBuffer(statement.b, buffer, false);
-		break;
-
-	default:
-		if (statement.b)
-			LS_GlobalStringToBuffer(statement.b, buffer);
-		break;
-	}
-
-	luaL_pushresult(&buffer);
-	return 1;
-}
-
-static int LS_PushStatementCString(lua_State* state, const dstatement_t& statement)
-{
-	luaL_Buffer buffer;
-	luaL_buffinit(state, &buffer);
-
-	if (statement.c)
-		LS_GlobalStringToBuffer(statement.c, buffer, false);
-
-	luaL_pushresult(&buffer);
-	return 1;
-}
-
-static int LS_PushStatementOpString(lua_State* state, const dstatement_t& statement)
-{
-	lua_pushstring(state, LS_GetProgsOpName(statement.op));
-	return 1;
-}
-
-static int LS_PushStatementToString(lua_State* state, const dstatement_t& statement)
-{
-	luaL_Buffer buffer;
-	luaL_buffinit(state, &buffer);
-	LS_StatementToBuffer(statement, buffer, false);
-
-	luaL_pushresult(&buffer);
-	return 1;
-}
-
-// Pushes progs statement by its index, [1..progs->numstatements)
-static int LS_progs_statements_index(lua_State* state)
-{
-	if (progs == nullptr)
-		return 0;
-
-	const int index = luaL_checkinteger(state, 2);
-
-	if (index <= 0 || index > progs->numstatements)
-		return 0;
-
-	static const luaL_Reg members[] =
-	{
-		{ "a", LS_StatementMember<LS_PushStatementA> },
-		{ "b", LS_StatementMember<LS_PushStatementB> },
-		{ "c", LS_StatementMember<LS_PushStatementC> },
-		{ "op", LS_StatementMember<LS_PushStatementOp> },
-		{ "astring", LS_StatementMember<LS_PushStatementAString> },
-		{ "bstring", LS_StatementMember<LS_PushStatementBString> },
-		{ "cstring", LS_StatementMember<LS_PushStatementCString> },
-		{ "opstring", LS_StatementMember<LS_PushStatementOpString> },
-		{ nullptr, nullptr }
-	};
-
-	static const luaL_Reg metafuncs[] =
-	{
-		{ "__tostring", LS_StatementMember<LS_PushStatementToString> },
-		{ nullptr, nullptr }
-	};
-
-	ls_statement_type.New(state, members, metafuncs) = index - 1;
-	return 1;
-}
-
-// Pushes number of progs statements
-static int LS_progs_statements_len(lua_State* state)
-{
-	const lua_Integer count = progs == nullptr ? 0 : progs->numstatements;
-	lua_pushinteger(state, count);
-	return 1;
-}
-
-
-//
 // Global 'progs' table
 //
 
@@ -1336,6 +1363,21 @@ static int LS_global_progs_globalvariables(lua_State* state)
 	return 1;
 }
 
+static int LS_global_progs_ops(lua_State* state)
+{
+	const unsigned short opcount = LS_GetProgsOpCount();
+	lua_createtable(state, 0, opcount);
+
+	for (unsigned short i = 0; i < opcount; ++i)
+	{
+		const char* const opname = LS_GetProgsOpName(i);
+		lua_pushinteger(state, i);
+		lua_setfield(state, -2, opname);
+	}
+
+	return 1;
+}
+
 // Pushes name of type by its index
 static int LS_global_progs_typename(lua_State* state)
 {
@@ -1421,6 +1463,7 @@ void LS_InitProgsType(lua_State* state)
 			{ "functions", LS_global_progs_functions },
 			{ "globaldefinitions", LS_global_progs_globaldefinitions },
 			{ "globalvariables", LS_global_progs_globalvariables },
+			{ "ops", LS_global_progs_ops },
 			{ "strings", LS_global_progs_strings },
 			{ "statements", LS_global_progs_statements },
 		};
