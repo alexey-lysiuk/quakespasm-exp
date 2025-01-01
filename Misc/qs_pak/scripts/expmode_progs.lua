@@ -96,10 +96,10 @@ local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
-		local searchmodified = searchbar(self)
+		local searchmodified = searchbar(self, 240)
 		local entries = updatesearch(self, functiondisassembly_searchcompare, searchmodified)
 
-		imSameLine()
+		imSameLine(0, 24)
 		local _, fileoffsetenabled = imCheckbox('File Offsets', self.withfileoffset)
 		imSameLine()
 		local _, bytecodeenabled = imCheckbox('Bytecode', self.withbytecode)

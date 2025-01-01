@@ -234,6 +234,15 @@ static int LS_global_imgui_SetNextWindowFocus(lua_State* state)
 	return 0;
 }
 
+static int LS_global_imgui_SetNextItemWidth(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const float width = luaL_checknumber(state, 1);
+	ImGui::SetNextItemWidth(width);
+	return 0;
+}
+
 static int LS_global_imgui_GetCursorScreenPos(lua_State* state)
 {
 	LS_EnsureFrameScope(state);
@@ -1080,7 +1089,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// Parameters stacks
 		// * PushItemWidth
 		// * PopItemWidth
-		// * SetNextItemWidth
+		{ "SetNextItemWidth", LS_global_imgui_SetNextItemWidth },
 		// * CalcItemWidth
 		// * PushTextWrapPos
 		// * PopTextWrapPos
