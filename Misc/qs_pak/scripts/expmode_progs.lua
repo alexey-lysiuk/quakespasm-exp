@@ -75,6 +75,7 @@ local function functiondisassembly_gather(self)
 		local entry =
 		{
 			address = format('%06i', i),
+			fileoffset = format('%06x', st.fileoffset),
 			bytecode = format('%02x %04x %04x %04x', st.op, st.a, st.b, st.c),
 			op = st.opstring,
 			a = st.astring,
@@ -97,19 +98,16 @@ local function functiondisassembly_onupdate(self)
 	if visible and opened then
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, functiondisassembly_searchcompare, searchmodified)
-		imSameLine();
 
-		local bytecodepressed, bytecodeenabled = imCheckbox('Bytecode', self.withbytecode)
-
-		if bytecodepressed then
-			functiondisassembly_gather(self)
-			self.withbytecode = bytecodeenabled
-		end
+		imSameLine()
+		local _, fileoffsetenabled = imCheckbox('File Offsets', self.withfileoffset)
+		imSameLine()
+		local _, bytecodeenabled = imCheckbox('Bytecode', self.withbytecode)
 
 		if imBeginTable(self.name, 6, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
-			imTableSetupColumn('Address', imTableColumnWidthFixed)
-			imTableSetupColumn('Bytecode', imTableColumnWidthFixed | (self.withbytecode and 0 or imTableColumnDisabled))
+			imTableSetupColumn(fileoffsetenabled and 'File Offset' or 'Address', imTableColumnWidthFixed)
+			imTableSetupColumn('Bytecode', imTableColumnWidthFixed | (bytecodeenabled and 0 or imTableColumnDisabled))
 			imTableSetupColumn('Operation', imTableColumnWidthFixed)
 			imTableSetupColumn('Operand A')
 			imTableSetupColumn('Operand B')
@@ -119,7 +117,7 @@ local function functiondisassembly_onupdate(self)
 			for _, entry in ipairs(entries) do
 				imTableNextRow()
 				imTableNextColumn()
-				imText(entry.address)
+				imText(fileoffsetenabled and entry.fileoffset or entry.address)
 				imTableNextColumn()
 				imText(entry.bytecode)
 				imTableNextColumn()
@@ -134,6 +132,9 @@ local function functiondisassembly_onupdate(self)
 
 			imEndTable()
 		end
+
+		self.withfileoffset = fileoffsetenabled
+		self.withbytecode = bytecodeenabled
 	end
 
 	imEnd()
@@ -150,6 +151,10 @@ local function functiondisassembly_onshow(self)
 
 	if func.entrypoint < 0 then
 		return false  -- built-in function, nothing to disassemble
+	end
+
+	if self.withfileoffset == nil then
+		self.withfileoffset = false
 	end
 
 	if self.withbytecode == nil then
