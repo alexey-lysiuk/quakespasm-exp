@@ -10,8 +10,6 @@ local imBegin <const> = ImGui.Begin
 local imBeginCombo <const> = ImGui.BeginCombo
 local imBeginMenu <const> = ImGui.BeginMenu
 local imBeginTable <const> = ImGui.BeginTable
-local imCheckbox <const> = ImGui.Checkbox
-local imColorTextEdit <const> = ImGui.ColorTextEdit
 local imEnd <const> = ImGui.End
 local imEndCombo <const> = ImGui.EndCombo
 local imEndMenu <const> = ImGui.EndMenu
@@ -41,9 +39,11 @@ local enginestrings <const> = progs.enginestrings
 local fielddefinitions <const> = progs.fielddefinitions
 local functions <const> = progs.functions
 local globaldefinitions <const> = progs.globaldefinitions
-local typename <const> = progs.typename
+local op_done <const> = progs.ops.DONE
+local statements <const> = progs.statements
 local strings <const> = progs.strings
 local stringoffset <const> = strings.offset
+local typename <const> = progs.typename
 
 local isfree <const> = edicts.isfree
 
@@ -53,32 +53,40 @@ local searchbar <const> = expmode.searchbar
 local updatesearch <const> = expmode.updatesearch
 local window <const> = expmode.window
 
-local defaultDisassemblySize <const> = imVec2(640, 480)
+local defaultDisassemblySize <const> = imVec2(640, 0)
 
 local function functiondisassembly_onupdate(self)
 	local visible, opened = imBegin(self.title, true, imWindowNoSavedSettings)
 
 	if visible and opened then
-		local textview = self.textview
+		if imBeginTable(self.name, 6, defaultTableFlags) then
+			imTableSetupScrollFreeze(0, 1)
+			imTableSetupColumn('Address', imTableColumnWidthFixed)
+			imTableSetupColumn('Bytecode', imTableColumnWidthFixed)
+			imTableSetupColumn('Operation')
+			imTableSetupColumn('Operand A')
+			imTableSetupColumn('Operand B')
+			imTableSetupColumn('Operand C')
+			imTableHeadersRow()
 
-		if not textview then
-			local disassembly = self.func:disassemble(self.withbinary)
-			textview = imColorTextEdit()
-			textview:SetReadOnly(true)
-			textview:SetText(disassembly)
+			for _, entry in ipairs(self.entries) do
+				imTableNextRow()
+				imTableNextColumn()
+				imText(entry.address)
+				imTableNextColumn()
+				imText(entry.bytecode)
+				imTableNextColumn()
+				imText(entry.op)
+				imTableNextColumn()
+				imText(entry.a)
+				imTableNextColumn()
+				imText(entry.b)
+				imTableNextColumn()
+				imText(entry.c)
+			end
 
-			self.textview = textview
+			imEndTable()
 		end
-
-		local binarypressed, binaryenabled = imCheckbox('Show statements binaries', self.withbinary)
-
-		if binarypressed then
-			local disassembly = self.func:disassemble(binaryenabled)
-			textview:SetText(disassembly)
-			self.withbinary = binaryenabled
-		end
-
-		textview:Render('##text')
 	end
 
 	imEnd()
@@ -87,19 +95,46 @@ local function functiondisassembly_onupdate(self)
 end
 
 local function functiondisassembly_onshow(self)
-	if self.name ~= self.func.name then
+	local func = self.func
+
+	if self.name ~= func.name then
 		return false
 	end
 
-	if not self.withbinary then
-		self.withbinary = false
+	local entrypoint = func.entrypoint
+
+	if entrypoint < 0 then
+		return false  -- built-in function, nothing to disassemble
 	end
+
+	local entries = {}
+	local statementcount = #statements
+
+	for i = entrypoint, statementcount do
+		local st = statements[i]
+		local entry =
+		{
+			address = format('%06i', i),
+			bytecode = format('%02x %04x %04x %04x', st.op, st.a, st.b, st.c),
+			op = st.opstring,
+			a = st.astring,
+			b = st.bstring,
+			c = st.cstring,
+		}
+		insert(entries, entry)
+
+		if st.op == op_done then
+			break
+		end
+	end
+
+	self.entries = entries
 
 	return true
 end
 
 local function functiondisassembly_onhide(self)
-	self.textview = nil
+	self.entries = nil
 	return true
 end
 
