@@ -59,8 +59,7 @@ local window <const> = expmode.window
 local defaultDisassemblySize <const> = imVec2(640, 0)
 
 local function functiondisassembly_searchcompare(entry, string)
-	return entry.address:find(string, 1, true)
-		or entry.op:lower():find(string, 1, true)
+	return entry.op:lower():find(string, 1, true)
 		or entry.a:lower():find(string, 1, true)
 		or entry.b:lower():find(string, 1, true)
 		or entry.c:lower():find(string, 1, true)
