@@ -35,6 +35,7 @@ local imSeparator <const> = ImGui.Separator
 local imSeparatorText <const> = ImGui.SeparatorText
 local imSetClipboardText <const> = ImGui.SetClipboardText
 local imSetKeyboardFocusHere <const> = ImGui.SetKeyboardFocusHere
+local imSetNextItemWidth <const> = ImGui.SetNextItemWidth
 local imSetNextWindowFocus <const> = ImGui.SetNextWindowFocus
 local imSetNextWindowPos <const> = ImGui.SetNextWindowPos
 local imSetNextWindowSize <const> = ImGui.SetNextWindowSize
@@ -498,13 +499,17 @@ function expmode.messagebox(title, text)
 	return messagebox
 end
 
-function expmode.searchbar(window)
+function expmode.searchbar(window, inputwidth)
 	imAlignTextToFramePadding()
 	imText('Search:')
 	imSameLine()
 
 	if imIsWindowAppearing() then
 		imSetKeyboardFocusHere()
+	end
+
+	if inputwidth then
+		imSetNextItemWidth(inputwidth)
 	end
 
 	local modified = imInputText('##search', window.searchbuffer)
