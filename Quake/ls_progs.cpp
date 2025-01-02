@@ -303,6 +303,13 @@ static int LS_PushStatementOpString(lua_State* state, const dstatement_t& statem
 	return 1;
 }
 
+static int LS_PushStatementFileOffset(lua_State* state, const dstatement_t& statement)
+{
+	const size_t fileoffset = reinterpret_cast<const byte*>(&statement) - reinterpret_cast<const byte*>(progs);
+	lua_pushinteger(state, lua_Integer(fileoffset));
+	return 1;
+}
+
 static void LS_StatementToBuffer(const dstatement_t& statement, luaL_Buffer& buffer, const unsigned flags = 0)
 {
 	if (flags & WithBinary)
@@ -380,6 +387,7 @@ static int LS_progs_statements_index(lua_State* state)
 		{ "bstring", LS_StatementMember<LS_PushStatementBString> },
 		{ "cstring", LS_StatementMember<LS_PushStatementCString> },
 		{ "opstring", LS_StatementMember<LS_PushStatementOpString> },
+		{ "fileoffset", LS_StatementMember<LS_PushStatementFileOffset> },
 		{ nullptr, nullptr }
 	};
 
