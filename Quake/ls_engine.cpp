@@ -31,7 +31,7 @@ extern "C"
 const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
 
-extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, sv_traceentity;
+extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, r_fullbright, sv_traceentity;
 }
 
 
@@ -202,21 +202,29 @@ static void LS_InitPlayerTable(lua_State* state)
 
 static void LS_InitRenderTable(lua_State* state)
 {
-	lua_newtable(state);
-	lua_pushstring(state, "polyoffset");
-
-	static const luaL_Reg functions[] =
 	{
-		{ "factor", LS_NumberCVarFunction<gl_polyoffset_factor> },
-		{ "units", LS_NumberCVarFunction<gl_polyoffset_units> },
-		{ nullptr, nullptr }
-	};
+		static const luaL_Reg functions[] =
+		{
+			{ "boundingboxes", LS_BoolCVarFunction<r_showbboxes> },
+			{ "fullbright", LS_BoolCVarFunction<r_fullbright> },
+			{ nullptr, nullptr }
+		};
 
-	luaL_newlib(state, functions);
-	lua_rawset(state, -3);
-	lua_pushstring(state, "boundingboxes");
-	lua_pushcfunction(state, LS_BoolCVarFunction<r_showbboxes>);
-	lua_rawset(state, -3);
+		luaL_newlib(state, functions);
+	}
+
+	{
+		static const luaL_Reg functions[] =
+		{
+			{ "factor", LS_NumberCVarFunction<gl_polyoffset_factor> },
+			{ "units", LS_NumberCVarFunction<gl_polyoffset_units> },
+			{ nullptr, nullptr }
+		};
+
+		luaL_newlib(state, functions);
+		lua_setfield(state, -2, "polyoffset");
+	}
+
 	lua_setglobal(state, "render");
 }
 
