@@ -31,7 +31,7 @@ extern "C"
 const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
 
-extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, sv_traceentity;
+extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, r_fullbright, sv_traceentity;
 }
 
 
@@ -206,6 +206,7 @@ static void LS_InitRenderTable(lua_State* state)
 		static const luaL_Reg functions[] =
 		{
 			{ "boundingboxes", LS_BoolCVarFunction<r_showbboxes> },
+			{ "fullbright", LS_BoolCVarFunction<r_fullbright> },
 			{ nullptr, nullptr }
 		};
 
