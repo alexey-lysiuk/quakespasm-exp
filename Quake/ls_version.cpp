@@ -79,7 +79,7 @@ int LS_global_expversion(lua_State* state)
 	lua_pushfstring(state, "MikMod %d.%d.%d", LIBMIKMOD_VERSION_MAJOR, LIBMIKMOD_VERSION_MINOR, LIBMIKMOD_REVISION);
 	++results;
 #endif // USE_CODEC_MIKMOD
-#ifdef USE_CODEC_MP3
+#if defined USE_CODEC_MP3 && MPG123_API_VERSION >= 48
 	lua_pushfstring(state, "mpg123 %s", mpg123_distversion(nullptr, nullptr, nullptr));
 	++results;
 	// TODO: libmad support
