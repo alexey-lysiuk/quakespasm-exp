@@ -49,6 +49,7 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
 local BoundingBoxes <const> = render.boundingboxes
+local FullBright <const> = render.fullbright
 local PolyOffsetFactor <const> = render.polyoffset.factor
 local PolyOffsetUnits <const> = render.polyoffset.units
 
@@ -595,6 +596,12 @@ expmode.addaction(function ()
 
 		if imMenuItem('Bounding Boxes', nil, bboxes) then
 			BoundingBoxes(not bboxes)
+		end
+
+		local fullbright = FullBright()
+
+		if imMenuItem('Level Lightning', nil, not fullbright) then
+			FullBright(not fullbright)
 		end
 
 		imSeparator()
