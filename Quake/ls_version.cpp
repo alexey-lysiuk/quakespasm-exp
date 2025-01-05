@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif // USE_CODEC_MP3
 
 #ifdef USE_CODEC_OPUS
-#include <opus_defines.h>
+#include <opusfile.h>
 #endif // USE_CODEC_OPUS
 
 #ifdef USE_CODEC_VORBIS
