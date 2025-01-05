@@ -38,12 +38,8 @@ extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, sv_tracee
 #include "tlsf/tlsf.h"
 #endif // USE_TLSF
 
-#if __has_include("expversion.h")
-#include "expversion.h"
-#else
-static const char* const expversion = "developement version";
-#endif // has expversion header
 
+int LS_global_expversion(lua_State* state);
 
 static lua_State* ls_state;
 static size_t ls_quota;
@@ -549,18 +545,6 @@ static int LS_global_dprint(lua_State* state)
 	return 0;
 }
 
-static int LS_global_expversion(lua_State* state)
-{
-	lua_pushstring(state, expversion);
-	return 1;
-}
-
-static int LS_global_luaversion(lua_State* state)
-{
-	lua_pushstring(state, LUA_RELEASE);
-	return 1;
-}
-
 static lua_CFunction ls_loadfunc;
 
 // Calls original load() function with mode explicitly set to text
@@ -613,7 +597,6 @@ static void LS_InitGlobalFunctions(lua_State* state)
 		{ "crc16", LS_global_crc16 },
 		{ "dprint", LS_global_dprint },
 		{ "expversion", LS_global_expversion },
-		{ "luaversion", LS_global_luaversion },
 		{ "memstats", LS_global_memstats },
 		{ "stacktrace", LS_global_stacktrace },
 

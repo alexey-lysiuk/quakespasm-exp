@@ -25,7 +25,6 @@ local imEndMenu <const> = ImGui.EndMenu
 local imGetCursorPosX <const> = ImGui.GetCursorPosX
 local imGetCursorScreenPos <const> = ImGui.GetCursorScreenPos
 local imGetMainViewport <const> = ImGui.GetMainViewport
-local imGetVersion <const> = ImGui.GetVersion
 local imInputText <const> = ImGui.InputText
 local imIsItemHovered <const> = ImGui.IsItemHovered
 local imIsWindowAppearing <const> = ImGui.IsWindowAppearing
@@ -235,19 +234,21 @@ local function foreachwindow(func_or_name)
 	end
 end
 
+local versions
+
 local function about_update(self)
 	local visible, opened = imBegin(self.title, true, messageboxflags)
 
 	if visible and opened then
-		imText('')
-		imBulletText(expversion())
-		imBulletText(luaversion())
-		imBulletText('ImGui ' .. imGetVersion())
-		imText('')
-
-		if imButton('Close') then
-			opened = false
+		if not versions then
+			versions = { expversion() }
 		end
+
+		imText('')
+		for _, version in ipairs(versions) do
+			imBulletText(version)
+		end
+		imText('')
 	end
 
 	imEnd()
