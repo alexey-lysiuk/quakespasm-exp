@@ -74,6 +74,7 @@ set(COMMON_SOURCES
 	Quake/ls_progs_builtins.h
 	Quake/ls_vector.cpp
 	Quake/ls_vector.h
+	Quake/ls_version.cpp
 	Quake/main_sdl.c
 	Quake/mathlib.c
 	Quake/mathlib.h
