@@ -35,11 +35,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef USE_CODEC_MP3
 #include <mpg123.h>
+#if MPG123_API_VERSION < 48
+static const char *mpg123_distversion(unsigned int *major, unsigned int *minor, unsigned int *patch)
+{
+	return "pre-1.32.0";
+}
+#endif // MPG123_API_VERSION < 48
 // TODO: libmad support
 #endif // USE_CODEC_MP3
 
 #ifdef USE_CODEC_OPUS
-#include <opus_defines.h>
+#include <opusfile.h>
 #endif // USE_CODEC_OPUS
 
 #ifdef USE_CODEC_VORBIS
