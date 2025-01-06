@@ -87,11 +87,6 @@ int LS_global_expversion(lua_State* state)
 	++results;
 #endif // USE_CODEC_FLAC
 
-#ifdef USE_CODEC_MIKMOD
-	lua_pushfstring(state, "MikMod %d.%d.%d", LIBMIKMOD_VERSION_MAJOR, LIBMIKMOD_VERSION_MINOR, LIBMIKMOD_REVISION);
-	++results;
-#endif // USE_CODEC_MIKMOD
-
 #ifdef USE_CODEC_MPG123
 	lua_pushfstring(state, "mpg123 %s", mpg123_distversion(nullptr, nullptr, nullptr));
 	++results;
@@ -116,6 +111,16 @@ int LS_global_expversion(lua_State* state)
 	lua_pushstring(state, "libxmp " XMP_VERSION);
 	++results;
 #endif // USE_CODEC_XMP
+
+#ifdef USE_CODEC_MIKMOD
+	lua_pushfstring(state, "MikMod %d.%d.%d", LIBMIKMOD_VERSION_MAJOR, LIBMIKMOD_VERSION_MINOR, LIBMIKMOD_REVISION);
+	++results;
+#endif // USE_CODEC_MIKMOD
+
+#ifdef USE_CODEC_MODPLUG
+	lua_pushstring(state, "ModPlug");
+	++results;
+#endif // USE_CODEC_MODPLUG
 
 	lua_pushstring(state, LUA_RELEASE);
 	++results;
