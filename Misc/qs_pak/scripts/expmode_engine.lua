@@ -117,16 +117,10 @@ local function levelentities_update(self)
 
 	if visible and opened then
 		local textview = self.textview or levelentities_createtextview(self)
-		local savedline, savedcolumn = self.savedline, self.savedcolumn
-
-		if savedline and savedcolumn then
-			textview:SetCursorPosition(savedline, savedcolumn)
-			self.savedline, self.savedcolumn = nil, nil
-		end
-
 		local starts = self.starts
-		local currentline, currentcolumn = textview:GetCursorPosition()
+
 		local currententity = 0
+		local currentline = textview:GetCursorPosition()
 
 		-- Find the current entity index
 		-- TODO: Use binary search
@@ -156,9 +150,6 @@ local function levelentities_update(self)
 		end
 
 		textview:Render('##text')
-
-		self.currentline = currentline
-		self.currentcolumn = currentcolumn
 	end
 
 	imEnd()
@@ -167,8 +158,6 @@ local function levelentities_update(self)
 end
 
 local function levelentities_onhide(self)
-	self.savedline = self.currentline
-	self.savedcolumn = self.currentcolumn
 	self.textview = nil
 	self.names = nil
 	self.starts = nil
