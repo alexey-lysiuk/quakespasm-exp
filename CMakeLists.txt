@@ -124,6 +124,8 @@ set(COMMON_SOURCES
 	Quake/snd_mikmod.c
 	Quake/snd_mikmod.h
 	Quake/snd_mix.c
+	Quake/snd_modplug.c
+	Quake/snd_modplug.h
 	Quake/snd_mp3.h
 	Quake/snd_mp3tag.c
 	Quake/snd_opus.c
@@ -678,6 +680,14 @@ if(NOT XMP_FOUND)
 		LIBRARIES mikmod
 		DEFINES USE_CODEC_MIKMOD
 	)
+
+	if(NOT MIKMOD_FOUND)
+		find_codec(NAME MODPLUG
+			HEADER libmodplug/modplug.h
+			LIBRARIES modplug
+			DEFINES USE_CODEC_MODPLUG
+		)
+	endif()
 endif()
 
 if(CMAKE_CROSSCOMPILING)
