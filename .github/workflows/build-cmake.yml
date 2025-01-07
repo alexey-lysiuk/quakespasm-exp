@@ -39,9 +39,9 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == 'Linux' ]]; then
-            sudo apt update && sudo apt install libflac-dev libmikmod-dev libmpg123-dev libopusfile-dev libsdl2-dev libvorbis-dev libxmp-dev
+            sudo apt update && sudo apt install libflac-dev libmpg123-dev libopusfile-dev libsdl2-dev libvorbis-dev libxmp-dev
           elif [[ "${{ runner.os }}" == 'macOS' ]]; then
-            brew install flac libmikmod libvorbis libxmp mpg123 opusfile sdl2
+            brew install flac libvorbis libxmp mpg123 opusfile sdl2
           fi
 
       - name: Configure
