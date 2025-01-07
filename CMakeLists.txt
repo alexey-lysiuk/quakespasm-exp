@@ -637,12 +637,6 @@ find_codec(NAME FLAC
 	DEFINES USE_CODEC_FLAC
 )
 
-find_codec(NAME MIKMOD
-	HEADER mikmod.h
-	LIBRARIES mikmod
-	DEFINES USE_CODEC_MIKMOD
-)
-
 find_codec(NAME MPG123
 	HEADER mpg123.h
 	LIBRARIES mpg123
@@ -677,6 +671,14 @@ find_codec(NAME XMP
 	LIBRARIES xmp
 	DEFINES USE_CODEC_XMP
 )
+
+if(NOT XMP_FOUND)
+	find_codec(NAME MIKMOD
+		HEADER mikmod.h
+		LIBRARIES mikmod
+		DEFINES USE_CODEC_MIKMOD
+	)
+endif()
 
 if(CMAKE_CROSSCOMPILING)
 	find_package(EntFixesGenerator)
