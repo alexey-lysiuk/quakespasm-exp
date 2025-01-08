@@ -573,20 +573,39 @@ expmode.addaction(function ()
 		imSeparator()
 
 		if imBeginMenu('Polygon Offset') then
-			local changed, value
-
-			value = PolyOffsetFactor()
-			changed, value = imSliderFloat('Factor', value, -16, 16, imLogarithmic)
-
-			if changed then
-				PolyOffsetFactor(value)
+			if imMenuItem('None') then
+				PolyOffsetFactor(0)
 			end
+			if imMenuItem('Light') then
+				PolyOffsetFactor(0.25)
+				PolyOffsetUnits(1)
+			end
+			if imMenuItem('Medium') then
+				PolyOffsetFactor(1)
+				PolyOffsetUnits(1)
+			end
+			if imMenuItem('Heavy') then
+				PolyOffsetFactor(4)
+				PolyOffsetUnits(1)
+			end
+			if imBeginMenu('Custom') then
+				local changed, value
 
-			value = PolyOffsetUnits()
-			changed, value = imSliderFloat('Units', value, -16, 16, imLogarithmic)
+				value = PolyOffsetFactor()
+				changed, value = imSliderFloat('Factor', value, -16, 16, imLogarithmic)
 
-			if changed then
-				PolyOffsetUnits(value)
+				if changed then
+					PolyOffsetFactor(value)
+				end
+
+				value = PolyOffsetUnits()
+				changed, value = imSliderFloat('Units', value, -16, 16, imLogarithmic)
+
+				if changed then
+					PolyOffsetUnits(value)
+				end
+
+				imEndMenu()
 			end
 
 			imEndMenu()
