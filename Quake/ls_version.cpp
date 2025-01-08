@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <mikmod.h>
 #endif // USE_CODEC_MIKMOD
 
-#ifdef USE_CODEC_MP3
+#ifdef USE_CODEC_MPG123
 #include <mpg123.h>
 #if MPG123_API_VERSION < 48
 static const char *mpg123_distversion(unsigned int *major, unsigned int *minor, unsigned int *patch)
@@ -41,8 +41,11 @@ static const char *mpg123_distversion(unsigned int *major, unsigned int *minor, 
 	return "pre-1.32.0";
 }
 #endif // MPG123_API_VERSION < 48
-// TODO: libmad support
-#endif // USE_CODEC_MP3
+#endif // USE_CODEC_MPG123
+
+#ifdef USE_CODEC_MAD
+#include <mad.h>
+#endif // USE_CODEC_MAD
 
 #ifdef USE_CODEC_OPUS
 #include <opusfile.h>
@@ -84,11 +87,15 @@ int LS_global_expversion(lua_State* state)
 	++results;
 #endif // USE_CODEC_FLAC
 
-#ifdef USE_CODEC_MP3
+#ifdef USE_CODEC_MPG123
 	lua_pushfstring(state, "mpg123 %s", mpg123_distversion(nullptr, nullptr, nullptr));
 	++results;
-	// TODO: libmad support
-#endif // USE_CODEC_MP3
+#endif // USE_CODEC_MPG123
+
+#ifdef USE_CODEC_MAD
+	lua_pushstring(state, "libmad " MAD_VERSION);
+	++results;
+#endif // USE_CODEC_MAD
 
 #ifdef USE_CODEC_OPUS
 	lua_pushstring(state, opus_get_version_string());
