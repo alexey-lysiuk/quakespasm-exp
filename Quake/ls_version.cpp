@@ -106,7 +106,7 @@ int LS_global_expversion(lua_State* state)
 #endif // USE_CODEC_VORBIS
 
 #ifdef USE_CODEC_XMP
-	lua_pushfstring(state, "XMP %s", XMP_VERSION);
+	lua_pushstring(state, "libxmp " XMP_VERSION);
 	++results;
 #endif // USE_CODEC_XMP
 
@@ -114,7 +114,7 @@ int LS_global_expversion(lua_State* state)
 	++results;
 
 #ifdef USE_IMGUI
-	lua_pushfstring(state, "ImGui %s", IMGUI_VERSION);
+	lua_pushstring(state, "ImGui " IMGUI_VERSION);
 	++results;
 #endif // USE_IMGUI
 
