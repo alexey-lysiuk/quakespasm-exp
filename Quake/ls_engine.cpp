@@ -514,13 +514,9 @@ static int LS_global_text_tint(lua_State* state)
 
 static int LS_global_text_toascii(lua_State* state)
 {
-	// Convert argument to function
-	lua_getglobal(state, "tostring");
-	lua_insert(state, 1);  // swap argument and function
-	lua_call(state, 1, 1);
-
-	const char* string = luaL_checkstring(state, 1);
-	size_t buffersize = strlen(string) + 1;
+	size_t buffersize;
+	const char* string = lua_tolstring(state, 1, &buffersize);
+	++buffersize;  // for null terminator
 	char* result = LS_tempalloc(state, buffersize);
 
 	q_strtoascii(string, result, buffersize);
