@@ -459,6 +459,21 @@ bool TextEditor::Render(const char* aTitle, bool aParentIsFocused, const ImVec2&
 // ------------------------------------ //
 // ---------- Generic utils ----------- //
 
+#ifdef IMGUI_EDITOR_QSEXP
+
+static constexpr int UTF8CharLength(char)
+{
+	return 1;
+}
+
+static constexpr int ImTextCharToUtf8(char* buf, int, unsigned int c)
+{
+	buf[0] = c;
+	return 1;
+}
+
+#else // !IMGUI_EDITOR_QSEXP
+
 // https://en.wikipedia.org/wiki/UTF-8
 // We assume that the char is a standalone character (<128) or a leading byte of an UTF-8 code sequence (non-10xxxxxx code)
 static int UTF8CharLength(char c)
@@ -513,6 +528,8 @@ static inline int ImTextCharToUtf8(char* buf, int buf_size, unsigned int c)
 		return 3;
 	}
 }
+
+#endif // IMGUI_EDITOR_QSEXP
 
 static inline bool CharIsWordChar(char ch)
 {
