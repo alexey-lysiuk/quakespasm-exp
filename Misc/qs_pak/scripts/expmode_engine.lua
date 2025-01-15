@@ -60,7 +60,7 @@ local updatesearch <const> = expmode.updatesearch
 expmode.engine = {}
 
 local function levelentities_createtextview(self)
-	local entities = host.entities()
+	local entities = text.toascii(host.entities())
 
 	local textview = imColorTextEdit()
 	textview:SetLanguageDefinition('entities')
