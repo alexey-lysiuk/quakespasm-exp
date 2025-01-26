@@ -1,0 +1,3705 @@
+{
+"light" "0"
+"sounds" "2"
+"worldtype" "1"
+"message" "Sadlark7"
+"classname" "worldspawn"
+}
+{
+"origin" "-172 312 528"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-172 424 528"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-172 536 528"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-312 700 428"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-468 508 316"
+"style" "10"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-344 36 428"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-236 336 252"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-232 668 680"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-572 536 560"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-960 36 824"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-960 104 824"
+"style" "0"
+"light" "400"
+"classname" "light"
+}
+{
+"origin" "-960 176 824"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-960 240 824"
+"style" "0"
+"light" "400"
+"classname" "light"
+}
+{
+"origin" "-960 456 824"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-960 524 824"
+"style" "0"
+"light" "400"
+"classname" "light"
+}
+{
+"origin" "-960 596 824"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-960 660 824"
+"style" "0"
+"light" "400"
+"classname" "light"
+}
+{
+"origin" "-928 492 216"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-928 660 216"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-824 660 216"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-892 240 216"
+"style" "0"
+"light" "275"
+"classname" "light"
+}
+{
+"origin" "-892 104 216"
+"style" "0"
+"light" "275"
+"classname" "light"
+}
+{
+"origin" "-736 580 208"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-636 728 204"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-484 728 208"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-736 452 208"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-928 204 504"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-820 100 484"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-660 252 472"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-508 200 444"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-912 560 484"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-808 632 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-312 504 536"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-312 384 428"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-200 220 432"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"model" "*1"
+"classname" "func_illusionary"
+}
+{
+"model" "*2"
+"targetname" "thronedoor"
+"sounds" "1"
+"dmg" "0"
+"lip" "0"
+"wait" "-1"
+"speed" "20"
+"angle" "180"
+"classname" "func_door"
+}
+{
+"model" "*3"
+"targetname" "thronedoor"
+"sounds" "1"
+"wait" "-1"
+"speed" "20"
+"classname" "func_door"
+}
+{
+"origin" "-536 -24 768"
+"target" "sp2"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-312 -24 768"
+"target" "sp3"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-696 372 768"
+"target" "sp4"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-536 372 768"
+"target" "sp5"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-312 372 768"
+"target" "sp6"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-664 172 856"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-536 172 856"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-404 172 856"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-280 172 856"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-696 -24 768"
+"target" "sp1"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-696 -24 576"
+"targetname" "sp1"
+"classname" "info_null"
+}
+{
+"origin" "-536 -24 576"
+"targetname" "sp2"
+"classname" "info_null"
+}
+{
+"origin" "-312 -24 576"
+"targetname" "sp3"
+"classname" "info_null"
+}
+{
+"origin" "-696 372 576"
+"targetname" "sp4"
+"classname" "info_null"
+}
+{
+"origin" "-536 372 576"
+"targetname" "sp5"
+"classname" "info_null"
+}
+{
+"origin" "-312 372 576"
+"targetname" "sp6"
+"classname" "info_null"
+}
+{
+"origin" "-348 220 436"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-696 -8 784"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-536 -8 784"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-312 -8 784"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-696 356 784"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-536 356 784"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-312 356 784"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-592 168 704"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-364 168 704"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-528 -62 576"
+"style" "0"
+"light" "150"
+"classname" "light_flame_small_yellow"
+}
+{
+"origin" "-520 -50 572"
+"style" "0"
+"light" "100"
+"classname" "light_flame_small_white"
+}
+{
+"origin" "-540 -58 596"
+"style" "1"
+"light" "200"
+"classname" "light_flame_large_yellow"
+}
+{
+"origin" "-556 -50 584"
+"style" "0"
+"light" "100"
+"classname" "light_flame_small_white"
+}
+{
+"origin" "-540 44 608"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-28 236 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "120 236 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "336 308 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "380 176 536"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-28 104 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "120 104 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "336 40 532"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "232 176 808"
+"target" "sp7"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "284 176 808"
+"target" "sp8"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "256 180 916"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "260 36 620"
+"targetname" "sp8"
+"classname" "info_null"
+}
+{
+"origin" "-64 200 576"
+"targetname" "sp10"
+"classname" "info_null"
+}
+{
+"origin" "260 312 620"
+"targetname" "sp7"
+"classname" "info_null"
+}
+{
+"origin" "-64 144 576"
+"targetname" "sp9"
+"classname" "info_null"
+}
+{
+"origin" "-28 204 796"
+"target" "sp10"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-28 136 796"
+"target" "sp9"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-28 136 816"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-28 204 816"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "320 176 676"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"model" "*4"
+"targetname" "endwall"
+"classname" "func_wall"
+}
+{
+"origin" "112 172 688"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "504 172 648"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"model" "*5"
+"sounds" "1"
+"lip" "0"
+"wait" "-1"
+"speed" "20"
+"spawnflags" "8"
+"angle" "90"
+"classname" "func_door"
+}
+{
+"model" "*6"
+"sounds" "1"
+"wait" "-1"
+"speed" "20"
+"spawnflags" "8"
+"angle" "270"
+"classname" "func_door"
+}
+{
+"origin" "-652 408 604"
+"target" "sp11"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-652 408 436"
+"targetname" "sp11"
+"classname" "info_null"
+}
+{
+"origin" "-536 408 628"
+"target" "sp12"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-536 408 436"
+"targetname" "sp12"
+"classname" "info_null"
+}
+{
+"origin" "-536 720 628"
+"target" "sp14"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-536 720 480"
+"targetname" "sp14"
+"classname" "info_null"
+}
+{
+"origin" "-651 720 605"
+"target" "sp13"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-652 720 464"
+"targetname" "sp13"
+"classname" "info_null"
+}
+{
+"model" "*7"
+"message" "Look above you.."
+"targetname" "sec1door"
+"health" "0"
+"wait" "-1"
+"dmg" "0"
+"lip" "5"
+"sounds" "3"
+"speed" "150"
+"angle" "-1"
+"classname" "func_door"
+}
+{
+"origin" "-108 668 692"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"model" "*8"
+"delay" "0"
+"style" "32"
+"target" "spike2trap"
+"wait" ".75"
+"sounds" "0"
+"classname" "trigger_multiple"
+}
+{
+"origin" "-948 340 252"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"model" "*9"
+"dmg" "300"
+"targetname" "lavatrain1"
+"target" "t0"
+"sounds" "0"
+"speed" "50"
+"classname" "func_train"
+}
+{
+"origin" "-804 632 216"
+"wait" "2"
+"target" "t2"
+"targetname" "t1"
+"classname" "path_corner"
+}
+{
+"origin" "-992 396 156"
+"target" "t5"
+"targetname" "t4"
+"classname" "path_corner"
+}
+{
+"origin" "-992 396 156"
+"target" "t4"
+"targetname" "t4"
+"classname" "path_corner"
+}
+{
+"origin" "-804 632 156"
+"target" "t1"
+"targetname" "t6"
+"classname" "path_corner"
+}
+{
+"origin" "-892 632 156"
+"target" "t1"
+"targetname" "t0"
+"classname" "path_corner"
+}
+{
+"model" "*10"
+"message" "Take the train!"
+"wait" "-1"
+"sounds" "3"
+"lip" "6"
+"delay" "0"
+"target" "lavatrain1"
+"speed" "100"
+"angle" "90"
+"classname" "func_button"
+}
+{
+"origin" "-664 644 268"
+"style" "10"
+"light" "175"
+"classname" "light"
+}
+{
+"model" "*11"
+"health" "0"
+"dmg" "300"
+"lip" "15"
+"wait" "4"
+"sounds" "1"
+"targetname" "spike2trap"
+"speed" "150"
+"spawnflags" "32"
+"angle" "-1"
+"classname" "func_door"
+}
+{
+"origin" "-716 -24 208"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-588 -24 208"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-440 -24 208"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-468 68 296"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-488 288 296"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"model" "*12"
+"message" "Take the train again!"
+"wait" "-1"
+"health" "0"
+"lip" "10"
+"sounds" "3"
+"delay" "0"
+"target" "lavatrain2"
+"speed" "100"
+"angle" "180"
+"classname" "func_button"
+}
+{
+"origin" "-992 220 208"
+"wait" "2"
+"target" "t8"
+"targetname" "t7"
+"classname" "path_corner"
+}
+{
+"model" "*13"
+"dmg" "300"
+"targetname" "lavatrain2"
+"target" "t11"
+"sounds" "0"
+"speed" "50"
+"classname" "func_train"
+}
+{
+"origin" "-992 52 208"
+"target" "t9"
+"targetname" "t8"
+"classname" "path_corner"
+}
+{
+"origin" "-820 52 216"
+"wait" "2"
+"target" "t10"
+"targetname" "t9"
+"classname" "path_corner"
+}
+{
+"origin" "-820 52 156"
+"target" "t12"
+"targetname" "t10"
+"classname" "path_corner"
+}
+{
+"origin" "-992 156 156"
+"target" "t7"
+"targetname" "t11"
+"classname" "path_corner"
+}
+{
+"origin" "-992 632 208"
+"target" "t3"
+"targetname" "t2"
+"classname" "path_corner"
+}
+{
+"origin" "-992 396 208"
+"wait" "4"
+"target" "t4"
+"targetname" "t3"
+"classname" "path_corner"
+}
+{
+"model" "*14"
+"health" "0"
+"message" "Take the silver key first!"
+"dmg" "0"
+"lip" "0"
+"wait" "-1"
+"sounds" "4"
+"speed" "100"
+"targetname" "keydoor"
+"angle" "-1"
+"classname" "func_door"
+}
+{
+"origin" "-464 316 256"
+"delay" "1"
+"message" "Use the teleporter!"
+"target" "seq4"
+"classname" "item_key1"
+}
+{
+"model" "*15"
+"target" "play1dest"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-676 600 256"
+"targetname" "play1dest"
+"angle" "322"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-992 52 156"
+"target" "t7"
+"targetname" "t12"
+"classname" "path_corner"
+}
+{
+"origin" "-992 632 156"
+"target" "t6"
+"targetname" "t5"
+"classname" "path_corner"
+}
+{
+"origin" "-244 -124 428"
+"style" "1"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-2360 352 548"
+"classname" "info_player_start"
+}
+{
+"model" "*16"
+"dmg" "0"
+"lip" "5"
+"wait" "-1"
+"sounds" "4"
+"speed" "200"
+"targetname" "trap1door"
+"angle" "-1"
+"classname" "func_door"
+}
+{
+"origin" "-1096 476 576"
+"target" "s12"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-1096 476 464"
+"targetname" "s12"
+"classname" "info_null"
+}
+{
+"origin" "-1180 528 512"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-1488 512 536"
+"target" "s13"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-1488 512 424"
+"targetname" "s13"
+"classname" "info_null"
+}
+{
+"origin" "-1180 184 512"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-1264 476 576"
+"target" "s11"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-1264 476 464"
+"targetname" "s11"
+"classname" "info_null"
+}
+{
+"origin" "-1528 356 636"
+"target" "s14"
+"style" "0"
+"light" "275"
+"classname" "light"
+}
+{
+"origin" "-1528 356 548"
+"targetname" "s14"
+"classname" "info_null"
+}
+{
+"origin" "-1668 356 648"
+"target" "s15"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-1668 356 548"
+"targetname" "s15"
+"classname" "info_null"
+}
+{
+"origin" "-1804 356 648"
+"target" "s16"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-1804 356 548"
+"targetname" "s16"
+"classname" "info_null"
+}
+{
+"origin" "-1940 356 652"
+"target" "s17"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-1960 356 552"
+"targetname" "s17"
+"classname" "info_null"
+}
+{
+"origin" "-1432 196 512"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-1432 356 512"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-1924 208 572"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-1924 496 572"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-2372 352 752"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-2320 352 752"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-2152 352 752"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-2204 352 752"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1940 356 668"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-1804 356 664"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-1668 356 664"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-1528 360 652"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-2264 352 752"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"model" "*17"
+"targetname" "trueendwall"
+"classname" "func_wall"
+}
+{
+"origin" "-2280 232 588"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-2280 476 588"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-2108 228 588"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-2108 476 588"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1312 516 488"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-1120 152 464"
+"spawnflags" "1"
+"classname" "item_health"
+}
+{
+"origin" "-1120 192 464"
+"spawnflags" "1"
+"classname" "item_health"
+}
+{
+"model" "*18"
+"target" "trap1door"
+"sounds" "3"
+"delay" "0"
+"style" "32"
+"classname" "trigger_once"
+}
+{
+"origin" "-788 848 516"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-856 1004 528"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-1004 1156 548"
+"style" "10"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-1156 1320 584"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-1352 1344 640"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-1544 1756 652"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-1128 1908 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1352 1560 652"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"model" "*19"
+"targetname" "egyptdoor"
+"message" "Kill the guard first!"
+"lip" "5"
+"sounds" "1"
+"wait" "-1"
+"speed" "20"
+"angle" "180"
+"classname" "func_door"
+}
+{
+"model" "*20"
+"targetname" "egyptdoor"
+"message" "Kill the guard first!"
+"lip" "5"
+"sounds" "1"
+"wait" "-1"
+"speed" "20"
+"classname" "func_door"
+}
+{
+"origin" "-1744 1756 776"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1352 2148 776"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-960 1756 776"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1352 1780 864"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1376 1756 864"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1352 1728 864"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1324 1756 864"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-1184 1984 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1516 1984 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1580 1904 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1580 1592 660"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-1524 1532 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1128 1600 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1184 1540 660"
+"style" "0"
+"light" "175"
+"classname" "light"
+}
+{
+"origin" "-1156 1756 652"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-1356 1952 652"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-2320 168 536"
+"spawnflags" "1"
+"classname" "item_shells"
+}
+{
+"origin" "-2280 516 520"
+"spawnflags" "1"
+"classname" "weapon_supershotgun"
+}
+{
+"origin" "-2136 352 544"
+"classname" "item_armor1"
+}
+{
+"origin" "-1488 512 456"
+"spawnflags" "1"
+"classname" "weapon_grenadelauncher"
+}
+{
+"origin" "-1428 356 484"
+"spawnflags" "257"
+"angle" "180"
+"classname" "monster_demon1"
+}
+{
+"origin" "-1428 172 484"
+"spawnflags" "1"
+"angle" "90"
+"classname" "monster_ogre"
+}
+{
+"origin" "-1428 512 452"
+"spawnflags" "1"
+"classname" "monster_demon1"
+}
+{
+"model" "*21"
+"health" "1"
+"delay" "0"
+"target" "sec1door"
+"wait" "-1"
+"sounds" "3"
+"speed" "150"
+"angle" "-1"
+"classname" "func_button"
+}
+{
+"model" "*22"
+"targetname" "bar1door"
+"message" "Find  Sadlarks Egyptian\nTemple first!"
+"lip" "2"
+"wait" "-1"
+"sounds" "4"
+"speed" "20"
+"angle" "-2"
+"classname" "func_door"
+}
+{
+"model" "*23"
+"lip" "8"
+"delay" "0"
+"target" "seq1"
+"wait" "-1"
+"sounds" "3"
+"speed" "50"
+"angle" "-2"
+"classname" "func_button"
+}
+{
+"model" "*24"
+"lip" "8"
+"health" "0"
+"delay" "0"
+"target" "seq2"
+"wait" "-1"
+"sounds" "3"
+"speed" "50"
+"angle" "-2"
+"classname" "func_button"
+}
+{
+"model" "*25"
+"target" "seq3"
+"lip" "8"
+"delay" "0"
+"health" "0"
+"wait" "-1"
+"sounds" "3"
+"speed" "50"
+"angle" "-2"
+"classname" "func_button"
+}
+{
+"model" "*26"
+"delay" "0"
+"style" "32"
+"target" "count1"
+"sounds" "0"
+"targetname" "seq1"
+"classname" "trigger_relay"
+}
+{
+"model" "*27"
+"delay" "1"
+"style" "32"
+"target" "mon1tel"
+"sounds" "0"
+"targetname" "seq1"
+"classname" "trigger_relay"
+}
+{
+"model" "*28"
+"delay" "0"
+"style" "32"
+"target" "count1"
+"sounds" "0"
+"targetname" "seq2"
+"classname" "trigger_relay"
+}
+{
+"model" "*29"
+"delay" "0"
+"style" "32"
+"target" "mon2tel"
+"sounds" "0"
+"targetname" "seq2"
+"classname" "trigger_relay"
+}
+{
+"model" "*30"
+"delay" "0"
+"style" "32"
+"target" "count1"
+"sounds" "0"
+"targetname" "seq3"
+"classname" "trigger_relay"
+}
+{
+"model" "*31"
+"delay" "2"
+"style" "32"
+"target" "mon3tel"
+"sounds" "0"
+"targetname" "seq3"
+"classname" "trigger_relay"
+}
+{
+"model" "*32"
+"sounds" "0"
+"message" "Some bars are lowered..."
+"count" "3"
+"delay" "1"
+"style" "32"
+"target" "bar1door"
+"targetname" "count1"
+"spawnflags" "1"
+"classname" "trigger_counter"
+}
+{
+"origin" "-1924 2232 1080"
+"spawnflags" "768"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*33"
+"target" "mon1des"
+"targetname" "mon1tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-1924 2284 1080"
+"spawnflags" "256"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*34"
+"target" "mon2des"
+"targetname" "mon2tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-1924 2336 1080"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*35"
+"target" "mon3des"
+"targetname" "mon3tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-1440 1756 540"
+"targetname" "mon1des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-1352 1864 540"
+"targetname" "mon2des"
+"angle" "90"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-1260 1760 540"
+"targetname" "mon3des"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-1352 1376 540"
+"delay" "2"
+"target" "egyptdoor"
+"spawnflags" "1"
+"angle" "270"
+"classname" "monster_ogre"
+}
+{
+"origin" "-1004 1156 520"
+"classname" "ambient_flouro_buzz"
+}
+{
+"origin" "-1356 1628 576"
+"classname" "ambient_drone"
+}
+{
+"origin" "-1352 1964 576"
+"classname" "ambient_drone"
+}
+{
+"model" "*36"
+"target" "mon4des"
+"targetname" "mon4tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-1984 2336 1080"
+"spawnflags" "256"
+"classname" "monster_knight"
+}
+{
+"model" "*37"
+"target" "mon5des"
+"targetname" "mon5tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-1984 2284 1080"
+"classname" "monster_knight"
+}
+{
+"model" "*38"
+"delay" "0"
+"style" "32"
+"target" "mon4tel"
+"sounds" "0"
+"targetname" "seq3"
+"classname" "trigger_relay"
+}
+{
+"model" "*39"
+"delay" "0"
+"style" "32"
+"target" "mon5tel"
+"sounds" "0"
+"targetname" "seq3"
+"classname" "trigger_relay"
+}
+{
+"origin" "-1216 1316 540"
+"targetname" "mon4des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-820 1000 476"
+"targetname" "mon5des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-1576 1544 548"
+"classname" "monster_zombie"
+}
+{
+"origin" "-1136 1528 548"
+"spawnflags" "768"
+"angle" "180"
+"classname" "monster_zombie"
+}
+{
+"origin" "-1224 1960 548"
+"spawnflags" "256"
+"angle" "211"
+"classname" "monster_zombie"
+}
+{
+"origin" "-1568 1908 548"
+"spawnflags" "768"
+"angle" "292"
+"classname" "monster_zombie"
+}
+{
+"origin" "-136 664 516"
+"angle" "180"
+"classname" "monster_demon1"
+}
+{
+"origin" "-84 648 512"
+"spawnflags" "2"
+"classname" "item_health"
+}
+{
+"model" "*40"
+"target" "mon6des"
+"targetname" "mon6tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-148 932 1076"
+"spawnflags" "1"
+"classname" "monster_demon1"
+}
+{
+"origin" "-224 212 390"
+"targetname" "mon6des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"model" "*41"
+"message" "The throne moves..."
+"sounds" "4"
+"delay" "2"
+"style" "32"
+"target" "troomdoor"
+"classname" "trigger_once"
+}
+{
+"model" "*42"
+"sounds" "0"
+"delay" "0"
+"style" "32"
+"target" "mon7tel"
+"classname" "trigger_once"
+}
+{
+"model" "*43"
+"target" "mon6des"
+"targetname" "mon7tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "68 928 1080"
+"spawnflags" "1"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*44"
+"killtarget" "trueendwall"
+"delay" "0"
+"wait" "-1"
+"sounds" "3"
+"classname" "func_button"
+}
+{
+"model" "*45"
+"delay" "0"
+"style" "32"
+"message" "Then begining is the end..."
+"wait" "1"
+"sounds" "4"
+"classname" "trigger_multiple"
+}
+{
+"origin" "76 176 608"
+"spawnflags" "1"
+"angle" "180"
+"classname" "monster_shambler"
+}
+{
+"model" "*46"
+"map" "start"
+"classname" "trigger_changelevel"
+}
+{
+"model" "*47"
+"delay" "0"
+"style" "32"
+"message" "Here ends this level..."
+"wait" "1"
+"sounds" "4"
+"classname" "trigger_multiple"
+}
+{
+"origin" "-1260 1536 568"
+"mangle" "345 135 0"
+"angle" "315"
+"classname" "info_intermission"
+}
+{
+"origin" "-244 176 688"
+"mangle" "5 180 0"
+"angle" "315"
+"classname" "info_intermission"
+}
+{
+"origin" "-800 524 452"
+"target" "p13"
+"spawnflags" "768"
+"angle" "90"
+"classname" "monster_ogre_marksman"
+}
+{
+"origin" "-524 428 448"
+"angle" "212"
+"classname" "monster_knight"
+}
+{
+"origin" "-692 232 452"
+"target" "p12"
+"spawnflags" "256"
+"angle" "212"
+"classname" "monster_knight"
+}
+{
+"model" "*48"
+"delay" "0"
+"style" "32"
+"target" "mon6tel"
+"sounds" "0"
+"targetname" "seq4"
+"classname" "trigger_relay"
+}
+{
+"model" "*49"
+"target" "mon7des"
+"targetname" "mon6tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-64 928 1076"
+"spawnflags" "1"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "-240 680 392"
+"targetname" "mon7des"
+"angle" "270"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-236 424 292"
+"targetname" "mon8des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "8 928 1080"
+"spawnflags" "1"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*50"
+"target" "mon8des"
+"targetname" "mon6tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"model" "*51"
+"delay" "0"
+"style" "32"
+"target" "keydoor"
+"sounds" "0"
+"targetname" "seq4"
+"classname" "trigger_relay"
+}
+{
+"origin" "-520 672 256"
+"spawnflags" "257"
+"angle" "270"
+"classname" "monster_demon1"
+}
+{
+"origin" "-380 432 292"
+"classname" "monster_knight"
+}
+{
+"origin" "-948 664 640"
+"spawnflags" "256"
+"angle" "278"
+"classname" "monster_wizard"
+}
+{
+"origin" "-944 64 564"
+"spawnflags" "768"
+"angle" "90"
+"classname" "monster_wizard"
+}
+{
+"origin" "-640 84 252"
+"spawnflags" "257"
+"angle" "180"
+"classname" "monster_ogre_marksman"
+}
+{
+"origin" "-516 264 256"
+"angle" "270"
+"classname" "monster_knight"
+}
+{
+"origin" "-488 176 608"
+"spawnflags" "257"
+"classname" "monster_demon1"
+}
+{
+"origin" "144 932 1076"
+"spawnflags" "256"
+"classname" "monster_shalrath"
+}
+{
+"model" "*52"
+"target" "mon9des"
+"targetname" "mon8tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-280 180 572"
+"targetname" "mon9des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-476 560 440"
+"classname" "item_health"
+}
+{
+"origin" "-476 524 440"
+"classname" "item_health"
+}
+{
+"origin" "-476 488 440"
+"spawnflags" "1"
+"classname" "item_shells"
+}
+{
+"origin" "-508 528 308"
+"classname" "ambient_light_buzz"
+}
+{
+"origin" "-996 996 500"
+"classname" "monster_knight"
+}
+{
+"origin" "-1148 1752 576"
+"classname" "ambient_drone"
+}
+{
+"origin" "-1508 1756 576"
+"classname" "ambient_drone"
+}
+{
+"origin" "-1616 1984 536"
+"classname" "item_rockets"
+}
+{
+"origin" "-1576 1984 536"
+"spawnflags" "1024"
+"classname" "item_rockets"
+}
+{
+"origin" "-1120 1988 540"
+"classname" "item_shells"
+}
+{
+"origin" "-1160 1988 540"
+"classname" "item_shells"
+}
+{
+"origin" "-1576 1492 532"
+"classname" "item_health"
+}
+{
+"origin" "-1616 1492 532"
+"classname" "item_health"
+}
+{
+"origin" "-1352 2136 536"
+"classname" "weapon_nailgun"
+}
+{
+"origin" "-1368 1656 528"
+"spawnflags" "1"
+"classname" "item_spikes"
+}
+{
+"origin" "-580 180 596"
+"target" "mon8tel"
+"classname" "weapon_supernailgun"
+}
+{
+"origin" "-724 344 576"
+"spawnflags" "1"
+"classname" "item_shells"
+}
+{
+"origin" "-688 344 576"
+"spawnflags" "1"
+"classname" "item_spikes"
+}
+{
+"origin" "-724 -12 576"
+"classname" "item_health"
+}
+{
+"origin" "-688 -12 576"
+"spawnflags" "1024"
+"classname" "item_health"
+}
+{
+"origin" "-532 316 248"
+"classname" "item_armor2"
+}
+{
+"origin" "-716 -12 244"
+"spawnflags" "1"
+"classname" "item_health"
+}
+{
+"origin" "-680 -12 244"
+"spawnflags" "1"
+"classname" "item_health"
+}
+{
+"origin" "-476 12 248"
+"spawnflags" "1"
+"classname" "item_shells"
+}
+{
+"origin" "-476 48 248"
+"spawnflags" "1"
+"classname" "item_spikes"
+}
+{
+"origin" "-660 680 244"
+"classname" "item_health"
+}
+{
+"origin" "-624 680 244"
+"classname" "item_health"
+}
+{
+"origin" "-700 404 244"
+"classname" "item_rockets"
+}
+{
+"origin" "-356 280 572"
+"angle" "97"
+"classname" "monster_knight"
+}
+{
+"origin" "-316 260 576"
+"spawnflags" "256"
+"angle" "76"
+"classname" "monster_knight"
+}
+{
+"model" "*53"
+"delay" "2"
+"style" "32"
+"target" "mon9tel"
+"classname" "trigger_once"
+}
+{
+"origin" "-148 1028 1076"
+"spawnflags" "1"
+"classname" "monster_shalrath"
+}
+{
+"model" "*54"
+"target" "mon10des"
+"targetname" "mon9tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-60 1028 1076"
+"spawnflags" "1"
+"classname" "monster_ogre"
+}
+{
+"model" "*55"
+"target" "mon11des"
+"targetname" "mon9tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "16 1032 1076"
+"spawnflags" "1"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*56"
+"target" "mon12des"
+"targetname" "mon9tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"model" "*57"
+"target" "mon13des"
+"targetname" "mon9tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "80 1032 1076"
+"spawnflags" "1"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "-632 460 452"
+"targetname" "mon10des"
+"angle" "353"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-1924 344 528"
+"targetname" "mon11des"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-1096 192 468"
+"targetname" "mon12des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-116 176 580"
+"targetname" "mon13des"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "176 256 600"
+"classname" "item_health"
+}
+{
+"origin" "216 256 600"
+"classname" "item_health"
+}
+{
+"origin" "176 60 600"
+"classname" "item_spikes"
+}
+{
+"origin" "212 60 600"
+"classname" "item_rockets"
+}
+{
+"origin" "248 60 600"
+"classname" "item_shells"
+}
+{
+"model" "*58"
+"wait" "-1"
+"delay" "0"
+"style" "32"
+"classname" "trigger_secret"
+}
+{
+"origin" "24 -1416 728"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "28 -2000 900"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-368 -1688 1096"
+"style" "0"
+"light" "500"
+"classname" "light"
+}
+{
+"origin" "424 -1688 1096"
+"style" "0"
+"light" "500"
+"classname" "light"
+}
+{
+"origin" "480 -2012 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "480 -1840 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "480 -1648 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "480 -1464 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-424 -1464 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-424 -1648 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-424 -1840 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-424 -2012 576"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-356 -2111 576"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-98 -2111 576"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "171 -2112 576"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "412 -2111 576"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -1882 1108"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -1692 1108"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -1752 1108"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -1816 1108"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -1592 836"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "-212 -1784 896"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "268 -1784 896"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "312 -1652 780"
+"targetname" "s29"
+"classname" "info_null"
+}
+{
+"origin" "312 -1652 960"
+"target" "s29"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "312 -1908 960"
+"target" "s28"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "312 -1908 780"
+"targetname" "s28"
+"classname" "info_null"
+}
+{
+"origin" "-260 -1912 960"
+"target" "s27"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "-260 -1912 780"
+"targetname" "s27"
+"classname" "info_null"
+}
+{
+"origin" "-260 -1652 780"
+"targetname" "s26"
+"classname" "info_null"
+}
+{
+"origin" "-260 -1652 960"
+"target" "s26"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "28 -1792 1024"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "148 -2184 768"
+"targetname" "s30"
+"classname" "info_null"
+}
+{
+"origin" "28 -2188 768"
+"targetname" "s31"
+"classname" "info_null"
+}
+{
+"origin" "-92 -2184 768"
+"targetname" "s32"
+"classname" "info_null"
+}
+{
+"origin" "148 -2180 1012"
+"target" "s30"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -2180 1012"
+"target" "s31"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-92 -2180 1012"
+"target" "s32"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-200 -2108 1104"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -2108 1104"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "284 -2108 1104"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-88 -2108 1104"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "168 -2108 1104"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-260 -1652 976"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-260 -1912 976"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "312 -1908 976"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "312 -1652 976"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -1768 832"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-52 -1780 796"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "104 -1780 796"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -1712 796"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -1856 796"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"model" "*59"
+"delay" ".5"
+"style" "32"
+"target" "trap2door"
+"message" "Watch your back!"
+"sounds" "3"
+"classname" "trigger_once"
+}
+{
+"origin" "-212 -1788 680"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "276 -1788 680"
+"style" "0"
+"light" "250"
+"classname" "light"
+}
+{
+"origin" "28 -1568 668"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-192 -1548 668"
+"style" "6"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "264 -1548 668"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "28 -2044 576"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-52 -1716 680"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "108 -1716 680"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-368 -1568 668"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-352 -1388 668"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"origin" "-372 -1780 668"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "464 -1548 668"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "428 -1828 680"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "264 -1428 668"
+"style" "10"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-76 -1849 608"
+"style" "0"
+"light" "150"
+"classname" "light_flame_small_yellow"
+}
+{
+"origin" "133 -1849 608"
+"style" "0"
+"light" "150"
+"classname" "light_flame_small_yellow"
+}
+{
+"origin" "28 -1956 672"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-352 -1412 848"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "28 -1792 832"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-352 -1568 848"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "452 -1416 852"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "264 -1408 828"
+"style" "0"
+"light" "225"
+"classname" "light"
+}
+{
+"model" "*60"
+"message" "Watch out! A Trap!"
+"delay" "0"
+"style" "32"
+"target" "trap3door"
+"wait" "5"
+"sounds" "3"
+"classname" "trigger_multiple"
+}
+{
+"model" "*61"
+"delay" "0"
+"style" "32"
+"target" "seq6"
+"message" "You just missed\nthe gold rune key.."
+"sounds" "4"
+"classname" "trigger_once"
+}
+{
+"origin" "-16 -252 580"
+"target" "s19"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "-16 -252 352"
+"targetname" "s19"
+"classname" "info_null"
+}
+{
+"origin" "72 -252 580"
+"target" "s20"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "72 -252 352"
+"targetname" "s20"
+"classname" "info_null"
+}
+{
+"origin" "28 -248 472"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "72 -124 580"
+"target" "s22"
+"style" "0"
+"light" "450"
+"classname" "light"
+}
+{
+"origin" "88 -124 352"
+"targetname" "s22"
+"classname" "info_null"
+}
+{
+"origin" "-16 -124 580"
+"target" "s21"
+"style" "0"
+"light" "450"
+"classname" "light"
+}
+{
+"origin" "-12 -124 352"
+"targetname" "s21"
+"classname" "info_null"
+}
+{
+"model" "*62"
+"message" "Behind the throne\na button to operate this gate"
+"dmg" "0"
+"targetname" "silverstopbar"
+"lip" "1"
+"wait" "-1"
+"sounds" "4"
+"speed" "30"
+"angle" "-2"
+"classname" "func_door"
+}
+{
+"model" "*63"
+"lip" "25"
+"wait" "-1"
+"sounds" "1"
+"speed" "30"
+"spawnflags" "16"
+"angle" "180"
+"classname" "func_door"
+}
+{
+"model" "*64"
+"dmg" "0"
+"lip" "25"
+"wait" "-1"
+"sounds" "1"
+"speed" "30"
+"spawnflags" "16"
+"classname" "func_door"
+}
+{
+"origin" "-16 -252 600"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "72 -252 600"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "28 -512 696"
+"target" "s18"
+"style" "0"
+"light" "450"
+"classname" "light"
+}
+{
+"origin" "28 -512 424"
+"targetname" "s18"
+"classname" "info_null"
+}
+{
+"origin" "28 -740 696"
+"target" "s23"
+"style" "0"
+"light" "400"
+"classname" "light"
+}
+{
+"origin" "28 -740 464"
+"targetname" "s23"
+"classname" "info_null"
+}
+{
+"origin" "28 -992 696"
+"target" "s24"
+"style" "0"
+"light" "350"
+"classname" "light"
+}
+{
+"origin" "28 -992 529"
+"targetname" "s24"
+"classname" "info_null"
+}
+{
+"origin" "28 -1248 696"
+"target" "s25"
+"style" "0"
+"light" "300"
+"classname" "light"
+}
+{
+"origin" "28 -1248 586"
+"targetname" "s25"
+"classname" "info_null"
+}
+{
+"origin" "28 -512 712"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -740 712"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -992 712"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "28 -1248 712"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "72 -124 600"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "-16 -124 600"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "32 -1774 841"
+"targetname" "zombie"
+"spawnflags" "1"
+"angle" "90"
+"classname" "monster_zombie"
+}
+{
+"model" "*65"
+"message" "The cryptdoor is locked!\nfind 2 buttons first!"
+"targetname" "cryptdoor"
+"sounds" "1"
+"lip" "20"
+"wait" "-1"
+"speed" "30"
+"angle" "180"
+"classname" "func_door"
+}
+{
+"model" "*66"
+"message" "The cryptdoor is locked!\nfind 2 buttons first!"
+"targetname" "cryptdoor"
+"sounds" "1"
+"lip" "20"
+"wait" "-1"
+"speed" "30"
+"classname" "func_door"
+}
+{
+"origin" "32 -1786 841"
+"targetname" "zombie"
+"spawnflags" "1"
+"angle" "270"
+"classname" "monster_zombie"
+}
+{
+"model" "*67"
+"dmg" "0"
+"lip" "5"
+"wait" "-1"
+"sounds" "3"
+"speed" "150"
+"targetname" "trap2door"
+"classname" "func_door"
+}
+{
+"model" "*68"
+"targetname" "silverlift1"
+"lip" "-148"
+"wait" "-1"
+"sounds" "2"
+"speed" "75"
+"angle" "-1"
+"classname" "func_door"
+}
+{
+"origin" "28 -2040 628"
+"message" "Go to the throneroom\nsomething has changed..."
+"target" "seq7"
+"classname" "item_key2"
+}
+{
+"model" "*69"
+"dmg" "0"
+"lip" "-2"
+"wait" "4"
+"sounds" "3"
+"speed" "50"
+"targetname" "silverlift2"
+"angle" "90"
+"classname" "func_door"
+}
+{
+"model" "*70"
+"delay" "0"
+"style" "32"
+"target" "silverlift1"
+"sounds" "0"
+"targetname" "seq5"
+"classname" "trigger_relay"
+}
+{
+"model" "*71"
+"delay" "0"
+"style" "32"
+"target" "silverlift2"
+"sounds" "0"
+"targetname" "seq5"
+"classname" "trigger_relay"
+}
+{
+"model" "*72"
+"targetname" "trap3door"
+"lip" "-98"
+"wait" "1"
+"sounds" "3"
+"speed" "100"
+"classname" "func_door"
+}
+{
+"model" "*73"
+"message" "Shoot the target to open..."
+"dmg" "300"
+"lip" "-84"
+"wait" "5"
+"sounds" "3"
+"speed" "100"
+"targetname" "sec2door"
+"classname" "func_door"
+}
+{
+"model" "*74"
+"wait" "5"
+"sounds" "3"
+"target" "sec2door"
+"health" "1"
+"speed" "50"
+"delay" "0"
+"angle" "90"
+"classname" "func_button"
+}
+{
+"model" "*75"
+"lip" "10"
+"wait" "5"
+"sounds" "3"
+"target" "sec2door"
+"health" "0"
+"speed" "50"
+"delay" "0"
+"angle" "270"
+"classname" "func_button"
+}
+{
+"origin" "400 -1956 616"
+"classname" "item_health"
+}
+{
+"model" "*76"
+"lip" "10"
+"wait" "-1"
+"sounds" "3"
+"target" "count2"
+"health" "0"
+"speed" "50"
+"delay" "0"
+"angle" "90"
+"classname" "func_button"
+}
+{
+"model" "*77"
+"lip" "10"
+"wait" "-1"
+"sounds" "3"
+"target" "count2"
+"health" "0"
+"speed" "50"
+"delay" "0"
+"angle" "90"
+"classname" "func_button"
+}
+{
+"model" "*78"
+"sounds" "3"
+"count" "2"
+"delay" "1"
+"style" "32"
+"target" "cryptdoor"
+"message" "The cryptdoor opens!"
+"targetname" "count2"
+"spawnflags" "1"
+"classname" "trigger_counter"
+}
+{
+"origin" "-380 -1448 624"
+"angle" "273"
+"classname" "monster_demon1"
+}
+{
+"origin" "164 -1412 804"
+"classname" "item_armorInv"
+}
+{
+"origin" "220 -1388 776"
+"classname" "weapon_lightning"
+}
+{
+"origin" "204 -1460 792"
+"spawnflags" "1"
+"classname" "item_cells"
+}
+{
+"origin" "244 -1460 792"
+"spawnflags" "1"
+"classname" "item_cells"
+}
+{
+"origin" "-284 -1432 624"
+"spawnflags" "2"
+"classname" "item_health"
+}
+{
+"origin" "-280 -1408 780"
+"classname" "monster_ogre_marksman"
+}
+{
+"origin" "24 -1416 624"
+"angle" "90"
+"classname" "monster_ogre_marksman"
+}
+{
+"origin" "-228 -1568 784"
+"target" "p1"
+"spawnflags" "256"
+"angle" "183"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "-376 -1556 772"
+"target" "p2"
+"targetname" "p1"
+"classname" "path_corner"
+}
+{
+"origin" "424 -1556 772"
+"target" "p1"
+"targetname" "p2"
+"classname" "path_corner"
+}
+{
+"origin" "-364 -1688 784"
+"target" "p4"
+"targetname" "p3"
+"classname" "path_corner"
+}
+{
+"origin" "-364 -1956 784"
+"target" "p3"
+"targetname" "p4"
+"classname" "path_corner"
+}
+{
+"origin" "412 -1956 784"
+"target" "p5"
+"targetname" "p6"
+"classname" "path_corner"
+}
+{
+"origin" "412 -1688 784"
+"target" "p6"
+"targetname" "p5"
+"classname" "path_corner"
+}
+{
+"origin" "-364 -1888 784"
+"target" "p3"
+"spawnflags" "768"
+"angle" "90"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "416 -1876 784"
+"target" "p5"
+"spawnflags" "256"
+"angle" "90"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "28 -1716 800"
+"spawnflags" "1"
+"angle" "90"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "660 -1960 276"
+"classname" "monster_zombie"
+}
+{
+"origin" "712 -1960 276"
+"classname" "monster_zombie"
+}
+{
+"model" "*79"
+"target" "mon14des"
+"targetname" "mon12tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"model" "*80"
+"target" "mon15des"
+"targetname" "mon12tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "28 -1724 796"
+"targetname" "mon14des"
+"angle" "90"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "28 -1836 796"
+"targetname" "mon15des"
+"angle" "270"
+"classname" "info_teleport_destination"
+}
+{
+"model" "*81"
+"delay" "0"
+"style" "32"
+"target" "seq5"
+"sounds" "0"
+"targetname" "seq6"
+"classname" "trigger_relay"
+}
+{
+"model" "*82"
+"delay" "0"
+"style" "32"
+"target" "mon12tel"
+"sounds" "0"
+"targetname" "seq6"
+"classname" "trigger_relay"
+}
+{
+"model" "*83"
+"killtarget" "zombie"
+"delay" "0"
+"style" "32"
+"sounds" "0"
+"targetname" "seq6"
+"classname" "trigger_relay"
+}
+{
+"origin" "672 -2036 276"
+"classname" "monster_shambler"
+}
+{
+"model" "*84"
+"target" "mon16des"
+"targetname" "mon10tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "28 -1588 784"
+"targetname" "mon16des"
+"angle" "270"
+"classname" "info_teleport_destination"
+}
+{
+"model" "*85"
+"target" "mon17des"
+"targetname" "mon10tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "764 -1960 276"
+"spawnflags" "256"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "24 -1412 640"
+"targetname" "mon17des"
+"angle" "180"
+"classname" "info_teleport_destination"
+}
+{
+"model" "*86"
+"target" "mon18des"
+"targetname" "mon10tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "756 -2036 276"
+"spawnflags" "256"
+"classname" "monster_shalrath"
+}
+{
+"origin" "28 -152 376"
+"targetname" "mon18des"
+"angle" "270"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-164 -2112 960"
+"spawnflags" "256"
+"angle" "73"
+"classname" "monster_wizard"
+}
+{
+"origin" "268 -2100 672"
+"spawnflags" "769"
+"angle" "125"
+"classname" "monster_wizard"
+}
+{
+"origin" "-8 -88 360"
+"spawnflags" "1"
+"classname" "item_shells"
+}
+{
+"origin" "32 -88 360"
+"spawnflags" "1"
+"classname" "item_spikes"
+}
+{
+"origin" "-84 -316 360"
+"classname" "item_health"
+}
+{
+"origin" "108 -320 360"
+"classname" "item_health"
+}
+{
+"origin" "36 -1488 620"
+"spawnflags" "1024"
+"classname" "item_health"
+}
+{
+"origin" "-8 -1488 620"
+"spawnflags" "1024"
+"classname" "item_health"
+}
+{
+"origin" "-404 -1404 620"
+"spawnflags" "1"
+"classname" "item_rockets"
+}
+{
+"origin" "-364 -1404 620"
+"spawnflags" "1"
+"classname" "item_spikes"
+}
+{
+"origin" "28 -1744 624"
+"delay" "4"
+"target" "mon11tel"
+"spawnflags" "1"
+"angle" "90"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "-268 -1972 620"
+"classname" "item_shells"
+}
+{
+"origin" "-268 -2012 620"
+"classname" "item_spikes"
+}
+{
+"origin" "292 -2004 620"
+"spawnflags" "1"
+"classname" "item_cells"
+}
+{
+"origin" "292 -1964 620"
+"classname" "item_rockets"
+}
+{
+"origin" "-156 -1676 620"
+"spawnflags" "256"
+"classname" "item_health"
+}
+{
+"origin" "-116 -1676 620"
+"classname" "item_health"
+}
+{
+"origin" "176 -1676 620"
+"classname" "item_health"
+}
+{
+"origin" "136 -1676 620"
+"classname" "item_health"
+}
+{
+"origin" "28 -1160 548"
+"target" "p8"
+"targetname" "p7"
+"classname" "path_corner"
+}
+{
+"origin" "28 -396 360"
+"target" "p7"
+"targetname" "p8"
+"classname" "path_corner"
+}
+{
+"origin" "28 -1116 564"
+"target" "p7"
+"angle" "270"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "-308 -1560 608"
+"target" "p10"
+"targetname" "p9"
+"classname" "path_corner"
+}
+{
+"origin" "368 -1560 608"
+"target" "p9"
+"targetname" "p10"
+"classname" "path_corner"
+}
+{
+"origin" "-168 -1560 620"
+"target" "p9"
+"spawnflags" "256"
+"angle" "180"
+"classname" "monster_ogre"
+}
+{
+"origin" "836 -1952 276"
+"classname" "monster_zombie"
+}
+{
+"model" "*87"
+"target" "mon19des"
+"targetname" "mon11tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "836 -2004 276"
+"spawnflags" "256"
+"classname" "monster_zombie"
+}
+{
+"model" "*88"
+"target" "mon20des"
+"targetname" "mon11tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "836 -2052 276"
+"spawnflags" "256"
+"classname" "monster_zombie"
+}
+{
+"model" "*89"
+"target" "mon21des"
+"targetname" "mon11tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "836 -2104 276"
+"spawnflags" "256"
+"classname" "monster_zombie"
+}
+{
+"model" "*90"
+"target" "mon22des"
+"targetname" "mon11tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-12 -1892 628"
+"targetname" "mon19des"
+"angle" "74"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-220 -1936 628"
+"targetname" "mon20des"
+"angle" "31"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "176 -1928 628"
+"targetname" "mon21des"
+"angle" "150"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "128 -1768 628"
+"targetname" "mon22des"
+"angle" "222"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-380 -1968 616"
+"classname" "item_health"
+}
+{
+"model" "*91"
+"message" "Kill the guard first!"
+"targetname" "tempdoor"
+"lip" "10"
+"wait" "-1"
+"sounds" "1"
+"speed" "30"
+"angle" "270"
+"classname" "func_door"
+}
+{
+"model" "*92"
+"message" "Kill the guard first!"
+"targetname" "tempdoor"
+"lip" "10"
+"wait" "-1"
+"sounds" "1"
+"speed" "30"
+"angle" "90"
+"classname" "func_door"
+}
+{
+"origin" "-176 -132 384"
+"message" "A door opens..."
+"delay" "2"
+"target" "tempdoor"
+"spawnflags" "1"
+"angle" "180"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*93"
+"lip" "10"
+"message" "You can use the\nsilver rune key now!"
+"delay" "0"
+"target" "seq8"
+"wait" "-1"
+"sounds" "3"
+"speed" "100"
+"angle" "180"
+"classname" "func_button"
+}
+{
+"model" "*94"
+"dmg" "0"
+"message" "Take the silver rune key\nand the throne will move"
+"lip" "-30"
+"wait" "-1"
+"sounds" "4"
+"speed" "20"
+"targetname" "troomdoor"
+"classname" "func_door"
+}
+{
+"model" "*95"
+"target" "mon10tel"
+"delay" "2"
+"style" "32"
+"sounds" "0"
+"targetname" "seq7"
+"classname" "trigger_relay"
+}
+{
+"model" "*96"
+"killtarget" "endwall"
+"delay" "0"
+"style" "32"
+"sounds" "0"
+"targetname" "seq7"
+"classname" "trigger_relay"
+}
+{
+"origin" "32 -212 452"
+"classname" "ambient_drone"
+}
+{
+"origin" "32 -640 540"
+"classname" "ambient_drone"
+}
+{
+"origin" "28 -1152 620"
+"classname" "ambient_drone"
+}
+{
+"origin" "32 -1420 672"
+"classname" "ambient_drone"
+}
+{
+"origin" "28 -1700 776"
+"classname" "ambient_drone"
+}
+{
+"origin" "28 -1940 752"
+"classname" "ambient_drone"
+}
+{
+"origin" "28 -1800 640"
+"classname" "ambient_drone"
+}
+{
+"model" "*97"
+"delay" "0"
+"style" "32"
+"dmg" "30"
+"sounds" "0"
+"classname" "trigger_hurt"
+}
+{
+"model" "*98"
+"delay" "0"
+"style" "32"
+"dmg" "30"
+"sounds" "0"
+"classname" "trigger_hurt"
+}
+{
+"origin" "-788 1004 480"
+"target" "p14"
+"targetname" "p13"
+"classname" "path_corner"
+}
+{
+"origin" "-812 408 444"
+"target" "p13"
+"targetname" "p14"
+"classname" "path_corner"
+}
+{
+"origin" "-776 228 444"
+"target" "p12"
+"targetname" "p11"
+"classname" "path_corner"
+}
+{
+"origin" "-336 232 388"
+"target" "p11"
+"targetname" "p12"
+"classname" "path_corner"
+}
+{
+"origin" "-536 188 232"
+"classname" "weapon_rocketlauncher"
+}
+{
+"origin" "-700 440 244"
+"classname" "item_rockets"
+}
+{
+"origin" "-2280 168 532"
+"spawnflags" "1"
+"classname" "item_shells"
+}
+{
+"origin" "-1504 544 472"
+"spawnflags" "1025"
+"classname" "item_rockets"
+}
+{
+"origin" "-56 -1544 876"
+"mangle" "5 295 0"
+"classname" "info_intermission"
+}
+{
+"origin" "-232 176 568"
+"classname" "item_health"
+}
+{
+"origin" "-232 140 568"
+"classname" "item_health"
+}
+{
+"model" "*99"
+"delay" "0"
+"style" "32"
+"target" "thronedoor"
+"message" "Enter the throneroom..."
+"sounds" "0"
+"classname" "trigger_once"
+}
+{
+"model" "*100"
+"wait" "-1"
+"delay" "0"
+"style" "32"
+"classname" "trigger_secret"
+}
+{
+"model" "*101"
+"wait" "-1"
+"delay" "0"
+"style" "32"
+"classname" "trigger_secret"
+}
+{
+"model" "*102"
+"target" "mon6des"
+"targetname" "mon10tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "676 -1896 276"
+"classname" "monster_demon1"
+}
+{
+"origin" "752 -1896 276"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*103"
+"target" "mon23des"
+"targetname" "mon10tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "808 -1896 276"
+"classname" "monster_hell_knight"
+}
+{
+"model" "*104"
+"target" "mon24des"
+"targetname" "mon10tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"origin" "-808 544 448"
+"targetname" "mon24des"
+"angle" "90"
+"classname" "info_teleport_destination"
+}
+{
+"origin" "-344 668 404"
+"targetname" "mon23des"
+"angle" "270"
+"classname" "info_teleport_destination"
+}
+{
+"model" "*105"
+"message" "Wellcome!\nMay death walk with you....\nNo need for a grave..."
+"targetname" "mess1"
+"wait" "1"
+"sounds" "2"
+"delay" "0"
+"style" "32"
+"classname" "trigger_multiple"
+}
+{
+"model" "*106"
+"delay" "0"
+"killtarget" "mess1"
+"style" "32"
+"sounds" "0"
+"classname" "trigger_once"
+}
+{
+"model" "*107"
+"delay" "0"
+"style" "32"
+"target" "mon15tel"
+"sounds" "0"
+"targetname" "seq8"
+"classname" "trigger_relay"
+}
+{
+"origin" "172 1024 1076"
+"spawnflags" "1"
+"classname" "monster_demon1"
+}
+{
+"model" "*108"
+"target" "mon6des"
+"targetname" "mon15tel"
+"spawnflags" "2"
+"classname" "trigger_teleport"
+}
+{
+"model" "*109"
+"delay" "0"
+"style" "32"
+"target" "silverstopbar"
+"sounds" "0"
+"targetname" "seq8"
+"classname" "trigger_relay"
+}
+{
+"origin" "472 172 612"
+"spawnflags" "256"
+"angle" "180"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "220 -1420 648"
+"classname" "ambient_light_buzz"
+}
+{
+"origin" "-220 -128 412"
+"classname" "ambient_light_buzz"
+}
+{
+"origin" "-1412 516 488"
+"style" "0"
+"light" "150"
+"classname" "light"
+}
+{
+"origin" "-808 412 532"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "408 -1560 852"
+"style" "0"
+"light" "200"
+"classname" "light"
+}
+{
+"origin" "-544 468 472"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "-564 488 472"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "-544 508 472"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "-524 488 472"
+"style" "0"
+"light" "100"
+"classname" "light"
+}
+{
+"origin" "-344 568 404"
+"spawnflags" "769"
+"angle" "270"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "-788 1004 468"
+"spawnflags" "1792"
+"angle" "270"
+"classname" "monster_shalrath"
+}
+{
+"origin" "-344 664 512"
+"spawnflags" "1792"
+"angle" "180"
+"classname" "monster_shalrath"
+}
+{
+"origin" "28 -256 380"
+"spawnflags" "769"
+"angle" "90"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "416 -1552 628"
+"spawnflags" "768"
+"angle" "90"
+"classname" "monster_knight"
+}
+{
+"origin" "-372 -1788 628"
+"spawnflags" "768"
+"angle" "90"
+"classname" "monster_knight"
+}
+{
+"origin" "-2208 352 540"
+"spawnflags" "1792"
+"angle" "180"
+"classname" "monster_hell_knight"
+}
+{
+"origin" "72 -88 360"
+"spawnflags" "769"
+"classname" "item_shells"
+}
+{
+"origin" "108 -280 360"
+"spawnflags" "768"
+"classname" "item_health"
+}
+{
+"origin" "-84 -276 360"
+"spawnflags" "768"
+"classname" "item_health"
+}
+{
+"origin" "-380 -1448 616"
+"spawnflags" "768"
+"classname" "item_shells"
+}
