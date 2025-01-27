@@ -37,7 +37,6 @@ const char* LS_GetEdictFieldName(int offset);
 const char* SV_GetEntityName(const edict_t* entity);
 const ddef_t* LS_GetProgsGlobalDefinitionByIndex(int index);
 const char* LS_GetProgsString(int offset);
-void SV_GetPlayerForwardVector(vec3_t forward);
 qboolean SV_SendClientDatagram(client_t* client);
 } // extern "C"
 
