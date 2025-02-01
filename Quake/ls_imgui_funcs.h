@@ -1430,6 +1430,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * IsMouseClicked
 		{ "IsMouseReleased", LS_global_imgui_IsMouseReleased },
 		// * IsMouseDoubleClicked
+		// * IsMouseReleasedWithDelay
 		// * GetMouseClickedCount
 		// * IsMouseHoveringRect
 		// * IsMousePosValid
