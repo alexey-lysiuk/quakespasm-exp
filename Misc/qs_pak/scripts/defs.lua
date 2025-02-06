@@ -14,9 +14,8 @@ vec3 = {}
 vec2 = {}
 vec4 = {}
 
-crc16 = function() end
-dprint = function() end
+crc16 = function(data) end
+dprint = function(...) end
 expversion = function() end
-luaversion = function() end
 memstats = function() end
-stacktrace = function() end
+stacktrace = function(message) end

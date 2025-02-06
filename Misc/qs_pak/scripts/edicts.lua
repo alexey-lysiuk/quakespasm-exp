@@ -60,6 +60,7 @@ edicts.monsternames =
 	monster_hell_knight = 'Death Knight',
 	monster_knight = 'Knight',
 	monster_ogre = 'Ogre',
+	monster_ogre_marksman = 'Ogre Marksman',
 	monster_oldone = 'Shub-Niggurath',
 	monster_shalrath = 'Vore',
 	monster_shambler = 'Shambler',
@@ -304,8 +305,12 @@ function edicts.ismonster(edict)
 	local name = monsternames[classname]
 		-- Remove classname prefix if present
 		or titlecase(classname:find('monster_', 1, true) == 1 and classname:sub(9) or classname)
+	local armor = edict.armorvalue * edict.armortype
+	local description = armor ~= 0
+		and format('%s (%.0f+%.0f)', name, health, armor)
+		or format('%s (%.0f)', name, health)
 
-	return name, edict.origin, edict.angles
+	return description, edict.origin, edict.angles
 end
 
 
