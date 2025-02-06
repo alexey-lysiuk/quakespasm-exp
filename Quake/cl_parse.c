@@ -339,13 +339,6 @@ void CL_ParseServerInfo (void)
 	str = MSG_ReadString ();
 	q_strlcpy (cl.levelname, str, sizeof(cl.levelname));
 
-// seperate the printfs so the server message can have a color
-	Con_Printf ("\n%s\n", Con_Quakebar(40)); //johnfitz
-	Con_Printf ("%c%s\n", 2, str);
-
-//johnfitz -- tell user which protocol this is
-	Con_Printf ("Using protocol %i\n", i);
-
 // first we go through and touch all of the precache data that still
 // happens to be in the cache, so precaching something else doesn't
 // needlessly purge it
@@ -398,6 +391,16 @@ void CL_ParseServerInfo (void)
 
 	// copy the naked name of the map file to the cl structure -- O.S
 	COM_StripExtension (COM_SkipPath(model_precache[1]), cl.mapname, sizeof(cl.mapname));
+
+	if (cl.levelname[0] == '\0')
+		q_strlcpy (cl.levelname, cl.mapname, sizeof cl.levelname);
+
+	// seperate the printfs so the server message can have a color
+	Con_Printf ("\n%s\n", Con_Quakebar(40)); //johnfitz
+	Con_Printf ("%c%s\n", 2, cl.levelname);
+
+	//johnfitz -- tell user which protocol this is
+	Con_Printf ("Using protocol %i\n", i);
 
 	for (i = 1; i < nummodels; i++)
 	{
