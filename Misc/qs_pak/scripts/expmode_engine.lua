@@ -59,13 +59,21 @@ local updatesearch <const> = expmode.updatesearch
 
 expmode.engine = {}
 
-local function levelentities_createtextview(self)
-	local entities = text.toascii(host.entities())
+local function levelentities_updatetextview(self)
+	if not self.textview then
+		self.textview = imColorTextEdit()
+		self.textview:SetLanguageDefinition('entities')
+		self.textview:SetReadOnly(true)
+	end
 
-	local textview = imColorTextEdit()
-	textview:SetLanguageDefinition('entities')
-	textview:SetReadOnly(true)
-	textview:SetText(entities)
+	local entities = self.entities
+
+	if not entities then
+		return  -- already up-to-date
+	end
+
+	self.textview:SetText(entities)
+	self.entities = nil
 
 	local lines = {}
 	local searchpos = 1
@@ -105,18 +113,17 @@ local function levelentities_createtextview(self)
 	-- Add line index after the last entity
 	insert(starts, #lines + 1)
 
-	self.textview = textview
 	self.names = names
 	self.starts = starts
-
-	return textview
 end
 
 local function levelentities_update(self)
 	local visible, opened = imBegin(self.title, true)
 
 	if visible and opened then
-		local textview = self.textview or levelentities_createtextview(self)
+		levelentities_updatetextview(self)
+
+		local textview = self.textview
 		local starts = self.starts
 
 		local currententity = 0
@@ -157,11 +164,23 @@ local function levelentities_update(self)
 	return opened
 end
 
-local function levelentities_onhide(self)
-	self.textview = nil
-	self.names = nil
-	self.starts = nil
+local function levelentities_onshow(self)
+	local oldmapname = self.mapname
+	local mapname = host.mapname()
+	local entities
 
+	if oldmapname == mapname then
+		entities = host.entities()
+
+		local oldcrc = self.crc
+		local crc = crc16(entities)
+
+		if oldcrc == crc then
+			return true
+		end
+	end
+
+	self.entities = text.toascii(entities or host.entities())
 	return true
 end
 
@@ -393,7 +412,7 @@ function expmode.engine.levelentities()
 			self:setconstraints()
 			self:setsize(imVec2(640, 480))
 		end,
-		nil, levelentities_onhide)
+		levelentities_onshow)
 end
 
 function expmode.engine.textures()
