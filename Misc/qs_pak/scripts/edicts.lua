@@ -60,6 +60,7 @@ edicts.monsternames =
 	monster_hell_knight = 'Death Knight',
 	monster_knight = 'Knight',
 	monster_ogre = 'Ogre',
+	monster_ogre_marksman = 'Ogre Marksman',
 	monster_oldone = 'Shub-Niggurath',
 	monster_shalrath = 'Vore',
 	monster_shambler = 'Shambler',
