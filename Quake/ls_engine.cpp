@@ -109,25 +109,6 @@ static void LS_InitHostTable(lua_State* state)
 // Expose 'player' global table
 //
 
-static int LS_global_player_pushentity(lua_State* state)
-{
-	const float speed = luaL_optnumber(state, 1, 1000.f);  // default speed of trigger_push
-
-	if (edict_t* const edict = SV_TraceEntity(SV_TRACE_ENTITY_SOLID))
-	{
-		vec3_t movedir;
-		SV_GetPlayerForwardVector(movedir);
-		VectorScale(movedir, speed * 10, edict->v.velocity);
-		VectorCopy(vec3_origin, edict->v.movedir);
-		edict->v.flags = static_cast<int>(edict->v.flags) & ~FL_ONGROUND;
-
-		LS_PushEdictValue(state, edict);
-		return 1;
-	}
-
-	return 0;
-}
-
 static int LS_global_player_setpos(lua_State* state)
 {
 	const LS_Vector3& pos = LS_GetVectorValue<3>(state, 1);
@@ -206,7 +187,6 @@ static void LS_InitPlayerTable(lua_State* state)
 		{ "ingameentitytrace", LS_BoolCVarFunction<sv_traceentity> },
 		{ "noclip", LS_global_player_noclip },
 		{ "notarget", LS_global_player_notarget },
-		{ "pushentity", LS_global_player_pushentity },
 		{ "setpos", LS_global_player_setpos },
 		{ "traceentity", LS_global_player_traceentity },
 		{ NULL, NULL }

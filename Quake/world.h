@@ -83,8 +83,6 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
 
-void SV_GetPlayerForwardVector(vec3_t forward);
-
 #define SV_TRACE_ENTITY_SOLID 1
 #define SV_TRACE_ENTITY_TRIGGER 2
 #define SV_TRACE_ENTITY_ANY (SV_TRACE_ENTITY_SOLID | SV_TRACE_ENTITY_TRIGGER)
