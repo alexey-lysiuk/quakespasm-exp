@@ -21,7 +21,11 @@
 //	TextEditor::setText
 //
 
-void TextEditor::setText(const std::string &text) {
+#ifdef IMGUI_EDITOR_QSEXP
+void TextEditor::setText(const std::string_view& text) {
+#else // !IMGUI_EDITOR_QSEXP
+void TextEditor::setText(const std::string& text) {
+#endif // IMGUI_EDITOR_QSEXP
 	// load text into document and reset transactions and cursors
 	document.setText(text);
 	transactions.clear();
@@ -2069,7 +2073,11 @@ void TextEditor::Cursors::adjustForDelete(iterator start, Coordinate deleteStart
 //	TextEditor::Document::setText
 //
 
+#ifdef IMGUI_EDITOR_QSEXP
+void TextEditor::Document::setText(const std::string_view& text) {
+#else // !IMGUI_EDITOR_QSEXP
 void TextEditor::Document::setText(const std::string& text) {
+#endif // IMGUI_EDITOR_QSEXP
 	// reset document
 	clear();
 	emplace_back();
@@ -2077,7 +2085,11 @@ void TextEditor::Document::setText(const std::string& text) {
 
 	// process input UTF-8 and generate lines of glyphs
 	auto end = text.end();
+#ifdef IMGUI_EDITOR_QSEXP
+	auto i = text.begin();
+#else // !IMGUI_EDITOR_QSEXP
 	auto i = CodePoint::skipBOM(text.begin(), end);
+#endif // IMGUI_EDITOR_QSEXP
 
 	while (i < end) {
 		ImWchar character;
@@ -4099,6 +4111,33 @@ static inline char sch(ImWchar i) {
 }
 
 
+#ifdef IMGUI_EDITOR_QSEXP
+
+std::string_view::const_iterator TextEditor::CodePoint::read(std::string_view::const_iterator i, std::string_view::const_iterator end, ImWchar *codepoint) {
+	if (i < end) {
+		*codepoint = uch(*i);
+		i++;
+	}
+
+	return i;
+}
+
+std::string::const_iterator TextEditor::CodePoint::read(std::string::const_iterator i, std::string::const_iterator end, ImWchar *codepoint) {
+	if (i < end) {
+		*codepoint = uch(*i);
+		i++;
+	}
+
+	return i;
+}
+
+std::string::iterator TextEditor::CodePoint::write(std::string::iterator i, ImWchar codepoint) {
+	*i++ = sch(codepoint);
+	return i;
+}
+
+#else // !IMGUI_EDITOR_QSEXP
+
 //
 //	skipBOM
 //
@@ -4194,6 +4233,8 @@ std::string::iterator TextEditor::CodePoint::write(std::string::iterator i, ImWc
 
 	return i;
 }
+
+#endif // IMGUI_EDITOR_QSEXP
 
 
 //

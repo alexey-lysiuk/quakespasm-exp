@@ -59,7 +59,11 @@ public:
 	inline bool IsOverwriteEnabled() const { return overwrite; }
 
 	// access text (using UTF-8 encoded strings)
+#ifdef IMGUI_EDITOR_QSEXP
+	inline void SetText(const std::string_view& text) { setText(text); }
+#else // !IMGUI_EDITOR_QSEXP
 	inline void SetText(const std::string& text) { setText(text); }
+#endif // IMGUI_EDITOR_QSEXP
 	inline std::string GetText() { return document.getText(); }
 	inline bool IsEmpty() const { return document.size() == 1 && document[0].size() == 0; }
 	inline int GetLineCount() const { return document.lines(); }
@@ -250,7 +254,11 @@ public:
 	// support unicode codepoints
 	class CodePoint {
 	public:
+#ifdef IMGUI_EDITOR_QSEXP
+		static std::string_view::const_iterator read(std::string_view::const_iterator i, std::string_view::const_iterator end, ImWchar* codepoint);
+#else // !IMGUI_EDITOR_QSEXP
 		static std::string::const_iterator skipBOM(std::string::const_iterator i, std::string::const_iterator end);
+#endif // IMGUI_EDITOR_QSEXP
 		static std::string::const_iterator read(std::string::const_iterator i, std::string::const_iterator end, ImWchar* codepoint);
 		static std::string::iterator write(std::string::iterator i, ImWchar codepoint);
 		static bool isLetter(ImWchar codepoint);
@@ -457,7 +465,11 @@ private:
 		inline int getTabSize() const { return tabSize; }
 
 		// manipulate document text (strings should be UTF-8 encoded)
+#ifdef IMGUI_EDITOR_QSEXP
+		void setText(const std::string_view& text);
+#else // !IMGUI_EDITOR_QSEXP
 		void setText(const std::string& text);
+#endif // IMGUI_EDITOR_QSEXP
 		Coordinate insertText(Coordinate start, const std::string& text);
 		void deleteText(Coordinate start, Coordinate end);
 
@@ -638,7 +650,11 @@ private:
 	} bracketeer;
 
 	// set the editor's text
+#ifdef IMGUI_EDITOR_QSEXP
+	void setText(const std::string_view& text);
+#else // !IMGUI_EDITOR_QSEXP
 	void setText(const std::string& text);
+#endif // IMGUI_EDITOR_QSEXP
 
 	// render (parts of) the text editor
 	void render(const char* title, const ImVec2& size, bool border);
