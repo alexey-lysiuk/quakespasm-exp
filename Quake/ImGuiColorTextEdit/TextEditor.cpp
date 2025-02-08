@@ -3063,12 +3063,11 @@ void TextEditor::Bracketeer::update(Document& document) {
 TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getActive(Coordinate location) {
 	if (location != activeLocation) {
 		active = end();
-		bool done = false;
 
 		for (auto i = begin(); i < end(); i++) {
 			// skip pairs that start after specified location
 			if (i->isAfter(location)) {
-				done = true;
+				break;
 			}
 
 			// brackets are active when they are around specified location
@@ -6390,7 +6389,7 @@ const TextEditor::Language& TextEditor::Language::Lua() {
 
 		for (auto& keyword : keywords) { language.keywords.insert(keyword); }
 
-		language.isPunctuation = isCStylePunctuation;
+		language.isPunctuation = isLuaStylePunctuation;
 		language.getIdentifier = getCStyleIdentifier;
 		language.getNumber = getLuaStyleNumber;
 		initialized = true;

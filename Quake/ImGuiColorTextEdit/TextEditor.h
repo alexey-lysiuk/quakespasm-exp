@@ -756,7 +756,6 @@ private:
 	float fontSize;
 	ImVec2 glyphSize;
 	float textStart;
-	int longestLine;
 	float visibleHeight;
 	int visibleLines;
 	int firstVisibleLine;
