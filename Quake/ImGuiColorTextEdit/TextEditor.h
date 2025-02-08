@@ -788,4 +788,29 @@ private:
 
 	// language support
 	const Language* language = nullptr;
+
+#ifdef IMGUI_EDITOR_QSEXP
+	void renderFindReplace(const ImVec2& cursorPos, const ImVec2& contentRegionAvail);
+
+	// https://github.com/goossens/ObjectTalk -> ide/script/OtObjectTalkEditor.h
+	std::string findText;
+	std::string replaceText;
+
+	bool findReplaceVisible = false;
+	bool focusOnFind = false;
+	bool caseSensitiveFind = false;
+	bool wholeWordFind = false;
+
+	bool focusOnEditor = true;
+
+	void openFindReplace();
+	void find();
+	void findAll();
+	void replace();
+	void replaceAll();
+
+	// https://github.com/goossens/ObjectTalk -> gfx/framework/OtUi.h
+	static bool inputStdString(const char* label, std::string* value, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
+	static bool latchButton(const char* label, bool* value, const ImVec2& size);
+#endif // IMGUI_EDITOR_QSEXP
 };

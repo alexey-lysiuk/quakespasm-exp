@@ -38,6 +38,11 @@ void TextEditor::setText(const std::string& text) {
 //
 
 void TextEditor::render(const char* title, const ImVec2& size, bool border) {
+#ifdef IMGUI_EDITOR_QSEXP
+	const ImVec2 cursorPos = ImGui::GetCursorPos();
+	const ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+#endif // IMGUI_EDITOR_QSEXP
+
 	// update color palette (if required)
 	if (paletteAlpha != ImGui::GetStyle().Alpha) {
 		updatePalette();
@@ -156,6 +161,10 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
 	ImGui::PopStyleColor();
+
+#ifdef IMGUI_EDITOR_QSEXP
+	renderFindReplace(cursorPos, contentRegionAvail);
+#endif // IMGUI_EDITOR_QSEXP
 }
 
 
@@ -431,6 +440,10 @@ void TextEditor::handleKeyboardInputs() {
 		else if (isOptionalShift && ImGui::IsKeyPressed(ImGuiKey_End)) { moveToEndOfLine(shift); }
 		else if (isShortcut && ImGui::IsKeyPressed(ImGuiKey_A)) { selectAll(); }
 		else if (isShortcut && ImGui::IsKeyPressed(ImGuiKey_D) && cursors.currentCursorHasSelection()) { addNextOccurrence(); }
+#ifdef IMGUI_EDITOR_QSEXP
+		else if (isShortcut && ImGui::IsKeyPressed(ImGuiKey_F)) { openFindReplace(); }
+		else if (isShortcut && ImGui::IsKeyPressed(ImGuiKey_G)) { find(); }
+#endif // IMGUI_EDITOR_QSEXP
 
 		// clipboard operations
 		else if (isShortcut && ImGui::IsKeyPressed(ImGuiKey_X)) { cut(); }
@@ -4446,6 +4459,235 @@ TextEditor::Iterator::reference TextEditor::Iterator::operator*() const {
 TextEditor::Iterator::pointer TextEditor::Iterator::operator->() const {
 	return &(static_cast<Line*>(line)->at(index).codepoint);
 }
+
+
+#ifdef IMGUI_EDITOR_QSEXP
+
+// https://github.com/goossens/ObjectTalk -> ide/script/OtObjectTalkEditor.cpp
+
+void TextEditor::renderFindReplace(const ImVec2& cursorPos, const ImVec2& contentRegionAvail)
+{
+	if (!findReplaceVisible)
+		return;
+
+	// calculate sizes
+	ImGuiStyle& style = ImGui::GetStyle();
+	constexpr float fieldWidth = 250.0f;
+
+	const float replaceWidth = ImGui::CalcTextSize("Replace").x + style.FramePadding.x * 2.0f;
+	const float replaceAllWidth = ImGui::CalcTextSize("Replace All").x + style.FramePadding.x * 2.0f;
+	const float optionWidth = ImGui::CalcTextSize("Aa").x + style.FramePadding.x * 2.0f;
+
+	const float windowHeight =
+		style.ChildBorderSize * 2.0f +
+		style.WindowPadding.y * 2.0f +
+		ImGui::GetFrameHeight() * (readOnly ? 1.0f : 2.0f) +
+		(readOnly ? 0 : style.ItemSpacing.y);
+
+	const float windowWidth =
+		style.ChildBorderSize * 2.0f +
+		style.WindowPadding.x * 2.0f +
+		fieldWidth + style.ItemSpacing.x +
+		replaceWidth + style.ItemSpacing.x +
+		replaceAllWidth + style.ItemSpacing.x +
+		optionWidth * 3.0f + style.ItemSpacing.x * 2.0f;
+
+	// create window
+	ImGui::SetCursorPos(ImVec2(
+		cursorPos.x + contentRegionAvail.x - windowWidth - style.ScrollbarSize - style.ItemSpacing.x,
+		cursorPos.y + style.ItemSpacing.y * 2.0f));
+
+	ImVec4 childBgColor = style.Colors[ImGuiCol_WindowBg];
+	childBgColor.w = 0.7f;
+
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, childBgColor);
+	ImGui::BeginChild("find-replace", ImVec2(windowWidth, windowHeight), ImGuiChildFlags_Borders);
+	ImGui::PopStyleColor();
+
+	ImGui::SetNextItemWidth(fieldWidth);
+
+	if (focusOnFind) {
+		ImGui::SetKeyboardFocusHere();
+		focusOnFind = false;
+	}
+
+	if (inputStdString("###find", &findText, ImGuiInputTextFlags_AutoSelectAll))
+	{
+		if (findText.size()) {
+			SelectFirstOccurrenceOf(findText, caseSensitiveFind, wholeWordFind);
+		}
+		else {
+			ClearCursors();
+		}
+	}
+
+	if (ImGui::IsItemDeactivatedAfterEdit()) {
+		focusOnEditor = true;
+	}
+
+	if (!findText.size())
+		ImGui::BeginDisabled();
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Find", ImVec2(replaceWidth, 0.0f)))
+		find();
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Find All", ImVec2(replaceAllWidth, 0.0f))) {
+		findAll();
+	}
+
+	if (!findText.size()) {
+		ImGui::EndDisabled();
+	}
+
+	ImGui::SameLine();
+
+	if (latchButton("Aa", &caseSensitiveFind, ImVec2(optionWidth, 0.0f)))
+	{
+		SetCursor(0, 0);
+		find();
+	}
+
+	ImGui::SameLine();
+
+	if (latchButton("[]", &wholeWordFind, ImVec2(optionWidth, 0.0f)))
+	{
+		SetCursor(0, 0);
+		find();
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("x", ImVec2(optionWidth, 0.0f))) {
+		findReplaceVisible = false;
+		focusOnEditor = true;
+	}
+
+	if (!readOnly)
+	{
+		ImGui::SetNextItemWidth(fieldWidth);
+		inputStdString("###replace", &replaceText);
+		ImGui::SameLine();
+
+		if (findText.empty() || replaceText.empty())
+			ImGui::BeginDisabled();
+
+		if (ImGui::Button("Replace", ImVec2(replaceWidth, 0.0f)))
+			replace();
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Replace All", ImVec2(replaceAllWidth, 0.0f))) {
+			replaceAll();
+		}
+
+		if (!findText.size() || !replaceText.size()) {
+			ImGui::EndDisabled();
+		}
+	}
+
+	ImGui::EndChild();
+}
+
+void TextEditor::openFindReplace() {
+	findReplaceVisible = true;
+	focusOnFind = true;
+}
+
+void TextEditor::find()
+{
+	if (findText.size()) {
+		SelectNextOccurrenceOf(findText, caseSensitiveFind, wholeWordFind);
+		focusOnEditor = true;
+	}
+}
+
+void TextEditor::findAll()
+{
+	if (findText.size()) {
+		SelectAllOccurrencesOf(findText, caseSensitiveFind, wholeWordFind);
+		focusOnEditor = true;
+	}
+}
+
+void TextEditor::replace()
+{
+	if (findText.size()) {
+		if (!AnyCursorHasSelection()) {
+			SelectNextOccurrenceOf(findText, caseSensitiveFind, wholeWordFind);
+		}
+
+		ReplaceTextInCurrentCursor(replaceText);
+		SelectNextOccurrenceOf(findText, caseSensitiveFind, wholeWordFind);
+		focusOnEditor = true;
+	}
+}
+
+void TextEditor::replaceAll()
+{
+	if (findText.size()) {
+		SelectAllOccurrencesOf(findText, caseSensitiveFind, wholeWordFind);
+		ReplaceTextInAllCursors(replaceText);
+		focusOnEditor = true;
+	}
+}
+
+// https://github.com/goossens/ObjectTalk -> gfx/framework/OtUi.h
+
+// create an input field based on a std::string
+bool TextEditor::inputStdString(const char* label, std::string* value, ImGuiInputTextFlags flags)
+{
+	flags |= ImGuiInputTextFlags_NoUndoRedo | ImGuiInputTextFlags_CallbackResize;
+
+	return ImGui::InputText(label, value->data(), value->capacity() + 1, flags, [](ImGuiInputTextCallbackData* data)
+	{
+		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+		{
+			std::string* value = static_cast<std::string*>(data->UserData);
+			value->resize(data->BufTextLen);
+			data->Buf = value->data();
+		}
+
+		return 0;
+	}, value);
+}
+
+// https://github.com/goossens/ObjectTalk -> gfx/framework/OtUi.cpp
+
+bool TextEditor::latchButton(const char* label, bool* value, const ImVec2& size)
+{
+	bool changed = false;
+	ImVec4* colors = ImGui::GetStyle().Colors;
+
+	if (*value)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, colors[ImGuiCol_ButtonActive]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[ImGuiCol_ButtonActive]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors[ImGuiCol_TableBorderLight]);
+	}
+	else
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, colors[ImGuiCol_TableBorderLight]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[ImGuiCol_TableBorderLight]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors[ImGuiCol_ButtonActive]);
+	}
+
+	ImGui::Button(label, size);
+
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+	{
+		*value = !*value;
+		changed = true;
+	}
+
+	ImGui::PopStyleColor(3);
+	return changed;
+}
+
+#endif // IMGUI_EDITOR_QSEXP
 
 
 //
