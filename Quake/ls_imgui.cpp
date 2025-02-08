@@ -502,12 +502,12 @@ static int LS_value_ImGuiColorTextEdit_index(lua_State* state)
 	return 1;
 }
 
-static int LS_value_ImGuiColorTextEdit_GetCursorPosition(lua_State* state)
+static int LS_value_ImGuiColorTextEdit_GetCursor(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	int line, column;
-	texteditor->GetCursorPosition(line, column);
+	texteditor->GetCursor(line, column);
 
 	// On Lua side, line and character indices begin with one
 	lua_pushinteger(state, line + 1);
@@ -520,13 +520,11 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const char* const title = luaL_checkstring(state, 2);
-	const bool parentIsFocused = luaL_opt(state, lua_toboolean, 3, false);
-	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::Zero());
-	const bool border = luaL_opt(state, lua_toboolean, 5, false);
+	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
+	const bool border = luaL_opt(state, lua_toboolean, 4, false);
 
-	const bool focused = texteditor->Render(title, parentIsFocused, ToImVec2(size), border);
-	lua_pushboolean(state, focused);
-	return 1;
+	texteditor->Render(title, ToImVec2(size), border);
+	return 0;
 }
 
 static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
@@ -538,21 +536,19 @@ static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
 	return 0;
 }
 
-static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
+static int LS_value_ImGuiColorTextEdit_SelectLines(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	const int startline = luaL_checkinteger(state, 2);
-	const int startchar = luaL_checkinteger(state, 3);
-	const int endline = luaL_checkinteger(state, 4);
-	const int endchar = luaL_checkinteger(state, 5);
+	const int endline = luaL_checkinteger(state, 3);
 
 	// On C++ side, line and character indices begin with zero
-	texteditor->SelectRegion(startline - 1, startchar - 1, endline - 1, endchar - 1);
+	texteditor->SelectLines(startline - 1, endline - 1);
 	return 0;
 }
 
-static int LS_value_ImGuiColorTextEdit_SetCursorPosition(lua_State* state)
+static int LS_value_ImGuiColorTextEdit_SetCursor(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
@@ -560,17 +556,17 @@ static int LS_value_ImGuiColorTextEdit_SetCursorPosition(lua_State* state)
 	const int character = luaL_optinteger(state, 3, 1);
 
 	// On C++ side, line and character indices begin with zero
-	texteditor->SetCursorPosition(line - 1, character - 1);
+	texteditor->SetCursor(line - 1, character - 1);
 	return 0;
 }
 
-static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
+static int LS_value_ImGuiColorTextEdit_SetLanguage(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	static const char* const languages[] = { "none", "cpp", "lua", "entities" };
 	const int languageId = luaL_checkoption(state, 2, nullptr, languages);
-	const TextEditor::LanguageDefinition* language;
+	const TextEditor::Language* language;
 
 	switch (languageId)
 	{
@@ -579,15 +575,15 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 		break;
 
 	case 1:
-		language = &TextEditor::LanguageDefinition::Cpp();
+		language = &TextEditor::Language::Cpp();
 		break;
 
 	case 2:
-		language = &TextEditor::LanguageDefinition::Lua();
+		language = &TextEditor::Language::Lua();
 		break;
 
 	case 3:
-		language = &TextEditor::LanguageDefinition::QuakeEntities();
+		language = &TextEditor::Language::QuakeEntities();
 		break;
 
 	default:
@@ -595,7 +591,7 @@ static int LS_value_ImGuiColorTextEdit_SetLanguageDefinition(lua_State* state)
 		return 0;
 	}
 
-	texteditor->SetLanguageDefinition(language);
+	texteditor->SetLanguage(language);
 	return 0;
 }
 
@@ -635,12 +631,12 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 
 		constexpr luaL_Reg methods[] =
 		{
-			{ "GetCursorPosition", LS_value_ImGuiColorTextEdit_GetCursorPosition },
+			{ "GetCursor", LS_value_ImGuiColorTextEdit_GetCursor },
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
-			{ "SelectRegion", LS_value_ImGuiColorTextEdit_SelectRegion },
-			{ "SetCursorPosition", LS_value_ImGuiColorTextEdit_SetCursorPosition },
-			{ "SetLanguageDefinition", LS_value_ImGuiColorTextEdit_SetLanguageDefinition },
+			{ "SelectLines", LS_value_ImGuiColorTextEdit_SelectLines },
+			{ "SetCursor", LS_value_ImGuiColorTextEdit_SetCursor },
+			{ "SetLanguage", LS_value_ImGuiColorTextEdit_SetLanguage },
 			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },
 			{ "SetText", LS_value_ImGuiColorTextEdit_SetText },
 			{ nullptr, nullptr }
