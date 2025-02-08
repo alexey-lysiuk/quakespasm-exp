@@ -165,22 +165,14 @@ local function levelentities_update(self)
 end
 
 local function levelentities_onshow(self)
-	local oldmapname = self.mapname
-	local mapname = host.mapname()
-	local entities
+	local entities = host.entities()
+	local crc = crc16(entities)
 
-	if oldmapname == mapname then
-		entities = host.entities()
-
-		local oldcrc = self.crc
-		local crc = crc16(entities)
-
-		if oldcrc == crc then
-			return true
-		end
+	if crc ~= self.crc then
+		self.entities = text.toascii(entities)
+		self.crc = crc
 	end
 
-	self.entities = text.toascii(entities or host.entities())
 	return true
 end
 
