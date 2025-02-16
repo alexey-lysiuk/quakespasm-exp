@@ -193,7 +193,7 @@ local function function_declarationcell(index, entry)
 				this.name = funcname
 			end
 
-			window(format('Disassembly of #%i %s()', index, funcname), functiondisassembly_onupdate,
+			window(format('Disassembly of #%s %s()', index, funcname), functiondisassembly_onupdate,
 				oncreate, functiondisassembly_onshow, functiondisassembly_onhide)
 		end
 	else
@@ -222,7 +222,7 @@ local function functions_onupdate(self)
 				imTableNextColumn()
 				imText(entry.index)
 				imTableNextColumn()
-				function_declarationcell(i, entry)
+				function_declarationcell(entry.index, entry)
 				imTableNextColumn()
 				imText(entry.filename)
 			end
