@@ -32,7 +32,10 @@ extern "C"
 const sfx_t* LS_GetSounds(int* count);
 const gltexture_t* LS_GetTextures();
 
-extern cvar_t gl_polyoffset_factor, gl_polyoffset_units, r_showbboxes, r_fullbright, sv_traceentity;
+extern cvar_t
+	gl_polyoffset_factor, gl_polyoffset_units,
+	r_showbboxes, r_fullbright,
+	sv_freezenonclients, sv_traceentity;
 }
 
 
@@ -94,6 +97,7 @@ static void LS_InitHostTable(lua_State* state)
 		{ "entities", LS_global_host_entities },
 		{ "framecount", LS_global_host_framecount },
 		{ "frametime", LS_global_host_frametime },
+		{ "freezenonclients", LS_BoolCVarFunction<sv_freezenonclients> },
 		{ "gamedir", LS_global_host_gamedir },
 		{ "realtime", LS_global_host_realtime },
 		{ "realtimes", LS_global_host_realtimes },
