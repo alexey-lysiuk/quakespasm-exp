@@ -48,6 +48,8 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local FreezeNonClients <const> = host.freezenonclients
+
 local BoundingBoxes <const> = render.boundingboxes
 local FullBright <const> = render.fullbright
 local PolyOffsetFactor <const> = render.polyoffset.factor
@@ -570,6 +572,12 @@ expmode.addaction(function ()
 
 		if imMenuItem('Level Entities\u{85}') then
 			expmode.engine.levelentities()
+		end
+
+		local freezenonclients = FreezeNonClients()
+
+		if imMenuItem('Freeze Entities', nil, freezenonclients) then
+			FreezeNonClients(not freezenonclients)
 		end
 
 		imSeparator()
