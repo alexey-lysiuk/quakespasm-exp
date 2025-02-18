@@ -70,12 +70,12 @@ local function levelentities_updatetextview(self)
 
 	if not self.textview then
 		self.textview = imColorTextEdit()
-		self.textview:SetLanguageDefinition('entities')
+		self.textview:SetLanguage('entities')
 		self.textview:SetReadOnly(true)
 	end
 
 	self.textview:SetText(entities)
-	self.textview:SetCursorPosition(1)
+	self.textview:SetCursor(1)
 	self.entities = nil
 
 	local lines = {}
@@ -130,7 +130,7 @@ local function levelentities_update(self)
 		local starts = self.starts
 
 		local currententity = 0
-		local currentline = textview:GetCursorPosition()
+		local currentline = textview:GetCurrentCursor()
 
 		-- Find the current entity index
 		-- TODO: Use binary search
@@ -148,7 +148,7 @@ local function levelentities_update(self)
 				local selected = currententity == i
 
 				if imSelectable(name, selected) then
-					textview:SelectRegion(starts[i], 1, starts[i + 1] - 1, math.maxinteger)
+					textview:SelectLines(starts[i], starts[i + 1] - 1)
 				end
 
 				if selected then
