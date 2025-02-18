@@ -358,6 +358,9 @@ if(MSVC)
 	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
 		PROPERTIES COMPILE_FLAGS "/wd4018 /wd4244 /wd4267")
 
+	# Disable warning introduced by ${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.h
+	set_source_files_properties(Quake/ls_imgui.cpp PROPERTIES COMPILE_FLAGS "/wd4244")
+
 	# Disable C++ exceptions and RTTI
 	# Altering of global CMAKE_CXX_FLAGS is required because the following line
 	#   target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
