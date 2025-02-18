@@ -736,7 +736,8 @@ static int LS_global_edicts_references(lua_State* state)
 						}
 					}
 				}
-				else if (!targets.empty() && IsTargetName(name))
+
+				if (!targets.empty() && IsTargetName(name))
 				{
 					for (const char* const target : targets)
 					{
@@ -747,7 +748,8 @@ static int LS_global_edicts_references(lua_State* state)
 						}
 					}
 				}
-				else if (!killtargets.empty() && IsTargetName(name))
+
+				if (!killtargets.empty() && IsTargetName(name))
 				{
 					for (const char* const killtarget : killtargets)
 					{
