@@ -639,7 +639,7 @@ expmode.addaction(function ()
 
 		local fullbright = FullBright()
 
-		if imMenuItem('Level Lightning', nil, not fullbright) then
+		if imMenuItem('Level Lighting', nil, not fullbright) then
 			FullBright(not fullbright)
 		end
 
