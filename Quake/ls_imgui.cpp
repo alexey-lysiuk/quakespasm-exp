@@ -502,12 +502,12 @@ static int LS_value_ImGuiColorTextEdit_index(lua_State* state)
 	return 1;
 }
 
-static int LS_value_ImGuiColorTextEdit_GetCursor(lua_State* state)
+static int LS_value_ImGuiColorTextEdit_GetCurrentCursor(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
 
 	int line, column;
-	texteditor->GetCursor(line, column);
+	texteditor->GetCurrentCursor(line, column);
 
 	// On Lua side, line and character indices begin with one
 	lua_pushinteger(state, line + 1);
@@ -518,12 +518,27 @@ static int LS_value_ImGuiColorTextEdit_GetCursor(lua_State* state)
 static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
+	assert(texteditor);
 
 	const char* const title = luaL_checkstring(state, 2);
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
 	const bool border = luaL_opt(state, lua_toboolean, 4, false);
 
 	texteditor->Render(title, ToImVec2(size), border);
+	return 0;
+}
+
+static int LS_value_ImGuiColorTextEdit_ScrollToLine(lua_State* state)
+{
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
+	assert(texteditor);
+
+	const int line = luaL_checkinteger(state, 2);
+
+	static const char* const names[] = { "top", "middle", "bottom" };
+	const auto alignment = TextEditor::Scroll(luaL_checkoption(state, 3, nullptr, names));
+
+	texteditor->ScrollToLine(line - 1, alignment);  // first line index is zero
 	return 0;
 }
 
@@ -560,6 +575,31 @@ static int LS_value_ImGuiColorTextEdit_SetCursor(lua_State* state)
 	return 0;
 }
 
+static const TextEditor::Language* QuakeEntitiesLanguage()
+{
+	static bool initialized = false;
+	static TextEditor::Language language;
+
+	if (!initialized)
+	{
+		const TextEditor::Language* clanguage = TextEditor::Language::C();
+
+		language.name = "Quake Entities";
+		language.singleLineComment = "//";
+		language.commentStart = "/*";
+		language.commentEnd = "*/";
+		language.hasDoubleQuotedStrings = true;
+		language.stringEscape = '\\';
+		language.isPunctuation = clanguage->isPunctuation;
+		language.getIdentifier = clanguage->getIdentifier;
+		language.getNumber = clanguage->getNumber;
+
+		initialized = true;
+	}
+
+	return &language;
+}
+
 static int LS_value_ImGuiColorTextEdit_SetLanguage(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
@@ -575,15 +615,15 @@ static int LS_value_ImGuiColorTextEdit_SetLanguage(lua_State* state)
 		break;
 
 	case 1:
-		language = &TextEditor::Language::Cpp();
+		language = TextEditor::Language::Cpp();
 		break;
 
 	case 2:
-		language = &TextEditor::Language::Lua();
+		language = TextEditor::Language::Lua();
 		break;
 
 	case 3:
-		language = &TextEditor::Language::QuakeEntities();
+		language = QuakeEntitiesLanguage();
 		break;
 
 	default:
@@ -631,8 +671,9 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 
 		constexpr luaL_Reg methods[] =
 		{
-			{ "GetCursor", LS_value_ImGuiColorTextEdit_GetCursor },
+			{ "GetCurrentCursor", LS_value_ImGuiColorTextEdit_GetCurrentCursor },
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
+			{ "ScrollToLine", LS_value_ImGuiColorTextEdit_ScrollToLine },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
 			{ "SelectLines", LS_value_ImGuiColorTextEdit_SelectLines },
 			{ "SetCursor", LS_value_ImGuiColorTextEdit_SetCursor },

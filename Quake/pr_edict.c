@@ -1161,7 +1161,7 @@ static void PR_PatchRereleaseBuiltins (void)
 	}
 }
 
-static int PR_FindFishPatchOffset(const dfunction_t* function)
+static int PR_FindFishPatchOffset(const dfunction_t* function, int* toskip)
 {
 	static const short totalmonsters = offsetof(globalvars_t, total_monsters) / sizeof(int);
 	const int statementcount = progs->numstatements;
@@ -1177,7 +1177,7 @@ static int PR_FindFishPatchOffset(const dfunction_t* function)
 			if (statement->a != totalmonsters)
 				continue;
 
-			const int incrementimmediate = statement->c;
+			const int destination = statement->c;
 			const int next = i + 1;
 
 			if (next == statementcount)
@@ -1196,11 +1196,21 @@ static int PR_FindFishPatchOffset(const dfunction_t* function)
 			if (pr_globals[onefpconstoffset] != 1.0f)
 				continue;
 
-			// Check if the next statement is store operation of incremented total monster count
+			// Destination is either total monsters count field itself...
+			if (destination == totalmonsters)
+			{
+				*toskip = 1;  // skip the current instruction
+				return i;
+			}
+
+			// ... or a temporary value which is written to total monsters count field by the next statement
 			statement = &pr_statements[next];
 
-			if (statement->op == OP_STORE_F && statement->a == incrementimmediate)
+			if (statement->op == OP_STORE_F && statement->a == destination)
+			{
+				*toskip = 2;  // skip the current and the next instructions
 				return i;  // patch location found
+			}
 
 			break;
 		}
@@ -1252,17 +1262,19 @@ static void PR_PatchFishCountBug (void)
 	if (!startgofunc)
 		return;
 
-	if (!PR_FindFishPatchOffset(startfunc))
+	int toskip = 0;
+
+	if (!PR_FindFishPatchOffset(startfunc, &toskip))
 		return;
 
-	const int startgooffset = PR_FindFishPatchOffset(startgofunc);
+	const int startgooffset = PR_FindFishPatchOffset(startgofunc, &toskip);
 	if (!startgooffset)
 		return;
 
 	// Replace the first instruction with goto to skip the second one
 	dstatement_t* statement = &pr_statements[startgooffset];
 	statement->op = OP_GOTO;
-	statement->a = 2;  // skip the current and the next instructions
+	statement->a = toskip;
 
 	Con_DPrintf("Patch for rotfish total monster count bug applied\n");
 }

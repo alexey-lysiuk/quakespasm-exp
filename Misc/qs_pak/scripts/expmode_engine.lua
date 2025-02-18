@@ -48,6 +48,8 @@ local imWindowNoSavedSettings <const> = ImGui.WindowFlags.NoSavedSettings
 
 local defaultTableFlags <const> = imTableFlags.Borders | imTableFlags.Resizable | imTableFlags.RowBg | imTableFlags.ScrollY
 
+local FreezeNonClients <const> = host.freezenonclients
+
 local BoundingBoxes <const> = render.boundingboxes
 local FullBright <const> = render.fullbright
 local PolyOffsetFactor <const> = render.polyoffset.factor
@@ -60,19 +62,20 @@ local updatesearch <const> = expmode.updatesearch
 expmode.engine = {}
 
 local function levelentities_updatetextview(self)
-	if not self.textview then
-		self.textview = imColorTextEdit()
-		self.textview:SetLanguage('entities')
-		self.textview:SetReadOnly(true)
-	end
-
 	local entities = self.entities
 
 	if not entities then
 		return  -- already up-to-date
 	end
 
+	if not self.textview then
+		self.textview = imColorTextEdit()
+		self.textview:SetLanguage('entities')
+		self.textview:SetReadOnly(true)
+	end
+
 	self.textview:SetText(entities)
+	self.textview:SetCursor(1)
 	self.entities = nil
 
 	local lines = {}
@@ -127,7 +130,7 @@ local function levelentities_update(self)
 		local starts = self.starts
 
 		local currententity = 0
-		local currentline = textview:GetCursor()
+		local currentline = textview:GetCurrentCursor()
 
 		-- Find the current entity index
 		-- TODO: Use binary search
@@ -145,7 +148,9 @@ local function levelentities_update(self)
 				local selected = currententity == i
 
 				if imSelectable(name, selected) then
-					textview:SelectLines(starts[i], starts[i + 1] - 2)
+					local firstline = starts[i]
+					textview:SelectLines(firstline, starts[i + 1] - 1)
+					textview:ScrollToLine(firstline, 'top')
 				end
 
 				if selected then
@@ -571,6 +576,12 @@ expmode.addaction(function ()
 			expmode.engine.levelentities()
 		end
 
+		local freezenonclients = FreezeNonClients()
+
+		if imMenuItem('Freeze Entities', nil, freezenonclients) then
+			FreezeNonClients(not freezenonclients)
+		end
+
 		imSeparator()
 
 		if imMenuItem('Textures\u{85}') then
@@ -630,7 +641,7 @@ expmode.addaction(function ()
 
 		local fullbright = FullBright()
 
-		if imMenuItem('Level Lightning', nil, not fullbright) then
+		if imMenuItem('Level Lighting', nil, not fullbright) then
 			FullBright(not fullbright)
 		end
 
