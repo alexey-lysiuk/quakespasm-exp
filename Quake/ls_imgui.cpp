@@ -528,6 +528,20 @@ static int LS_value_ImGuiColorTextEdit_Render(lua_State* state)
 	return 0;
 }
 
+static int LS_value_ImGuiColorTextEdit_ScrollToLine(lua_State* state)
+{
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
+	assert(texteditor);
+
+	const int line = luaL_checkinteger(state, 2);
+
+	static const char* const names[] = { "top", "middle", "bottom" };
+	const auto alignment = TextEditor::Scroll(luaL_checkoption(state, 3, nullptr, names));
+
+	texteditor->ScrollToLine(line - 1, alignment);  // first line index is zero
+	return 0;
+}
+
 static int LS_value_ImGuiColorTextEdit_SelectLine(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
@@ -659,6 +673,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 		{
 			{ "GetCurrentCursor", LS_value_ImGuiColorTextEdit_GetCurrentCursor },
 			{ "Render", LS_value_ImGuiColorTextEdit_Render },
+			{ "ScrollToLine", LS_value_ImGuiColorTextEdit_ScrollToLine },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
 			{ "SelectLines", LS_value_ImGuiColorTextEdit_SelectLines },
 			{ "SetCursor", LS_value_ImGuiColorTextEdit_SetCursor },
