@@ -136,6 +136,7 @@ static void EXP_Create()
 		: "expmode.ini";
 
 	io.ConfigFlags = ImGuiConfigFlags_NoMouse;
+	io.ConfigWindowsMoveFromTitleBarOnly = true;
 	io.IniFilename = configpath[0] == '\0' ? nullptr : configpath;
 
 	ImGui_ImplSDL2_InitForOpenGL(exp_window, exp_glcontext);
