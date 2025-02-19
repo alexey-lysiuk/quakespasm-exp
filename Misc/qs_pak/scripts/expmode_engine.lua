@@ -150,7 +150,12 @@ local function levelentities_update(self)
 				if imSelectable(name, selected) then
 					local firstline = starts[i]
 					textview:SetCursor(firstline)
-					textview:ScrollToLine(firstline, 'top')
+
+					local marginlines = 2
+					local scrollline = (firstline > marginlines)
+						and (firstline - marginlines)
+						or firstline
+					textview:ScrollToLine(scrollline, 'top')
 				end
 
 				if selected then
