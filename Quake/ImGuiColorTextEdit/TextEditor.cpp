@@ -3270,7 +3270,7 @@ TextEditor::State TextEditor::Colorizer::update(Line& line, const Language* lang
 					color = Color::identifier;
 
 					for (auto i = tokenStart; i < tokenEnd; i++) {
-						identifier += *i;
+						identifier += static_cast<char>(*i);
 					}
 
 					if (language->keywords.find(identifier) != language->keywords.end()) {
@@ -4891,7 +4891,7 @@ static TextEditor::Iterator getCStyleNumber(TextEditor::Iterator start, TextEdit
 	TextEditor::Iterator i = start;
 	TextEditor::Iterator marker;
 
-	
+
 {
 	ImWchar yych;
 	unsigned int yyaccept = 0;
@@ -5898,7 +5898,7 @@ static TextEditor::Iterator getCsStyleNumber(TextEditor::Iterator start, TextEdi
 	TextEditor::Iterator i = start;
 	TextEditor::Iterator marker;
 
-	
+
 {
 	ImWchar yych;
 	unsigned int yyaccept = 0;
@@ -6509,7 +6509,7 @@ static TextEditor::Iterator getLuaStyleNumber(TextEditor::Iterator start, TextEd
 	TextEditor::Iterator i = start;
 	TextEditor::Iterator marker;
 
-	
+
 {
 	ImWchar yych;
 	yych = i < end ? *i : 0;
@@ -6825,7 +6825,7 @@ static TextEditor::Iterator getPythonStyleNumber(TextEditor::Iterator start, Tex
 	TextEditor::Iterator i = start;
 	TextEditor::Iterator marker;
 
-	
+
 {
 	ImWchar yych;
 	yych = i < end ? *i : 0;
@@ -7242,7 +7242,7 @@ static TextEditor::Iterator tokenizeJson(TextEditor::Iterator start, TextEditor:
 	TextEditor::Iterator i = start;
 	TextEditor::Iterator marker;
 
-	
+
 {
 	ImWchar yych;
 	unsigned int yyaccept = 0;
@@ -7542,7 +7542,7 @@ static TextEditor::Iterator tokenizeMarkdown(TextEditor::Iterator start, TextEdi
 	TextEditor::Iterator i = start;
 	TextEditor::Iterator marker;
 
-	
+
 {
 	ImWchar yych;
 	yych = i < end ? *i : 0;
