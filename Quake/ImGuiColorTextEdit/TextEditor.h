@@ -60,6 +60,7 @@ public:
 	inline bool IsOverwriteEnabled() const { return overwrite; }
 
 	// access text (using UTF-8 encoded strings)
+	// (see note below on cursor and scroll manipulation after setting new text)
 	inline void SetText(const std::string_view& text) { setText(text); }
 	inline std::string GetText() { return document.getText(); }
 	inline bool IsEmpty() const { return document.size() == 1 && document[0].size() == 0; }
@@ -109,8 +110,24 @@ public:
 	inline int GetFirstVisibleColumn() const { return firstVisibleColumn; }
 	inline int GetLastVisibleColumn() const { return lastVisibleColumn; }
 
-	inline int GetLineHeight() const { return glyphSize.y; }
-	inline int GetGlyphWidth() const { return glyphSize.x; }
+	inline float GetLineHeight() const { return glyphSize.y; }
+	inline float GetGlyphWidth() const { return glyphSize.x; }
+
+	// note on setting cursor and scrolling
+	//
+	// calling SetCursor or ScrollToLine has no effect until the next call to Render
+	// this is because we can only do layout calculations when we are in a Dear ImGui drawing context
+	// as a result, SetCursor or ScrollToLine just mark the request and let Render execute it
+	//
+	// the order of the calls is therefore important as they can interfere with each other
+	// so if you call SetText, SetCursor and/or ScrollToLine before Render, the order should be:
+	//
+	// * call SetText first as it resets the entire editor state including cursors and scrolling
+	// * then call SetCursor as it sets the cursor and requests that we make the cursor visible (i.e. scroll to it)
+	// * then call ScrollToLine to mark the exact scroll location (it cancels the possible SetCursor scroll request)
+	// * call Render to properly update the entire state
+	//
+	// this works on opening the editor as well as later
 
 	// find/replace support
 	inline void SelectFirstOccurrenceOf(const std::string_view& text, bool caseSensitive=true, bool wholeWord=false) { selectFirstOccurrenceOf(text, caseSensitive, wholeWord); }
@@ -120,6 +137,10 @@ public:
 	inline void ReplaceTextInAllCursors(const std::string_view& text) { if (!readOnly) replaceTextInAllCursors(text); }
 
 	inline void OpenFindReplaceWindow() { findReplaceVisible = true; focusOnFind = true; }
+	inline void SetFindButtonLabel(const std::string_view& label) { findButtonLabel = label; }
+	inline void SetFindAllButtonLabel(const std::string_view& label) { findAllButtonLabel = label; }
+	inline void SetReplaceButtonLabel(const std::string_view& label) { replaceButtonLabel = label; }
+	inline void SetReplaceAllButtonLabel(const std::string_view& label) { replaceAllButtonLabel = label; }
 	inline bool HasFindString() const { return findText.size(); }
 	inline void FindNext() { findNext(); }
 	inline void FindAll() { findAll(); }
@@ -205,7 +226,7 @@ public:
 		inline ImU32 get(Color color) const { return at(static_cast<size_t>(color)); }
 	};
 
-	inline void SetPalette(const Palette& palette) { paletteBase = palette; paletteAlpha = -1.0f; }
+	inline void SetPalette(const Palette& newPalette) { paletteBase = newPalette; paletteAlpha = -1.0f; }
 	inline const Palette& GetPalette() const { return paletteBase; }
 	inline static void SetDefaultPalette(const Palette& aValue) { defaultPalette = aValue; }
 	inline static Palette& GetDefaultPalette() { return defaultPalette; }
@@ -423,8 +444,8 @@ private:
 
 	private:
 		// helper functions
-		Coordinate adjustCoordinateForInsert(Coordinate coordinate, Coordinate start, Coordinate end);
-		Coordinate adjustCoordinateForDelete(Coordinate coordinate, Coordinate start, Coordinate end);
+		Coordinate adjustCoordinateForInsert(Coordinate coordinate, Coordinate insertStart, Coordinate insertEnd);
+		Coordinate adjustCoordinateForDelete(Coordinate coordinate, Coordinate deleteStart, Coordinate deleteEnd);
 
 		// properties
 		Coordinate start{0, 0};
@@ -446,7 +467,7 @@ private:
 
 		// add a cursor to the list
 		inline void addCursor(Coordinate c) { addCursor(c, c); }
-		void addCursor(Coordinate start, Coordinate end);
+		void addCursor(Coordinate cursorStart, Coordinate cursorEnd);
 
 		// update the current cursor (the one last added)
 		inline void updateCurrentCursor(Coordinate coordinate) { at(current).update(coordinate); }
@@ -518,9 +539,6 @@ private:
 	// a single line in a document
 	class Line : public std::vector<Glyph> {
 	public:
-		// get number of glyphs (as an int)
-		inline int glyphCount() const { return static_cast<int>(size()); }
-
 		// state at start of line
 		State state = State::inText;
 
@@ -562,10 +580,10 @@ private:
 		inline int getMaxColumn() const { return maxColumn; }
 
 		// translate visible column to line index (and visa versa)
-		int getIndex(const Line& line, int column) const;
-		inline int getIndex(Coordinate coordinate) const { return getIndex(at(coordinate.line), coordinate.column); }
-		int getColumn(const Line& line, int index) const;
-		inline int getColumn(int line, int index) const { return getColumn(at(line), index); }
+		size_t getIndex(const Line& line, int column) const;
+		inline size_t getIndex(Coordinate coordinate) const { return getIndex(at(coordinate.line), coordinate.column); }
+		int getColumn(const Line& line, size_t index) const;
+		inline int getColumn(int line, size_t index) const { return getColumn(at(line), index); }
 
 		// coordinate operations in context of document
 		Coordinate getUp(Coordinate from, int lines=1) const;
@@ -588,7 +606,7 @@ private:
 
 		// utility functions
 		bool isWholeWord(Coordinate start, Coordinate end) const;
-		inline bool isEndOfLine(Coordinate from) const { return getIndex(from) == at(from.line).glyphCount(); }
+		inline bool isEndOfLine(Coordinate from) const { return getIndex(from) == at(from.line).size(); }
 		inline bool isLastLine(int line) const { return line == lineCount() - 1; }
 		Coordinate normalizeCoordinate(Coordinate coordinate) const;
 
@@ -763,6 +781,7 @@ private:
 	void getCursor(int& line, int& column, size_t cursor) const;
 
 	// scrolling support
+	void makeCursorVisible();
 	void scrollToLine(int line, Scroll alignment);
 
 	// find/replace support
@@ -883,6 +902,10 @@ private:
 	static constexpr int cursorWidth = 1;
 
 	// find and replace support
+	std::string findButtonLabel = "Find";
+	std::string findAllButtonLabel = "Find All";
+	std::string replaceButtonLabel = "Replace";
+	std::string replaceAllButtonLabel = "Replace All";
 	bool findReplaceVisible = false;
 	bool focusOnEditor = true;
 	bool focusOnFind = false;
