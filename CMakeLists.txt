@@ -355,11 +355,7 @@ if(MSVC)
 		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
 	endif()
 
-	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
-		PROPERTIES COMPILE_FLAGS "/wd4018 /wd4244 /wd4267")
-
-	# Disable warning introduced by ${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.h
-	set_source_files_properties(Quake/ls_imgui.cpp PROPERTIES COMPILE_FLAGS "/wd4244")
+	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp PROPERTIES COMPILE_FLAGS "/wd4244")
 
 	# Disable C++ exceptions and RTTI
 	# Altering of global CMAKE_CXX_FLAGS is required because the following line
@@ -383,8 +379,6 @@ else()
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
-	set_source_files_properties(${IMGUI_COLOR_TEXT_EDIT_DIR}/TextEditor.cpp
-		PROPERTIES COMPILE_FLAGS "-Wno-unused-variable -Wno-sign-compare")
 
 	# Disable C++ exceptions and RTTI
 	# target_compile_options() doesn't fit very well as GCC complains on every C file
