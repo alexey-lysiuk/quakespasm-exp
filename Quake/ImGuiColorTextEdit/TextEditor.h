@@ -661,6 +661,9 @@ private:
 	// transaction list to support do/undo/redo
  	class Transactions : public std::vector<std::shared_ptr<Transaction>> {
 	public:
+		// reset the transactions
+		void reset();
+
 		// create a new transaction
 		static inline std::shared_ptr<Transaction> create() { return std::make_shared<Transaction>(); }
 
