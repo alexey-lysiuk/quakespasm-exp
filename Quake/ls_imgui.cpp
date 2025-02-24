@@ -563,6 +563,20 @@ static int LS_value_ImGuiColorTextEdit_SelectLines(lua_State* state)
 	return 0;
 }
 
+static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
+{
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
+
+	const int startline = luaL_checkinteger(state, 2);
+	const int startchar = luaL_checkinteger(state, 3);
+	const int endline = luaL_checkinteger(state, 4);
+	const int endchar = luaL_checkinteger(state, 5);
+
+	// On C++ side, line and character indices begin with zero
+	texteditor->SelectRegion(startline - 1, startchar - 1, endline - 1, endchar - 1);
+	return 0;
+}
+
 static int LS_value_ImGuiColorTextEdit_SetCursor(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
@@ -676,6 +690,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 			{ "ScrollToLine", LS_value_ImGuiColorTextEdit_ScrollToLine },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
 			{ "SelectLines", LS_value_ImGuiColorTextEdit_SelectLines },
+			{ "SelectRegion", LS_value_ImGuiColorTextEdit_SelectRegion },
 			{ "SetCursor", LS_value_ImGuiColorTextEdit_SetCursor },
 			{ "SetLanguage", LS_value_ImGuiColorTextEdit_SetLanguage },
 			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },
