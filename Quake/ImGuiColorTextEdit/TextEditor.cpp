@@ -1,4 +1,4 @@
-//	TextEditor - A syntax highlighting text editor for ImGui
+//	TextEditor - A syntax highlighting text editor for Dear ImGui.
 //	Copyright (c) 2024-2025 Johan A. Goossens. All rights reserved.
 //
 //	This work is licensed under the terms of the MIT license.
@@ -161,9 +161,9 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 	}
 
 	// start a new child window
-	// this must be done before we handle keyboard and mouse interactions to ensure correct ImGui context
+	// this must be done before we handle keyboard and mouse interactions to ensure correct Dear ImGui context
 	ImGui::SetNextWindowContentSize(totalSize);
-	ImGui::BeginChild(title, size, border, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoNavInputs);
+	ImGui::BeginChild(title, size, border, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoNavInputs);
 
 	// handle keyboard and mouse inputs
 	handleKeyboardInputs();
@@ -758,13 +758,13 @@ void TextEditor::handleKeyboardInputs() {
 		else if (isOptionalShift && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) { moveDown(1, shift); }
 
 #if __APPLE__
-		else if (isCtrlShift && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) { shrinkSelectionsToCurlyBrackets(true); }
-		else if (isCtrlShift && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) { growSelectionsToCurlyBrackets(true); }
+		else if (isCtrlShift && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) { shrinkSelectionsToCurlyBrackets(); }
+		else if (isCtrlShift && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) { growSelectionsToCurlyBrackets(); }
 		else if (isOptionalAltShift && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) { moveLeft(shift, alt); }
 		else if (isOptionalAltShift && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) { moveRight(shift, alt); }
 #else
-		else if (isShiftAlt && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) { shrinkSelectionsToCurlyBrackets(true); }
-		else if (isShiftAlt && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) { growSelectionsToCurlyBrackets(true); }
+		else if (isShiftAlt && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) { shrinkSelectionsToCurlyBrackets(); }
+		else if (isShiftAlt && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) { growSelectionsToCurlyBrackets(); }
 		else if (isOptionalCtrlShift && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) { moveLeft(shift, ctrl); }
 		else if (isOptionalCtrlShift && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) { moveRight(shift, ctrl); }
 #endif
@@ -939,7 +939,13 @@ void TextEditor::handleMouseInteractions() {
 						auto brackets = bracketeer.getEnclosingBrackets(document.getRight(mouseCoordAbs));
 
 						if (brackets != bracketeer.end()) {
-							cursors.setCursor(brackets->start, document.getRight(brackets->end));
+							if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
+								cursors.setCursor(brackets->start, document.getRight(brackets->end));
+
+							} else {
+								cursors.setCursor(document.getRight(brackets->start), brackets->end);
+							}
+
 							handled = true;
 						}
 
@@ -1084,19 +1090,24 @@ void TextEditor::selectToBrackets(bool includeBrackets) {
 //	TextEditor::growSelectionsToCurlyBrackets
 //
 
-void TextEditor::growSelectionsToCurlyBrackets(bool includeBrackets) {
+void TextEditor::growSelectionsToCurlyBrackets() {
 	if (!showMatchingBrackets) {
 		bracketeer.update(document);
 	}
 
 	for (auto& cursor : cursors) {
-		auto bracket = bracketeer.getEnclosingCurlyBrackets(cursor.getSelectionStart());
+		auto start = cursor.getSelectionStart();
+		auto end = cursor.getSelectionEnd();
+		auto startCodePoint = document.getCodePoint(document.getLeft(start));
+		auto endCodePoint = document.getCodePoint(end);
 
-		if (bracket != bracketeer.end()) {
-			if (includeBrackets) {
-				cursor.update(bracket->start, document.getRight(bracket->end));
+		if (startCodePoint == '{' && endCodePoint == '}') {
+			cursor.update(document.getLeft(start),document.getRight(end));
 
-			} else {
+		} else {
+			auto bracket = bracketeer.getEnclosingCurlyBrackets(start, end);
+
+			if (bracket != bracketeer.end()) {
 				cursor.update(document.getRight(bracket->start), bracket->end);
 			}
 		}
@@ -1108,7 +1119,7 @@ void TextEditor::growSelectionsToCurlyBrackets(bool includeBrackets) {
 //	TextEditor::shrinkSelectionsToCurlyBrackets
 //
 
-void TextEditor::shrinkSelectionsToCurlyBrackets(bool includeBrackets) {
+void TextEditor::shrinkSelectionsToCurlyBrackets() {
 	if (!showMatchingBrackets) {
 		bracketeer.update(document);
 	}
@@ -1116,19 +1127,18 @@ void TextEditor::shrinkSelectionsToCurlyBrackets(bool includeBrackets) {
 	for (auto& cursor : cursors) {
 		if (cursor.hasSelection()){
 			auto start = cursor.getSelectionStart();
+			auto end = cursor.getSelectionEnd();
+			auto startCodePoint = document.getCodePoint(start);
+			auto endCodePoint = document.getCodePoint(document.getLeft(end));
 
-			if (document.getCodePoint(start) == '{') {
-				start = document.getRight(start);
-			}
+			if (startCodePoint == '{' && endCodePoint == '}') {
+				cursor.update(document.getRight(start),document.getLeft(end));
 
-			auto bracket = bracketeer.getInnerCurlyBrackets(start);
+			} else {
+				auto bracket = bracketeer.getInnerCurlyBrackets(start, end);
 
-			if (bracket != bracketeer.end()) {
-				if (includeBrackets) {
+				if (bracket != bracketeer.end()) {
 					cursor.update(bracket->start, document.getRight(bracket->end));
-
-				} else {
-					cursor.update(document.getRight(bracket->start), bracket->end);
 				}
 			}
 		}
@@ -3472,8 +3482,14 @@ TextEditor::State TextEditor::Colorizer::update(Line& line, const Language* lang
 					color = Color::identifier;
 
 					for (auto i = tokenStart; i < tokenEnd; i++) {
+						ImWchar codepoint = *i;
+
+						if (!language->caseSensitive) {
+							codepoint = CodePoint::toLower(codepoint);
+						}
+
 						char utf8[4];
-						identifier.append(utf8, CodePoint::write(utf8, *i));
+						identifier.append(utf8, CodePoint::write(utf8, codepoint));
 					}
 
 					if (language->keywords.find(identifier) != language->keywords.end()) {
@@ -3777,17 +3793,17 @@ TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getEnclosingBrackets(Co
 //	TextEditor::Bracketeer::getEnclosingCurlyBrackets
 //
 
-TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getEnclosingCurlyBrackets(Coordinate location) {
+TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getEnclosingCurlyBrackets(Coordinate first, Coordinate last) {
 	iterator brackets = end();
 	bool done = false;
 
 	for (auto i = begin(); !done && i < end(); i++) {
 		// brackets are sorted so no need to go past specified location
-		if (i->isAfter(location)) {
+		if (i->isAfter(first)) {
 			done = true;
 		}
 
-		else if (i->isAround(location) && i->startChar == '{') {
+		else if (i->isAround(first) && i->isAround(last) && i->startChar == '{') {
 			// this could be what we're looking for
 			brackets = i;
 		}
@@ -3801,20 +3817,21 @@ TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getEnclosingCurlyBracke
 //	TextEditor::Bracketeer::getInnerCurlyBrackets
 //
 
-TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getInnerCurlyBrackets(Coordinate location) {
-	auto brackets = getEnclosingCurlyBrackets(location);
+TextEditor::Bracketeer::iterator TextEditor::Bracketeer::getInnerCurlyBrackets(Coordinate first, Coordinate last) {
+	iterator brackets = end();
+	auto outer = getEnclosingCurlyBrackets(first, last);
 
-	if (brackets != end()) {
+	if (outer != end()) {
 		bool done = false;
 
-		for (auto next = brackets + 1; next < end() && !done; next++) {
-			 if (next->level == brackets->level + 1 && next->startChar == '{') {
-				brackets = next;
+		for (auto i = outer + 1; i < end() && !done; i++) {
+			if (i->level <= outer->level) {
 				done = true;
 
-			} else if (next->level <= brackets->level) {
+			} else if (i->level == outer->level + 1 && i->startChar == '{' && i->start > first && i->end < last) {
+				brackets = i;
 				done = true;
-			 }
+			}
 		}
 	}
 
@@ -8207,6 +8224,76 @@ const TextEditor::Language* TextEditor::Language::Markdown() {
 		language.commentEnd = "-->";
 
 		language.customTokenizer = tokenizeMarkdown;
+		initialized = true;
+	}
+
+	return &language;
+}
+
+
+//
+//	TextEditor::Language::Sql
+//
+
+const TextEditor::Language* TextEditor::Language::Sql() {
+	static bool initialized = false;
+	static TextEditor::Language language;
+
+	if (!initialized) {
+		language.name = "SQL";
+		language.caseSensitive = false;
+		language.singleLineComment = "--";
+		language.commentStart = "/*";
+		language.commentEnd = "*/";
+		language.hasSingleQuotedStrings = true;
+		language.hasDoubleQuotedStrings = true;
+		language.stringEscape = '\\';
+
+		static const char* const keywords[] = {
+			"abs", "absent", "acos", "all", "allocate", "alter", "and", "any", "any_value", "are", "array", "array_agg",
+			"array_max_cardinality", "as", "asensitive", "asin", "asymmetric", "at", "atan", "atomic", "authorization",
+			"avg", "begin", "begin_frame", "begin_partition", "between", "bigint", "binary", "blob", "boolean", "both",
+			"btrim", "by", "call", "called", "cardinality", "cascaded", "case", "cast", "ceil", "ceiling", "char",
+			"character", "character_length", "char_length", "check", "classifier", "clob", "close", "coalesce", "collate",
+			"collect", "column", "commit", "condition", "connect", "constraint", "contains", "convert", "copy", "corr",
+			"corresponding", "cos", "cosh", "count", "covar_pop", "covar_samp", "create", "cross", "cube", "cume_dist",
+			"current", "current_catalog", "current_date", "current_default_transform_group", "current_path", "current_role",
+			"current_row", "current_schema", "current_time", "current_timestamp", "current_transform_group_for_type",
+			"current_user", "cursor", "cycle", "date", "day", "deallocate", "dec", "decfloat", "decimal", "declare",
+			"default", "define", "delete", "dense_rank", "deref", "describe", "deterministic", "disconnect", "distinct",
+			"double", "drop", "dynamic", "each", "element", "else", "empty", "end", "end-exec", "end_frame", "end_partition",
+			"equals", "escape", "every", "except", "exec", "execute", "exists", "exp", "external", "extract", "false", "fetch",
+			"filter", "first_value", "float", "floor", "for", "foreign", "frame_row", "free", "from", "full", "function",
+			"fusion", "get", "global", "grant", "greatest", "group", "grouping", "groups", "having", "hold", "hour",
+			"identity", "in", "indicator", "initial", "inner", "inout", "insensitive", "insert", "int", "integer",
+			"intersect", "intersection", "interval", "into", "is", "join", "json", "json_array", "json_arrayagg",
+			"json_exists", "json_object", "json_objectagg", "json_query", "json_scalar", "json_serialize", "json_table",
+			"json_table_primitive", "json_value", "lag", "language", "large", "last_value", "lateral", "lead", "leading",
+			"least", "left", "like", "like_regex", "limit", "listagg", "ln", "local", "localtime", "localtimestamp", "log", "log10",
+			"lower", "lpad", "ltrim", "match", "matches", "match_number", "match_recognize", "max", "member", "merge", "method",
+			"min", "minute", "mod", "modifies", "module", "month", "multiset", "national", "natural", "nchar", "nclob", "new",
+			"no", "none", "normalize", "not", "nth_value", "ntile", "null", "nullif", "numeric", "occurrences_regex",
+			"octet_length", "of", "offset", "old", "omit", "on", "one", "only", "open", "or", "order", "out", "outer", "over",
+			"overlaps", "overlay", "parameter", "partition", "pattern", "per", "percent", "percentile_cont", "percentile_disc",
+			"percent_rank", "period", "portion", "position", "position_regex", "power", "precedes", "precision", "prepare", "primary",
+			"procedure", "ptf", "range", "rank", "reads", "real", "recursive", "ref", "references", "referencing", "regr_avgx",
+			"regr_avgy", "regr_count", "regr_intercept", "regr_r2", "regr_slope", "regr_sxx", "regr_sxy", "regr_syy", "release",
+			"result", "return", "returns", "revoke", "right", "rollback", "rollup", "row", "rows", "row_number", "rpad", "running",
+			"savepoint", "scope", "scroll", "search", "second", "seek", "select", "sensitive", "session_user", "set", "show", "similar",
+			"sin", "sinh", "skip", "smallint", "some", "specific", "specifictype", "sql", "sqlexception", "sqlstate", "sqlwarning", "sqrt",
+			"start", "static", "stddev_pop", "stddev_samp", "submultiset", "subset", "substring", "substring_regex", "succeeds",
+			"sum", "symmetric", "system", "system_time", "system_user", "table", "tablesample", "tan", "tanh", "then", "time",
+			"timestamp", "timezone_hour", "timezone_minute", "to", "trailing", "translate", "translate_regex", "translation",
+			"treat", "trigger", "trim", "trim_array", "true", "truncate", "uescape", "union", "unique", "unknown", "unnest",
+			"update", "upper", "user", "using", "value", "values", "value_of", "varbinary", "varchar", "varying", "var_pop",
+			"var_samp", "versioning", "when", "whenever", "where", "width_bucket", "window", "with", "within", "without", "year"
+	   };
+
+		for (auto& keyword : keywords) { language.keywords.insert(keyword); }
+
+		language.isPunctuation = isCStylePunctuation;
+		language.getIdentifier = getCStyleIdentifier;
+		language.getNumber = getCStyleNumber;
 		initialized = true;
 	}
 

@@ -1,4 +1,4 @@
-//	TextEditor - A syntax highlighting text editor for ImGui
+//	TextEditor - A syntax highlighting text editor for Dear ImGui.
 //	Copyright (c) 2024-2025 Johan A. Goossens. All rights reserved.
 //
 //	This work is licensed under the terms of the MIT license.
@@ -106,8 +106,8 @@ public:
 	}
 
 	inline void SelectToBrackets(bool includeBrackets=true) { selectToBrackets(includeBrackets); }
-	inline void GrowSelectionsToCurlyBrackets(bool includeBrackets=true) { growSelectionsToCurlyBrackets(includeBrackets); }
-	inline void ShrinkSelectionsToCurlyBrackets(bool includeBrackets=true) { growSelectionsToCurlyBrackets(includeBrackets); }
+	inline void GrowSelectionsToCurlyBrackets() { growSelectionsToCurlyBrackets(); }
+	inline void ShrinkSelectionsToCurlyBrackets() { shrinkSelectionsToCurlyBrackets(); }
 	inline void AddNextOccurrence() { addNextOccurrence(); }
 	inline void SelectAllOccurrences() { selectAllOccurrences(); }
 	inline bool AnyCursorHasSelection() const { return cursors.anyHasSelection(); }
@@ -308,6 +308,9 @@ public:
 		// name of the language
 		std::string name;
 
+		// flag to describe if keywords and identifiers are case sensitive (which is the default)
+		bool caseSensitive = true;
+
 		// the character that starts a preprocessor directive (can be 0 if language doesn't have this feature)
 		ImWchar preprocess = 0;
 
@@ -337,6 +340,7 @@ public:
 		ImWchar stringEscape = 0;
 
 		// set of keywords, declarations, identifiers used in the language (can be blank if language doesn't have these features)
+		// if language is not case sensitive, all entries should be in lower case
 		std::unordered_set<std::string> keywords;
 		std::unordered_set<std::string> declarations;
 		std::unordered_set<std::string> identifiers;
@@ -367,6 +371,7 @@ public:
 		static const Language* Hlsl();
 		static const Language* Json();
 		static const Language* Markdown();
+		static const Language* Sql();
 	};
 
 	inline void SetLanguage(const Language* l) { language = l; languageChanged = true; }
@@ -758,8 +763,8 @@ private:
 
 		// find relevant brackets
 		iterator getEnclosingBrackets(Coordinate location);
-		iterator getEnclosingCurlyBrackets(Coordinate location);
-		iterator getInnerCurlyBrackets(Coordinate location);
+		iterator getEnclosingCurlyBrackets(Coordinate first, Coordinate last);
+		iterator getInnerCurlyBrackets(Coordinate first, Coordinate last);
 
 		// utility functions
 		static inline bool isBracketCandidate(Glyph& glyph) {
@@ -774,6 +779,7 @@ private:
 		static inline bool isBracketCloser(ImWchar ch) { return ch == '}' || ch == ']' || ch == ')'; }
 		static inline ImWchar toBracketCloser(ImWchar ch) { return ch == '{' ? '}' : (ch == '[' ? ']' : (ch == '(' ? ')' : ch)); }
 		static inline ImWchar toBracketOpener(ImWchar ch) { return ch == '}' ? '{' : (ch == ']' ? '[' : (ch == ')' ? '(' : ch)); }
+		static inline bool isMatchingBrackets(ImWchar open, ImWchar close) { return isBracketOpener(open) && close == toBracketCloser(open); }
 	} bracketeer;
 
 	// access the editor's text
@@ -801,8 +807,8 @@ private:
 	void selectLines(int startLine, int endLine);
 	void selectRegion(int startLine, int startColumn, int endLine, int endColumn);
 	void selectToBrackets(bool includeBrackets);
-	void growSelectionsToCurlyBrackets(bool includeBrackets);
-	void shrinkSelectionsToCurlyBrackets(bool includeBrackets);
+	void growSelectionsToCurlyBrackets();
+	void shrinkSelectionsToCurlyBrackets();
 
 	void cut();
 	void copy() const;
