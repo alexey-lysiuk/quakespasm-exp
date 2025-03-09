@@ -1309,7 +1309,8 @@ static void PR_PatchOgreSmashState(void)
 		return;
 
 	const int entrypoint = statefunc->first_statement;
-	if (entrypoint + 3 >= progs->numstatements)
+	const int statementcount = progs->numstatements;
+	if (entrypoint + 3 >= statementcount)
 		return;
 
 	const dstatement_t* statement = &pr_statements[entrypoint];
@@ -1338,47 +1339,60 @@ static void PR_PatchOgreSmashState(void)
 		return;
 
 	// Incorrect ai_charge() call detected, find proper code sequence to use it as GOTO destination
-	dstatement_t* patchstatement = &pr_statements[entrypoint + 1];
-	qboolean iscall1 = false;
-	statement = pr_statements + 2;
+	const dstatement_t* endstatement = &pr_statements[statementcount - 2];
+	const dfunction_t* probefunc = ED_FindFunction("ogre_smash2");  // most probable candidate
+	const int firststatement = probefunc ? probefunc->first_statement + 1 : 0;
+	int sequencecounter = 0;
 
-	for (int i = 2, e = progs->numstatements; i < e; ++i, ++statement)
+	for (statement = &pr_statements[firststatement]; statement < endstatement; ++statement)
 	{
-		if (statement->op == OP_CALL1)
+		const int op = statement->op;
+
+		switch (sequencecounter)
 		{
-			iscall1 = statement->a == chargeoffset;
-			continue;
-		}
-		else if (iscall1 && statement->op == OP_DONE)
-		{
-			const dstatement_t* prevprev = statement - 2;
-			if ((prevprev->op != OP_STORE_V && prevprev->op != OP_STORE_F) || prevprev->b != 4)
-			{
-				iscall1 = false;
-				continue;
-			}
-
-			const int valueoffset = prevprev->a;
-			const ddef_t* adef = ED_GlobalAtOfs(valueoffset);
-			if (!adef || adef->type != ev_float)
-			{
-				iscall1 = false;
-				continue;
-			}
-
-			const eval_t* value = (const eval_t*)(&pr_globals[valueoffset]);
-			if (value->_float == 0.0f)
-			{
-				// Proper code sequence found, apply path to ogre_smash12()
-				patchstatement->op = OP_GOTO;
-				patchstatement->a = prevprev - patchstatement;
-
-				Con_DPrintf("Patch for incorrect ogre smash state applied\n");
+			case 0:
+				if ((op == OP_STORE_V || op == OP_STORE_F) && statement->b == 4)
+				{
+					const int valueoffset = statement->a;
+					const ddef_t* adef = ED_GlobalAtOfs(valueoffset);
+					if (adef && adef->type == ev_float)
+					{
+						const eval_t* value = (const eval_t*)(&pr_globals[valueoffset]);
+						if (value->_float == 0.0f)
+							++sequencecounter;
+					}
+				}
 				break;
-			}
+
+			case 1:
+				if (op == OP_CALL1 && statement->a == chargeoffset)
+					++sequencecounter;
+				else
+					sequencecounter = 0;
+				break;
+
+			case 2:
+				if (op == OP_DONE)
+					++sequencecounter;
+				else
+					sequencecounter = 0;
+				break;
+
+			default:
+				Host_Error("Broken patch for ogre smash state");
+				break;
 		}
 
-		iscall1 = false;
+		if (sequencecounter == 3)
+		{
+			// Proper code sequence found, apply path to ogre_smash12()
+			dstatement_t* patchstatement = &pr_statements[entrypoint + 1];
+			patchstatement->op = OP_GOTO;
+			patchstatement->a = statement - patchstatement - 2;  // point to start of found sequence
+
+			Con_DPrintf("Patch for incorrect ogre smash state applied\n");
+			break;
+		}
 	}
 }
 
