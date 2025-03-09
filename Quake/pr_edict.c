@@ -1279,6 +1279,109 @@ static void PR_PatchFishCountBug (void)
 	Con_DPrintf("Patch for rotfish total monster count bug applied\n");
 }
 
+static void PR_PatchOgreSmashState(void)
+{
+/*
+	There is a common error in ogre_smash12 state which calls ai_charge() function without a parameter.
+	The issue leads to a junk distance value passed to movetogoal() function.
+	This may trigger occasional teleportation of an attacking ogre to a random location.
+
+	Disassembly of ogre_smash12() from version 1.06.
+
+	12407: STATE    5330(IMMEDIATE)58.0        7817(ogre_smash13)ogre_smash13()
+	12408: CALL0    857(ai_charge)ai_charge()
+	12409: DONE
+
+	Disassembly of ogre_smash2() with a parameter set to zero.
+
+	12351: STATE    5421(IMMEDIATE)48.0        7803(ogre_smash3)ogre_smash3()
+	12352: STORE_V  213(FALSE)0.0              4(?)
+	12353: CALL1    857(ai_charge)ai_charge()
+	12354: DONE
+
+	To fix this error, find appriate code sequence within progs.dat,
+	STORE_V 0.0 -> CALL1 ai_charge -> DONE,	and replace CALL0 with GOTO to found sequence.
+*/
+
+	// Make sure that ogre_smash12() contains incorrect call to ai_charge()
+	const dfunction_t* statefunc = ED_FindFunction("ogre_smash12");
+	if (!statefunc)
+		return;
+
+	const int entrypoint = statefunc->first_statement;
+	if (entrypoint + 3 >= progs->numstatements)
+		return;
+
+	const dstatement_t* statement = &pr_statements[entrypoint];
+	if (statement->op != OP_STATE)
+		return;
+
+	++statement;
+	if (statement->op != OP_CALL0)
+		return;
+
+	const int chargeoffset = statement->a;
+	if (chargeoffset >= progs->numglobals)
+		return;
+
+	const int chargeindex = *((int*)&pr_globals[chargeoffset]);
+	if (chargeindex >= progs->numfunctions)
+		return;
+
+	const dfunction_t* chargefunc = &pr_functions[chargeindex];
+	const char* chargename = PR_GetString(chargefunc->s_name);
+	if (strcmp(chargename, "ai_charge") != 0)
+		return;
+
+	++statement;
+	if (statement->op != OP_DONE)
+		return;
+
+	// Incorrect ai_charge() call detected, find proper code sequence to use it as GOTO destination
+	dstatement_t* patchstatement = &pr_statements[entrypoint + 1];
+	qboolean iscall1 = false;
+	statement = pr_statements + 2;
+
+	for (int i = 2, e = progs->numstatements; i < e; ++i, ++statement)
+	{
+		if (statement->op == OP_CALL1)
+		{
+			iscall1 = statement->a == chargeoffset;
+			continue;
+		}
+		else if (iscall1 && statement->op == OP_DONE)
+		{
+			const dstatement_t* prevprev = statement - 2;
+			if (prevprev->op != OP_STORE_V || prevprev->b != 4)
+			{
+				iscall1 = false;
+				continue;
+			}
+
+			const int valueoffset = prevprev->a;
+			const ddef_t* adef = ED_GlobalAtOfs(valueoffset);
+			if (!adef || adef->type != ev_float)
+			{
+				iscall1 = false;
+				continue;
+			}
+
+			const eval_t* value = (const eval_t*)(&pr_globals[valueoffset]);
+			if (value->_float == 0.0f)
+			{
+				// Proper code sequence found, apply path to ogre_smash12()
+				patchstatement->op = OP_GOTO;
+				patchstatement->a = prevprev - patchstatement;
+
+				Con_DPrintf("Patch for incorrect ogre smash state applied\n");
+				break;
+			}
+		}
+
+		iscall1 = false;
+	}
+}
+
 
 /*
 ===============
@@ -1389,6 +1492,7 @@ void PR_LoadProgs (void)
 	pr_effects_mask = PR_FindSupportedEffects ();
 
 	PR_PatchFishCountBug ();
+	PR_PatchOgreSmashState ();
 }
 
 /*
