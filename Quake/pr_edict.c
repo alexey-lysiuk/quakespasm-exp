@@ -1352,7 +1352,7 @@ static void PR_PatchOgreSmashState(void)
 		else if (iscall1 && statement->op == OP_DONE)
 		{
 			const dstatement_t* prevprev = statement - 2;
-			if (prevprev->op != OP_STORE_V || prevprev->b != 4)
+			if ((prevprev->op != OP_STORE_V && prevprev->op != OP_STORE_F) || prevprev->b != 4)
 			{
 				iscall1 = false;
 				continue;
