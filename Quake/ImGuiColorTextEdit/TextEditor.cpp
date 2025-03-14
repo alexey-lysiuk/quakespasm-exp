@@ -17,6 +17,7 @@
 #endif
 
 #include "imgui.h"
+#include "imgui_internal.h"
 
 #include "TextEditor.h"
 
@@ -31,6 +32,7 @@ void TextEditor::setText(const std::string_view &text) {
 	transactions.reset();
 	bracketeer.reset();
 	cursors.clearAll();
+	clearMarkers();
 	makeCursorVisible();
 }
 
@@ -64,28 +66,18 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 	if (decoratorWidth > 0.0f) {
 		textOffset = decorationOffset + decoratorWidth + decorationMargin * glyphSize.x;
 
+	} else if (decoratorWidth < 0.0f) {
+		textOffset = decorationOffset + (-decoratorWidth + decorationMargin) * glyphSize.x;
+
 	} else {
 		textOffset = decorationOffset + textMargin * glyphSize.x;
 	}
 
 	// get current position and total/visible editor size
-	auto pos = ImGui::GetCursorPos();
+	auto pos = ImGui::GetCursorScreenPos();
 	auto totalSize = ImVec2(textOffset + document.getMaxColumn() * glyphSize.x + cursorWidth, document.size() * glyphSize.y);
-	auto visibleSize = ImGui::GetContentRegionAvail();
-
-	if (size.x > 0.0f) {
-		visibleSize.x = std::min(visibleSize.x, size.x);
-
-	} else if (size.x < 0.0f) {
-		visibleSize.x = std::max(visibleSize.x + size.x, 0.0f);
-	}
-
-	if (size.y > 0.0f) {
-		visibleSize.y = std::min(visibleSize.y, size.y);
-
-	} else if (size.y < 0.0f) {
-		visibleSize.y = std::max(visibleSize.y + size.y, 0.0f);
-	}
+	auto region = ImGui::GetContentRegionAvail();
+	auto visibleSize = ImGui::CalcItemSize(size, region.x, region.y);
 
 	// see if we have scrollbars
 	float scrollbarSize = ImGui::GetStyle().ScrollbarSize;
@@ -145,9 +137,10 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 		scrollToLineNumber = -1;
 	}
 
-	// set style
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(palette.get(Color::background)));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+	// set scroll (if required)
+	if (scrollX >= 0.0f || scrollY >= 0.0f) {
+		ImGui::SetNextWindowScroll(ImVec2(scrollX, scrollY));
+	}
 
 	// ensure editor has focus (if required)
 	if (focusOnEditor) {
@@ -155,14 +148,11 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 		focusOnEditor = false;
 	}
 
-	// set scroll (if required)
-	if (scrollX >= 0.0f || scrollY >= 0.0f) {
-		ImGui::SetNextWindowScroll(ImVec2(scrollX, scrollY));
-	}
-
 	// start a new child window
 	// this must be done before we handle keyboard and mouse interactions to ensure correct Dear ImGui context
 	ImGui::SetNextWindowContentSize(totalSize);
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(palette.get(Color::background)));
 	ImGui::BeginChild(title, size, border, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoNavInputs);
 
 	// handle keyboard and mouse inputs
@@ -214,6 +204,7 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 	renderMargin();
 	renderLineNumbers();
 	renderDecorations();
+	renderScrollbarMiniMap();
 
 	if (ImGui::BeginPopup("LineNumberContextMenu")) {
 		lineNumberContextMenuCallback(contextMenuLine);
@@ -225,12 +216,12 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 		ImGui::EndPopup();
 	}
 
-	ImGui::EndChild();
-	ImGui::PopStyleVar();
-	ImGui::PopStyleColor();
-
 	// render find/replace popup
-	renderFindReplace(pos, visibleSize);
+	renderFindReplace(pos, visibleSize.x - verticalScrollBarSize);
+
+	ImGui::EndChild();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar();
 }
 
 
@@ -473,7 +464,7 @@ void TextEditor::renderCursors() {
 //
 
 void TextEditor::renderMargin() {
-	if ((decoratorWidth > 0.0f && decoratorCallback) || showLineNumbers) {
+	if ((decoratorWidth != 0.0f && decoratorCallback) || showLineNumbers) {
 		// erase background in case we are scrolling horizontally
 		if (ImGui::GetScrollX() > 0.0f) {
 			ImGui::GetWindowDrawList()->AddRectFilled(
@@ -511,10 +502,11 @@ void TextEditor::renderLineNumbers() {
 //
 
 void TextEditor::renderDecorations() {
-	if (decoratorWidth > 0.0f && decoratorCallback) {
+	if (decoratorWidth != 0.0f && decoratorCallback) {
 		auto cursorScreenPos = ImGui::GetCursorScreenPos();
 		auto position = ImVec2(ImGui::GetWindowPos().x + decorationOffset, cursorScreenPos.y + glyphSize.y * firstVisibleLine);
-		Decorator decorator{0, decoratorWidth, glyphSize.y};
+		auto widthInPixels = (decoratorWidth < 0.0f) ? -decoratorWidth * glyphSize.x: decoratorWidth;
+		Decorator decorator{0, widthInPixels, glyphSize.y, glyphSize};
 
 		for (int i = firstVisibleLine; i <= lastVisibleLine; i++) {
 			decorator.line = i;
@@ -526,6 +518,58 @@ void TextEditor::renderDecorations() {
 		}
 
 		ImGui::SetCursorScreenPos(cursorScreenPos);
+	}
+}
+
+
+//
+//	TextEditor::renderScrollbarMiniMap
+//
+
+void TextEditor::renderScrollbarMiniMap() {
+	// based on https://github.com/ocornut/imgui/issues/3114
+	if (showScrollbarMiniMap) {
+		auto window = ImGui::GetCurrentWindow();
+
+		if (window->ScrollbarY) {
+			auto drawList = ImGui::GetWindowDrawList();
+			auto rect = ImGui::GetWindowScrollbarRect(window, ImGuiAxis_Y);
+			auto lineHeight = std::max(rect.GetHeight() / static_cast<float>(document.size()), 1.0f);
+			auto offset = (rect.Max.x - rect.Min.x) * 0.3f;
+			auto left = rect.Min.x + offset;
+			auto right = rect.Max.x - offset;
+
+			drawList->PushClipRect(rect.Min, rect.Max, false);
+
+			// render cursor locations
+			for (auto& cursor : cursors) {
+				auto begin = cursor.getSelectionStart();
+				auto end = cursor.getSelectionEnd();
+
+				auto ly1 = std::round(rect.Min.y + begin.line * lineHeight);
+				auto ly2 = std::round(rect.Min.y + (end.line + 1) * lineHeight);
+
+				drawList->AddRectFilled(ImVec2(left, ly1), ImVec2(right, ly2), palette.get(Color::selection));
+			}
+
+			// render marker locations
+			if (markers.size()) {
+				for (size_t line = 0; line < document.size(); line++) {
+					if (document[line].marker) {
+						auto color = markers[document[line].marker - 1].textColor;
+
+						if (!color) {
+							color = markers[document[line].marker - 1].lineNumberColor;
+						}
+
+						auto ly = std::round(rect.Min.y + line * lineHeight);
+						drawList->AddRectFilled(ImVec2(left, ly), ImVec2(right, ly + lineHeight), color);
+					}
+				}
+			}
+
+			drawList->PopClipRect();
+		}
 	}
 }
 
@@ -586,13 +630,14 @@ static bool inputString(const char* label, std::string* value, ImGuiInputTextFla
 //	TextEditor::renderFindReplace
 //
 
-void TextEditor::renderFindReplace(ImVec2 pos, ImVec2 contentSize) {
+void TextEditor::renderFindReplace(ImVec2 pos, float width) {
 	// render find/replace window (if required)
 	if (findReplaceVisible) {
 		// save current screen position
 		auto currentScreenPosition = ImGui::GetCursorScreenPos();
 
 		// calculate sizes
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 4.0f));
 		auto& style = ImGui::GetStyle();
 		auto fieldWidth = 250.0f;
 
@@ -620,11 +665,13 @@ void TextEditor::renderFindReplace(ImVec2 pos, ImVec2 contentSize) {
 			optionWidth * 3.0f + style.ItemSpacing.x * 2.0f;
 
 		// create window
-		ImGui::SetCursorPos(ImVec2(
-			pos.x + contentSize.x - windowWidth - style.ScrollbarSize - style.ItemSpacing.x,
+		ImGui::SetNextWindowPos(ImVec2(
+			pos.x + width - windowWidth - style.ItemSpacing.x,
 			pos.y + style.ItemSpacing.y * 2.0f));
 
-		ImGui::SetNextWindowBgAlpha(0.6f);
+		ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
+		ImGui::SetNextWindowBgAlpha(0.75f);
+
 		ImGui::BeginChild("find-replace", ImVec2(windowWidth, windowHeight), ImGuiChildFlags_Borders);
 		ImGui::SetNextItemWidth(fieldWidth);
 
@@ -714,6 +761,7 @@ void TextEditor::renderFindReplace(ImVec2 pos, ImVec2 contentSize) {
 		}
 
 		ImGui::EndChild();
+		ImGui::PopStyleVar();
 		ImGui::SetCursorScreenPos(currentScreenPosition);
 	}
 }
@@ -869,7 +917,7 @@ void TextEditor::handleMouseInteractions() {
 			static_cast<int>(std::floor(mousePos.y / glyphSize.y)),
 			static_cast<int>(std::floor((mousePos.x - textOffset) / glyphSize.x))));
 
-				// show text cursor if required
+		// show text cursor if required
 		if (ImGui::IsWindowFocused() && overText) {
 			ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
 		}
@@ -2771,6 +2819,41 @@ void TextEditor::Document::setText(const std::string_view& text) {
 		} else if (character != '\r') {
 			back().emplace_back(Glyph(character, Color::text));
 		}
+	}
+
+	// update maximum column counts
+	updateMaximumColumn(0, lineCount() - 1);
+}
+
+
+//
+//	TextEditor::Document::setText
+//
+
+void TextEditor::Document::setText(const std::vector<std::string_view>& text) {
+	// reset document
+	clear();
+	updated = true;
+
+	if (text.size()) {
+		// process input UTF-8 and generate lines of glyphs
+		for (auto& line : text) {
+			emplace_back();
+			auto i = line.begin();
+			auto end = line.end();
+
+			while (i < end) {
+				ImWchar character;
+				i = CodePoint::read(i, end, &character);
+
+				if (character != '\r') {
+					back().emplace_back(Glyph(character, Color::text));
+				}
+			}
+		}
+
+	} else {
+		emplace_back();
 	}
 
 	// update maximum column counts
