@@ -410,10 +410,23 @@ static int LS_global_imgui_Image(lua_State* state)
 	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
 	const LS_Vector2 uv0 = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
 	const LS_Vector2 uv1 = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::One());
+
+	ImGui::Image(texID, ToImVec2(size), ToImVec2(uv0), ToImVec2(uv1));
+	return 0;
+}
+
+static int LS_global_imgui_ImageWithBg(lua_State* state)
+{
+	LS_EnsureFrameScope(state);
+
+	const ImTextureID texID = luaL_checkinteger(state, 1);
+	const LS_Vector2 size = luaL_opt(state, LS_GetVectorValue<2>, 2, LS_Vector2::Zero());
+	const LS_Vector2 uv0 = luaL_opt(state, LS_GetVectorValue<2>, 3, LS_Vector2::Zero());
+	const LS_Vector2 uv1 = luaL_opt(state, LS_GetVectorValue<2>, 4, LS_Vector2::One());
 	const LS_Vector4 tintColor = luaL_opt(state, LS_GetVectorValue<4>, 5, LS_Vector4::One());
 	const LS_Vector4 borderColor = luaL_opt(state, LS_GetVectorValue<4>, 6, LS_Vector4::Zero());
 
-	ImGui::Image(texID, ToImVec2(size), ToImVec2(uv0), ToImVec2(uv1), ToImVec4(tintColor), ToImVec4(borderColor));
+	ImGui::ImageWithBg(texID, ToImVec2(size), ToImVec2(uv0), ToImVec2(uv1), ToImVec4(tintColor), ToImVec4(borderColor));
 	return 0;
 }
 
@@ -1163,6 +1176,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 
 		// Widgets: Images
 		{ "Image", LS_global_imgui_Image },
+		{ "ImageWithBg", LS_global_imgui_ImageWithBg },
 		// * ImageButton
 
 		// Widgets: Combo Box
