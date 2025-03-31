@@ -40,7 +40,13 @@ public:
 	//
 
 	// access editor options
-	inline void SetTabSize(int value) { document.setTabSize(std::max(1, std::min(8, value))); }
+	inline void SetTabSize(int value) {
+		// this must be called before text is loaded/edited
+		if (document.isEmpty() && transactions.empty()) {
+			document.setTabSize(std::max(1, std::min(8, value)));
+		}
+	}
+
 	inline int GetTabSize() const { return document.getTabSize(); }
 	inline void SetLineSpacing(float value) { lineSpacing = std::max(1.0f, std::min(2.0f, value)); }
 	inline float GetLineSpacing() const { return lineSpacing; }
@@ -54,12 +60,17 @@ public:
 	inline bool IsShowLineNumbersEnabled() const { return showLineNumbers; }
 	inline void SetShowScrollbarMiniMapEnabled(bool value) { showScrollbarMiniMap = value; }
 	inline bool IsShowScrollbarMiniMapEnabled() const { return showScrollbarMiniMap; }
+	inline void SetShowPanScrollIndicatorEnabled(bool value) { showPanScrollIndicator = value; }
+	inline bool IsShowPanScrollIndicatorEnabled() const { return showPanScrollIndicator; }
 	inline void SetShowMatchingBrackets(bool value) { showMatchingBrackets = value; showMatchingBracketsChanged = true; }
 	inline bool IsShowingMatchingBrackets() const { return showMatchingBrackets; }
 	inline void SetCompletePairedGlyphs(bool value) { completePairedGlyphs = value; }
 	inline bool IsCompletingPairedGlyphs() const { return completePairedGlyphs; }
 	inline void SetOverwriteEnabled(bool value) { overwrite = value; }
 	inline bool IsOverwriteEnabled() const { return overwrite; }
+	inline void SetMiddleMousePanMode() { panMode = true; }
+	inline void SetMiddleMouseScrollMode() { panMode = false; }
+	inline bool IsMiddleMousePanMode() const { return panMode; }
 
 	// access text (using UTF-8 encoded strings)
 	// (see note below on cursor and scroll manipulation after setting new text)
@@ -77,7 +88,9 @@ public:
 			document.normalizeCoordinate(Coordinate(endLine, endColumn)));
 	}
 
-	inline bool IsEmpty() const { return document.size() == 1 && document[0].size() == 0; }
+	inline void ClearText() { SetText(""); }
+
+	inline bool IsEmpty() const { return document.isEmpty(); }
 	inline int GetLineCount() const { return document.lineCount(); }
 
 	// render the text editor in a Dear ImGui context
@@ -387,7 +400,7 @@ public:
 	public:
 		static std::string_view::const_iterator skipBOM(std::string_view::const_iterator i, std::string_view::const_iterator end);
 		static std::string_view::const_iterator read(std::string_view::const_iterator i, std::string_view::const_iterator end, ImWchar* codepoint);
-		static size_t write(char* i, ImWchar codepoint); // must point to buffer of 4 character (returns number of characters written)
+		static size_t write(char* i, ImWchar codepoint); // must point to buffer of 4 characters (returns number of characters written)
 		static bool isLetter(ImWchar codepoint);
 		static bool isNumber(ImWchar codepoint);
 		static bool isWord(ImWchar codepoint);
@@ -675,6 +688,9 @@ protected:
 		std::string getSectionText(Coordinate start, Coordinate end) const;
 		ImWchar getCodePoint(Coordinate location);
 
+		// see if document is empty
+		inline bool isEmpty() const { return size() == 1 && at(0).size() == 0; }
+
 		// get number of lines (as an int)
 		inline int lineCount() const { return static_cast<int>(size()); }
 
@@ -848,6 +864,7 @@ protected:
 
 	// access the editor's text
 	void setText(const std::string_view& text);
+	void clearText();
 
 	// render (parts of) the text editor
 	void render(const char* title, const ImVec2& size, bool border);
@@ -860,6 +877,7 @@ protected:
 	void renderLineNumbers();
 	void renderDecorations();
 	void renderScrollbarMiniMap();
+	void renderPanScrollIndicator();
 	void renderFindReplace(ImVec2 pos, float width);
 
 	// keyboard and mouse interactions
@@ -988,6 +1006,8 @@ protected:
 	int visibleColumns;
 	int firstVisibleColumn;
 	int lastVisibleColumn;
+	float verticalScrollBarSize;
+	float horizontalScrollBarSize;
 	float cursorAnimationTimer = 0.0f;
 	bool ensureCursorIsVisible = false;
 	int scrollToLineNumber = -1;
@@ -1025,6 +1045,11 @@ protected:
 	float lastClickTime = -1.0f;
 	ImWchar completePairCloser = 0;
 	Coordinate completePairLocation;
+	bool panMode = true;
+	bool panning = false;
+	bool scrolling = false;
+	ImVec2 scrollStart;
+	bool showPanScrollIndicator = true;
 
 	// color palette support
 	void updatePalette();

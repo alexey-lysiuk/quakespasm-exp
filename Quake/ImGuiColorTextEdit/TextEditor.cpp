@@ -82,8 +82,8 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 
 	// see if we have scrollbars
 	float scrollbarSize = ImGui::GetStyle().ScrollbarSize;
-	float verticalScrollBarSize = (totalSize.y > visibleSize.y) ? scrollbarSize : 0.0f;
-	float horizontalScrollBarSize = (totalSize.x > visibleSize.x) ? scrollbarSize : 0.0f;
+	verticalScrollBarSize = (totalSize.y > visibleSize.y) ? scrollbarSize : 0.0f;
+	horizontalScrollBarSize = (totalSize.x > visibleSize.x) ? scrollbarSize : 0.0f;
 
 	// determine visible lines and columns
 	visibleWidth = visibleSize.x - textOffset - verticalScrollBarSize;
@@ -206,6 +206,7 @@ void TextEditor::render(const char* title, const ImVec2& size, bool border) {
 	renderLineNumbers();
 	renderDecorations();
 	renderScrollbarMiniMap();
+	renderPanScrollIndicator();
 
 	if (ImGui::BeginPopup("LineNumberContextMenu")) {
 		lineNumberContextMenuCallback(contextMenuLine);
@@ -536,7 +537,7 @@ void TextEditor::renderScrollbarMiniMap() {
 		if (window->ScrollbarY) {
 			auto drawList = ImGui::GetWindowDrawList();
 			auto rect = ImGui::GetWindowScrollbarRect(window, ImGuiAxis_Y);
-			auto lineHeight = std::max(rect.GetHeight() / static_cast<float>(document.size()), 1.0f);
+			auto lineHeight = rect.GetHeight() / static_cast<float>(document.size());
 			auto offset = (rect.Max.x - rect.Min.x) * 0.3f;
 			auto left = rect.Min.x + offset;
 			auto right = rect.Max.x - offset;
@@ -572,6 +573,49 @@ void TextEditor::renderScrollbarMiniMap() {
 
 			drawList->PopClipRect();
 		}
+	}
+}
+
+
+//
+//	TextEditor::renderPanScrollIndicator
+//
+
+void TextEditor::renderPanScrollIndicator() {
+	if (showPanScrollIndicator && (panning || scrolling)) {
+		auto drawList = ImGui::GetWindowDrawList();
+		auto center =ImGui::GetWindowPos() + ImGui::GetWindowSize() / 2.0f;
+		static constexpr int alpha = 160;
+		drawList->AddCircleFilled(center, 20.0f, IM_COL32(255, 255, 255, alpha));
+		drawList->AddCircle(center, 5.0f, IM_COL32(0, 0, 0, alpha), 0, 2.0f);
+
+		drawList->AddTriangle(
+			ImVec2(center.x - 15.0f, center.y),
+			ImVec2(center.x - 8.0f, center.y - 4.0f),
+			ImVec2(center.x - 8.0f, center.y + 4.0f),
+			IM_COL32(0, 0, 0, alpha),
+			2.0f);
+
+		drawList->AddTriangle(
+			ImVec2(center.x + 15.0f, center.y),
+			ImVec2(center.x + 8.0f, center.y - 4.0f),
+			ImVec2(center.x + 8.0f, center.y + 4.0f),
+			IM_COL32(0, 0, 0, alpha),
+			2.0f);
+
+		drawList->AddTriangle(
+			ImVec2(center.x, center.y - 15.0f),
+			ImVec2(center.x - 4.0f, center.y - 8.0f),
+			ImVec2(center.x + 4.0f, center.y - 8.0f),
+			IM_COL32(0, 0, 0, alpha),
+			2.0f);
+
+		drawList->AddTriangle(
+			ImVec2(center.x, center.y + 15.0f),
+			ImVec2(center.x - 4.0f, center.y + 8.0f),
+			ImVec2(center.x + 4.0f, center.y + 8.0f),
+			IM_COL32(0, 0, 0, alpha),
+			2.0f);
 	}
 }
 
@@ -903,11 +947,59 @@ void TextEditor::handleKeyboardInputs() {
 //
 
 void TextEditor::handleMouseInteractions() {
+	// handle middle mouse button modes
+	panning &= panMode && ImGui::IsMouseDown(ImGuiMouseButton_Middle);
+	auto absoluteMousePos = ImGui::GetMousePos() - ImGui::GetWindowPos();
+
+	if (panning && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+		// handle middle mouse button panning
+		auto windowSize = ImGui::GetWindowSize();
+		auto mouseDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Middle);
+		float dragFactor = ImGui::GetIO().DeltaTime * 15.0f;
+		ImVec2 autoPanMargin(glyphSize.x * 4.0f, glyphSize.y * 2.0f);
+
+		if (absoluteMousePos.x < textOffset + autoPanMargin.x) {
+			mouseDelta.x = (absoluteMousePos.x - (textOffset + autoPanMargin.x)) * dragFactor;
+
+		} else if (absoluteMousePos.x > windowSize.x - verticalScrollBarSize - autoPanMargin.x) {
+			mouseDelta.x = (absoluteMousePos.x - (windowSize.x - verticalScrollBarSize - autoPanMargin.x)) * dragFactor;
+		}
+
+		if (absoluteMousePos.y < autoPanMargin.y) {
+			mouseDelta.y = (absoluteMousePos.y - autoPanMargin.y) * dragFactor;
+
+		} else if (absoluteMousePos.y > windowSize.y - horizontalScrollBarSize - autoPanMargin.y) {
+			mouseDelta.y = (absoluteMousePos.y - (windowSize.y - horizontalScrollBarSize - autoPanMargin.y)) * dragFactor;
+		}
+
+		ImGui::SetScrollX(ImGui::GetScrollX() - mouseDelta.x);
+		ImGui::SetScrollY(ImGui::GetScrollY() - mouseDelta.y);
+		ImGui::ResetMouseDragDelta(ImGuiMouseButton_Middle);
+
+	} else if (scrolling) {
+		// handle middle mouse button scrolling
+		float deadzone = glyphSize.x;
+		auto offset = scrollStart - absoluteMousePos;
+		offset.x = (offset.x < 0.0f) ? std::min(offset.x + deadzone, 0.0f) : std::max(offset.x - deadzone, 0.0f);
+		offset.y = (offset.y < 0.0f) ? std::min(offset.y + deadzone, 0.0f) : std::max(offset.y - deadzone, 0.0f);
+
+		float scrollFactor = ImGui::GetIO().DeltaTime * 5.0f;
+		offset *= scrollFactor;
+
+		ImGui::SetScrollX(ImGui::GetScrollX() - offset.x);
+		ImGui::SetScrollY(ImGui::GetScrollY() - offset.y);
+
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+			ImGui::IsMouseClicked(ImGuiMouseButton_Middle) ||
+			ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+
+			scrolling = false;
+		}
+
 	// ignore interactions when the editor is not hovered
-	if (ImGui::IsWindowHovered()) {
+	} else if (ImGui::IsWindowHovered()) {
 		auto io = ImGui::GetIO();
-		ImVec2 mousePos = ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
-		ImVec2 absoluteMousePos = ImGui::GetMousePos() - ImGui::GetWindowPos();
+		auto mousePos = ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
 		bool overLineNumbers = showLineNumbers && absoluteMousePos.x > lineNumberLeftOffset && absoluteMousePos.x < lineNumberRightOffset;
 		bool overText = mousePos.x - ImGui::GetScrollX() > textOffset;
 
@@ -940,12 +1032,15 @@ void TextEditor::handleMouseInteractions() {
 
 			makeCursorVisible();
 
-		} else if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle) && overText) {
-			// pan with dragging middle mouse button
-			ImVec2 mouseDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Middle);
-			ImGui::SetScrollX(ImGui::GetScrollX() - mouseDelta.x);
-			ImGui::SetScrollY(ImGui::GetScrollY() - mouseDelta.y);
-			ImGui::ResetMouseDragDelta(ImGuiMouseButton_Middle);
+		} else if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+			// start panning/scrolling mode on middle mouse click
+			if (panMode) {
+				panning = true;
+
+			} else {
+				scrolling = true;
+				scrollStart = absoluteMousePos;
+			}
 
 		} else if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
 			// handle right clicks by setting up context menu (if required)
@@ -959,7 +1054,7 @@ void TextEditor::handleMouseInteractions() {
 				ImGui::OpenPopup("TextContextMenu");
 			}
 
-		} else {
+		} else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
 			// handle left mouse button actions
 			auto click = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
 			auto doubleClick = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
