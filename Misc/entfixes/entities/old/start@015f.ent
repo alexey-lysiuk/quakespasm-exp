@@ -1,0 +1,530 @@
+{
+"_sunlight" "256"
+"_sunlight_color" "232 177 226"
+"_tb_def" "external:D:/QUAKEDEV/fgd/quakeMODERN.fgd"
+"classname" "worldspawn"
+"message" "A Vision Of True Hell"
+"wad" "D:/QUAKEDEV/wads/QUAKE101.WAD;D:/QUAKEDEV/wads/START.WAD"
+}
+{
+"classname" "info_player_start"
+"origin" "80 0 72"
+}
+{
+"classname" "info_player_coop"
+"origin" "64 40 72"
+}
+{
+"classname" "info_player_coop"
+"origin" "64 -40 72"
+}
+{
+"classname" "info_player_coop"
+"origin" "48 -88 72"
+}
+{
+"classname" "info_player_coop"
+"origin" "48 88 72"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "444 112 120"
+}
+{
+"classname" "light_torch_small_walltorch"
+"origin" "444 -112 120"
+}
+{
+"classname" "trigger_teleport"
+"model" "*1"
+"target" "tele"
+}
+{
+"classname" "trigger_setskill"
+"message" "2"
+"model" "*2"
+}
+{
+"classname" "trigger_setskill"
+"message" "1"
+"model" "*3"
+}
+{
+"classname" "trigger_teleport"
+"model" "*4"
+"target" "tele"
+}
+{
+"classname" "trigger_setskill"
+"message" "0"
+"model" "*5"
+}
+{
+"classname" "trigger_teleport"
+"model" "*6"
+"target" "tele"
+}
+{
+"classname" "func_door_secret"
+"model" "*7"
+"sounds" "1"
+"spawnflags" "8"
+"t_length" "68"
+"targetname" "nightmare"
+"wait" "-1"
+}
+{
+"classname" "trigger_counter"
+"count" "3"
+"origin" "568 -312 120"
+"target" "nightmare"
+"targetname" "nmcount"
+}
+{
+"angle" "180"
+"classname" "func_button"
+"health" "2"
+"lip" "8"
+"model" "*8"
+"target" "nmcount"
+"wait" "-1"
+}
+{
+"angle" "-1"
+"classname" "func_button"
+"health" "2"
+"lip" "8"
+"model" "*9"
+"target" "nmcount"
+"wait" "-1"
+}
+{
+"angle" "270"
+"classname" "func_button"
+"health" "2"
+"lip" "8"
+"model" "*10"
+"target" "nmcount"
+"wait" "-1"
+}
+{
+"classname" "trigger_setskill"
+"message" "2"
+"model" "*11"
+}
+{
+"classname" "trigger_teleport"
+"model" "*12"
+"target" "tele"
+}
+{
+"classname" "light"
+"origin" "704 0 108"
+}
+{
+"classname" "light"
+"origin" "712 228 100"
+}
+{
+"classname" "light"
+"origin" "700 -224 136"
+}
+{
+"_color" "241 89 89"
+"classname" "light"
+"delay" "5"
+"origin" "496 -224 12"
+}
+{
+"_color" "241 89 89"
+"classname" "light"
+"delay" "5"
+"origin" "684 -224 12"
+}
+{
+"classname" "trigger_multiple"
+"message" "This secret selects NIGHTMARE skill!"
+"model" "*13"
+"wait" "2"
+}
+{
+"classname" "trigger_multiple"
+"message" "This hall selects EASY skill"
+"model" "*14"
+"wait" "2"
+}
+{
+"classname" "trigger_multiple"
+"message" "These jumps select NORMAL skill"
+"model" "*15"
+"wait" "2"
+}
+{
+"classname" "trigger_multiple"
+"message" "This perilous ravine selects HARD skill!"
+"model" "*16"
+"wait" "2"
+}
+{
+"angle" "100"
+"classname" "light"
+"mangle" "180 -20 0"
+"origin" "300 0 120"
+"wait" "0.8"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "124 -220 112"
+"wait" "0.6"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "124 224 112"
+"wait" "0.6"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "744 0 8"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "400 0 260"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "480 0 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "544 0 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "620 0 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "688 0 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "764 0 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "764 144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "688 144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "620 144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "544 144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "480 144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "764 -144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "688 -144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "620 -144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "544 -144 256"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "480 -144 256"
+}
+{
+"classname" "light"
+"origin" "536 228 100"
+}
+{
+"classname" "ds"
+"origin" "528 0 108"
+}
+{
+"classname" "light"
+"origin" "524 -224 100"
+}
+{
+"classname" "light"
+"light" "150"
+"origin" "580 0 8"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "56 0 84"
+"targetname" "return"
+}
+{
+"classname" "trigger_teleport"
+"model" "*17"
+"target" "return"
+}
+{
+"classname" "trigger_multiple"
+"message" "This portal returns to difficulty selection"
+"model" "*18"
+"wait" "2"
+}
+{
+"classname" "info_teleport_destination"
+"origin" "1024 0 20"
+"targetname" "tele"
+}
+{
+"classname" "light_flame_large_yellow"
+"origin" "888 212 166"
+}
+{
+"classname" "light_flame_large_yellow"
+"origin" "888 -224 166"
+}
+{
+"classname" "light"
+"origin" "992 -224 88"
+}
+{
+"classname" "light"
+"origin" "992 212 88"
+}
+{
+"angle" "180"
+"classname" "monster_hell_knight"
+"origin" "1308 224 208"
+"spawnflags" "1"
+}
+{
+"angle" "180"
+"classname" "monster_hell_knight"
+"origin" "1308 18 208"
+"spawnflags" "1"
+}
+{
+"angle" "180"
+"classname" "monster_hell_knight"
+"origin" "1308 -18 208"
+"spawnflags" "1"
+}
+{
+"angle" "180"
+"classname" "monster_hell_knight"
+"origin" "1308 -268 208"
+"spawnflags" "1"
+}
+{
+"angle" "180"
+"classname" "monster_hell_knight"
+"origin" "1308 -232 208"
+"spawnflags" "1"
+}
+{
+"angle" "180"
+"classname" "monster_hell_knight"
+"origin" "1308 -196 208"
+"spawnflags" "1"
+}
+{
+"classname" "trigger_multiple"
+"message" "How many ƒÂ·ÙË†ÀÓÈÁËÙÛ would you like?"
+"model" "*19"
+"wait" "2"
+}
+{
+"classname" "trigger_multiple"
+"message" "One-Thousand ƒÂ·ÙË†ÀÓÈÁËÙÛ"
+"model" "*20"
+"wait" "2"
+}
+{
+"classname" "trigger_multiple"
+"message" "Ten-Thousand ƒÂ·ÙË†ÀÓÈÁËÙÛ"
+"model" "*21"
+"wait" "2"
+}
+{
+"classname" "trigger_multiple"
+"message" "◊¡“Œ…Œ«∫\nThis hall selects\nÔÓÂ≠ËıÓ‰ÚÂ‰†ÙËÔıÛ·Ó‰†ƒÂ·ÙË†ÀÓÈÁËÙÛ"
+"model" "*22"
+"wait" "2"
+}
+{
+"_color" "231 42 42"
+"classname" "light"
+"origin" "1257 -228 84"
+}
+{
+"_color" "157 105 0"
+"classname" "light"
+"origin" "1289 10 50"
+}
+{
+"_color" "5 71 5"
+"classname" "light"
+"origin" "1289 220 44"
+}
+{
+"classname" "light"
+"origin" "1307 1 219"
+}
+{
+"classname" "light"
+"origin" "1307 222 218"
+}
+{
+"classname" "light"
+"origin" "1307 -234 224"
+}
+{
+"_tb_group" "1"
+"angle" "-2"
+"classname" "func_door"
+"lip" "-30"
+"model" "*23"
+"sounds" "4"
+"spawnflags" "33"
+"speed" "896"
+"targetname" "gatelock"
+}
+{
+"classname" "trigger_once"
+"model" "*24"
+"target" "m1"
+}
+{
+"classname" "trigger_relay"
+"message" "HOLD IT!"
+"origin" "1396 -316 106"
+"target" "m2"
+"targetname" "m1"
+}
+{
+"classname" "trigger_relay"
+"delay" "3"
+"message" "I need to verify that you understand\nsomething first."
+"origin" "1380 -316 106"
+"target" "m3"
+"targetname" "m2"
+}
+{
+"classname" "trigger_relay"
+"delay" "3"
+"message" "If you understand that,\npress the button to your ÚÈÁËÙ"
+"origin" "1332 -316 106"
+"target" "butt"
+"targetname" "m5"
+}
+{
+"angle" "-2"
+"classname" "func_door"
+"lip" "-8"
+"model" "*25"
+"sounds" "1"
+"targetname" "butt"
+"wait" "-1"
+}
+{
+"angle" "270"
+"classname" "func_button"
+"model" "*26"
+"target" "m6"
+"wait" "-1"
+}
+{
+"classname" "trigger_relay"
+"origin" "1420 -316 100"
+"target" "gatelock"
+"targetname" "m1"
+}
+{
+"classname" "trigger_relay"
+"delay" "1"
+"message" "Okay, you may proceed."
+"origin" "1268 -316 106"
+"target" "gatelock"
+"targetname" "m6"
+}
+{
+"classname" "trigger_relay"
+"delay" "3"
+"message" "This map is\n’Œ‘≈”‘≈ƒ and is likely to\nŒœ‘†∆’Œ√‘…œŒ"
+"origin" "1364 -316 106"
+"target" "m4"
+"targetname" "m3"
+}
+{
+"classname" "trigger_relay"
+"delay" "3"
+"message" "It will also very likely\n„Ú·ÛË†˘ÔıÚ†„ÏÈÂÓÙ"
+"origin" "1348 -316 106"
+"target" "m5"
+"targetname" "m4"
+}
+{
+"classname" "trigger_changelevel"
+"map" "1kknights"
+"model" "*27"
+"spawnflags" "1"
+}
+{
+"classname" "trigger_changelevel"
+"map" "10kknights"
+"model" "*28"
+"spawnflags" "1"
+}
+{
+"classname" "trigger_changelevel"
+"map" "100kknights"
+"model" "*29"
+"spawnflags" "1"
+}
+{
+"_color" "85 0 0"
+"classname" "light"
+"origin" "1529 -236 40"
+}
+{
+"classname" "light"
+"light" "-300"
+"origin" "1545 228 44"
+}
+{
+"classname" "light"
+"light" "-300"
+"origin" "1545 18 50"
+}

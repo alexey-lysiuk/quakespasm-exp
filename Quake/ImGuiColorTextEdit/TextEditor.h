@@ -1,4 +1,4 @@
-//	TextEditor - A syntax highlighting text editor for ImGui
+//	TextEditor - A syntax highlighting text editor for Dear ImGui.
 //	Copyright (c) 2024-2025 Johan A. Goossens. All rights reserved.
 //
 //	This work is licensed under the terms of the MIT license.
@@ -40,7 +40,13 @@ public:
 	//
 
 	// access editor options
-	inline void SetTabSize(int value) { document.setTabSize(std::max(1, std::min(8, value))); }
+	inline void SetTabSize(int value) {
+		// this must be called before text is loaded/edited
+		if (document.isEmpty() && transactions.empty()) {
+			document.setTabSize(std::max(1, std::min(8, value)));
+		}
+	}
+
 	inline int GetTabSize() const { return document.getTabSize(); }
 	inline void SetLineSpacing(float value) { lineSpacing = std::max(1.0f, std::min(2.0f, value)); }
 	inline float GetLineSpacing() const { return lineSpacing; }
@@ -52,22 +58,46 @@ public:
 	inline bool IsShowWhitespacesEnabled() const { return showWhitespaces; }
 	inline void SetShowLineNumbersEnabled(bool value) { showLineNumbers = value; }
 	inline bool IsShowLineNumbersEnabled() const { return showLineNumbers; }
+	inline void SetShowScrollbarMiniMapEnabled(bool value) { showScrollbarMiniMap = value; }
+	inline bool IsShowScrollbarMiniMapEnabled() const { return showScrollbarMiniMap; }
+	inline void SetShowPanScrollIndicatorEnabled(bool value) { showPanScrollIndicator = value; }
+	inline bool IsShowPanScrollIndicatorEnabled() const { return showPanScrollIndicator; }
 	inline void SetShowMatchingBrackets(bool value) { showMatchingBrackets = value; showMatchingBracketsChanged = true; }
 	inline bool IsShowingMatchingBrackets() const { return showMatchingBrackets; }
 	inline void SetCompletePairedGlyphs(bool value) { completePairedGlyphs = value; }
 	inline bool IsCompletingPairedGlyphs() const { return completePairedGlyphs; }
 	inline void SetOverwriteEnabled(bool value) { overwrite = value; }
 	inline bool IsOverwriteEnabled() const { return overwrite; }
+	inline void SetMiddleMousePanMode() { panMode = true; }
+	inline void SetMiddleMouseScrollMode() { panMode = false; }
+	inline bool IsMiddleMousePanMode() const { return panMode; }
 
 	// access text (using UTF-8 encoded strings)
 	// (see note below on cursor and scroll manipulation after setting new text)
 	inline void SetText(const std::string_view& text) { setText(text); }
-	inline std::string GetText() { return document.getText(); }
-	inline bool IsEmpty() const { return document.size() == 1 && document[0].size() == 0; }
+	inline std::string GetText() const { return document.getText(); }
+	inline std::string GetCursorText(size_t cursor) const { return getCursorText(cursor); }
+
+	inline std::string GetLineText(int line) const {
+		return (line < 0 || line > static_cast<int>(document.size())) ? "" : document.getLineText(line);
+	}
+
+	inline std::string GetSectionText(int startLine, int startColumn, int endLine, int endColumn) const {
+		return document.getSectionText(
+			document.normalizeCoordinate(Coordinate(startLine, startColumn)),
+			document.normalizeCoordinate(Coordinate(endLine, endColumn)));
+	}
+
+	inline void ClearText() { SetText(""); }
+
+	inline bool IsEmpty() const { return document.isEmpty(); }
 	inline int GetLineCount() const { return document.lineCount(); }
 
 	// render the text editor in a Dear ImGui context
 	inline void Render(const char* title, const ImVec2& size=ImVec2(), bool border=false) { render(title, size, border); }
+
+	// programmatically set focus on the editor
+	inline void SetFocus() { focusOnEditor = true; }
 
 	// clipboard actions
 	inline void Cut() { if (!readOnly) cut(); }
@@ -84,6 +114,14 @@ public:
 	inline void SelectAll() { selectAll(); }
 	inline void SelectLine(int line) { if (line >= 0 && line < document.lineCount()) selectLine(line); }
 	inline void SelectLines(int start, int end) { if (start >= 0 && end < document.lineCount() && start <= end) selectLines(start, end); }
+
+	inline void SelectRegion(int startLine, int startColumn, int endLine, int endColumn) {
+		selectRegion(startLine, startColumn, endLine, endColumn);
+	}
+
+	inline void SelectToBrackets(bool includeBrackets=true) { selectToBrackets(includeBrackets); }
+	inline void GrowSelectionsToCurlyBrackets() { growSelectionsToCurlyBrackets(); }
+	inline void ShrinkSelectionsToCurlyBrackets() { shrinkSelectionsToCurlyBrackets(); }
 	inline void AddNextOccurrence() { addNextOccurrence(); }
 	inline void SelectAllOccurrences() { selectAllOccurrences(); }
 	inline bool AnyCursorHasSelection() const { return cursors.anyHasSelection(); }
@@ -94,6 +132,7 @@ public:
 	// get cursor positions (the meaning of main and current is explained in README.md)
 	inline size_t GetNumberOfCursors() const { return cursors.size(); }
 	inline void GetCursor(int& line, int& column, size_t cursor) const { return getCursor(line, column, cursor); }
+	inline void GetCursor(int& startLine, int& startColumn, int& endLine, int& endColumn, size_t cursor) const { return getCursor(startLine, startColumn, endLine, endColumn, cursor); }
 	inline void GetMainCursor(int& line, int& column) const { return getCursor(line, column, cursors.getMainIndex()); }
 	inline void GetCurrentCursor(int& line, int& column) const { return getCursor(line, column, cursors.getCurrentIndex()); }
 
@@ -155,15 +194,17 @@ public:
 		int line; // zero-based
 		float width;
 		float height;
+		ImVec2 glyphSize;
 	};
 
+	// positive width is number of pixels, negative with is number of glyphs
 	inline void SetLineDecorator(float width, std::function<void(Decorator& decorator)> callback) {
 		decoratorWidth = width;
 		decoratorCallback = callback;
 	}
 
 	inline void ClearLineDecorator() { SetLineDecorator(0.0f, nullptr); }
-	inline bool HasLineDecorator() const { return decoratorWidth > 0.0f && decoratorCallback != nullptr; }
+	inline bool HasLineDecorator() const { return decoratorWidth != 0.0f && decoratorCallback != nullptr; }
 
 	// setup context menu callbacks (these are called when a user right clicks line numbers or somewhere in the text)
 	// the editor sets up the popup menus, the callback has to populate them
@@ -236,16 +277,16 @@ public:
 
 	// a single colored character (a glyph)
 	class Glyph {
-		public:
-			// constructors
-			Glyph() = default;
-			Glyph(ImWchar cp) : codepoint(cp) {}
-			Glyph(ImWchar cp, Color col) : codepoint(cp), color(col) {}
+	public:
+		// constructors
+		Glyph() = default;
+		Glyph(ImWchar cp) : codepoint(cp) {}
+		Glyph(ImWchar cp, Color col) : codepoint(cp), color(col) {}
 
-			// properties
-			ImWchar codepoint = 0;
-			Color color = Color::text;
-		};
+		// properties
+		ImWchar codepoint = 0;
+		Color color = Color::text;
+	};
 
 	// iterator used in language specific tokenizers
 	class Iterator {
@@ -283,6 +324,9 @@ public:
 		// name of the language
 		std::string name;
 
+		// flag to describe if keywords and identifiers are case sensitive (which is the default)
+		bool caseSensitive = true;
+
 		// the character that starts a preprocessor directive (can be 0 if language doesn't have this feature)
 		ImWchar preprocess = 0;
 
@@ -312,6 +356,7 @@ public:
 		ImWchar stringEscape = 0;
 
 		// set of keywords, declarations, identifiers used in the language (can be blank if language doesn't have these features)
+		// if language is not case sensitive, all entries should be in lower case
 		std::unordered_set<std::string> keywords;
 		std::unordered_set<std::string> declarations;
 		std::unordered_set<std::string> identifiers;
@@ -342,6 +387,7 @@ public:
 		static const Language* Hlsl();
 		static const Language* Json();
 		static const Language* Markdown();
+		static const Language* Sql();
 	};
 
 	inline void SetLanguage(const Language* l) { language = l; languageChanged = true; }
@@ -354,7 +400,7 @@ public:
 	public:
 		static std::string_view::const_iterator skipBOM(std::string_view::const_iterator i, std::string_view::const_iterator end);
 		static std::string_view::const_iterator read(std::string_view::const_iterator i, std::string_view::const_iterator end, ImWchar* codepoint);
-		static size_t write(char* i, ImWchar codepoint); // must point to buffer of 4 character (returns number of characters written)
+		static size_t write(char* i, ImWchar codepoint); // must point to buffer of 4 characters (returns number of characters written)
 		static bool isLetter(ImWchar codepoint);
 		static bool isNumber(ImWchar codepoint);
 		static bool isWord(ImWchar codepoint);
@@ -365,9 +411,74 @@ public:
 		static bool isUpper(ImWchar codepoint);
 		static ImWchar toUpper(ImWchar codepoint);
 		static ImWchar toLower(ImWchar codepoint);
+
+		static constexpr ImWchar singleQuote = '\'';
+		static constexpr ImWchar doubleQuote = '"';
+		static constexpr ImWchar openCurlyBracket = '{';
+		static constexpr ImWchar closeCurlyBracket = '}';
+		static constexpr ImWchar openSquareBracket = '[';
+		static constexpr ImWchar closeSquareBracket = ']';
+		static constexpr ImWchar openParenthesis = '(';
+		static constexpr ImWchar closeParenthesis = ')';
+
+		static inline bool isPairOpener(ImWchar ch) {
+			return
+				ch == openCurlyBracket ||
+				ch == openSquareBracket ||
+				ch == openParenthesis ||
+				ch == singleQuote ||
+				ch == doubleQuote;
+		}
+
+		static inline bool isPairCloser(ImWchar ch) {
+			return
+				ch == closeCurlyBracket ||
+				ch == closeSquareBracket ||
+				ch == closeParenthesis ||
+				ch == singleQuote ||
+				ch == doubleQuote;
+		}
+
+		static inline ImWchar toPairCloser(ImWchar ch) {
+			return
+				(ch == openCurlyBracket) ? closeCurlyBracket :
+				(ch == openSquareBracket) ? closeSquareBracket :
+				(ch == openParenthesis) ? closeParenthesis:
+				ch;
+		}
+
+		static inline ImWchar toPairOpener(ImWchar ch) {
+			return
+				(ch == closeCurlyBracket) ? openCurlyBracket :
+				(ch == closeSquareBracket) ? openSquareBracket :
+				(ch == closeParenthesis) ? openParenthesis:
+				ch;
+		}
+
+		static inline bool isMatchingPair(ImWchar open, ImWchar close) {
+			return isPairOpener(open) && close == toPairCloser(open);
+		}
+
+		static inline bool isBracketOpener(ImWchar ch) {
+			return
+				ch == openCurlyBracket ||
+				ch == openSquareBracket ||
+				ch == openParenthesis;
+		}
+
+		static inline bool isBracketCloser(ImWchar ch) {
+			return
+				ch == closeCurlyBracket ||
+				ch == closeSquareBracket ||
+				ch == closeParenthesis;
+		}
+
+		static inline bool isMatchingBrackets(ImWchar open, ImWchar close) {
+			return isBracketOpener(open) && close == toPairCloser(open);
+		}
 	};
 
-private:
+protected:
 	//
 	// below is the private API
 	// private members (function and variables) start with a lowercase character
@@ -461,6 +572,9 @@ private:
 		// constructor
 		Cursors() { clearAll(); }
 
+		// reset the cursors
+		void reset();
+
 		// erase all cursors and specify a new one
 		inline void setCursor(Coordinate coordinate) { setCursor(coordinate, coordinate); }
 		void setCursor(Coordinate start, Coordinate end);
@@ -543,7 +657,7 @@ private:
 		State state = State::inText;
 
 		// marker reference (0 means no marker for this line)
-		size_t marker;
+		size_t marker = 0;
 
 		// width of this line (in visible columns)
 		int maxColumn = 0;
@@ -564,13 +678,18 @@ private:
 
 		// manipulate document text (strings should be UTF-8 encoded)
 		void setText(const std::string_view& text);
+		void setText(const std::vector<std::string_view>& text);
 		Coordinate insertText(Coordinate start, const std::string_view& text);
 		void deleteText(Coordinate start, Coordinate end);
 
 		// access document text (strings are UTF-8 encoded)
 		std::string getText() const;
-		std::string getSectionText(Coordinate start, Coordinate end) const;
 		std::string getLineText(int line) const;
+		std::string getSectionText(Coordinate start, Coordinate end) const;
+		ImWchar getCodePoint(Coordinate location);
+
+		// see if document is empty
+		inline bool isEmpty() const { return size() == 1 && at(0).size() == 0; }
 
 		// get number of lines (as an int)
 		inline int lineCount() const { return static_cast<int>(size()); }
@@ -603,6 +722,7 @@ private:
 
 		// see if document was updated this frame (can only be called once)
 		inline bool isUpdated() { auto result = updated; updated = false; return result; }
+		inline void resetUpdated() { updated = false; }
 
 		// utility functions
 		bool isWholeWord(Coordinate start, Coordinate end) const;
@@ -706,9 +826,9 @@ private:
 	} colorizer;
 
 	// details about bracketed text
-	class Bracket {
+	class BracketPair {
 	public:
-		Bracket(ImWchar sc, Coordinate s, ImWchar ec, Coordinate e, int l) : startChar(sc), start(s), endChar(ec), end(e), level(l) {}
+		BracketPair(ImWchar sc, Coordinate s, ImWchar ec, Coordinate e, int l) : startChar(sc), start(s), endChar(ec), end(e), level(l) {}
 		ImWchar startChar;
 		Coordinate start;
 		ImWchar endChar;
@@ -716,10 +836,10 @@ private:
 		int level;
 
 		inline bool isAfter(Coordinate location) const { return start > location; }
-		inline bool isAround(Coordinate location) const { return start <= location && end >= location; }
+		inline bool isAround(Coordinate location) const { return start < location && end >= location; }
 	};
 
-	class Bracketeer : public std::vector<Bracket> {
+	class Bracketeer : public std::vector<BracketPair> {
 	public:
 		// reset the bracketeer
 		void reset();
@@ -727,10 +847,11 @@ private:
 		// update the list of bracket pairs in the document and colorize the relevant glyphs
 		void update(Document& document);
 
-		// manage active brackets
-		iterator getActiveBracket(Coordinate location);
+		// find relevant brackets
+		iterator getEnclosingBrackets(Coordinate location);
+		iterator getEnclosingCurlyBrackets(Coordinate first, Coordinate last);
+		iterator getInnerCurlyBrackets(Coordinate first, Coordinate last);
 
-	private:
 		// utility functions
 		static inline bool isBracketCandidate(Glyph& glyph) {
 			return glyph.color == Color::punctuation ||
@@ -739,18 +860,11 @@ private:
 				glyph.color == Color::matchingBracketLevel3 ||
 				glyph.color == Color::matchingBracketError;
 		}
-
-		static inline bool isBracketOpener(ImWchar ch) { return ch == '{' || ch == '[' || ch == '('; }
-		static inline bool isBracketCloser(ImWchar ch) { return ch == '}' || ch == ']' || ch == ')'; }
-		static inline ImWchar toBracketCloser(ImWchar ch) { return ch == '{' ? '}' : (ch == '[' ? ']' : (ch == '(' ? ')' : ch)); }
-		static inline ImWchar toBracketOpener(ImWchar ch) { return ch == '}' ? '{' : (ch == ']' ? '[' : (ch == ')' ? '(' : ch)); }
-
-		int active = -1;
-		Coordinate activeLocation = Coordinate::invalid();
 	} bracketeer;
 
-	// set the editor's text
+	// access the editor's text
 	void setText(const std::string_view& text);
+	void clearText();
 
 	// render (parts of) the text editor
 	void render(const char* title, const ImVec2& size, bool border);
@@ -762,7 +876,9 @@ private:
 	void renderMargin();
 	void renderLineNumbers();
 	void renderDecorations();
-	void renderFindReplace(ImVec2 pos, ImVec2 available);
+	void renderScrollbarMiniMap();
+	void renderPanScrollIndicator();
+	void renderFindReplace(ImVec2 pos, float width);
 
 	// keyboard and mouse interactions
 	void handleKeyboardInputs();
@@ -772,16 +888,21 @@ private:
 	void selectAll();
 	void selectLine(int line);
 	void selectLines(int startLine, int endLine);
+	void selectRegion(int startLine, int startColumn, int endLine, int endColumn);
+	void selectToBrackets(bool includeBrackets);
+	void growSelectionsToCurlyBrackets();
+	void shrinkSelectionsToCurlyBrackets();
 
-	// clipboard actions
 	void cut();
 	void copy() const;
 	void paste();
 	void undo();
 	void redo();
 
-	// access cursor location
+	// access cursor locations
 	void getCursor(int& line, int& column, size_t cursor) const;
+	void getCursor(int& startLine, int& startColumn, int& endLine, int& endColumn, size_t cursor) const;
+	std::string	getCursorText(size_t cursor) const;
 
 	// scrolling support
 	void makeCursorVisible();
@@ -864,6 +985,7 @@ private:
 	bool autoIndent = true;
 	bool showWhitespaces = true;
 	bool showLineNumbers = true;
+	bool showScrollbarMiniMap = true;
 	bool showMatchingBrackets = true;
 	bool completePairedGlyphs = true;
 	bool overwrite = false;
@@ -884,6 +1006,8 @@ private:
 	int visibleColumns;
 	int firstVisibleColumn;
 	int lastVisibleColumn;
+	float verticalScrollBarSize;
+	float horizontalScrollBarSize;
 	float cursorAnimationTimer = 0.0f;
 	bool ensureCursorIsVisible = false;
 	int scrollToLineNumber = -1;
@@ -921,6 +1045,11 @@ private:
 	float lastClickTime = -1.0f;
 	ImWchar completePairCloser = 0;
 	Coordinate completePairLocation;
+	bool panMode = true;
+	bool panning = false;
+	bool scrolling = false;
+	ImVec2 scrollStart;
+	bool showPanScrollIndicator = true;
 
 	// color palette support
 	void updatePalette();

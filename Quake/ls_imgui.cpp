@@ -286,6 +286,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipMouse),
 	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipNav),
 	LS_IMGUI_STYLE_MEMBER(HoverStationaryDelay),
+	LS_IMGUI_STYLE_MEMBER(ImageBorderSize),
 	LS_IMGUI_STYLE_MEMBER(IndentSpacing),
 	LS_IMGUI_STYLE_MEMBER(ItemInnerSpacing),
 	LS_IMGUI_STYLE_MEMBER(ItemSpacing),
@@ -303,10 +304,12 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(TabBorderSize),
 	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
 	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersTextAlign),
-	LS_IMGUI_STYLE_MEMBER(TabMinWidthForCloseButton),
+	LS_IMGUI_STYLE_MEMBER(TabCloseButtonMinWidthSelected),
+	LS_IMGUI_STYLE_MEMBER(TabCloseButtonMinWidthUnselected),
 	LS_IMGUI_STYLE_MEMBER(TabRounding),
 	LS_IMGUI_STYLE_MEMBER(TouchExtraPadding),
 	LS_IMGUI_STYLE_MEMBER(WindowBorderSize),
+	LS_IMGUI_STYLE_MEMBER(WindowBorderHoverPadding),
 	LS_IMGUI_STYLE_MEMBER(WindowMenuButtonPosition),
 	LS_IMGUI_STYLE_MEMBER(WindowMinSize),
 	LS_IMGUI_STYLE_MEMBER(WindowPadding),
@@ -563,6 +566,20 @@ static int LS_value_ImGuiColorTextEdit_SelectLines(lua_State* state)
 	return 0;
 }
 
+static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
+{
+	TextEditor* texteditor = LS_GetColorTextEdit(state);
+
+	const int startline = luaL_checkinteger(state, 2);
+	const int startchar = luaL_checkinteger(state, 3);
+	const int endline = luaL_checkinteger(state, 4);
+	const int endchar = luaL_checkinteger(state, 5);
+
+	// On C++ side, line and character indices begin with zero
+	texteditor->SelectRegion(startline - 1, startchar - 1, endline - 1, endchar - 1);
+	return 0;
+}
+
 static int LS_value_ImGuiColorTextEdit_SetCursor(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
@@ -676,6 +693,7 @@ static int LS_global_imgui_ColorTextEdit(lua_State* state)
 			{ "ScrollToLine", LS_value_ImGuiColorTextEdit_ScrollToLine },
 			{ "SelectLine", LS_value_ImGuiColorTextEdit_SelectLine },
 			{ "SelectLines", LS_value_ImGuiColorTextEdit_SelectLines },
+			{ "SelectRegion", LS_value_ImGuiColorTextEdit_SelectRegion },
 			{ "SetCursor", LS_value_ImGuiColorTextEdit_SetCursor },
 			{ "SetLanguage", LS_value_ImGuiColorTextEdit_SetLanguage },
 			{ "SetReadOnly", LS_value_ImGuiColorTextEdit_SetReadOnly },
