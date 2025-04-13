@@ -21,14 +21,14 @@ jobs:
             os: macos-13
 
           - name: macOS ARM
-            os: macos-14
+            os: macos-15
 
           - name: MSVC 32-bit
-            os: windows-2022
+            os: windows-2025
             extra_options: -A Win32
 
           - name: MSVC 64-bit
-            os: windows-2022
+            os: windows-2025
 
     steps:
       - uses: actions/checkout@v4
