@@ -10,11 +10,18 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: Linux Clang
+          - name: Linux ARM Clang
+            os: ubuntu-24.04-arm
+            extra_options: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
+          - name: Linux ARM GCC
+            os: ubuntu-24.04-arm
+
+          - name: Linux Intel Clang
             os: ubuntu-24.04
             extra_options: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
-          - name: Linux GCC
+          - name: Linux Intel GCC
             os: ubuntu-24.04
 
           - name: macOS Intel
