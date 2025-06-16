@@ -149,7 +149,7 @@ GLSLGamma_CreateShaders
 */
 static void GLSLGamma_CreateShaders (void)
 {
-#if __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
 	const GLchar *vertSource = \
 		"precision highp float;\n"
 		"attribute vec4 aVertexPosition;\n"
@@ -159,7 +159,7 @@ static void GLSLGamma_CreateShaders (void)
 		"void main(void) {\n"
 		"	gl_Position = aVertexPosition;\n"
 		"	vTextureCoord = aTextureCoord;\n"
-	"}\n";
+		"}\n";
 
 	const GLchar *fragSource = \
 		"precision highp float;\n"
