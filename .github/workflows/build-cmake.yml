@@ -6,6 +6,11 @@ jobs:
   build:
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
+
+    defaults:
+      run:
+        shell: bash
+
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +48,6 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies
-        shell: bash
         run: |
           if [[ "${{ runner.os }}" == 'Linux' ]]; then
             sudo apt update && sudo apt install libflac-dev libmpg123-dev libopusfile-dev libsdl2-dev libvorbis-dev libxmp-dev
@@ -52,7 +56,6 @@ jobs:
           fi
 
       - name: Configure
-        shell: bash
         run: |
           cmake -B build -DQUAKE_WARNINGS_AS_ERRORS=ON -DQUAKE_GENERATE_VERSION_HEADER=ON ${{ matrix.config.extra_options }} .
 
@@ -61,14 +64,12 @@ jobs:
         id: cpu-cores
 
       - name: Build
-        shell: bash
         run: |
           export MAKEFLAGS=--keep-going
           cmake --build build --config Release --parallel ${{ steps.cpu-cores.outputs.count }}
 
       - name: List Build Directory
         if: always()
-        shell: bash
         run: |
           cat build/expversion.h
           git status
