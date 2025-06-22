@@ -243,6 +243,11 @@ void Host_Error (const char *error, ...)
 	cls.demonum = -1;
 	cl.intermission = 0; //johnfitz -- for errors during intermissions (changelevel with no map found, etc.)
 
+#ifdef USE_LUA_SCRIPTING
+	void LS_CleanStack(void);
+	LS_CleanStack();
+#endif // USE_LUA_SCRIPTING`
+
 	inerror = false;
 
 	longjmp (host_abortserver, 1);

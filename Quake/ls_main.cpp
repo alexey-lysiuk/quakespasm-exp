@@ -861,6 +861,12 @@ void LS_Shutdown(void)
 #endif // USE_TLSF
 }
 
+void LS_CleanStack()
+{
+	if (ls_state)
+		lua_settop(ls_state, 0);
+}
+
 } // extern "C"
 
 #endif // USE_LUA_SCRIPTING
