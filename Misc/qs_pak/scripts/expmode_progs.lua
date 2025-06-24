@@ -182,7 +182,7 @@ local function function_declarationcell(index, entry)
 	local func = entry.func
 
 	if func.entrypoint > 0 then
-		if imSelectable(entry.declaration, false, imSpanAllColumns) then
+		if imSelectable(entry.declarationid, false, imSpanAllColumns) then
 			local funcname = func.name
 
 			local function oncreate(this)
@@ -199,7 +199,7 @@ local function function_declarationcell(index, entry)
 		end
 	else
 		-- Built-in function, nothing to disassemble
-		imText(entry.declaration)
+		imText(entry.declarationid)
 	end
 end
 
@@ -245,11 +245,13 @@ local function functions_onshow(self)
 
 	for i, func in ipairs(functions) do
 		local entrypoint = func.entrypoint
+		local declaration = tostring(func)
 		local entry =
 		{
 			func = func,
 			index = tostring(i),
-			declaration = entrypoint > 0 and format('%s##%i', func, i) or tostring(func),
+			declaration = declaration,
+			declarationid = entrypoint > 0 and format('%s##%i', declaration, i) or declaration,
 			entrypoint = entrypoint > 0 and tostring(entrypoint) or format('builtin #%i', -entrypoint),
 			filename = func.filename
 		}
