@@ -1068,7 +1068,6 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * SetWindowSize
 		// * SetWindowCollapsed
 		// * SetWindowFocus
-		// * SetWindowFontScale
 		// * SetWindowPos
 		// * SetWindowSize
 		// * SetWindowCollapsed
@@ -1086,9 +1085,13 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * SetScrollFromPosX
 		// * SetScrollFromPosY
 
-		// Parameters stacks
 		// * PushFont
 		// * PopFont
+		// * GetFont
+		// * GetFontSize
+		// * GetFontBaked
+
+		// Parameters stacks (shared)
 		// * PushStyleColor
 		// * PushStyleColor
 		// * PopStyleColor
@@ -1100,7 +1103,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PushItemFlag
 		// * PopItemFlag
 
-		// Parameters stacks
+		// Parameters stacks (current window)
 		// * PushItemWidth
 		// * PopItemWidth
 		{ "SetNextItemWidth", LS_global_imgui_SetNextItemWidth },
@@ -1109,8 +1112,6 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * PopTextWrapPos
 
 		// Style read access
-		// * GetFont
-		// * GetFontSize
 		// * GetFontTexUvWhitePixel
 		// * GetColorU32
 		// * GetColorU32
