@@ -307,6 +307,8 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(TabBorderSize),
 	LS_IMGUI_STYLE_MEMBER(TabCloseButtonMinWidthSelected),
 	LS_IMGUI_STYLE_MEMBER(TabCloseButtonMinWidthUnselected),
+	LS_IMGUI_STYLE_MEMBER(TabMinWidthBase),
+	LS_IMGUI_STYLE_MEMBER(TabMinWidthShrink),
 	LS_IMGUI_STYLE_MEMBER(TabRounding),
 	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersAngle),
 	LS_IMGUI_STYLE_MEMBER(TableAngledHeadersTextAlign),
