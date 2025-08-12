@@ -20,6 +20,33 @@ edicts.flags =
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
 }
 
+edicts.items =
+{
+	IT_SHOTGUN           = 1,
+	IT_SUPER_SHOTGUN     = 2,
+	IT_NAILGUN           = 4,
+	IT_SUPER_NAILGUN     = 8,
+	IT_GRENADE_LAUNCHER  = 16,
+	IT_ROCKET_LAUNCHER   = 32,
+	IT_LIGHTNING         = 64,
+	IT_EXTRA_WEAPON      = 128,
+	IT_SHELLS            = 256,
+	IT_NAILS             = 512,
+	IT_ROCKETS           = 1024,
+	IT_CELLS             = 2048,
+	IT_AXE               = 4096,
+	IT_ARMOR1            = 8192,
+	IT_ARMOR2            = 16384,
+	IT_ARMOR3            = 32768,
+	IT_SUPERHEALTH       = 65536,
+	IT_KEY1              = 131072,
+	IT_KEY2              = 262144,
+	IT_INVISIBILITY      = 524288,
+	IT_INVULNERABILITY   = 1048576,
+	IT_SUIT              = 2097152,
+	IT_QUAD              = 4194304,
+}
+
 edicts.solidstates =
 {
 	SOLID_NOT         = 0,  -- no interaction with other objects
@@ -124,6 +151,8 @@ local vec3mid <const> = vec3.mid
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local IT_KEY1 <const> = edicts.items.IT_KEY1
+local IT_KEY2 <const> = edicts.items.IT_KEY2
 local ITEM_SECRET <const> = edicts.spawnflags.ITEM_SECRET
 local TELEPORT_PLAYER_ONLY <const> = edicts.spawnflags.TELEPORT_PLAYER_ONLY
 
@@ -377,7 +406,27 @@ local function getitemname(edict)
 			and probe.classname:find('item_', 1, true) == 1
 
 		if ismatching then
-			return localizednetname(probe) or '???'
+			local name = localizednetname(probe)
+
+			if not name then
+				if items == IT_KEY1 then
+					name = 'Silver'
+				elseif items == IT_KEY2 then
+					name = 'Gold'
+				end
+
+				local worldtype = edicts[1].worldtype
+
+				if worldtype == 0 then
+					name = format('%s Key', name)
+				elseif worldtype == 1 then
+					name = format('%s Runekey', name)
+				elseif worldtype == 2 then
+					name = format('%s Keycard', name)
+				end
+			end
+
+			return name or '???'
 		end
 	end
 end
