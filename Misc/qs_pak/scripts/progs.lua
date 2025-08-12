@@ -78,7 +78,7 @@ end
 local function detectmod()
 	if functions['Mutant_Melee'] then
 		return mods.ALKALINE
-	elseif functions['BlastBeltCheat'] then
+	elseif functions['NailPiercerCheat'] then
 		return mods.ARCANE_DIMENSIONS
 	elseif functions['TransferKeys'] then
 		return mods.COPPER

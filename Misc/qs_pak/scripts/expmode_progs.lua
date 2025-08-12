@@ -175,13 +175,14 @@ end
 local function function_searchcompare(entry, string)
 	return entry.declaration:lower():find(string, 1, true)
 		or entry.filename:lower():find(string, 1, true)
+		or entry.entrypoint:find(string, 1, true)
 end
 
 local function function_declarationcell(index, entry)
 	local func = entry.func
 
 	if func.entrypoint > 0 then
-		if imSelectable(entry.declaration, false, imSpanAllColumns) then
+		if imSelectable(entry.declarationid, false, imSpanAllColumns) then
 			local funcname = func.name
 
 			local function oncreate(this)
@@ -198,7 +199,7 @@ local function function_declarationcell(index, entry)
 		end
 	else
 		-- Built-in function, nothing to disassemble
-		imText(entry.declaration)
+		imText(entry.declarationid)
 	end
 end
 
@@ -210,10 +211,11 @@ local function functions_onupdate(self)
 		local searchmodified = searchbar(self)
 		local entries = updatesearch(self, function_searchcompare, searchmodified)
 
-		if imBeginTable(title, 3, defaultTableFlags) then
+		if imBeginTable(title, 4, defaultTableFlags) then
 			imTableSetupScrollFreeze(0, 1)
 			imTableSetupColumn('Index', imTableColumnWidthFixed)
 			imTableSetupColumn('Declaration')
+			imTableSetupColumn('Entry Point', imTableColumnWidthFixed)
 			imTableSetupColumn('File', imTableColumnWidthFixed)
 			imTableHeadersRow()
 
@@ -223,6 +225,8 @@ local function functions_onupdate(self)
 				imText(entry.index)
 				imTableNextColumn()
 				function_declarationcell(entry.index, entry)
+				imTableNextColumn()
+				imText(entry.entrypoint)
 				imTableNextColumn()
 				imText(entry.filename)
 			end
@@ -240,11 +244,15 @@ local function functions_onshow(self)
 	local entries = {}
 
 	for i, func in ipairs(functions) do
+		local entrypoint = func.entrypoint
+		local declaration = tostring(func)
 		local entry =
 		{
 			func = func,
 			index = tostring(i),
-			declaration = func.entrypoint > 0 and format('%s##%i', func, i) or tostring(func),
+			declaration = declaration,
+			declarationid = entrypoint > 0 and format('%s##%i', declaration, i) or declaration,
+			entrypoint = entrypoint > 0 and tostring(entrypoint) or format('builtin #%i', -entrypoint),
 			filename = func.filename
 		}
 		insert(entries, entry)

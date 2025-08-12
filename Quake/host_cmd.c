@@ -2399,6 +2399,8 @@ static void Host_Ghost_f(void)
 		player->takedamage = isghost ? DAMAGE_NO : DAMAGE_AIM;
 		player->solid = isghost ? SOLID_NOT : SOLID_SLIDEBOX;
 		player->movetype = isghost ? MOVETYPE_NOCLIP : MOVETYPE_WALK;
+		player->waterlevel = 0;
+		player->watertype = CONTENTS_EMPTY;
 
 		int flags = player->flags;
 		player->flags = isghost

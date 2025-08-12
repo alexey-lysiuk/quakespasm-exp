@@ -193,8 +193,8 @@ local function truesecret(edict)
 	local max = edict.absmax
 	local description, location
 
-	if detectmod() == mods.ARCANE_DIMENSIONS then
-		if min == vec3minusone and max == vec3one and edict.count == 0 then
+	if detectmod() == mods.ARCANE_DIMENSIONS and min == vec3minusone and max == vec3one then
+		if edict.count == 0 then
 			-- Revealed Arcane Dimensions secret, skip it
 			return
 		else
