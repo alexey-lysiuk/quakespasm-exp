@@ -359,14 +359,25 @@ end
 -- Doors
 --
 
-local function getitemname(item)
-	if not item or item == 0 then
+local function getitemname(edict)
+	local items = edict.items
+
+	if items == 0 then
 		return
 	end
 
-	for _, edict in ipairs(edicts) do
-		if not isfree(edict) and edict.items == item and edict.classname:find('item_', 1, true) == 1 then
-			return localizednetname(edict) or '???'
+	-- Specific to Arcane Dimensions, should be nil for other mods
+	local moditems = edict.moditems
+
+	for _, probe in ipairs(edicts) do
+		local ismatching = not isfree(probe)
+			and probe ~= edict
+			and probe.items == items
+			and probe.moditems == moditems
+			and probe.classname:find('item_', 1, true) == 1
+
+		if ismatching then
+			return localizednetname(probe) or '???'
 		end
 	end
 end
@@ -386,7 +397,7 @@ function edicts.isdoor(edict)
 	local issecret = classname == door_secret_class or edict.touch == 'secret_touch()'
 	local secretprefix = issecret and 'Secret ' or ''
 
-	local itemname = getitemname(edict.items)
+	local itemname = getitemname(edict)
 	local itemprefix = itemname and itemname .. ' ' or ''
 
 	local description = format('%s%sDoor', secretprefix, itemprefix)
