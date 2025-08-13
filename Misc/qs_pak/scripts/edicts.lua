@@ -151,6 +151,8 @@ local vec3mid <const> = vec3.mid
 local FL_MONSTER <const> = edicts.flags.FL_MONSTER
 local SOLID_TRIGGER <const> = edicts.solidstates.SOLID_TRIGGER
 local SUPER_SECRET <const> = edicts.spawnflags.SUPER_SECRET
+local IT_KEY1 <const> = edicts.items.IT_KEY1
+local IT_KEY2 <const> = edicts.items.IT_KEY2
 local ITEM_SECRET <const> = edicts.spawnflags.ITEM_SECRET
 local TELEPORT_PLAYER_ONLY <const> = edicts.spawnflags.TELEPORT_PLAYER_ONLY
 
@@ -386,6 +388,34 @@ end
 -- Doors
 --
 
+local function getkeyname(edict)
+	local items = edict.items
+
+	if items == 0 then
+		return
+	end
+
+	local name
+
+	if items == IT_KEY1 then
+		name = 'Silver'
+	elseif items == IT_KEY2 then
+		name = 'Gold'
+	end
+
+	local worldtype = edicts[1].worldtype
+
+	if worldtype == 0 then
+		name = format('%s Key', name)
+	elseif worldtype == 1 then
+		name = format('%s Runekey', name)
+	elseif worldtype == 2 then
+		name = format('%s Keycard', name)
+	end
+
+	return name
+end
+
 local function getitemname(edict)
 	local items = edict.items
 
@@ -404,7 +434,7 @@ local function getitemname(edict)
 			and probe.classname:find('item_', 1, true) == 1
 
 		if ismatching then
-			return localizednetname(probe) or '???'
+			return localizednetname(probe) or getkeyname(probe) or '???'
 		end
 	end
 end
@@ -504,6 +534,8 @@ function edicts.isitem(edict)
 			name = 'Yellow Armor'
 		elseif name == 'armorInv' then
 			name = 'Red Armor'
+		elseif name:find('key', 1, true) == 1 then
+			name = getkeyname(edict)
 		end
 	end
 
