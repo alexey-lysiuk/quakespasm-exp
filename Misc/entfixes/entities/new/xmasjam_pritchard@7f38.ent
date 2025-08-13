@@ -459,7 +459,7 @@
 {
 "angle" "270"
 "classname" "misc_textbook"
-"message" "ï¾ ï¿”ï¿¨ï¿¥ï¾ ï¿ï¿©ï¿¬ï¿¬ï¿¡ï¿²"
+"message" " Ôèå Ğéììáò"
 "message2" "\n Drive your stake"
 "message3" "\n \n Pierce the Void"
 "message4" "\n \n Seal The World's Fate"
@@ -12186,7 +12186,7 @@
 {
 "angle" "90"
 "classname" "misc_textbook"
-"message" "ï¾ ï¿”ï¿¨ï¿¥ï¾ ï¿–ï¿¯ï¿©ï¿¤"
+"message" " Ôèå Öïéä"
 "message2" "\n Withdraw your Stake"
 "message3" "\n \n Stained black with the blood"
 "message4" "\n \n of an Elder God"
