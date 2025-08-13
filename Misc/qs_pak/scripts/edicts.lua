@@ -20,6 +20,33 @@ edicts.flags =
 	FL_JUMPRELEASED   = 4096,  -- for jump debouncing
 }
 
+edicts.items =
+{
+	IT_SHOTGUN           = 1,
+	IT_SUPER_SHOTGUN     = 2,
+	IT_NAILGUN           = 4,
+	IT_SUPER_NAILGUN     = 8,
+	IT_GRENADE_LAUNCHER  = 16,
+	IT_ROCKET_LAUNCHER   = 32,
+	IT_LIGHTNING         = 64,
+	IT_EXTRA_WEAPON      = 128,
+	IT_SHELLS            = 256,
+	IT_NAILS             = 512,
+	IT_ROCKETS           = 1024,
+	IT_CELLS             = 2048,
+	IT_AXE               = 4096,
+	IT_ARMOR1            = 8192,
+	IT_ARMOR2            = 16384,
+	IT_ARMOR3            = 32768,
+	IT_SUPERHEALTH       = 65536,
+	IT_KEY1              = 131072,
+	IT_KEY2              = 262144,
+	IT_INVISIBILITY      = 524288,
+	IT_INVULNERABILITY   = 1048576,
+	IT_SUIT              = 2097152,
+	IT_QUAD              = 4194304,
+}
+
 edicts.solidstates =
 {
 	SOLID_NOT         = 0,  -- no interaction with other objects
