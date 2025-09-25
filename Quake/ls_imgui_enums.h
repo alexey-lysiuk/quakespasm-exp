@@ -114,6 +114,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackCharFilter)
 	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackResize)
 	//LS_IMGUI_INPUT_TEXT_FLAG(CallbackEdit)
+	LS_IMGUI_INPUT_TEXT_FLAG(WordWrap)
 	LS_IMGUI_ENUM_END(InputTextFlags)
 #undef LS_IMGUI_INPUT_TEXT_FLAG
 
@@ -143,6 +144,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_SELECTABLE_FLAG(Disabled)
 	LS_IMGUI_SELECTABLE_FLAG(AllowOverlap)
 	LS_IMGUI_SELECTABLE_FLAG(Highlight)
+	LS_IMGUI_SELECTABLE_FLAG(SelectOnNav)
 	LS_IMGUI_ENUM_END(SelectableFlags)
 #undef LS_IMGUI_SELECTABLE_FLAG
 
