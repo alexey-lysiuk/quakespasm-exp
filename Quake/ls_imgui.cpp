@@ -297,6 +297,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(MouseCursorScale),
 	LS_IMGUI_STYLE_MEMBER(PopupBorderSize),
 	LS_IMGUI_STYLE_MEMBER(PopupRounding),
+	LS_IMGUI_STYLE_MEMBER(ScrollbarPadding),
 	LS_IMGUI_STYLE_MEMBER(ScrollbarRounding),
 	LS_IMGUI_STYLE_MEMBER(ScrollbarSize),
 	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
