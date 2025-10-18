@@ -29,11 +29,11 @@ jobs:
           - name: Linux Intel GCC
             os: ubuntu-24.04
 
-          - name: macOS Intel
-            os: macos-13
-
           - name: macOS ARM
             os: macos-15
+
+          - name: macOS Intel
+            os: macos-15-intel
 
           - name: MSVC 32-bit
             os: windows-2025
@@ -43,7 +43,7 @@ jobs:
             os: windows-2025
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
