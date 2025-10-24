@@ -521,7 +521,7 @@ function expmode.searchbar(window, inputwidth)
 			local count = searchresults and #searchresults or -1
 
 			if count > 1 then
-				imSetTooltip(count .. ' results')
+				imSetTooltip(count .. ' entries')
 			end
 		end
 
