@@ -146,6 +146,19 @@ local function movetocursor(self, flags)
 	local position = imGetCursorScreenPos()
 	position.x = position.x + screensize.x * 0.01
 	position.y = position.y + screensize.y * 0.01
+
+	local minsize = self.minsize
+
+	if minsize then
+		if position.x + minsize.x > screensize.x then
+			position.x = position.x - minsize.x
+		end
+
+		if position.y + minsize.y > screensize.y then
+			position.y = position.y - minsize.y
+		end
+	end
+
 	self.position = position
 	self.positionflags = flags or imCondFirstUseEver
 
@@ -521,7 +534,7 @@ function expmode.searchbar(window, inputwidth)
 			local count = searchresults and #searchresults or -1
 
 			if count > 1 then
-				imSetTooltip(count .. ' results')
+				imSetTooltip(count .. ' entries')
 			end
 		end
 
