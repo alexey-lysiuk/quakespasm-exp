@@ -358,6 +358,8 @@ if(MSVC)
 		set_source_files_properties(${LUA_DIR}/lstrlib.c PROPERTIES COMPILE_FLAGS "/wd4334")
 	endif()
 
+	target_compile_definitions(${PROJECT_NAME} PRIVATE LUA_USE_WINDOWS)
+
 	# Disable C++ exceptions and RTTI
 	# Altering of global CMAKE_CXX_FLAGS is required because the following line
 	#   target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
@@ -377,6 +379,12 @@ else()
 
 	if(QUAKE_SEARCH_USERDIRS)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
+	endif()
+
+	if(APPLE)
+		target_compile_definitions(${PROJECT_NAME} PRIVATE LUA_USE_MACOSX)
+	else()
+		target_compile_definitions(${PROJECT_NAME} PRIVATE LUA_USE_LINUX)
 	endif()
 
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
