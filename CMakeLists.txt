@@ -379,6 +379,12 @@ else()
 		target_compile_definitions(${PROJECT_NAME} PRIVATE DO_USERDIRS)
 	endif()
 
+	if(APPLE)
+		target_compile_definitions(${PROJECT_NAME} PRIVATE LUA_USE_MACOSX)
+	else()
+		target_compile_definitions(${PROJECT_NAME} PRIVATE LUA_USE_LINUX)
+	endif()
+
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wno-trigraphs)
 
 	# Disable C++ exceptions and RTTI
