@@ -204,6 +204,7 @@ set(LUA_SOURCES
 	${LUA_DIR}/lobject.h
 	${LUA_DIR}/lopcodes.c
 	${LUA_DIR}/lopcodes.h
+	${LUA_DIR}/lopnames.h
 	${LUA_DIR}/loslib.c
 	${LUA_DIR}/lparser.c
 	${LUA_DIR}/lparser.h
@@ -352,10 +353,9 @@ if(MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /MP /wd4996)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		# Disable the following warnings, Lua files only
-		# - warning C4244: 'function': conversion from '__int64' to 'lua_Integer', possible loss of data
-		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
-		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
+		# Disable warning when compiling lstrlib.c, 64-bit target only
+		# warning C4334: '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
+		set_source_files_properties(${LUA_DIR}/lstrlib.c PROPERTIES COMPILE_FLAGS "/wd4334")
 	endif()
 
 	# Disable C++ exceptions and RTTI
