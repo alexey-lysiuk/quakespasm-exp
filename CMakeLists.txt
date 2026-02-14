@@ -352,12 +352,12 @@ if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	target_compile_options(${PROJECT_NAME} PRIVATE /MP /wd4996)
 
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		# Disable the following warnings, Lua files only
-		# - warning C4244: 'function': conversion from '__int64' to 'lua_Integer', possible loss of data
-		# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
-		set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
-	endif()
+	# if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	# 	# Disable the following warnings, Lua files only
+	# 	# - warning C4244: 'function': conversion from '__int64' to 'lua_Integer', possible loss of data
+	# 	# - warning C4267: 'function': conversion from 'size_t' to 'lua_Integer', possible loss of data
+	# 	set_source_files_properties(${LUA_SOURCES} PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267")
+	# endif()
 
 	# Disable C++ exceptions and RTTI
 	# Altering of global CMAKE_CXX_FLAGS is required because the following line
