@@ -358,8 +358,6 @@ if(MSVC)
 		set_source_files_properties(${LUA_DIR}/lstrlib.c PROPERTIES COMPILE_FLAGS "/wd4334")
 	endif()
 
-	target_compile_definitions(${PROJECT_NAME} PRIVATE LUA_USE_WINDOWS)
-
 	# Disable C++ exceptions and RTTI
 	# Altering of global CMAKE_CXX_FLAGS is required because the following line
 	#   target_compile_options(${PROJECT_NAME} PRIVATE /EHs-c- /GR-)
