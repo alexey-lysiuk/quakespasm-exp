@@ -269,6 +269,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(ChildRounding),
 	LS_IMGUI_STYLE_MEMBER(CircleTessellationMaxError),
 	LS_IMGUI_STYLE_MEMBER(ColorButtonPosition),
+	LS_IMGUI_STYLE_MEMBER(ColorMarkerSize),
 	// TODO: Add support for arrays
 	//LS_IMGUI_STYLE_MEMBER(Colors),
 	LS_IMGUI_STYLE_MEMBER(ColumnsMinSpacing),
@@ -290,6 +291,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(HoverFlagsForTooltipNav),
 	LS_IMGUI_STYLE_MEMBER(HoverStationaryDelay),
 	LS_IMGUI_STYLE_MEMBER(ImageBorderSize),
+	LS_IMGUI_STYLE_MEMBER(ImageRounding),
 	LS_IMGUI_STYLE_MEMBER(IndentSpacing),
 	LS_IMGUI_STYLE_MEMBER(ItemInnerSpacing),
 	LS_IMGUI_STYLE_MEMBER(ItemSpacing),

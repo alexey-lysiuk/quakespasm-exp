@@ -380,6 +380,7 @@ static void LS_InitImGuiEnums(lua_State* state)
 	LS_IMGUI_SLIDER_FLAGS(ClampZeroRange)
 	LS_IMGUI_SLIDER_FLAGS(NoSpeedTweaks)
 	LS_IMGUI_SLIDER_FLAGS(AlwaysClamp)
+	LS_IMGUI_SLIDER_FLAGS(ColorMarkers)
 	LS_IMGUI_ENUM_END(SliderFlags)
 #undef LS_IMGUI_MOUSE_BUTTON
 

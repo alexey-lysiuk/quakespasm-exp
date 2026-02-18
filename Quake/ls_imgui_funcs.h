@@ -710,7 +710,7 @@ static int LS_global_imgui_BeginPopupContextItem(lua_State* state)
 	LS_EnsureFrameScope(state);
 
 	const char* strid = luaL_optlstring(state, 1, nullptr, nullptr);
-	const int flags = luaL_optinteger(state, 2, 1);
+	const int flags = luaL_optinteger(state, 2, 0);
 
 	const bool visible = ImGui::BeginPopupContextItem(strid, flags);
 	lua_pushboolean(state, visible);
@@ -1397,6 +1397,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "GetItemRectMin", LS_global_imgui_GetItemRectMin },
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		// * GetItemRectSize
+		// * GetItemFlags
 
 		// Viewports
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
