@@ -1,5 +1,5 @@
 //	TextEditor - A syntax highlighting text editor for Dear ImGui.
-//	Copyright (c) 2024-2025 Johan A. Goossens. All rights reserved.
+//	Copyright (c) 2024-2026 Johan A. Goossens. All rights reserved.
 //
 //	This work is licensed under the terms of the MIT license.
 //	For a copy, see <https://opensource.org/licenses/MIT>.
@@ -32,7 +32,7 @@
 class TextEditor {
 public:
 	// constructor
-	TextEditor() { SetPalette(defaultPalette); }
+	TextEditor();
 
 	//
 	// Below is the public API
@@ -48,14 +48,20 @@ public:
 	}
 
 	inline int GetTabSize() const { return document.getTabSize(); }
+	inline void SetInsertSpacesOnTabs(bool value) { document.setInsertSpacesOnTabs(value); }
+	inline bool IsInsertSpacesOnTabs() const { return document.isInsertSpacesOnTabs(); }
 	inline void SetLineSpacing(float value) { lineSpacing = std::max(1.0f, std::min(2.0f, value)); }
 	inline float GetLineSpacing() const { return lineSpacing; }
 	inline void SetReadOnlyEnabled(bool value) { readOnly = value; }
 	inline bool IsReadOnlyEnabled() const { return readOnly; }
 	inline void SetAutoIndentEnabled(bool value) { autoIndent = value; }
 	inline bool IsAutoIndentEnabled() const { return autoIndent; }
-	inline void SetShowWhitespacesEnabled(bool value) { showWhitespaces = value; }
-	inline bool IsShowWhitespacesEnabled() const { return showWhitespaces; }
+	inline void SetShowWhitespacesEnabled(bool value) { showSpaces = value; showTabs = value; }
+	inline bool IsShowWhitespacesEnabled() const { return showSpaces && showTabs; }
+	inline void SetShowSpacesEnabled(bool value) { showSpaces = value; }
+	inline bool IsShowSpacesEnabled() const { return showSpaces; }
+	inline void SetShowTabsEnabled(bool value) { showTabs = value; }
+	inline bool IsShowTabsEnabled() const { return showTabs; }
 	inline void SetShowLineNumbersEnabled(bool value) { showLineNumbers = value; }
 	inline bool IsShowLineNumbersEnabled() const { return showLineNumbers; }
 	inline void SetShowScrollbarMiniMapEnabled(bool value) { showScrollbarMiniMap = value; }
@@ -175,7 +181,8 @@ public:
 	inline void ReplaceTextInCurrentCursor(const std::string_view& text) { if (!readOnly) replaceTextInCurrentCursor(text); }
 	inline void ReplaceTextInAllCursors(const std::string_view& text) { if (!readOnly) replaceTextInAllCursors(text); }
 
-	inline void OpenFindReplaceWindow() { findReplaceVisible = true; focusOnFind = true; }
+	inline void OpenFindReplaceWindow() { openFindReplace(); }
+	inline void CloseFindReplaceWindow() { closeFindReplace(); }
 	inline void SetFindButtonLabel(const std::string_view& label) { findButtonLabel = label; }
 	inline void SetFindAllButtonLabel(const std::string_view& label) { findAllButtonLabel = label; }
 	inline void SetReplaceButtonLabel(const std::string_view& label) { replaceButtonLabel = label; }
@@ -189,12 +196,32 @@ public:
 	inline void ClearMarkers() { clearMarkers(); }
 	inline bool HasMarkers() const { return markers.size() != 0; }
 
+	// line-based callbacks (line numbers are zero-based)
+	// insertor callbacks are called when lines are added/inserted
+	// deletor callbacks are called when lines are deleted
+	// these callbacks work with user data (see below)
+	// setting either callback to nullptr will deactivate that callback
+	inline void SetInsertor(std::function<void*(int line)> callback) { document.setInsertor(callback); }
+	inline void SetDeletor(std::function<void(int line, void* data)> callback) { document.setDeletor(callback); }
+
+	// line-based user data (line numbers are zero-based)
+	// allowing integrators to associate external data with select lines or all lines
+	// user data is an opaque void* that must be managed externally
+	// user data is also passed to the decorator callback (see below)
+	// user data is attached to a line and additions/insertions/deletions don't effect this
+	// if a line with user data is removed, it won't come back on a redo (yet)
+	// the deletor callback (if specified) is called when a line is deleted (see above)
+	inline void SetUserData(int line, void* data) { document.setUserData(line, data); }
+	inline void* GetUserData(int line) const { return document.getUserData(line); }
+	inline void IterateUserData(std::function<void(int line, void* data)> callback) const { document.iterateUserData(callback); }
+
 	// line-based decoration
 	struct Decorator {
 		int line; // zero-based
 		float width;
 		float height;
 		ImVec2 glyphSize;
+		void* userData;
 	};
 
 	// positive width is number of pixels, negative with is number of glyphs
@@ -664,6 +691,9 @@ protected:
 
 		// do we need to (re)colorize this line
 		bool colorize = true;
+
+		// user data associated with this line
+		void* userData = nullptr;
 	};
 
 	// the document being edited (Lines of Glyphs)
@@ -672,9 +702,11 @@ protected:
 		// constructor
 		Document() { emplace_back(); }
 
-		// access document's tab size
-		inline void setTabSize(int ts) { tabSize = ts; }
+		// access document's tab size and processing options
+		inline void setTabSize(int value) { tabSize = value; }
 		inline int getTabSize() const { return tabSize; }
+		inline void setInsertSpacesOnTabs(bool value) { insertSpacesOnTabs = value; }
+		inline bool isInsertSpacesOnTabs() const { return insertSpacesOnTabs; }
 
 		// manipulate document text (strings should be UTF-8 encoded)
 		void setText(const std::string_view& text);
@@ -716,24 +748,45 @@ protected:
 		inline Coordinate getNextLine(Coordinate from) const { return getRight(getEndOfLine(from)); }
 
 		// search in document
-		Coordinate findWordStart(Coordinate from) const;
-		Coordinate findWordEnd(Coordinate from) const;
+		Coordinate findWordStart(Coordinate from, bool wordOnly=false) const;
+		Coordinate findWordEnd(Coordinate from, bool wordOnly=false) const;
 		bool findText(Coordinate from, const std::string_view& text, bool caseSensitive, bool wholeWord, Coordinate& start, Coordinate& end) const;
 
 		// see if document was updated this frame (can only be called once)
 		inline bool isUpdated() { auto result = updated; updated = false; return result; }
 		inline void resetUpdated() { updated = false; }
 
+		// line-based callbacks
+		inline void setInsertor(std::function<void*(int line )> callback) { insertor = callback; }
+		inline void setDeletor(std::function<void(int line, void* data)> callback) { deletor = callback; }
+
+		// access line user data
+		void setUserData(int line, void* data);
+		void* getUserData(int line) const;
+		void iterateUserData(std::function<void(int line, void* data)> callback) const;
+
 		// utility functions
 		bool isWholeWord(Coordinate start, Coordinate end) const;
 		inline bool isEndOfLine(Coordinate from) const { return getIndex(from) == at(from.line).size(); }
 		inline bool isLastLine(int line) const { return line == lineCount() - 1; }
+		Coordinate findPreviousNonWhiteSpace(Coordinate from, bool includeEndOfLine=true) const;
+		Coordinate findNextNonWhiteSpace(Coordinate from, bool includeEndOfLine=true) const;
 		Coordinate normalizeCoordinate(Coordinate coordinate) const;
+		void normalizeCoordinate(float line, float column, Coordinate& glyphCoordinate, Coordinate& cursorCoordinate) const;
 
 	private:
 		int tabSize = 4;
+		bool insertSpacesOnTabs = false;
 		int maxColumn = 0;
 		bool updated = false;
+
+		std::function<void*(int)> insertor;
+		std::function<void(int, void*)> deletor;
+
+		void appendLine();
+		void insertLine(int line);
+		void deleteLines(int start, int end);
+		void clearDocument();
 	} document;
 
 	// single action to be performed on text as part of a larger transaction
@@ -864,7 +917,6 @@ protected:
 
 	// access the editor's text
 	void setText(const std::string_view& text);
-	void clearText();
 
 	// render (parts of) the text editor
 	void render(const char* title, const ImVec2& size, bool border);
@@ -919,6 +971,7 @@ protected:
 	void replaceTextInAllCursors(const std::string_view& text);
 
 	void openFindReplace();
+	void closeFindReplace();
 	void find();
 	void findNext();
 	void findAll();
@@ -983,7 +1036,8 @@ protected:
 	float lineSpacing = 1.0f;
 	bool readOnly = false;
 	bool autoIndent = true;
-	bool showWhitespaces = true;
+	bool showSpaces = true;
+	bool showTabs = true;
 	bool showLineNumbers = true;
 	bool showScrollbarMiniMap = true;
 	bool showMatchingBrackets = true;
