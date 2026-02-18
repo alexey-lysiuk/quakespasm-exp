@@ -692,7 +692,7 @@ lua_State* LS_GetState(void)
 			ls_memory = tlsf_create_with_pool(malloc(ls_memorysize), ls_memorysize);
 		}
 
-		lua_State* state = lua_newstate(LS_alloc, NULL);
+		lua_State* state = lua_newstate(LS_alloc, nullptr, luaL_makeseed(nullptr));
 #else
 		lua_State* state = luaL_newstate();
 #endif // USE_TLSF
