@@ -57,16 +57,17 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -B build -DQUAKE_WARNINGS_AS_ERRORS=ON -DQUAKE_GENERATE_VERSION_HEADER=ON ${{ matrix.config.extra_options }} .
+          extra_options="${{ matrix.config.extra_options }}"
 
-      - name: Get number of CPU cores
-        uses: SimenB/github-actions-cpu-cores@v2
-        id: cpu-cores
+          if [[ "${{ runner.os }}" != 'Windows' ]]; then
+            extra_options="$extra_options -G Ninja"
+          fi
+          
+          cmake -B build -DQUAKE_WARNINGS_AS_ERRORS=ON -DQUAKE_GENERATE_VERSION_HEADER=ON $extra_options
 
       - name: Build
         run: |
-          export MAKEFLAGS=--keep-going
-          cmake --build build --config Release --parallel ${{ steps.cpu-cores.outputs.count }}
+          cmake --build build --config Release
 
       - name: List Build Directory
         if: always()
