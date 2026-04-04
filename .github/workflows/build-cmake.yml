@@ -57,25 +57,17 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -B build -DQUAKE_WARNINGS_AS_ERRORS=ON -DQUAKE_GENERATE_VERSION_HEADER=ON ${{ matrix.config.extra_options }} .
+          extra_options="${{ matrix.config.extra_options }}"
 
-      - name: Get Number of CPU Cores
-        uses: actions/github-script@v8
-        id: cpu-cores
-        with:
-          script: |
-            const os = require("os");
-
-            const numberOfCpus =
-              typeof os.availableParallelism === "function"
-                ? os.availableParallelism()
-                : os.cpus().length;
-
-            core.setOutput("count", numberOfCpus);
+          if [[ "${{ runner.os }}" != 'Windows' ]]; then
+            extra_options="$extra_options -G Ninja"
+          fi
+          
+          cmake -B build -DQUAKE_WARNINGS_AS_ERRORS=ON -DQUAKE_GENERATE_VERSION_HEADER=ON $extra_options
 
       - name: Build
         run: |
-          cmake --build build --config Release --parallel ${{ steps.cpu-cores.outputs.count }}
+          cmake --build build --config Release
 
       - name: List Build Directory
         if: always()
