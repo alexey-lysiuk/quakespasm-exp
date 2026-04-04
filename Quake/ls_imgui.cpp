@@ -303,6 +303,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(ScrollbarRounding),
 	LS_IMGUI_STYLE_MEMBER(ScrollbarSize),
 	LS_IMGUI_STYLE_MEMBER(SelectableTextAlign),
+	LS_IMGUI_STYLE_MEMBER(SeparatorSize),
 	LS_IMGUI_STYLE_MEMBER(SeparatorTextAlign),
 	LS_IMGUI_STYLE_MEMBER(SeparatorTextBorderSize),
 	LS_IMGUI_STYLE_MEMBER(SeparatorTextPadding),

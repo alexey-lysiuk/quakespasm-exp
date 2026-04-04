@@ -1248,6 +1248,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * CollapsingHeader
 		// * SetNextItemOpen
 		// * SetNextItemStorageID
+		// * TreeNodeGetOpen
 
 		// Widgets: Selectables
 		{ "Selectable", LS_global_imgui_Selectable },
