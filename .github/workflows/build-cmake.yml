@@ -30,10 +30,10 @@ jobs:
             os: ubuntu-24.04
 
           - name: macOS ARM
-            os: macos-15
+            os: macos-26
 
           - name: macOS Intel
-            os: macos-15-intel
+            os: macos-26-intel
 
           - name: MSVC 32-bit
             os: windows-2025
