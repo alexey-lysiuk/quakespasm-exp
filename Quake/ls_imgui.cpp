@@ -523,13 +523,11 @@ static int LS_value_ImGuiColorTextEdit_index(lua_State* state)
 static int LS_value_ImGuiColorTextEdit_GetCurrentCursor(lua_State* state)
 {
 	TextEditor* texteditor = LS_GetColorTextEdit(state);
-
-	int line, column;
-	texteditor->GetCurrentCursor(line, column);
+	const TextEditor::DocPos pos = texteditor->GetMainCursorPosition();
 
 	// On Lua side, line and character indices begin with one
-	lua_pushinteger(state, line + 1);
-	lua_pushinteger(state, column + 1);
+	lua_pushinteger(state, pos.line + 1);
+	lua_pushinteger(state, pos.index + 1);
 	return 2;
 }
 
@@ -591,7 +589,10 @@ static int LS_value_ImGuiColorTextEdit_SelectRegion(lua_State* state)
 	const int endchar = luaL_checkinteger(state, 5);
 
 	// On C++ side, line and character indices begin with zero
-	texteditor->SelectRegion(startline - 1, startchar - 1, endline - 1, endchar - 1);
+	const TextEditor::DocPos start(startline - 1, startchar - 1);
+	const TextEditor::DocPos end(endline - 1, endchar - 1);
+
+	texteditor->SelectRegion(start, end);
 	return 0;
 }
 
@@ -603,7 +604,9 @@ static int LS_value_ImGuiColorTextEdit_SetCursor(lua_State* state)
 	const int character = luaL_optinteger(state, 3, 1);
 
 	// On C++ side, line and character indices begin with zero
-	texteditor->SetCursor(line - 1, character - 1);
+	const TextEditor::DocPos pos(line - 1, character - 1);
+
+	texteditor->SetCursor(pos);
 	return 0;
 }
 
