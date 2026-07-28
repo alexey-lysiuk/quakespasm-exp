@@ -1237,7 +1237,6 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		// * ColorPicker3
 		// * ColorPicker4
 		// * ColorButton
-		// * SetColorEditOptions
 
 		// Widgets: Trees
 		// * TreeNode
@@ -1399,6 +1398,7 @@ static void LS_InitImGuiFuncs(lua_State* state)
 		{ "GetItemRectMax", LS_global_imgui_GetItemRectMax },
 		// * GetItemRectSize
 		// * GetItemFlags
+		// * GetItemClickedCountWithSingleClickDelay
 
 		// Viewports
 		{ "GetMainViewport", LS_global_imgui_GetMainViewport },
