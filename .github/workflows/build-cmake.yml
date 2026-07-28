@@ -52,7 +52,7 @@ jobs:
           if [[ "${{ runner.os }}" == 'Linux' ]]; then
             sudo apt update && sudo apt install libflac-dev libmpg123-dev libopusfile-dev libsdl2-dev libvorbis-dev libxmp-dev
           elif [[ "${{ runner.os }}" == 'macOS' ]]; then
-            brew install flac libvorbis libxmp mpg123 opusfile sdl2
+            brew untap aws/tap && brew install flac libvorbis libxmp mpg123 opusfile sdl2
           fi
 
       - name: Configure
