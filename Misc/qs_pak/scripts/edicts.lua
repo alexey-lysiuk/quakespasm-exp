@@ -530,17 +530,21 @@ function edicts.isitem(edict)
 	end
 
 	if not name then
-		-- use classname with prefix removed for entity without netname
-		name = classname:sub(prefixlen)
+		if classname == 'item_armor_shard' then
+			name = 'Armor Shard'
+		else
+			-- use classname with prefix removed for entity without netname
+			name = classname:sub(prefixlen)
 
-		if name == 'armor1' then
-			name = 'Green Armor'
-		elseif name == 'armor2' then
-			name = 'Yellow Armor'
-		elseif name == 'armorInv' then
-			name = 'Red Armor'
-		elseif name:find('key', 1, true) == 1 then
-			name = getkeyname(edict)
+			if name == 'armor1' then
+				name = 'Green Armor'
+			elseif name == 'armor2' then
+				name = 'Yellow Armor'
+			elseif name == 'armorInv' then
+				name = 'Red Armor'
+			elseif name:find('key', 1, true) == 1 then
+				name = getkeyname(edict)
+			end
 		end
 	end
 
