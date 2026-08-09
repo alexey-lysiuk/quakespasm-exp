@@ -524,6 +524,11 @@ function edicts.isitem(edict)
 		name = localizednetname(edict)
 	end
 
+	if classname:find('item_upgrade_', 1, true) then
+		-- Dawn of the Machine health and ammo upgrades
+		name = name .. ' Capacity Upgrade'
+	end
+
 	if not name then
 		-- use classname with prefix removed for entity without netname
 		name = classname:sub(prefixlen)
