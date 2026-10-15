@@ -262,7 +262,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	LS_IMGUI_STYLE_MEMBER(Alpha),
 	LS_IMGUI_STYLE_MEMBER(AntiAliasedFill),
 	LS_IMGUI_STYLE_MEMBER(AntiAliasedLines),
-	LS_IMGUI_STYLE_MEMBER(AntiAliasedLinesUseTex),
+	LS_IMGUI_STYLE_MEMBER(AntiAliasedLineEnds),
 	LS_IMGUI_STYLE_MEMBER(ButtonTextAlign),
 	LS_IMGUI_STYLE_MEMBER(CellPadding),
 	LS_IMGUI_STYLE_MEMBER(ChildBorderSize),
@@ -273,7 +273,7 @@ constexpr LS_ImGuiMember ls_imguistyle_members[] =
 	// TODO: Add support for arrays
 	//LS_IMGUI_STYLE_MEMBER(Colors),
 	LS_IMGUI_STYLE_MEMBER(ColumnsMinSpacing),
-	LS_IMGUI_STYLE_MEMBER(CurveTessellationTol),
+	LS_IMGUI_STYLE_MEMBER(CurveTessellationMaxError),
 	LS_IMGUI_STYLE_MEMBER(DisabledAlpha),
 	LS_IMGUI_STYLE_MEMBER(DisplaySafeAreaPadding),
 	LS_IMGUI_STYLE_MEMBER(DisplayWindowPadding),
