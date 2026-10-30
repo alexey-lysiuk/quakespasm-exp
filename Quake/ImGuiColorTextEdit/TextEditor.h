@@ -101,6 +101,8 @@ public:
 	inline bool IsWordWrapEnabled() const { return config.wordWrap; }
 	inline void SetReadOnlyEnabled(bool value) { config.readOnly = value; }
 	inline bool IsReadOnlyEnabled() const { return config.readOnly; }
+	inline void SetFindReplaceEnabled(bool value) { config.findReplaceEnabled = value; if (!value) { closeFindReplace(); } }
+	inline bool IsFindReplaceEnabled() const { return config.findReplaceEnabled; }
 	inline void SetCaretsVisible(bool value) { config.caretsVisible = value; }
 	inline bool IsCaretsVisible() const { return config.caretsVisible; }
 	inline void SetAutoIndentEnabled(bool value) { config.autoIndent = value; }
@@ -121,6 +123,8 @@ public:
 	inline bool IsShowScrollbarMiniMapEnabled() const { return config.showScrollbarMiniMap; }
 	inline void SetShowPanScrollIndicatorEnabled(bool value) { config.showPanScrollIndicator = value; }
 	inline bool IsShowPanScrollIndicatorEnabled() const { return config.showPanScrollIndicator; }
+	inline void SetShowCurrentLineHighlightEnabled(bool value) { config.showCurrentLineHighlight = value; }
+	inline bool IsShowCurrentLineHighlightEnabled() const { return config.showCurrentLineHighlight; }
 	inline void SetShowMatchingBrackets(bool value) { config.showMatchingBrackets = value; if (!value) { config.lineFolding = false; } }
 	inline bool IsShowingMatchingBrackets() const { return config.showMatchingBrackets; }
 	inline void SetCompletePairedGlyphs(bool value) { config.completePairedGlyphs = value; }
@@ -139,36 +143,71 @@ public:
 	inline void SetTextLeftMargin(size_t value) { config.textMargin = value; }
 	inline size_t GetTextLeftMargin() const { return config.textMargin; }
 
-	// access text (using UTF-8 encoded strings)
-	// (see note below on cursor and scroll manipulation after setting new text)
-	inline void SetText(const std::string_view& text) { setText(text); }
-	inline std::string GetText() const { return document.getText(); }
+	// load new text into editor (see note below on cursor and scroll manipulation after setting new text)
+	//
+	// API calls to set/get text are available for all standard C++ UTF-8 and unicode string formats to support fast file en/de-coding
+	// other API calls use UTF-8 encoded std::strings
+	// Dear ImGui also uses UTF-8 encoding across the board for all internal string processing, text rendering, and widgets
 
-	inline std::string GetCursorText(size_t cursor) const {
-		return cursor < cursors.size() ? document.getSectionText(cursors[cursor].getSelectionStart(), cursors[cursor].getSelectionEnd()) : "";
-	}
+	// load UTF-8 encoded string(s)
+	inline void SetText(const std::string_view& text) { reset(); document.setUtf8Text(config, text); }
+	inline void SetText(const std::vector<std::string_view>& lines) { reset(); document.setUtf8Text(config, lines); }
 
-	inline std::string GetLineText(size_t line) const {
-		return line < document.size() ? document.getLineText(line) : "";
-	}
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L) || (__cplusplus >= 202002L)
+	inline void SetText(const std::u8string_view& text) { reset(); document.setUtf8Text(config, text); }
+	inline void SetText(const std::vector<std::u8string_view>& lines) { reset(); document.setUtf8Text(config, lines); }
+#endif
 
-	inline std::string GetSectionText(DocPos start, DocPos end) const { return document.getSectionText(normalizePos(start), normalizePos(end)); }
+	// load unicode encoded string(s)
+	inline void SetText(const std::wstring_view& text) { reset(); document.setUnicodeText(config, text); }
+	inline void SetText(const std::vector<std::wstring_view>& lines) { reset(); document.setUnicodeText(config, lines); }
+
+	inline void SetText(const std::u16string_view& text) { reset(); document.setUnicodeText(config, text); }
+	inline void SetText(const std::vector<std::u16string_view>& lines) { reset(); document.setUnicodeText(config, lines); }
+
+#ifdef IMGUI_USE_WCHAR32
+	inline void SetText(const std::u32string_view& text) { reset(); document.setUnicodeText(config, text); }
+	inline void SetText(const std::vector<std::u32string_view>& lines) { reset(); document.setUnicodeText(config, lines); }
+#endif
+
+	// get text from editor as UTF-8 encoded strings
+	inline std::string GetText() const { return document.getUtf8Text<char>(); }
+
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L) || (__cplusplus >= 202002L)
+	inline std::u8string GetTextAsU8String() const { return document.getUtf8Text<char8_t>(); }
+#endif
+
+	// get text from editor as unicode strings
+	inline std::wstring GetTextAsWstring() const { return document.getUnicodeText<wchar_t>(); }
+	inline std::u16string GetTextAsU16String() const { return document.getUnicodeText<char16_t>(); }
+
+#ifdef IMGUI_USE_WCHAR32
+	inline std::u32string GetTextAsU32String() const { return document.getUnicodeText<char32_t>(); }
+#endif
+
+	// get part of text from editor as UTF-8 encoded strings
+ 	inline std::string GetSectionText(DocPos start, DocPos end) const { return document.getSectionText(normalizePos(start), normalizePos(end)); }
 	inline std::string GetSectionText(const DocSelection& selection) const { return GetSectionText(selection.start, selection.end); }
+	inline std::string GetCursorText(size_t cursor) const { return cursor < cursors.size() ? document.getSectionText(cursors[cursor].getSelectionStart(), cursors[cursor].getSelectionEnd()) : ""; }
+	inline std::string GetLineText(size_t line) const { return line < document.size() ? document.getSectionText(DocPos(line, 0), document.getEndOfLine(DocPos(line, 0))) : ""; }
+
+	// replace text in editor (new text must be UTF-8 encoded)
 	inline void ReplaceSectionText(DocPos start, DocPos end, const std::string_view& text) { replaceSectionText(normalizePos(start), normalizePos(end), text); }
 	inline void ReplaceSectionText(const DocSelection& selection, const std::string_view& text) { ReplaceSectionText(selection.start, selection.end, text); }
 
-	inline void ClearText() { setText(""); }
+	// clear the editor
+	inline void ClearText() { SetText(""); }
 
+	// get editor status
 	inline bool IsEmpty() const { return document.isEmpty(); }
 	inline size_t GetLineCount() const { return document.size(); }
 
 	// render the text editor in a Dear ImGui context
 	// note: if you overwrite windowFlags to for instance add ImGuiWindowFlags_NoSavedSettings
 	// ensure you keep the default as they are required for the editor
-	// - ImGuiWindowFlags_NoNavInputs to ensure cursor keys are passed to the editor
 	// - ImGuiWindowFlags_NoMove to ensure mouse drag event are passed to the editor
 	// - ImGuiWindowFlags_HorizontalScrollbar to ensure a horizontal scrollbar is rendered when required
-	inline void Render(const char* title, const ImVec2& size=ImVec2(), ImGuiChildFlags childFlags=0, ImGuiWindowFlags windowFlags=ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar) { render(title, size, childFlags, windowFlags); }
+	inline bool Render(const char* title, const ImVec2& size=ImVec2(), ImGuiChildFlags childFlags=0, ImGuiWindowFlags windowFlags=ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar) { return render(title, size, childFlags, windowFlags); }
 
 	// programmatically set focus on the editor
 	inline void SetFocus() { focusOnEditor = true; }
@@ -185,16 +224,18 @@ public:
 
 	// manipulate cursors and selections (line numbers are zero-based)
 	inline void SelectAll() { selectAll(); }
-	inline void SelectLine(size_t line) { if (line < document.size()) selectLine(line); }
+	inline void SelectLine(size_t line) { selectLine(normalizeLine(line)); }
 	inline void SelectLines(size_t start, size_t end) { if (end < document.size() && start <= end) { selectLines(start, end); }}
 	inline void SelectRegion(DocPos start, DocPos end) { selectRegion(normalizePos(start), normalizePos(end)); }
 	inline void SelectToBrackets(bool includeBrackets=true) { selectToBrackets(includeBrackets); }
 	inline void GrowSelections() { growSelections(); }
 	inline void ShrinkSelections() { shrinkSelections(); }
-	inline void AddNextOccurrence() { addNextOccurrence(); }
-	inline void SelectAllOccurrences() { selectAllOccurrences(); }
+	inline void AddNextOccurrence(bool wholeWord=false) { addNextOccurrence(wholeWord); }
+	inline void SelectAllOccurrences(bool wholeWord=false) { selectAllOccurrences(wholeWord); }
 	inline bool AnyCursorHasSelection() const { return cursors.anyHasSelection(); }
 	inline bool AllCursorsHaveSelection() const { return cursors.allHaveSelection(); }
+	inline bool CursorHasSelection(size_t cursor) const { return cursors.cursorHasSelection(cursor); }
+	inline bool MainCursorHasSelection() const { return cursors.mainCursorHasSelection(); }
 	inline bool CurrentCursorHasSelection() const { return cursors.currentCursorHasSelection(); }
 	inline void ClearCursors() { cursors.clearAll(); }
 
@@ -209,7 +250,8 @@ public:
 
 	// get information at mouse position (e.g. from ImGui::GetMousePos())
 	inline bool IsMousePosOverGlyph(const ImVec2& mousePos) const { return isMousePosOverGlyph(mousePos); }
-	inline DocPos GetDocPosAtMousePos(const ImVec2& mousePos) const {return  getDocPosAtMousePos(mousePos); }
+	inline bool IsMousePosOverTextArea(const ImVec2& mousePos) const { return isMousePosOverTextArea(mousePos); }
+	inline DocPos GetDocPosAtMousePos(const ImVec2& mousePos) const { return  getDocPosAtMousePos(mousePos); }
 	inline std::string GetWordAtMousePos(const ImVec2& mousePos) const { return getWordAtMousePos(mousePos); }
 
 	// scrolling support
@@ -219,7 +261,7 @@ public:
 		alignBottom
 	};
 
-	inline void ScrollToLine(size_t line, Scroll alignment) { scrollToLine(line, alignment); }
+	inline void ScrollToLine(size_t line, Scroll alignment=Scroll::alignMiddle) { scrollToLine(normalizeLine(line), alignment); }
 	inline size_t GetFirstVisibleRow() const { return firstVisibleRow; }
 	inline size_t GetLastVisibleRow() const { return lastVisibleRow; }
 	inline size_t GetFirstVisibleColumn() const { return firstVisibleColumn; }
@@ -227,7 +269,7 @@ public:
 
 	// specify a new cursor position and scroll to it (if required)
 	// if the new position is currently in a folded region, it will be automatically unfolded
-	inline void SetCursor(DocPos pos) { setCursor(pos); }
+	inline void SetCursor(DocPos pos) { setCursor(normalizePos(pos)); }
 
 	// note on setting scrolling and cursor position
 	//
@@ -236,16 +278,17 @@ public:
 	// as a result, SetCursor or ScrollToLine just mark the request and let Render execute it
 	//
 	// the order of the calls is therefore important as they can interfere with each other
-	// so if you call SetText, SetCursor and/or ScrollToLine before Render, the order should be:
+	// so if you call any API that changes the text, SetCursor and/or ScrollToLine before Render, the order should be:
 	//
-	// * call SetText first as it resets the entire editor state including cursors and scrolling
+	// * call text changing APIs first as they update the editor state including cursors and scrolling
 	// * then call SetCursor as it sets the cursor and requests that we make the cursor visible (i.e. scroll to it)
 	// * then call ScrollToLine to mark the exact scroll location (it cancels the possible SetCursor scroll request)
 	// * call Render to properly update the entire state
 	//
-	// this works while opening the editor as well as later
+	// this works while opening the editor for the first time as well as later
 
 	// get glyph size in pixels
+	// (width is for single width glyphs, double width glyphs are twice as wide)
 	inline float GetLineHeight() const { return glyphSize.y; }
 	inline float GetGlyphWidth() const { return glyphSize.x; }
 
@@ -253,42 +296,77 @@ public:
 	inline VisPos DocPos2VisPos(DocPos pos) const { return docPos2VisPos(normalizePos(pos)); }
 	inline DocPos VisPos2DocPos(VisPos pos) const { return visPos2DocPos(normalizePos(pos)); }
 
+	// get the screen position of the top left corner of a glyph
+	// only valid after a call to Render that drew the editor (its window was visible: see ImGui::IsItemVisible)
+	inline ImVec2 DocPos2ScreenPos(DocPos pos) const { return visPos2ScreenPos(docPos2VisPos(normalizePos(pos))); }
+
 	// see if a specified document location is visible (not folded and currently on screen)
 	inline bool IsDocPosVisible(DocPos pos) const { return isDocPosVisible(normalizePos(pos)); }
 
 	// see if a visual position covers a glyph
-	inline bool IsVisPosOverGlyph(VisPos pos) const { return typeSetter.isVisPosOverGlyph(pos); }
+	inline bool IsVisPosOverGlyph(VisPos pos) const { return typeSetter.isVisPosOverGlyph(normalizePos(pos)); }
 
-	// find/replace support
+	// find start or end of word from provided position
+	// if wordOnly = true, it only looks for sequences of glyphs that can make up words/symbols (letter and numbers)
+	// if wordOnly = false, it also recognizes whitespace sequences or non-word sequences
+	inline DocPos FindWordStart(DocPos pos, bool wordOnly=false) const { return document.findWordStart(normalizePos(pos), wordOnly); }
+	inline DocPos FindWordEnd(DocPos pos, bool wordOnly=false) const { return document.findWordEnd(normalizePos(pos), wordOnly); }
+
+	// find/replace support (strings must be UTF-8 encoded)
 	inline void SelectFirstOccurrenceOf(const std::string_view& text, bool caseSensitive=true, bool wholeWord=false) { selectFirstOccurrenceOf(text, caseSensitive, wholeWord); }
 	inline void SelectNextOccurrenceOf(const std::string_view& text, bool caseSensitive=true, bool wholeWord=false) { selectNextOccurrenceOf(text, caseSensitive, wholeWord); }
 	inline void SelectAllOccurrencesOf(const std::string_view& text, bool caseSensitive=true, bool wholeWord=false) { selectAllOccurrencesOf(text, caseSensitive, wholeWord); }
 	inline void ReplaceTextInCurrentCursor(const std::string_view& text) { if (!config.readOnly) replaceTextInCurrentCursor(text); }
 	inline void ReplaceTextInAllCursors(const std::string_view& text) { if (!config.readOnly) replaceTextInAllCursors(text); }
 
-	inline void OpenFindReplaceWindow() { openFindReplace(); }
-	inline void CloseFindReplaceWindow() { closeFindReplace(); }
-	inline void SetFindButtonLabel(const std::string_view& label) { findButtonLabel = label; }
-	inline void SetFindAllButtonLabel(const std::string_view& label) { findAllButtonLabel = label; }
-	inline void SetReplaceButtonLabel(const std::string_view& label) { replaceButtonLabel = label; }
-	inline void SetReplaceAllButtonLabel(const std::string_view& label) { replaceAllButtonLabel = label; }
+	// the built-in find/replace window can be disabled (see SetFindReplaceEnabled) when the application provides its own search
+	// the editor then ignores Ctrl+F, Ctrl+Shift+F and Ctrl+G, so they reach the application's windows
+	inline void OpenFindReplaceWindow() { if (config.findReplaceEnabled) { openFindReplace(); } }
+	inline void CloseFindReplaceWindow() { if (config.findReplaceEnabled) { closeFindReplace(); } }
 	inline bool HasFindString() const { return findText.size(); }
 	inline void FindNext() { findNext(); }
 	inline void FindAll() { findAll(); }
 
+	// internationalize find window labels (strings must be UTF-8 encoded)
+	inline void SetFindButtonLabel(const std::string_view& label) { findButtonLabel = label; }
+	inline void SetFindAllButtonLabel(const std::string_view& label) { findAllButtonLabel = label; }
+	inline void SetReplaceButtonLabel(const std::string_view& label) { replaceButtonLabel = label; }
+	inline void SetReplaceAllButtonLabel(const std::string_view& label) { replaceAllButtonLabel = label; }
+
 	// access markers (line numbers are zero-based)
-	inline void AddMarker(size_t line, ImU32 lineNumberColor, ImU32 textColor, const std::string_view& lineNumberTooltip, const std::string_view& textTooltip) { addMarker(line, lineNumberColor, textColor, lineNumberTooltip, textTooltip); }
+	// markers are attached to lines and are not effected by inserts or deletes before that line
+	// if a line with a marker is deleted, undo doesn't restore it
+	// tooltips must be UTF-8 encoded
+	inline void AddMarker(size_t line, ImU32 lineNumberColor, ImU32 textColor, const std::string_view& lineNumberTooltip, const std::string_view& textTooltip) { addMarker(normalizeLine(line), lineNumberColor, textColor, lineNumberTooltip, textTooltip); }
 	inline void ClearMarkers() { clearMarkers(); }
 	inline bool HasMarkers() const { return markers.size() != 0; }
+
+	// access squiggly underlines
+	// squiggles are attached to glyphs and are not effected  by inserts or deletes before that glyph
+	// if a glyph with a squiggle is deleted, undo doesn't restore it
+	// a squiggle is drawn as a wavy underline or as a background behind the text (e.g. to highlight search results)
+	// tooltips must be UTF-8 encoded
+	enum class SquiggleStyle {
+		wave,
+		background
+	};
+
+	inline void AddSquiggle(DocPos start, DocPos end, size_t type, ImU32 color, const std::string_view& tooltip = std::string_view(), SquiggleStyle style = SquiggleStyle::wave) { addSquiggle(normalizePos(start), normalizePos(end), type, color, tooltip, style); }
+	inline void ClearSquiggles(DocPos start, DocPos end) { clearSquiggles(normalizePos(start), normalizePos(end)); }
+	inline void ClearSquiggles(size_t type) { clearSquiggles(type); }
+	inline void ClearSquiggles() { clearSquiggles(); }
+	inline bool HasSquiggles() const { return squiggles.size() != 0; }
 
 	// specify a change callback (called when changes are made (including undo/redo))
 	// the delay parameter specifies a time in miliseconds that the editor will wait for before calling
 	// which helps in case you don't need to track every keystroke
-	// passing nullptr for callback deactivates the feature
 	inline void SetChangeCallback(std::function<void()> callback, int delay=0) {
 		delayedChangeCallback = callback;
 		delayedChangeDelay = std::chrono::milliseconds(delay);
 	}
+
+	inline void ClearChangeCallback() { SetChangeCallback(nullptr); }
+	inline bool HasChangeCallback() const { return delayedChangeCallback != nullptr; }
 
 	// detailed change report passed to callback below
 	// this callback is different from the one above as it reports every change (not just a summary) and is very detailed
@@ -296,7 +374,7 @@ public:
 	// in case of an overwrite, there will be two actions (first a delete and then an insert)
 	// the start parameters refer to the insert point or the start of the delete
 	// the end parameters refer to the end of the inserted text or the end of the deleted text
-	// the text parameter contains the inserted or deleted text
+	// the text parameter contains the inserted or deleted text (UTF-8 encoded)
 	// line and index values are zero-based
 	struct Change {
 		bool insert;
@@ -308,25 +386,30 @@ public:
 	// specify a transaction callback (live document changes in great detail)
 	// it provides a list of changes made to the document in a single transaction (in the right order)
 	// be carefull with this callback as it gets very verbose (called on every keystroke, delete, cut, paste, undo and redo)
-	// passing nullptr deactivates the callback
 	inline void SetTransactionCallback(std::function<void(const std::vector<Change>&)> callback) { transactions.setCallback(callback); }
+	inline void ClearTransactionCallback() { SetTransactionCallback(nullptr); }
+	inline bool HasTransactionCallback() const { return transactions.hasCallback(); }
 
 	// line-based callbacks (line numbers are zero-based)
-	// insertor callback is called when for each line inserted and the result is used as the new line specific user data
+	// insertor callback is called for each line inserted and the result is used as the new line specific user data
 	// deletor callback is called for each line deleted (line specific user data is passed to callback)
-	// setting either callback to nullptr will deactivate that callback
 	inline void SetInsertor(std::function<void*(size_t line)> callback) { document.setInsertor(callback); }
+	inline void ClearInsertor() { SetInsertor(nullptr); }
+	inline bool HasInsertor() const { return document.hasInsertor(); }
+
 	inline void SetDeletor(std::function<void(size_t line, void* data)> callback) { document.setDeletor(callback); }
+	inline void ClearDeletor() { SetDeletor(nullptr); }
+	inline bool HasDeletor() const { return document.hasDeletor(); }
 
 	// line-based user data (line numbers are zero-based)
-	// allowing integrators to associate external data with select lines or all lines
+	// allowing integrators to associate external data with select lines
 	// user data is an opaque void* that must be managed externally
 	// user data is also passed to the decorator and popup callbacks (see below)
 	// user data is attached to a line and insertions/deletions don't effect this
 	// if a line with user data is removed, it won't come back on a redo
 	// the deletor callback (if specified) is called when a line is deleted (see above)
-	inline void SetUserData(size_t line, void* data) { document.setUserData(line, data); }
-	inline void* GetUserData(size_t line) const { return document.getUserData(line); }
+	inline void SetUserData(size_t line, void* data) { document.setUserData(normalizeLine(line), data); }
+	inline void* GetUserData(size_t line) const { return document.getUserData(normalizeLine(line)); }
 	inline void IterateUserData(std::function<void(size_t line, void* data)> callback) const { document.iterateUserData(callback); }
 
 	// line-based decoration
@@ -346,6 +429,65 @@ public:
 
 	inline void ClearLineDecorator() { SetLineDecorator(0, nullptr); }
 	inline bool HasLineDecorator() const { return decoratorWidth != 0 && decoratorCallback != nullptr; }
+
+	// custom text cursor (caret) rendering
+	struct CustomCaret {
+		// draw list to submit rendering commands to
+		ImDrawList* drawList;
+
+		// top left corner of glyph where cursor is (in screen coordinates)
+		// can be used directly to submit drawing commands
+		ImVec2 glyphPos;
+
+		// visible size of glyph
+		ImVec2 glyphSize;
+
+		// flag indicating if cursor is visible (based on configuration and standard blinking algorithm)
+		// this can be ignored if the custom caret has its own animation algorithm
+		bool caretVisible;
+
+		// color of cursor caret as per the current palette
+		// this can also be ignored if custom caret has its own palette or animation
+		ImU32 caretColor;
+
+		// index of the cursor being rendered (in case additional cursor information is required)
+		size_t cursorIndex;
+	};
+
+	inline void SetCustomCaretRenderer(std::function<void(const CustomCaret& data)> callback) { customCaretCallback = callback; }
+	inline void ClearCustomCaretRenderer() { customCaretCallback = nullptr; }
+	inline bool HasCustomCaretRenderer() const { return customCaretCallback != nullptr; }
+
+	// custom line number renderer
+	struct CustomLineNumber {
+		// draw list to submit rendering commands to
+		ImDrawList* drawList;
+
+		// top left corner of line number box
+		// can be used directly to submit drawing commands
+		ImVec2 pos;
+
+		// visible size of line number box in pixels
+		ImVec2 size;
+
+		// width of line number box in glyphs (this is variable)
+		// the editor calculates the number of digits required for the highest line number
+		size_t digits;
+
+		// line number to be rendered (zero-based)
+		size_t lineNumber;
+
+		// line number for current cursor (zero-based)
+		size_t cursorLineNumber;
+
+		// line number color from current palette
+		// this can be ignored if custom renderer has its own palette or animation
+		ImU32 color;
+	};
+
+	inline void SetCustomLineNumberRenderer(std::function<void(const CustomLineNumber& data)> callback) { customLineNumberCallback = callback; }
+	inline void ClearCustomLineNumberRenderer() { customLineNumberCallback = nullptr; }
+	inline bool HasCustomLineNumberRenderer() const { return customLineNumberCallback != nullptr; }
 
 	// setup right click or hover callbacks
 	// the editor sets up a popup menu in the right location
@@ -421,6 +563,8 @@ public:
 		matchingBracketError,
 		lineNumber,
 		currentLineNumber,
+		currentLineHighlight,
+		currentLineHighlightBorder,
 		count
 	};
 
@@ -460,6 +604,10 @@ public:
 
 		// maintained by the TypeSetter overlay
 		BreakOption breakOption = BreakOption::undefined;
+		uint8_t columns = 1;
+
+		// squiggle reference
+		uint32_t squiggle = 0;
 	};
 
 	// iterator used in language-specific tokenizers
@@ -652,7 +800,7 @@ public:
 		// delay in milliseconds between autocomplete trigger and suggestions popup
 		std::chrono::milliseconds triggerDelay{200};
 
-		// text label used when no suggestions are available (this allows for internationalization)
+		// text label (UTF-8) used when no suggestions are available (this allows for internationalization)
 		std::string noSuggestionsLabel = "No suggestions";
 
 		// width of suggestion popup expressed in number of glyphs
@@ -693,6 +841,7 @@ public:
 		static bool isLower(ImWchar codepoint);
 		static bool isUpper(ImWchar codepoint);
 		static bool isEastAsian(ImWchar codepoint);
+		static size_t getGlyphWidth(ImWchar codepoint);
 		static ImWchar toUpper(ImWchar codepoint);
 		static ImWchar toLower(ImWchar codepoint);
 
@@ -855,12 +1004,14 @@ protected:
 		bool showMiniMap = false;
 		size_t miniMapColumns = 0;
 		bool showScrollbarMiniMap = true;
+		bool showCurrentLineHighlight = true;
 		bool showMatchingBrackets = true;
 		bool completePairedGlyphs = true;
 		bool lineFolding = false;
 		bool overwrite = false;
 		bool panMode = true;
 		bool showPanScrollIndicator = true;
+		bool findReplaceEnabled = true;
 		size_t leftMargin = 1; // margins are expressed in number of glyphs
 		size_t decorationMargin = 1;
 		size_t textMargin = 2;
@@ -960,17 +1111,199 @@ protected:
 		// constructor
 		Document() { emplace_back(); }
 
-		// manipulate document text (strings should be UTF-8 encoded)
-		void setText(const Config& config, const std::string_view& text);
-		void setText(const Config& config, const std::vector<std::string_view>& text);
+		// manipulate document text
+		template <typename T>
+		void setUtf8Text(const Config& config, const std::basic_string_view<T>& text) {
+			// reset document
+			clearDocument();
+			appendLine();
+
+			// process UTF-8 and generate lines of glyphs
+			const auto sv = std::string_view(reinterpret_cast<const char*>(text.data()), text.size());
+			auto i = sv.begin();
+			const auto end = sv.end();
+
+			while (i < end) {
+				ImWchar character;
+				i = CodePoint::read(i, end, &character);
+
+				if (character == '\n') {
+					appendLine();
+
+				} else if (config.insertSpacesOnTabs && character == '\t') {
+					const auto spaces = getSpacesToTab(config, back(), back().size());
+
+					for (size_t s = 0; s < spaces; s++) {
+						back().emplace_back(Glyph(' ', Color::text));
+					}
+
+				} else if (character != '\r') {
+					back().emplace_back(Glyph(character, Color::text));
+				}
+			}
+
+			// calculate line indents
+			updateIndents(config, 0, size() - 1);
+			updated = true;
+		}
+
+		template <typename T>
+		void setUtf8Text(const Config& config, const std::vector<std::basic_string_view<T>>& lines) {
+			// reset document
+			clearDocument();
+
+			if (lines.size()) {
+				// process input UTF-8 and generate lines of glyphs
+				for (const auto& line : lines) {
+					appendLine();
+
+					const auto sv = std::string_view(reinterpret_cast<const char*>(line.data()), line.size());
+					auto i = sv.begin();
+					const auto end = sv.end();
+
+					while (i < end) {
+						ImWchar character;
+						i = CodePoint::read(i, end, &character);
+
+						if (config.insertSpacesOnTabs && character == '\t') {
+							const auto spaces = getSpacesToTab(config, back(), back().size());
+
+							for (size_t s = 0; s < spaces; s++) {
+								back().emplace_back(Glyph(' ', Color::text));
+							}
+
+						} else if (character != '\r') {
+							back().emplace_back(Glyph(character, Color::text));
+						}
+					}
+				}
+
+			} else {
+				appendLine();
+			}
+
+			// calculate line indents
+			updateIndents(config, 0, size() - 1);
+			updated = true;
+		}
+
+		template <typename T>
+		void setUnicodeText(const Config& config, const std::basic_string_view<T>& text) {
+			// reset document
+			clearDocument();
+			appendLine();
+
+			// process all glyphs
+			for (auto i = text.begin(); i < text.end(); i++) {
+				const auto character = static_cast<ImWchar>(*i);
+
+				if (character == '\n') {
+					appendLine();
+
+				} else if (config.insertSpacesOnTabs && character == '\t') {
+					const auto spaces = getSpacesToTab(config, back(), back().size());
+
+					for (size_t s = 0; s < spaces; s++) {
+						back().emplace_back(Glyph(' ', Color::text));
+					}
+
+				} else if (character != '\r') {
+					back().emplace_back(Glyph(character, Color::text));
+				}
+			}
+
+			// calculate line indents
+			updateIndents(config, 0, size() - 1);
+			updated = true;
+		}
+
+		template <typename T>
+		void setUnicodeText(const Config& config, const std::vector<std::basic_string_view<T>>& lines) {
+			// reset document
+			clearDocument();
+
+			if (lines.size()) {
+				// process input UTF-8 and generate lines of glyphs
+				for (const auto& line : lines) {
+					appendLine();
+
+					// process all glyphs
+					for (auto i = line.begin(); i < line.end(); i++) {
+						const auto character = static_cast<ImWchar>(*i);
+
+						if (config.insertSpacesOnTabs && character == '\t') {
+							const auto spaces = getSpacesToTab(config, back(), back().size());
+
+							for (size_t s = 0; s < spaces; s++) {
+								back().emplace_back(Glyph(' ', Color::text));
+							}
+
+						} else if (character != '\r') {
+							back().emplace_back(Glyph(character, Color::text));
+						}
+					}
+				}
+
+			} else {
+				appendLine();
+			}
+
+			// calculate line indents
+			updateIndents(config, 0, size() - 1);
+			updated = true;
+		}
+
+		// insert/delete part of the document's text (strings are UTF-8 encoded)
 		DocPos insertText(const Config& config, DocPos start, const std::string_view& text);
 		void deleteText(const Config& config, DocPos start, DocPos end);
 
-		// access document text (strings are UTF-8 encoded)
-		std::string getText() const;
-		std::string getLineText(size_t line) const;
+		// get document text as UTF-8
+		template <typename T>
+		std::basic_string<T> getUtf8Text() const {
+			std::basic_string<T> text;
+			char utf8[4];
+
+			for (auto line = begin(); line < end(); line++) {
+				for (auto glyph = line->begin(); glyph < line->end(); glyph++) {
+					text.append(std::basic_string_view<T>(
+						reinterpret_cast<const T*>(utf8),
+						CodePoint::write(utf8, glyph->codepoint)));
+				}
+
+				if (line != std::prev(end()) || line->size()) {
+					text += static_cast<T>('\n');
+				}
+			}
+
+			return text;
+		}
+
+		// get document text as unicode
+		template <typename T>
+		std::basic_string<T> getUnicodeText() const {
+			std::basic_string<T> text;
+
+			for (auto line = begin(); line < end(); line++) {
+				for (auto glyph = line->begin(); glyph < line->end(); glyph++) {
+					text += static_cast<T>(glyph->codepoint);
+				}
+
+				if (line != std::prev(end()) || line->size()) {
+					text += static_cast<T>('\n');
+				}
+			}
+
+			return text;
+
+		}
+
+		// get part of document text (returned strings are UTF-8 encoded)
 		std::string getSectionText(DocPos start, DocPos end) const;
+		inline std::string getLineText(size_t line) const { return getSectionText(DocPos(line, 0), DocPos(line, at(line).size())); }
 		ImWchar getCodePoint(DocPos location) const;
+
+		// iterate through glyphs between two positions
+		void iterateGlyphs(DocPos start, DocPos end, std::function<void(Glyph& glyph)> callback);
 
 		// get line or color state
 		inline LineState getLineState(size_t line) const { return at(line).state; }
@@ -999,7 +1332,10 @@ protected:
 
 		// line-based callbacks
 		inline void setInsertor(std::function<void*(size_t line)> callback) { insertor = callback; }
+		inline bool hasInsertor() const { return insertor != nullptr; }
+
 		inline void setDeletor(std::function<void(size_t line, void* data)> callback) { deletor = callback; }
+		inline bool hasDeletor() const { return deletor != nullptr; }
 
 		// access line user data
 		void setUserData(size_t line, void* data);
@@ -1010,7 +1346,11 @@ protected:
 		void iterateIdentifiers(std::function<void(const std::string& identifier)> callback) const;
 
 		// utility functions
-		bool isWholeWord(DocPos start, DocPos end) const;
+		bool isWordStart(DocPos pos, bool wordOnly=false) const;
+		bool isWordEnd(DocPos pos, bool wordOnly=false) const;
+		bool isWholeWord(DocPos start, DocPos end, bool wordOnly=false) const;
+		DocSelection getWholeWord(DocPos pos, bool wordOnly=false) const;
+		inline bool isStartOfLine(DocPos from) const { return from.index == 0; }
 		inline bool isEndOfLine(DocPos from) const { return from.index == at(from.line).size(); }
 		inline bool isLastLine(size_t line) const { return line == size() - 1; }
 		DocPos findPreviousNonWhiteSpace(DocPos from, bool includeEndOfLine=true) const;
@@ -1032,6 +1372,7 @@ protected:
 		void deleteLines(size_t start, size_t end);
 		void clearDocument();
 		void updateIndents(const Config& config, size_t start, size_t end);
+		size_t getSpacesToTab(const Config& config, const Line& line, size_t index);
 	} document;
 
 	// a single cursor
@@ -1125,6 +1466,7 @@ protected:
 		inline bool hasMultiple() const { return size() > 1; }
 		bool anyHasSelection() const;
 		bool allHaveSelection() const;
+		inline bool cursorHasSelection(size_t cursor) const { return cursor < size() ? at(cursor).hasSelection() : false; }
 		inline bool mainCursorHasSelection() const { return at(main).hasSelection(); }
 		inline bool currentCursorHasSelection() const { return at(current).hasSelection(); }
 		inline bool mainHasUpdate() const { return at(main).isUpdated(); }
@@ -1151,9 +1493,8 @@ protected:
 		void update(const Document& document);
 
 		// adjust cursors for insert/delete operations
-		// (these functions assume that insert or delete points are before the cursor)
-		void adjustForInsert(iterator start, DocPos insertStart, DocPos insertEnd);
-		void adjustForDelete(iterator start, DocPos deleteStart, DocPos deleteEnd);
+		void adjustForInsert(iterator start, DocPos insertStart, DocPos insertEnd, bool includeCurrent=false);
+		void adjustForDelete(iterator start, DocPos deleteStart, DocPos deleteEnd, bool includeCurrent=false);
 
 	private:
 		size_t main = 0;
@@ -1180,7 +1521,7 @@ protected:
 	};
 
 	// a collection of actions for a complete transaction
- 	class Transaction : public std::vector<Action> {
+	class Transaction : public std::vector<Action> {
 	public:
 		// access state before/after transactions
 		inline void setBeforeState(const Cursors& cursors) { before = cursors; }
@@ -1199,7 +1540,7 @@ protected:
 	};
 
 	// overlay for managing the transaction list to support do/undo/redo
- 	class Transactions : public std::vector<std::shared_ptr<Transaction>> {
+	class Transactions : public std::vector<std::shared_ptr<Transaction>> {
 	public:
 		// reset the transactions
 		void reset();
@@ -1224,6 +1565,7 @@ protected:
 
 		// set transaction callback
 		inline void setCallback(std::function<void(const std::vector<Change>&)> cb) { callback = cb; }
+		inline bool hasCallback() const { return callback != nullptr; }
 
 	private:
 		size_t undoIndex = 0;
@@ -1324,10 +1666,10 @@ protected:
 		void toggleAtLine(Document& document, size_t line);
 		void unfoldAll(Document& document);
 
-		static inline bool isFoldable(const Document& document, size_t line) {return document[line].foldingState == FoldingState::foldable; }
-		static inline bool isFolded(const Document& document, size_t line) {return document[line].foldingState == FoldingState::folded; }
-		static inline bool isVisible(const Document& document, size_t line) {return document[line].foldingState == FoldingState::visible; }
-		static inline bool isHidden(const Document& document, size_t line) {return document[line].foldingState == FoldingState::hidden; }
+		static inline bool isFoldable(const Document& document, size_t line) { return document[line].foldingState == FoldingState::foldable; }
+		static inline bool isFolded(const Document& document, size_t line) { return document[line].foldingState == FoldingState::folded; }
+		static inline bool isVisible(const Document& document, size_t line) { return document[line].foldingState == FoldingState::visible; }
+		static inline bool isHidden(const Document& document, size_t line) { return document[line].foldingState == FoldingState::hidden; }
 
 		// see if line folding was updated this frame
 		inline bool isUpdated() const { return updated; }
@@ -1435,18 +1777,13 @@ protected:
 		bool showMiniMap = false;
 
 		// support functions
-		void processLine(
-			const Line& line,
-			const Config& config,
-			size_t index,
-			size_t column,
-			size_t endColumn);
+		void processLine(const Line& line, size_t index, size_t column, size_t endColumn);
 	} miniMap;
 
-	// the list of text markers
+	// list of text markers
 	struct Marker {
-		Marker(ImU32 lc, ImU32 tc, const std::string_view& lt, const std::string_view& tt) :
-			lineNumberColor(lc), textColor(tc), lineNumberTooltip(lt), textTooltip(tt) {}
+		Marker(ImU32 lineNumberColor, ImU32 textColor, const std::string_view& lineNumberTooltip, const std::string_view& textTooltip) :
+			lineNumberColor(lineNumberColor), textColor(textColor), lineNumberTooltip(lineNumberTooltip), textTooltip(textTooltip) {}
 
 		ImU32 lineNumberColor;
 		ImU32 textColor;
@@ -1456,6 +1793,18 @@ protected:
 
 	using Markers = std::vector<Marker>;
 	Markers markers;
+
+	// list of squiggles
+	struct Squiggle {
+		Squiggle(size_t type, ImU32 color, const std::string_view& tooltip, SquiggleStyle style) : type(type), color(color), tooltip(tooltip), style(style) {}
+		size_t type;
+		ImU32 color;
+		std::string tooltip;
+		SquiggleStyle style;
+	};
+
+	using Squiggles = std::vector<Squiggle>;
+	Squiggles squiggles;
 
 	// autocomplete support
 	class AutoComplete {
@@ -1505,17 +1854,19 @@ protected:
 		void refreshSuggestions();
 	} autocomplete;
 
-	// access the editor's text
-	void setText(const std::string_view& text);
+	// reset the editor's state
+	void reset();
 
 	// render (parts of) the text editor
-	void render(const char* title, const ImVec2& size, ImGuiChildFlags childFlags, ImGuiWindowFlags windowFlags);
+	bool render(const char* title, const ImVec2& size, ImGuiChildFlags childFlags, ImGuiWindowFlags windowFlags);
+	void renderCurrentLineHighlight();
 	void renderActiveBracketBackground();
 	void renderSelections();
 	void renderTextMarkers();
 	void renderMatchingBracketLines();
+	void renderSquiggles();
 	void renderText();
-	void renderCursors();
+	void renderCursorCarets();
 	void renderLineNumberMarkers();
 	void renderLineNumbers();
 	void renderDecorations();
@@ -1527,7 +1878,7 @@ protected:
 	void renderPopups();
 
 	// update editor state after changes caused by API calls or user interactions
-	void updateState();
+	bool updateState();
 
 	// keyboard and mouse interactions
 	void handleKeyboardInputs();
@@ -1539,6 +1890,7 @@ protected:
 	// coordinate transformation/normalization
 	inline VisPos docPos2VisPos(DocPos pos) const { return typeSetter.docPos2VisPos(document, pos); }
 	inline DocPos visPos2DocPos(VisPos pos) const { return typeSetter.visPos2DocPos(document, pos); }
+	inline ImVec2 visPos2ScreenPos(VisPos pos) const { return ImVec2(cursorScreenPos.x + textLeftOffset + pos.column * glyphSize.x, cursorScreenPos.y + pos.row * glyphSize.y); }
 
 	inline size_t normalizeLine(size_t line) const { return document.normalizeLine(line); }
 	inline DocPos normalizePos(DocPos pos) const { return document.normalizePos(pos); }
@@ -1553,6 +1905,7 @@ protected:
 	void growSelections();
 	void shrinkSelections();
 
+	// clipboard actions
 	void cut();
 	void copy() const;
 	void paste();
@@ -1565,21 +1918,23 @@ protected:
 
 	// get information at mouse position (e.g. from ImGui::GetMousePos())
 	bool isMousePosOverGlyph(const ImVec2& mousePos) const;
+	bool isMousePosOverTextArea(const ImVec2& mousePos) const;
 	DocPos getDocPosAtMousePos(const ImVec2& mousePos) const;
 	std::string getWordAtMousePos(const ImVec2& mousePos) const;
 
 	// scrolling support
 	void setCursor(DocPos pos);
-	void scrollToLine(size_t line, Scroll alignment);
+	void scrollToLine(size_t line, Scroll alignment, float fraction=0.0f);
 	void handlePossibleScrolling();
 	void makeCursorVisible();
+	void resetScrolling();
 
 	// find/replace support
 	void selectFirstOccurrenceOf(const std::string_view& text, bool caseSensitive, bool wholeWord);
 	void selectNextOccurrenceOf(const std::string_view& text, bool caseSensitive, bool wholeWord);
 	void selectAllOccurrencesOf(const std::string_view& text, bool caseSensitive, bool wholeWord);
-	void addNextOccurrence();
-	void selectAllOccurrences();
+	void addNextOccurrence(bool wholeWord);
+	void selectAllOccurrences(bool wholeWord);
 
 	void replaceTextInCurrentCursor(const std::string_view& text);
 	void replaceTextInAllCursors(const std::string_view& text);
@@ -1596,6 +1951,14 @@ protected:
 	// marker support
 	void addMarker(size_t line, ImU32 lineNumberColor, ImU32 textColor, const std::string_view& lineNumberTooltip, const std::string_view& textTooltip);
 	void clearMarkers();
+	void compressMarkers();
+
+	// squiggle support
+	void addSquiggle(DocPos start, DocPos end, size_t type, ImU32 color, const std::string_view& tooltip, SquiggleStyle style);
+	void clearSquiggles(size_t type);
+	void clearSquiggles(DocPos start, DocPos end);
+	void clearSquiggles();
+	void compressSquiggles();
 
 	// cursor/selection functions
 	void moveUp(size_t rows, bool select);
@@ -1653,16 +2016,20 @@ protected:
 	inline bool isLineVisible(size_t line) const { return lineFold.isVisible(document, line); }
 	inline bool isLineHidden(size_t line) const { return lineFold.isHidden(document, line); }
 
+	inline void resetCursorAnimationTimer() { cursorAnimationTimer = -0.3f; }
+
 	// rendering context
 	static constexpr size_t invalidLine = std::numeric_limits<size_t>::max();
 
-	bool editorVisible = false;
+	bool firstFrame = true;
 	float cursorWidth;
 	ImVec2 cursorScreenPos;
 	ImVec2 visibleSize;
+	ImDrawList* drawList;
 
 	ImFont* font;
 	float fontSize;
+	float fontScaleDpi;
 	ImVec2 glyphSize;
 
 	float lineNumberLeftOffset;
@@ -1694,18 +2061,23 @@ protected:
 	static constexpr float miniMapViewPortAlpha = 0.15f;
 	static constexpr float miniMapViewPortActiveAlpha = 0.3f;
 
-	float cursorAnimationTimer = 0.0f;
+	float cursorAnimationTimer = -0.3f;
 	size_t scrollToLineNumber = invalidLine;
 	Scroll scrollToAlignment = Scroll::alignMiddle;
-	DocPos ensureVisiblePos{invalidLine, 0};
+	float scrollToFraction = 0.0f;
+	DocPos scrollToDocPos{invalidLine, 0};
+	bool resetDearImGuiScrolling = false;
 
 	size_t decoratorWidth = 0;
 	std::function<void(Decorator&)> decoratorCallback;
 
+	std::function<void(const CustomCaret&)> customCaretCallback;
+	std::function<void(const CustomLineNumber&)> customLineNumberCallback;
+
 	std::function<void(PopupData& data)> lineNumberContextMenuCallback;
 	std::function<void(PopupData& data)> textContextMenuCallback;
 	std::function<void(PopupData& data)> textHoverCallback;
-	ImVec2 popUpWindowPos;
+	ImVec2 popupWindowPos;
 	DocPos popupDocPos;
 
 	// find and replace context
@@ -1714,7 +2086,7 @@ protected:
 	std::string replaceButtonLabel = "Replace";
 	std::string replaceAllButtonLabel = "Replace All";
 	bool findReplaceVisible = false;
-	bool focusOnEditor = true;
+	bool focusOnEditor = false;
 	bool focusOnFind = false;
 	bool findCancelledAutocomplete = false;
 	std::string findText;
@@ -1731,6 +2103,7 @@ protected:
 	bool scrolling = false;
 	ImVec2 scrollStart;
 	bool selectingText = false;
+	bool deletesHappened = false;
 	std::function<void()> delayedChangeCallback;
 	std::chrono::milliseconds delayedChangeDelay;
 	std::chrono::system_clock::time_point delayedChangeReportTime;
